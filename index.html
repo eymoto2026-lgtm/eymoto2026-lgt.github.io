@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EyMotoComidas Pro</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
+}
+
+header{
+    background:#333333;
+    color:white;
+    text-align:center;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.2);
+}
+
+header h1{
+    margin-top:10px;
+    font-size:42px;
+}
+
+.logo{
+    width:100px;
+    height:auto;
+    border-radius:15px;
+}
+
+.banner img{
+    width:100%;
+    height:auto;
+    display:block;
+}
+
+.categories{
+    display:flex;
+    overflow:auto;
+    gap:8px;
+    padding:10px;
+    background:#fff;
+}
+
+.categories button{
+    border:none;
+    padding:10px;
+    border-radius:20px;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(180px,180px));
+justify-content:center;
+gap:10px;
+padding:10px;
+padding-bottom:300px;
+}
+.card{
+background:#fff;
+border-radius:10px;
+padding:10px;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+}
+
+.card img{
+    width:100%;
+    height:140px;
+    object-fit:cover;
+    border-radius:8px;
+}
+
+.buy{
+    width:100%;
+    background:#333333;
+    color:#fff;
+    border:none;
+    padding:15px;
+    border-radius:15px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.checkout{
+    width:100%;
+    background:#333333;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.cart{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:#fff;
+    border-top:1px solid #ccc;
+    padding:10px;
+    max-height:40vh;
+    overflow:auto;
+}
+
+.small{
+    font-size:13px;
+    color:#555;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+<img src="img/portada.jpg" class="logo" alt="EyMotoComidas">
+<h1>EyMotoComidas</h1>
+</header>
+
+<div class="banner">
+<img src="img/banner.jpg" alt="Portada">
+</div>
+
+<div class="categories">
+<button onclick="filterProducts('Todos')">Todos</button>
+<button onclick="filterProducts('Hamburguesas')">🍔 Hamburguesas</button>
+<button onclick="filterProducts('Perros')">🌭 Perros</button>
+<button onclick="filterProducts('Salchipapas')">🍟 Salchipapas</button>
+<button onclick="filterProducts('Burritos')">🌮 Burritos</button>
+<button onclick="filterProducts('Bebidas')">🥤 Bebidas</button>
+</div>
+
+<div class="products" id="products"></div>
+
+<div class="cart">
+<h3>🛒 Carrito</h3>
+<div id="cartItems"></div>
+<p>Subtotal: $<span id="subtotal">0</span></p>
+<p>Domicilio: <span>A convenir</span></p>
+<p><b>Total: $<span id="total">0</span></b></p>
+<button class="checkout" onclick="sendWhatsApp()">Comprar</button>
+</div>
+
+<script>
+const whatsapp="573169934516";
+const delivery=0;
+
+const products=[
+{name:"Hamburguesa Especial",category:"Hamburguesas",price:22000,img:"img/hamburguesa_especial.jpg",description:"Carne artesanal y queso cheddar"},
+{name:"Hamburguesa Doble",category:"Hamburguesas",price:24000,img:"img/hamburguesa_doble.jpg",description:"Doble carne y doble queso"},
+{name:"Hamburguesa Sencilla",category:"Hamburguesas",price:18000,img:"img/hamburguesa_sencilla.jpg",description:"carne o pollo y queso mosarella pan blanco"},
+
+{name:"Perro Sencillo",category:"Perros",price:12000,img:"img/perro_sencillo.jpg",description:"Salchicha y salsas"},
+{name:"Perro Especial",category:"Perros",price:18000,img:"img/perro_especial.jpg",description:"pan blanco, carne o pollo, salchilla super,maiz, paparipio, queso y salsa de la casa"},
+{name:"ChoriPerro",category:"Perros",price:18000,img:"img/choriperro.jpg",description:"pan blanco, carne o pollo, chorizo,maiz, paparipio, queso y salsa de la casa"},
+
+{name:"Salchipapa Personal",category:"Salchipapas",price:15000,img:"img/salchipapasencilla.jpg",description:"Papas,lechuga,salchicha, queso costeño y salsas de la casa"},
+{name:"choripapa Personal",category:"Salchipapas",price:20000,img:"img/choripapa.jpg",description:"Papas,lechuga,chorizo, queso costeño y salsas de la casa"},
+{name:"salchipapa especial Personal",category:"Salchipapas",price:28000,img:"img/salchipapaespecial.jpg",description:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa"},
+{name:"Mega Salchipapa Especial para 2 Personas",category:"Salchipapas",price:58000,img:"img/megasalchipapa.jpg",description:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa"},
+
+
+
+{name:"Burrito De Pollo",category:"Burritos",price:22000,img:"img/burrito.jpg",description:"Maíz, pollo, lechuga, queso, paparipio y Salsa de la casa"},
+
+{name:"Gaseosa Pepsi",category:"Bebidas",price:5000,img:"img/pepsi_400_ml.jpg",description:"Gaseosa Pepsi 400ml"},
+{name:"Gaseosa Sprite",category:"Bebidas",price:5000,img:"img/sprite_400.jpg",description:"Gaseosa Sprite 400ml"},
+{name:"Gaseosa Cocacola 1.5L",category:"Bebidas",price:5000,img:"img/cocacola_1_5.jpg",description:"Gaseosa Cocacola 1.5L"},
+{name:"Gaseosa Quatro",category:"Bebidas",price:5000,img:"img/quatro_400.jpg",description:"Gaseosa Quatro 400ml"},
+{name:"Gaseosa Cocacola 2.5L",category:"Bebidas",price:5000,img:"img/cocacola_2_5.jpg",description:"Gaseosa Cocacola 2.5L"},
+{name:"Gaseosa Cocacola Zero",category:"Bebidas",price:5000,img:"img/cocacolazero600.jpg",description:"Gaseosa Cocacola Zero 600ml"},
+{name:"Gaseosa Hit Lulo",category:"Bebidas",price:5000,img:"img/hit-lulo.jpg",description:"Gaseosa Hit Lulo 400ml"},
+{name:"Gaseosa Hit Mango",category:"Bebidas",price:5000,img:"img/hit-mango.jpg",description:"Gaseosa Hit Mango 400ml"},
+{name:"Gaseosa Hit Mora",category:"Bebidas",price:5000,img:"img/hit-mora.jpg",description:"Gaseosa Hit Mora 400ml"},
+{name:"Gaseosa Hit Naranja-Pina",category:"Bebidas",price:5000,img:"img/hit-naranja-pina.jpg",description:"Gaseosa Hit Naranja-Piña 400ml"},
+{name:"Gaseosa Hit Tropical",category:"Bebidas",price:5000,img:"img/hit-tropical.jpg",description:"Gaseosa Hit Tropical 400ml"}
+];
+
+let cart=[];
+
+let currentProducts = products;
+
+function filterProducts(category){
+    if(category==="Todos"){
+        currentProducts = products;
+    }else{
+        currentProducts = products.filter(p => p.category === category);
+    }
+    renderProducts();
+}
+
+function renderProducts(){
+document.getElementById('products').innerHTML=currentProducts.map((p,i)=>`
+<div class="card">
+<img src="${p.img}">
+<h3>${p.name}</h3>
+<p class="small">${p.description}</p>
+<p><b>$${p.price.toLocaleString()}</b></p>
+<button class="buy" onclick="add('${p.name}')">Comprar</button>
+</div>`).join('');
+}
+
+function add(name){
+
+let product = products.find(p => p.name === name);
+
+let item = cart.find(x => x.name === product.name);
+
+if(item){
+    item.qty++;
+}else{
+    cart.push({...product, qty:1});
+}
+
+renderCart();
+
+}
+
+function plus(i){
+cart[i].qty++;
+renderCart();
+}
+
+function minus(i){
+cart[i].qty>1 ? cart[i].qty-- : cart.splice(i,1);
+renderCart();
+}
+
+function removeItem(i){
+cart.splice(i,1);
+renderCart();
+}
+
+function renderCart(){
+let subtotal=0;
+
+document.getElementById('cartItems').innerHTML=cart.map((p,i)=>{
+subtotal+=p.price*p.qty;
+return `${p.name} x${p.qty}
+<button onclick="plus(${i})">➕</button>
+<button onclick="minus(${i})">➖</button>
+<button onclick="removeItem(${i})">🗑️</button><br>`;
+}).join('');
+
+document.getElementById('subtotal').innerText=subtotal.toLocaleString();
+document.getElementById('total').innerText=subtotal.toLocaleString();
+}
+
+function sendWhatsApp(){
+let subtotal=0;
+let msg="🛵 PEDIDO EYMOTOCOMIDAS%0A%0A";
+
+cart.forEach(p=>{
+subtotal+=p.price*p.qty;
+msg+=`${p.name} x${p.qty} = $${p.price*p.qty}%0A`;
+});
+
+msg+=`%0ASubtotal: $${subtotal}%0ADomicilio: A convenir%0ATotal: $${subtotal}`;
+
+window.open(`https://wa.me/${whatsapp}?text=${msg}`);
+}
+renderProducts();
+renderCart();
+</script>
+
+</body>
+</html>
