@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin - EyMotoComidas</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    text-align:center;
+    background:#f4f4f4;
+    padding-top:40px;
+}
+
+.login-box,
+.panel{
+    max-width:400px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+input{
+    width:90%;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+button{
+    padding:12px 20px;
+    margin:8px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.login-btn{
+    background:#2196F3;
+    color:white;
+}
+
+.logout-btn{
+    background:#555;
+    color:white;
+}
+
+.open{
+    background:green;
+    color:white;
+}
+
+.close{
+    background:red;
+    color:white;
+}
+
+.estado{
+    font-size:24px;
+    font-weight:bold;
+    margin:20px 0;
+}
+
+.abierto{
+    color:green;
+}
+
+.cerrado{
+    color:red;
+}
+
+#panelAdmin{
+    display:none;
+}
+
+#error{
+    color:red;
+    margin-top:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="loginBox" class="login-box">
+
+```
+<h2>🔐 Login Administrador</h2>
+
+<input type="email" id="email" placeholder="Correo">
+
+<input type="password" id="password" placeholder="Contraseña">
+
+<br>
+
+<button class="login-btn" onclick="login()">
+    Iniciar sesión
+</button>
+
+<div id="error"></div>
+```
+
+</div>
+
+<div id="panelAdmin" class="panel">
+
+```
+<h2>Panel de Administración</h2>
+
+<div id="estado" class="estado">
+    Cargando...
+</div>
+
+<button class="open" onclick="abrirTienda()">
+    🟢 Abrir Tienda
+</button>
+
+<button class="close" onclick="cerrarTienda()">
+    🔴 Cerrar Tienda
+</button>
+
+<br><br>
+
+<button class="logout-btn" onclick="logout()">
+    🚪 Cerrar sesión
+</button>
+```
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  databaseURL: "https://eymotocomidas-default-rtdb.firebaseio.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.database();
+
+const loginBox = document.getElementById("loginBox");
+const panelAdmin = document.getElementById("panelAdmin");
+const estadoDiv = document.getElementById("estado");
+
+function login(){
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+    .catch(error=>{
+        document.getElementById("error").innerText =
+        "Correo o contraseña incorrectos";
+    });
+
+}
+
+function logout(){
+    auth.signOut();
+}
+
+auth.onAuthStateChanged(user=>{
+
+    if(user){
+
+        loginBox.style.display="none";
+        panelAdmin.style.display="block";
+
+        db.ref("tiendaAbierta").on("value", snapshot=>{
+
+            const abierta = snapshot.val();
+
+            if(abierta){
+                estadoDiv.innerHTML="🟢 TIENDA ABIERTA";
+                estadoDiv.className="estado abierto";
+            }else{
+                estadoDiv.innerHTML="🔴 TIENDA CERRADA";
+                estadoDiv.className="estado cerrado";
+            }
+
+        });
+
+    }else{
+
+        loginBox.style.display="block";
+        panelAdmin.style.display="none";
+
+    }
+
+});
+
+function abrirTienda(){
+
+    db.ref("tiendaAbierta").set(true);
+
+}
+
+function cerrarTienda(){
+
+    db.ref("tiendaAbierta").set(false);
+
+}
+
+</script>
+
+</body>
+</html>
