@@ -104,29 +104,31 @@
 
 </div>
 
-<!-- FIREBASE (CORRECTO PARA HTML SIMPLE) -->
+<!-- Firebase (IMPORTANTE: primero esto) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
+  // 1. CONFIG (la que tú enviaste)
   const firebaseConfig = {
     apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
     authDomain: "eymotocomidas.firebaseapp.com",
     projectId: "eymotocomidas",
     storageBucket: "eymotocomidas.firebasestorage.app",
     messagingSenderId: "670474251560",
-    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d",
-    measurementId: "G-L9JLNVSVTL"
+    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
   };
 
+  // 2. INICIALIZAR (OBLIGATORIO)
   firebase.initializeApp(firebaseConfig);
 
+  // 3. SERVICIOS
   const auth = firebase.auth();
   const db = firebase.firestore();
+
+  console.log("🔥 Firebase cargado correctamente");
 </script>
-  // LOGIN
-  function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
