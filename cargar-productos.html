@@ -50,20 +50,60 @@ document.getElementById("resultado").innerHTML =
 
 window.crearProductoPrueba = async function(){
 
+const productos = [
+
+{name:"Hamburguesa Especial",categoria:"Hamburguesas",precio:22000,img:"img/hamburguesa_especial.jpg",descripcion:"Carne artesanal y queso cheddar",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Hamburguesa Sencilla",categoria:"Hamburguesas",precio:18000,img:"img/hamburguesa_sencilla.jpg",descripcion:"carne o pollo y queso mosarella pan blanco",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Perro Sencillo",categoria:"Perros",precio:12000,img:"img/perro_sencillo.jpg",descripcion:"Salchicha y salsas",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Perro Especial",categoria:"Perros",precio:18000,img:"img/perro_especial.jpg",descripcion:"pan blanco, carne o pollo, salchilla super,maiz, paparipio, queso y salsa de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"ChoriPerro",categoria:"Perros",precio:18000,img:"img/choriperro.jpg",descripcion:"pan blanco, carne o pollo, chorizo,maiz, paparipio, queso y salsa de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Salchipapa Personal",categoria:"Salchipapas",precio:15000,img:"img/salchipapasencilla.jpg",descripcion:"Papas,lechuga,salchicha, queso costeño y salsas de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"choripapa Personal",categoria:"Salchipapas",precio:20000,img:"img/choripapa.jpg",descripcion:"Papas,lechuga,chorizo, queso costeño y salsas de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"salchipapa especial Personal",categoria:"Salchipapas",precio:28000,img:"img/salchipapaespecial.jpg",descripcion:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Mega Salchipapa Especial para 2 Personas",categoria:"Salchipapas",precio:58000,img:"img/megasalchipapa.jpg",descripcion:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Burrito De Pollo",categoria:"Burritos",precio:22000,img:"img/burrito.jpg",descripcion:"Maíz, pollo, lechuga, queso, paparipio y Salsa de la casa",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Pepsi",categoria:"Bebidas",precio:5000,img:"img/pepsi_400_ml.jpg",descripcion:"Gaseosa Pepsi 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Sprite",categoria:"Bebidas",precio:5000,img:"img/sprite_400.jpg",descripcion:"Gaseosa Sprite 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Cocacola 1.5L",categoria:"Bebidas",precio:5000,img:"img/cocacola_1_5.jpg",descripcion:"Gaseosa Cocacola 1.5L",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Quatro",categoria:"Bebidas",precio:5000,img:"img/quatro_400.jpg",descripcion:"Gaseosa Quatro 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Cocacola 2.5L",categoria:"Bebidas",precio:5000,img:"img/cocacola_2_5.jpg",descripcion:"Gaseosa Cocacola 2.5L",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Cocacola Zero",categoria:"Bebidas",precio:5000,img:"img/cocacolazero600.jpg",descripcion:"Gaseosa Cocacola Zero 600ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Hit Lulo",categoria:"Bebidas",precio:5000,img:"img/hit-lulo.jpg",descripcion:"Gaseosa Hit Lulo 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Hit Mango",categoria:"Bebidas",precio:5000,img:"img/hit-mango.jpg",descripcion:"Gaseosa Hit Mango 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Hit Mora",categoria:"Bebidas",precio:5000,img:"img/hit-mora.jpg",descripcion:"Gaseosa Hit Mora 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Hit Naranja-Pina",categoria:"Bebidas",precio:5000,img:"img/hit-naranja-pina.jpg",descripcion:"Gaseosa Hit Naranja-Piña 400ml",disponible:true,tiendaId:"eymotocomidas"},
+
+{name:"Gaseosa Hit Tropical",categoria:"Bebidas",precio:5000,img:"img/hit-tropical.jpg",descripcion:"Gaseosa Hit Tropical 400ml",disponible:true,tiendaId:"eymotocomidas"}
+
+];
+
 try{
 
-await addDoc(collection(db,"productos"),{
-
-nombre:"Producto Prueba",
-precio:1000,
-categoria:"Pruebas",
-disponible:true,
-tiendaId:"eymotocomidas"
-
-});
+for(const producto of productos){
+  await addDoc(collection(db,"productos"), producto);
+}
 
 document.getElementById("resultado").innerHTML =
-"✅ Producto de prueba creado";
+"✅ 21 productos cargados correctamente";
 
 }catch(error){
 
