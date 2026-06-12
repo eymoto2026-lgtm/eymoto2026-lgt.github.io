@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cargar Productos</title>
+</head>
+
+<body>
+
+<h1>EyMotoComidas</h1>
+
+<button onclick="probar()">
+Probar conexión Firestore
+</button>
+
+<p id="resultado"></p>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+import {
+getFirestore
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.probar = function(){
+
+document.getElementById("resultado").innerHTML =
+"✅ Firebase conectado correctamente";
+
+}
+
+</script>
+
+</body>
+</html>
