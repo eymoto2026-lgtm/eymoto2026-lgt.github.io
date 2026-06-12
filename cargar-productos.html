@@ -12,6 +12,11 @@
 <button onclick="probar()">
 Probar conexión Firestore
 </button>
+  <br><br>
+
+<button onclick="crearProductoPrueba()">
+Crear producto de prueba
+</button>
 
 <p id="resultado"></p>
 
@@ -20,7 +25,9 @@ Probar conexión Firestore
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 import {
-getFirestore
+getFirestore,
+collection,
+addDoc
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
