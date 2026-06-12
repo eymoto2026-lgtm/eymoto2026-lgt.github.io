@@ -125,6 +125,17 @@ justify-content:space-between;
 <header>
 <img src="img/portada.jpg" class="logo" alt="EyMotoComidas">
 <h1>EyMotoComidas</h1>
+
+<div id="estadoTienda" style="
+margin-top:10px;
+padding:10px;
+border-radius:10px;
+font-weight:bold;
+background:#28a745;
+color:white;">
+🟢 TIENDA ABIERTA
+</div>
+
 </header>
 
 <div class="banner">
@@ -272,6 +283,102 @@ window.open(`https://wa.me/${whatsapp}?text=${msg}`);
 renderProducts();
 renderCart();
 </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  databaseURL: "https://eymotocomidas-default-rtdb.firebaseio.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const tiendaRef = ref(db, "tiendaAbierta");
+
+onValue(tiendaRef, (snapshot) => {
+
+  console.log("Valor Firebase:", snapshot.val());
+
+  const abierta = snapshot.val();
+
+onValue(tiendaRef, (snapshot) => {
+
+  const abierta = snapshot.val();
+
+  const estado = document.getElementById("estadoTienda");
+  const productos = document.getElementById("products");
+  const carrito = document.querySelector(".cart");
+  const banner = document.querySelector(".banner");
+
+  if (abierta === false) {
+
+    document.body.style.backgroundColor = "#e0e0e0";
+
+    estado.innerHTML = "🔴 TIENDA CERRADA";
+    estado.style.background = "#dc3545";
+
+    productos.style.display = "none";
+    carrito.style.display = "none";
+
+    if (banner) {
+      banner.style.opacity = "0.4";
+    }
+
+  } else {
+
+    document.body.style.backgroundColor = "#f4f4f4";
+
+    estado.innerHTML = "🟢 TIENDA ABIERTA";
+    estado.style.background = "#28a745";
+
+    productos.style.display = "grid";
+    carrito.style.display = "block";
+
+    if (banner) {
+      banner.style.opacity = "1";
+    }
+  }
+
+});
+
+  const estado = document.getElementById("estadoTienda");
+  const productos = document.getElementById("products");
+  const carrito = document.querySelector(".cart");
+  const banner = document.querySelector(".banner");
+
+  if (abierta === false) {
+
+    document.body.style.backgroundColor = "#e0e0e0";
+
+    estado.innerHTML = "🔴 TIENDA CERRADA";
+    estado.style.background = "#dc3545";
+
+    productos.style.display = "none";
+    carrito.style.display = "none";
+
+    banner.style.opacity = "0.4";
+
+  } else {
+
+    document.body.style.backgroundColor = "#f4f4f4";
+
+    estado.innerHTML = "🟢 TIENDA ABIERTA";
+    estado.style.background = "#28a745";
+
+    productos.style.display = "grid";
+    carrito.style.display = "block";
+
+    banner.style.opacity = "1";
+  }
+
+});
+</script>
 </body>
 </html>
