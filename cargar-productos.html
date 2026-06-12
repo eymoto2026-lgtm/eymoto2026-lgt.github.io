@@ -47,6 +47,38 @@ document.getElementById("resultado").innerHTML =
 "✅ Firebase conectado correctamente";
 
 }
+window.probar = function(){
+
+document.getElementById("resultado").innerHTML =
+"✅ Firebase conectado correctamente";
+
+}
+
+window.crearProductoPrueba = async function(){
+
+try{
+
+await addDoc(collection(db,"productos"),{
+
+nombre:"Producto Prueba",
+precio:1000,
+categoria:"Pruebas",
+disponible:true,
+tiendaId:"eymotocomidas"
+
+});
+
+document.getElementById("resultado").innerHTML =
+"✅ Producto de prueba creado";
+
+}catch(error){
+
+document.getElementById("resultado").innerHTML =
+"❌ Error: " + error.message;
+
+}
+
+}
 
 </script>
 
