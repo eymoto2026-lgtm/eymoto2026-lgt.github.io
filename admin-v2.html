@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin V2 - EyMoto</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: #fff;
+      margin: 0;
+    }
+
+    header {
+      background: #000;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .card {
+      background: #1c1c1c;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: #f5c400;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .tienda {
+      border: 1px solid #333;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+
+    .ok {
+      color: lime;
+    }
+
+    .bad {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<header>ADMIN V2 - EYMOTO</header>
+
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="loginBox" class="card">
+    <h3>🔐 Login Administrador</h3>
+    <input type="email" id="email" placeholder="Correo">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button onclick="login()">Iniciar sesión</button>
+    <p id="loginMsg"></p>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel" class="hidden">
+
+    <div class="card">
+      <h3>➕ Crear Tienda</h3>
+      <input type="text" id="nombreTienda" placeholder="Nombre tienda">
+      <input type="text" id="whatsapp" placeholder="WhatsApp (ej: 5731...)">
+      <button onclick="crearTienda()">Crear Tienda</button>
+    </div>
+
+    <div class="card">
+      <h3>🏪 Tiendas</h3>
+      <div id="listaTiendas"></div>
+    </div>
+
+    <button onclick="logout()">Cerrar sesión</button>
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+
+<script>
+  // 🔥 TU CONFIG FIREBASE (usa la misma que ya tienes)
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_AUTH_DOMAIN",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_STORAGE_BUCKET",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // LOGIN
+  function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        document.getElementById("loginMsg").innerHTML = "✔ Login correcto";
+      })
+      .catch(err => {
+        document.getElementById("loginMsg").innerHTML = "❌ " + err.message;
+      });
+  }
+
+  // OBSERVAR SESIÓN
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("panel").classList.remove("hidden");
+      cargarTiendas();
+    } else {
+      document.getElementById("loginBox").classList.remove("hidden");
+      document.getElementById("panel").classList.add("hidden");
+    }
+  });
+
+  // CREAR TIENDA
+  async function crearTienda() {
+    const nombre = document.getElementById("nombreTienda").value;
+    const whatsapp = document.getElementById("whatsapp").value;
+
+    if (!nombre || !whatsapp) return alert("Completa los campos");
+
+    const id = nombre.toLowerCase().replace(/\s/g, "");
+
+    await db.collection("tiendas").doc(id).set({
+      nombre: nombre,
+      whatsapp: whatsapp,
+      abierta: true,
+      activa: true,
+      createdAt: Date.now()
+    });
+
+    alert("Tienda creada ✔");
+    cargarTiendas();
+  }
+
+  // CARGAR TIENDAS
+  async function cargarTiendas() {
+    const cont = document.getElementById("listaTiendas");
+    cont.innerHTML = "";
+
+    const snap = await db.collection("tiendas").get();
+
+    if (snap.empty) {
+      cont.innerHTML = "<p>No hay tiendas aún</p>";
+      return;
+    }
+
+    snap.forEach(doc => {
+      const t = doc.data();
+
+      cont.innerHTML += `
+        <div class="tienda">
+          <b>${t.nombre}</b><br>
+          WhatsApp: ${t.whatsapp}<br>
+          Estado: ${t.activa ? '<span class="ok">Activa</span>' : '<span class="bad">Inactiva</span>'}
+          <br><br>
+          <button onclick="toggle('${doc.id}', ${t.activa})">
+            ${t.activa ? "Desactivar" : "Activar"}
+          </button>
+        </div>
+      `;
+    });
+  }
+
+  // ACTIVAR / DESACTIVAR TIENDA
+  async function toggle(id, estado) {
+    await db.collection("tiendas").doc(id).update({
+      activa: !estado
+    });
+
+    cargarTiendas();
+  }
+
+  // LOGOUT
+  function logout() {
+    auth.signOut();
+  }
+</script>
+
+</body>
+</html>
