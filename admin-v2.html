@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin V2 - EyMoto</title>
+
   <style>
     body {
       font-family: Arial;
@@ -59,16 +60,9 @@
       margin-top: 10px;
       border-radius: 8px;
     }
-
-    .ok {
-      color: lime;
-    }
-
-    .bad {
-      color: red;
-    }
   </style>
 </head>
+
 <body>
 
 <header>ADMIN V2 - EYMOTO</header>
@@ -90,7 +84,7 @@
     <div class="card">
       <h3>➕ Crear Tienda</h3>
       <input type="text" id="nombreTienda" placeholder="Nombre tienda">
-      <input type="text" id="whatsapp" placeholder="WhatsApp (ej: 5731...)">
+      <input type="text" id="whatsapp" placeholder="WhatsApp">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
 
@@ -104,17 +98,31 @@
 
 </div>
 
-<!-- Firebase (IMPORTANTE: primero esto) -->
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
 
+<script>
+  // CONFIG FIREBASE
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+    authDomain: "eymotocomidas.firebaseapp.com",
+    projectId: "eymotocomidas",
+    storageBucket: "eymotocomidas.firebasestorage.app",
+    messagingSenderId: "670474251560",
+    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // LOGIN
   function login() {
-    const email = emailInput.value;
-    const password = passwordInput.value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
     auth.signInWithEmailAndPassword(email, password)
       .then(() => {
@@ -125,6 +133,7 @@
       });
   }
 
+  // ESTADO LOGIN
   auth.onAuthStateChanged(user => {
     if (user) {
       document.getElementById("loginBox").style.display = "none";
@@ -136,23 +145,27 @@
     }
   });
 
+  // CREAR TIENDA
   async function crearTienda() {
     const nombre = document.getElementById("nombreTienda").value;
     const whatsapp = document.getElementById("whatsapp").value;
+
+    if (!nombre || !whatsapp) return alert("Completa los campos");
 
     const id = nombre.toLowerCase().replace(/\s/g, "");
 
     await db.collection("tiendas").doc(id).set({
       nombre,
       whatsapp,
-      abierta: true,
       activa: true,
+      abierta: true,
       createdAt: Date.now()
     });
 
     cargarTiendas();
   }
 
+  // CARGAR TIENDAS
   async function cargarTiendas() {
     const cont = document.getElementById("listaTiendas");
     cont.innerHTML = "";
@@ -172,13 +185,12 @@
     });
   }
 
+  // LOGOUT
   function logout() {
     auth.signOut();
-  }
-</script>
   }
 
-  function logout() {
-    auth.signOut();
-  }
 </script>
+
+</body>
+</html>
