@@ -108,26 +108,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<script>
-  // 1. CONFIG (la que tú enviaste)
-  const firebaseConfig = {
-    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-    authDomain: "eymotocomidas.firebaseapp.com",
-    projectId: "eymotocomidas",
-    storageBucket: "eymotocomidas.firebasestorage.app",
-    messagingSenderId: "670474251560",
-    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
-  };
-
-  // 2. INICIALIZAR (OBLIGATORIO)
-  firebase.initializeApp(firebaseConfig);
-
-  // 3. SERVICIOS
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  console.log("🔥 Firebase cargado correctamente");
 <script>
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
@@ -138,88 +118,10 @@
 
     auth.signInWithEmailAndPassword(email, password)
       .then(() => {
-        document.getElementById("loginMsg").innerHTML = "✔ Login correcto";
+        document.getElementById("loginMsg").innerText = "✔ Login correcto";
       })
       .catch(err => {
-        document.getElementById("loginMsg").innerHTML = "❌ " + err.message;
-      });
-  }
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      document.getElementById("loginBox").classList.add("hidden");
-      document.getElementById("panel").classList.remove("hidden");
-      cargarTiendas();
-    } else {
-      document.getElementById("loginBox").classList.remove("hidden");
-      document.getElementById("panel").classList.add("hidden");
-    }
-  });
-
-  async function crearTienda() {
-    const nombre = document.getElementById("nombreTienda").value;
-    const whatsapp = document.getElementById("whatsapp").value;
-
-    if (!nombre || !whatsapp) return alert("Completa los campos");
-
-    const id = nombre.toLowerCase().replace(/\s/g, "");
-
-    await db.collection("tiendas").doc(id).set({
-      nombre,
-      whatsapp,
-      abierta: true,
-      activa: true,
-      createdAt: Date.now()
-    });
-
-    cargarTiendas();
-  }
-
-  async function cargarTiendas() {
-    const cont = document.getElementById("listaTiendas");
-    cont.innerHTML = "";
-
-    const snap = await db.collection("tiendas").get();
-
-    snap.forEach(doc => {
-      const t = doc.data();
-
-      cont.innerHTML += `
-        <div class="tienda">
-          <b>${t.nombre}</b><br>
-          WhatsApp: ${t.whatsapp}<br>
-          Estado: ${t.activa ? '<span class="ok">Activa</span>' : '<span class="bad">Inactiva</span>'}
-          <br><br>
-          <button onclick="toggle('${doc.id}', ${t.activa})">
-            ${t.activa ? "Desactivar" : "Activar"}
-          </button>
-        </div>
-      `;
-    });
-  }
-
-  async function toggle(id, estado) {
-    await db.collection("tiendas").doc(id).update({
-      activa: !estado
-    });
-
-    cargarTiendas();
-  }
-
-  function logout() {
-    auth.signOut();
-  }
-<script>
-  function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        document.getElementById("loginMsg").innerHTML = "✔ Login correcto";
-      })
-      .catch(err => {
-        document.getElementById("loginMsg").innerHTML = "❌ " + err.message;
+        document.getElementById("loginMsg").innerText = "❌ " + err.message;
       });
   }
 
@@ -237,8 +139,6 @@
   async function crearTienda() {
     const nombre = document.getElementById("nombreTienda").value;
     const whatsapp = document.getElementById("whatsapp").value;
-
-    if (!nombre || !whatsapp) return alert("Completa los campos");
 
     const id = nombre.toLowerCase().replace(/\s/g, "");
 
@@ -270,6 +170,12 @@
         </div>
       `;
     });
+  }
+
+  function logout() {
+    auth.signOut();
+  }
+</script>
   }
 
   function logout() {
