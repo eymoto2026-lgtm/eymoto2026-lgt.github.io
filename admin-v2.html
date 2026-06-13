@@ -209,7 +209,70 @@
   function logout() {
     auth.signOut();
   }
-</script>
+<script>
+  function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-</body>
-</html>
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        document.getElementById("loginMsg").innerHTML = "✔ Login correcto";
+      })
+      .catch(err => {
+        document.getElementById("loginMsg").innerHTML = "❌ " + err.message;
+      });
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("panel").style.display = "block";
+      cargarTiendas();
+    } else {
+      document.getElementById("loginBox").style.display = "block";
+      document.getElementById("panel").style.display = "none";
+    }
+  });
+
+  async function crearTienda() {
+    const nombre = document.getElementById("nombreTienda").value;
+    const whatsapp = document.getElementById("whatsapp").value;
+
+    if (!nombre || !whatsapp) return alert("Completa los campos");
+
+    const id = nombre.toLowerCase().replace(/\s/g, "");
+
+    await db.collection("tiendas").doc(id).set({
+      nombre,
+      whatsapp,
+      abierta: true,
+      activa: true,
+      createdAt: Date.now()
+    });
+
+    cargarTiendas();
+  }
+
+  async function cargarTiendas() {
+    const cont = document.getElementById("listaTiendas");
+    cont.innerHTML = "";
+
+    const snap = await db.collection("tiendas").get();
+
+    snap.forEach(doc => {
+      const t = doc.data();
+
+      cont.innerHTML += `
+        <div class="tienda">
+          <b>${t.nombre}</b><br>
+          ${t.whatsapp}<br>
+          Estado: ${t.activa ? "Activa" : "Inactiva"}
+        </div>
+      `;
+    });
+  }
+
+  function logout() {
+    auth.signOut();
+  }
+</script>
