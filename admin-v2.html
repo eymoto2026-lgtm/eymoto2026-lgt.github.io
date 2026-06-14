@@ -138,12 +138,15 @@
   }
 
   // ESTADO LOGIN
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("panel").style.display = "block";
-      cargarTiendas();
-    } else {
+ auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+
+    cargarTiendas();
+    cargarProductos();
+  }
+     else {
       document.getElementById("loginBox").style.display = "block";
       document.getElementById("panel").style.display = "none";
     }
@@ -159,16 +162,17 @@
     const id = nombre.toLowerCase().replace(/\s/g, "");
 
     await db.collection("tiendas").doc(id).set({
-      nombre,
-      whatsapp,
-      activa: true,
-      abierta: true,
-      createdAt: Date.now()
-    });
+  nombre,
+  whatsapp,
+  activa: true,
+  abierta: true,
+  createdAt: Date.now()
+});
 
-   cargarTiendas();
+cargarTiendas();
 cargarProductos();
 
+}
   // CARGAR TIENDAS
   async function cargarTiendas() {
     const cont = document.getElementById("listaTiendas");
