@@ -166,40 +166,11 @@ color:white;">
 const whatsapp="573169934516";
 const delivery=0;
 
-const products=[
-{name:"Hamburguesa Especial",category:"Hamburguesas",price:22000,img:"img/hamburguesa_especial.jpg",description:"Carne artesanal y queso cheddar"},
-{name:"Hamburguesa Doble",category:"Hamburguesas",price:24000,img:"img/hamburguesa_doble.jpg",description:"Doble carne y doble queso"},
-{name:"Hamburguesa Sencilla",category:"Hamburguesas",price:18000,img:"img/hamburguesa_sencilla.jpg",description:"carne o pollo y queso mosarella pan blanco"},
-
-{name:"Perro Sencillo",category:"Perros",price:12000,img:"img/perro_sencillo.jpg",description:"Salchicha y salsas"},
-{name:"Perro Especial",category:"Perros",price:18000,img:"img/perro_especial.jpg",description:"pan blanco, carne o pollo, salchilla super,maiz, paparipio, queso y salsa de la casa"},
-{name:"ChoriPerro",category:"Perros",price:18000,img:"img/choriperro.jpg",description:"pan blanco, carne o pollo, chorizo,maiz, paparipio, queso y salsa de la casa"},
-
-{name:"Salchipapa Personal",category:"Salchipapas",price:15000,img:"img/salchipapasencilla.jpg",description:"Papas,lechuga,salchicha, queso costeño y salsas de la casa"},
-{name:"choripapa Personal",category:"Salchipapas",price:20000,img:"img/choripapa.jpg",description:"Papas,lechuga,chorizo, queso costeño y salsas de la casa"},
-{name:"salchipapa especial Personal",category:"Salchipapas",price:28000,img:"img/salchipapaespecial.jpg",description:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa"},
-{name:"Mega Salchipapa Especial para 2 Personas",category:"Salchipapas",price:58000,img:"img/megasalchipapa.jpg",description:"Papas,lechuga,chorizo,salchicha,pollo,carne, queso costeño, queso mosarella, maiz tierno y salsas de la casa"},
-
-
-
-{name:"Burrito De Pollo",category:"Burritos",price:22000,img:"img/burrito.jpg",description:"Maíz, pollo, lechuga, queso, paparipio y Salsa de la casa"},
-
-{name:"Gaseosa Pepsi",category:"Bebidas",price:5000,img:"img/pepsi_400_ml.jpg",description:"Gaseosa Pepsi 400ml"},
-{name:"Gaseosa Sprite",category:"Bebidas",price:5000,img:"img/sprite_400.jpg",description:"Gaseosa Sprite 400ml"},
-{name:"Gaseosa Cocacola 1.5L",category:"Bebidas",price:5000,img:"img/cocacola_1_5.jpg",description:"Gaseosa Cocacola 1.5L"},
-{name:"Gaseosa Quatro",category:"Bebidas",price:5000,img:"img/quatro_400.jpg",description:"Gaseosa Quatro 400ml"},
-{name:"Gaseosa Cocacola 2.5L",category:"Bebidas",price:5000,img:"img/cocacola_2_5.jpg",description:"Gaseosa Cocacola 2.5L"},
-{name:"Gaseosa Cocacola Zero",category:"Bebidas",price:5000,img:"img/cocacolazero600.jpg",description:"Gaseosa Cocacola Zero 600ml"},
-{name:"Gaseosa Hit Lulo",category:"Bebidas",price:5000,img:"img/hit-lulo.jpg",description:"Gaseosa Hit Lulo 400ml"},
-{name:"Gaseosa Hit Mango",category:"Bebidas",price:5000,img:"img/hit-mango.jpg",description:"Gaseosa Hit Mango 400ml"},
-{name:"Gaseosa Hit Mora",category:"Bebidas",price:5000,img:"img/hit-mora.jpg",description:"Gaseosa Hit Mora 400ml"},
-{name:"Gaseosa Hit Naranja-Pina",category:"Bebidas",price:5000,img:"img/hit-naranja-pina.jpg",description:"Gaseosa Hit Naranja-Piña 400ml"},
-{name:"Gaseosa Hit Tropical",category:"Bebidas",price:5000,img:"img/hit-tropical.jpg",description:"Gaseosa Hit Tropical 400ml"}
-];
-
 let cart=[];
 
-let currentProducts = products;
+let products = [];
+
+let currentProducts = [];
 
 function filterProducts(category){
     if(category==="Todos"){
@@ -287,6 +258,11 @@ renderCart();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
@@ -299,9 +275,41 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const firestore = getFirestore(app);
 
 const tiendaRef = ref(db, "tiendaAbierta");
+    cargarProductosFirestore();
+async function cargarProductosFirestore() {
 
+  const snapshot = await getDocs(
+    collection(firestore, "productos")
+  );
+
+  products = [];
+
+  snapshot.forEach(doc => {
+
+    const p = doc.data();
+
+    if (p.disponible === true) {
+
+      products.push({
+        name: p.name,
+        category: p.categoria,
+        price: p.precio,
+        img: p.img,
+        description: p.descripcion
+      });
+
+    }
+
+  });
+
+  currentProducts = products;
+
+  renderProducts();
+
+}
 onValue(tiendaRef, (snapshot) => {
 
   console.log("Valor Firebase:", snapshot.val());
