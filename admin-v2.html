@@ -173,6 +173,30 @@ cargarTiendas();
 cargarProductos();
 
 }
+  async function eliminarProducto(id, nombre) {
+
+  const confirmar = confirm(
+    `¿Eliminar el producto "${nombre}"?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+
+    await db.collection("productos")
+      .doc(id)
+      .delete();
+
+    alert("✅ Producto eliminado");
+
+    cargarProductos();
+
+  } catch (error) {
+
+    alert("❌ Error: " + error.message);
+
+  }
+}
   // CARGAR TIENDAS
   async function cargarTiendas() {
     const cont = document.getElementById("listaTiendas");
@@ -206,18 +230,24 @@ async function cargarProductos() {
     const p = doc.data();
 
     cont.innerHTML += `
-      <div class="tienda">
-        <b>${p.name}</b><br>
+  <div class="tienda">
+    <b>${p.name}</b><br>
 
-        Precio: $${p.precio}<br>
+    Precio: $${p.precio}<br>
 
-        Categoría: ${p.categoria}<br>
+    Categoría: ${p.categoria}<br>
 
-        Disponible:
-        ${p.disponible ? "✅ Sí" : "❌ No"}
+    Disponible:
+    ${p.disponible ? "✅ Sí" : "❌ No"}
 
-      </div>
-    `;
+    <br><br>
+
+    <button onclick="eliminarProducto('${doc.id}','${p.name}')">
+      🗑️ Eliminar
+    </button>
+
+  </div>
+`;
   });
 }
   // LOGOUT
