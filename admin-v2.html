@@ -173,7 +173,7 @@ cargarTiendas();
 cargarProductos();
 
 }
-  async function eliminarProducto(id, nombre) {
+ async function eliminarProducto(id, nombre) {
 
   const confirmar = confirm(
     `¿Eliminar el producto "${nombre}"?`
@@ -196,7 +196,29 @@ cargarProductos();
     alert("❌ Error: " + error.message);
 
   }
+
 }
+
+async function cambiarDisponibilidad(id, estadoActual) {
+
+  try {
+
+    await db.collection("productos")
+      .doc(id)
+      .update({
+        disponible: !estadoActual
+      });
+
+    cargarProductos();
+
+  } catch (error) {
+
+    alert("❌ Error: " + error.message);
+
+  }
+
+}
+  
   // CARGAR TIENDAS
   async function cargarTiendas() {
     const cont = document.getElementById("listaTiendas");
@@ -241,6 +263,11 @@ async function cargarProductos() {
     ${p.disponible ? "✅ Sí" : "❌ No"}
 
     <br><br>
+<button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
+  ${p.disponible ? "❌ Agotar" : "✅ Activar"}
+</button>
+
+<br>
 
     <button onclick="eliminarProducto('${doc.id}','${p.name}')">
       🗑️ Eliminar
