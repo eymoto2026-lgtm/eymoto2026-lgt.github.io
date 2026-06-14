@@ -87,7 +87,25 @@
       <input type="text" id="whatsapp" placeholder="WhatsApp">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
+<div class="card">
 
+<h3>➕ Crear Producto</h3>
+
+<input type="text" id="nuevoNombre" placeholder="Nombre">
+
+<input type="number" id="nuevoPrecio" placeholder="Precio">
+
+<input type="text" id="nuevoCategoria" placeholder="Categoría">
+
+<input type="text" id="nuevoDescripcion" placeholder="Descripción">
+
+<input type="text" id="nuevoImagen" placeholder="Ruta imagen">
+
+<button onclick="crearProducto()">
+Crear Producto
+</button>
+
+</div>
     <div class="card">
       <h3>🏪 Tiendas</h3>
       <div id="listaTiendas"></div>
@@ -276,6 +294,48 @@ async function cargarProductos() {
   </div>
 `;
   });
+}
+  async function crearProducto() {
+
+  const nombre =
+    document.getElementById("nuevoNombre").value;
+
+  const precio =
+    Number(document.getElementById("nuevoPrecio").value);
+
+  const categoria =
+    document.getElementById("nuevoCategoria").value;
+
+  const descripcion =
+    document.getElementById("nuevoDescripcion").value;
+
+  const img =
+    document.getElementById("nuevoImagen").value;
+
+  if (!nombre || !precio) {
+
+    alert("Completa los datos");
+
+    return;
+
+  }
+
+  await db.collection("productos").add({
+
+    name: nombre,
+    precio: precio,
+    categoria: categoria,
+    descripcion: descripcion,
+    img: img,
+    disponible: true,
+    tiendaId: "eymotocomidas"
+
+  });
+
+  alert("✅ Producto creado");
+
+  cargarProductos();
+
 }
   // LOGOUT
   function logout() {
