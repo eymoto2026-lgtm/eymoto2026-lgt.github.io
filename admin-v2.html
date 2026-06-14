@@ -166,8 +166,8 @@
       createdAt: Date.now()
     });
 
-    cargarTiendas();
-  }
+   cargarTiendas();
+cargarProductos();
 
   // CARGAR TIENDAS
   async function cargarTiendas() {
@@ -188,7 +188,34 @@
       `;
     });
   }
+// CARGAR PRODUCTOS
+async function cargarProductos() {
 
+  const cont = document.getElementById("listaProductos");
+
+  cont.innerHTML = "";
+
+  const snap = await db.collection("productos").get();
+
+  snap.forEach(doc => {
+
+    const p = doc.data();
+
+    cont.innerHTML += `
+      <div class="tienda">
+        <b>${p.name}</b><br>
+
+        Precio: $${p.precio}<br>
+
+        Categoría: ${p.categoria}<br>
+
+        Disponible:
+        ${p.disponible ? "✅ Sí" : "❌ No"}
+
+      </div>
+    `;
+  });
+}
   // LOGOUT
   function logout() {
     auth.signOut();
