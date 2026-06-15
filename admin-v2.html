@@ -293,7 +293,14 @@ async function cargarProductos() {
 
   cont.innerHTML = "";
 
-  const snap = await db.collection("productos").get();
+ const tiendaId =
+  document.getElementById("tiendaProducto").value;
+
+const snap = await db
+  .collection("tiendas")
+  .doc(tiendaId)
+  .collection("productos")
+  .get();
 
   snap.forEach(doc => {
 
@@ -306,7 +313,7 @@ async function cargarProductos() {
     Precio: $${p.precio}<br>
 
     Categoría: ${p.categoria}<br>
-Tienda: ${p.tiendaId}<br>
+
     Disponible:
     ${p.disponible ? "✅ Sí" : "❌ No"}
 
