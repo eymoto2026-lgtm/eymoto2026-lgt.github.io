@@ -291,7 +291,26 @@ async function cargarProductosFirestore() {
 
     const p = doc.data();
 
-    if (p.disponible === true) {
+    snapshot.forEach(doc => {
+
+  const p = doc.data();
+
+  if (
+    p.disponible === true &&
+    p.tiendaId === "eymotocomidas"
+  ) {
+
+    products.push({
+      name: p.name,
+      category: p.categoria,
+      price: p.precio,
+      img: p.img,
+      description: p.descripcion
+    });
+
+  }
+
+});
 
       products.push({
         name: p.name,
