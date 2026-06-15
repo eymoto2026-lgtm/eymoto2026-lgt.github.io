@@ -352,18 +352,20 @@ Tienda: ${p.tiendaId}<br>
 
   }
 
-  await db.collection("productos").add({
+ await db
+  .collection("tiendas")
+  .doc(tiendaId)
+  .collection("productos")
+  .add({
 
     name: nombre,
     precio: precio,
     categoria: categoria,
     descripcion: descripcion,
     img: img,
-    disponible: true,
-    tiendaId: tiendaId
+    disponible: true
 
   });
-
   alert("✅ Producto creado");
 
   cargarProductos();
