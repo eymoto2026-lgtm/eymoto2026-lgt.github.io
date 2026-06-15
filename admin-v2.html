@@ -199,6 +199,9 @@ cargarSelectTiendas();
 }
  async function eliminarProducto(id, nombre) {
 
+  const tiendaId =
+    document.getElementById("tiendaProducto").value;
+
   const confirmar = confirm(
     `¿Eliminar el producto "${nombre}"?`
   );
@@ -207,7 +210,10 @@ cargarSelectTiendas();
 
   try {
 
-    await db.collection("productos")
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
       .doc(id)
       .delete();
 
@@ -222,12 +228,17 @@ cargarSelectTiendas();
   }
 
 }
-
 async function cambiarDisponibilidad(id, estadoActual) {
+
+  const tiendaId =
+    document.getElementById("tiendaProducto").value;
 
   try {
 
-    await db.collection("productos")
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
       .doc(id)
       .update({
         disponible: !estadoActual
@@ -291,9 +302,9 @@ async function cargarProductos() {
 
   const cont = document.getElementById("listaProductos");
 
-  cont.innerHTML = "";
+cont.innerHTML = "";
 
- const tiendaId =
+const tiendaId =
   document.getElementById("tiendaProducto").value;
 
 const snap = await db
