@@ -352,12 +352,14 @@ Tienda: ${p.tiendaId}<br>
 
   }
 
- await db
+ console.log("TIENDA:", tiendaId);
+
+await db
   .collection("tiendas")
   .doc(tiendaId)
   .collection("productos")
   .add({
-
+    
     name: nombre,
     precio: precio,
     categoria: categoria,
