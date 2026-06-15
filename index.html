@@ -289,10 +289,6 @@ async function cargarProductosFirestore() {
 
   snapshot.forEach(doc => {
 
-    const p = doc.data();
-
-    snapshot.forEach(doc => {
-
   const p = doc.data();
 
   if (
@@ -311,18 +307,6 @@ async function cargarProductosFirestore() {
   }
 
 });
-
-      products.push({
-        name: p.name,
-        category: p.categoria,
-        price: p.precio,
-        img: p.img,
-        description: p.descripcion
-      });
-
-    }
-
-  });
 
   currentProducts = products;
 
