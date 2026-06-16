@@ -232,7 +232,57 @@ async function crearProducto() {
 
   cargarProductos();
 }
+// CAMBIAR DISPONIBILIDAD
+async function cambiarDisponibilidad(productoId, disponibleActual) {
 
+  const tiendaId =
+    document.getElementById("tiendaProducto").value;
+
+  try {
+
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .doc(productoId)
+      .update({
+        disponible: !disponibleActual
+      });
+
+    cargarProductos();
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Error al actualizar disponibilidad");
+  }
+}
+
+// ELIMINAR PRODUCTO
+async function eliminarProducto(productoId, nombre) {
+
+  const tiendaId =
+    document.getElementById("tiendaProducto").value;
+
+  if (!confirm(`¿Eliminar ${nombre}?`)) return;
+
+  try {
+
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .doc(productoId)
+      .delete();
+
+    cargarProductos();
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Error al eliminar producto");
+  }
+}
 // LOGOUT
 function logout() {
   auth.signOut();
