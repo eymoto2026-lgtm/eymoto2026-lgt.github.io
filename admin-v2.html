@@ -37,7 +37,12 @@
     <div class="card">
       <h3>➕ Crear Tienda</h3>
       <input id="nombreTienda" placeholder="Nombre tienda">
-      <input id="whatsapp" placeholder="WhatsApp">
+
+<input id="whatsapp" placeholder="WhatsApp">
+
+<input id="logoTienda" placeholder="URL del logo">
+
+<input id="bannerTienda" placeholder="URL del banner (opcional)">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
 
@@ -130,6 +135,8 @@ async function crearTienda() {
   await db.collection("tiendas").doc(id).set({
     nombre: nombreTienda.value,
     whatsapp: whatsapp.value,
+    logo: logoTienda.value,
+    banner: bannerTienda.value || "",
     activa: true,
     abierta: true,
     createdAt: Date.now()
