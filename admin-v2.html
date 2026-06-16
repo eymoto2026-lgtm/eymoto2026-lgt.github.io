@@ -232,30 +232,23 @@ async function crearProducto() {
 
   cargarProductos();
 }
+
 // CAMBIAR DISPONIBILIDAD
 async function cambiarDisponibilidad(productoId, disponibleActual) {
 
   const tiendaId =
     document.getElementById("tiendaProducto").value;
 
-  try {
+  await db
+    .collection("tiendas")
+    .doc(tiendaId)
+    .collection("productos")
+    .doc(productoId)
+    .update({
+      disponible: !disponibleActual
+    });
 
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId)
-      .update({
-        disponible: !disponibleActual
-      });
-
-    cargarProductos();
-
-  } catch (error) {
-
-    console.error(error);
-    alert("Error al actualizar disponibilidad");
-  }
+  cargarProductos();
 }
 
 // ELIMINAR PRODUCTO
@@ -266,23 +259,16 @@ async function eliminarProducto(productoId, nombre) {
 
   if (!confirm(`¿Eliminar ${nombre}?`)) return;
 
-  try {
+  await db
+    .collection("tiendas")
+    .doc(tiendaId)
+    .collection("productos")
+    .doc(productoId)
+    .delete();
 
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId)
-      .delete();
-
-    cargarProductos();
-
-  } catch (error) {
-
-    console.error(error);
-    alert("Error al eliminar producto");
-  }
+  cargarProductos();
 }
+
 // LOGOUT
 function logout() {
   auth.signOut();
