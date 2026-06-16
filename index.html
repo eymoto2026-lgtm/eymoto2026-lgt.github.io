@@ -123,7 +123,7 @@ justify-content:space-between;
 <body>
 
 <header>
-<img id="logoTienda" class="logo"> alt="EyMotoComidas">
+<img id="logoTienda" class="logo" alt="EyMotoComidas">
 <h1>EyMotoComidas</h1>
 
 <div id="estadoTienda" style="
@@ -277,24 +277,15 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const firestore = getFirestore(app);
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-    async function cargarLogoTienda() {
-
-  const ref = doc(
-    firestore,
-    "tiendas",
-    "eymotocomidas"
-  );
-
+   async function cargarLogoTienda() {
+  const ref = doc(firestore, "tiendas", "eymotocomidas");
   const snap = await getDoc(ref);
 
   if (snap.exists()) {
-
     const data = snap.data();
-
-    if (data.logo) {
-      document.getElementById("logoTienda").src = data.logo;
-    }
+    document.getElementById("logoTienda").src = data.logo || "";
   }
+}
 }
     cargarLogoTienda();
 const tiendaRef = ref(db, "tiendaAbierta");
@@ -338,51 +329,22 @@ async function cargarProductosFirestore() {
 
 }
 onValue(tiendaRef, (snapshot) => {
-
-  console.log("Valor Firebase:", snapshot.val());
-
-  const abierta = snapshot.val();
-
-onValue(tiendaRef, (snapshot) => {
-
   const abierta = snapshot.val();
 
   const estado = document.getElementById("estadoTienda");
   const productos = document.getElementById("products");
   const carrito = document.querySelector(".cart");
-  const banner = document.querySelector(".banner");
 
-  if (abierta === false) {
-
-    document.body.style.backgroundColor = "#e0e0e0";
-
+  if (!abierta) {
     estado.innerHTML = "🔴 TIENDA CERRADA";
-    estado.style.background = "#dc3545";
-
     productos.style.display = "none";
     carrito.style.display = "none";
-
-    if (banner) {
-      banner.style.opacity = "0.4";
-    }
-
   } else {
-
-    document.body.style.backgroundColor = "#f4f4f4";
-
     estado.innerHTML = "🟢 TIENDA ABIERTA";
-    estado.style.background = "#28a745";
-
     productos.style.display = "grid";
     carrito.style.display = "block";
-
-    if (banner) {
-      banner.style.opacity = "1";
-    }
   }
-
 });
-
   const estado = document.getElementById("estadoTienda");
   const productos = document.getElementById("products");
   const carrito = document.querySelector(".cart");
