@@ -91,7 +91,7 @@
 
 <h3>➕ Crear Producto</h3>
 
-<select id="tiendaProducto">
+<select id="tiendaProducto" onchange="cargarProductos()">
   <option value="">Seleccionar tienda</option>
 </select>
 
@@ -273,7 +273,7 @@ async function cambiarDisponibilidad(id, estadoActual) {
       `;
     });
   }
-  async function cargarSelectTiendas() {
+ async function cargarSelectTiendas() {
 
   const select =
     document.getElementById("tiendaProducto");
@@ -295,6 +295,14 @@ async function cambiarDisponibilidad(id, estadoActual) {
     `;
 
   });
+
+  if (select.options.length > 1) {
+
+    select.selectedIndex = 1;
+
+    cargarProductos();
+
+  }
 
 }
 // CARGAR PRODUCTOS
