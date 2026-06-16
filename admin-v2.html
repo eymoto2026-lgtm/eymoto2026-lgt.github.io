@@ -239,6 +239,10 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
   const tiendaId =
     document.getElementById("tiendaProducto").value;
 
+  console.log("Tienda:", tiendaId);
+  console.log("Producto:", productoId);
+  console.log("Estado actual:", disponibleActual);
+
   try {
 
     await db
@@ -250,15 +254,16 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
         disponible: !disponibleActual
       });
 
+    alert("Actualizado correctamente");
+
     cargarProductos();
 
   } catch (error) {
 
     console.error(error);
-    alert("Error al actualizar disponibilidad");
+    alert(error.message);
   }
 }
-
 // ELIMINAR PRODUCTO
 async function eliminarProducto(productoId, nombre) {
 
