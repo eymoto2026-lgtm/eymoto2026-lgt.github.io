@@ -294,22 +294,24 @@ async function cargarProductosFirestore() {
 
   snapshot.forEach(doc => {
 
-    const p = doc.data();
+  const p = doc.data();
 
-    if (p.disponible === true) {
+  console.log("PRODUCTO", doc.id);
+  console.log(p);
 
-      products.push({
-        name: p.name,
-        category: p.categoria,
-        price: p.precio,
-        img: p.img,
-        description: p.descripcion
-      });
+  if (p.disponible === true) {
 
-    }
+    products.push({
+      name: p.name,
+      category: p.categoria,
+      price: p.precio,
+      img: p.img,
+      description: p.descripcion
+    });
 
-  });
+  }
 
+});
   currentProducts = products;
 
   renderProducts();
