@@ -239,69 +239,40 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
   const tiendaId =
     document.getElementById("tiendaProducto").value;
 
-  console.log("Tienda:", tiendaId);
-  console.log("Producto:", productoId);
-  console.log("Estado actual:", disponibleActual);
+  alert(
+    "Tienda: " + tiendaId +
+    "\nProducto: " + productoId +
+    "\nEstado: " + disponibleActual
+  );
 
   try {
 
-    await db
+    const ref = db
       .collection("tiendas")
       .doc(tiendaId)
       .collection("productos")
-      .doc(productoId)
-      .update({
-        disponible: !disponibleActual
-      });
+      .doc(productoId);
 
-    const verificacion = await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId)
-      .get();
+    const antes = await ref.get();
 
-    console.log(
-      "Nuevo valor:",
-      verificacion.data().disponible
-    );
+    console.log("ANTES:", antes.exists, antes.data());
 
-    alert("Actualizado correctamente");
+    await ref.update({
+      disponible: !disponibleActual
+    });
+
+    const despues = await ref.get();
+
+    console.log("DESPUES:", despues.data());
+
+    alert("Actualización ejecutada");
 
     cargarProductos();
 
   } catch (error) {
 
     console.error(error);
-    alert(error.message);
-  }
-}
-
-// ELIMINAR PRODUCTO
-async function eliminarProducto(productoId, nombre) {
-
-  const tiendaId =
-    document.getElementById("tiendaProducto").value;
-
-  if (!confirm(`¿Eliminar ${nombre}?`)) return;
-
-  try {
-
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId)
-      .delete();
-
-    alert("Producto eliminado");
-
-    cargarProductos();
-
-  } catch (error) {
-
-    console.error(error);
-    alert(error.message);
+    alert("ERROR: " + error.message);
   }
 }
 
