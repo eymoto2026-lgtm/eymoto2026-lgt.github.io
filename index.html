@@ -282,31 +282,33 @@ const tiendaRef = ref(db, "tiendaAbierta");
 async function cargarProductosFirestore() {
 
   const snapshot = await getDocs(
-    collection(firestore, "productos")
+    collection(
+      firestore,
+      "tiendas",
+      "eymotocomidas",
+      "productos"
+    )
   );
 
   products = [];
 
   snapshot.forEach(doc => {
 
-  const p = doc.data();
+    const p = doc.data();
 
-  if (
-    p.disponible === true &&
-    p.tiendaId === "eymotocomidas"
-  ) {
+    if (p.disponible === true) {
 
-    products.push({
-      name: p.name,
-      category: p.categoria,
-      price: p.precio,
-      img: p.img,
-      description: p.descripcion
-    });
+      products.push({
+        name: p.name,
+        category: p.categoria,
+        price: p.precio,
+        img: p.img,
+        description: p.descripcion
+      });
 
-  }
+    }
 
-});
+  });
 
   currentProducts = products;
 
