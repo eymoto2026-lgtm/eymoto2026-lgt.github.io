@@ -161,20 +161,17 @@ Crear Producto
 
   // ESTADO LOGIN
  auth.onAuthStateChanged(user => {
- if (user) {
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("panel").style.display = "block";
+  if (user) {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
 
-  cargarTiendas();
-  cargarProductos();
-  cargarSelectTiendas();
-}
-     else {
-      document.getElementById("loginBox").style.display = "block";
-      document.getElementById("panel").style.display = "none";
-    }
-  });
-
+    cargarTiendas();
+    cargarSelectTiendas();
+  } else {
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("panel").style.display = "none";
+  }
+});
   // CREAR TIENDA
   async function crearTienda() {
     const nombre = document.getElementById("nombreTienda").value;
@@ -296,61 +293,6 @@ async function cambiarDisponibilidad(id, estadoActual) {
   });
 }
 
-  if (select.options.length > 1) {
-
-    select.selectedIndex = 1;
-
-    cargarProductos();
-
-  }
-
-}
-// CARGAR PRODUCTOS
-async function cargarProductos() {
-
-  const cont = document.getElementById("listaProductos");
-
-cont.innerHTML = "";
-
-const tiendaId =
-  document.getElementById("tiendaProducto").value;
-
-const snap = await db
-  .collection("tiendas")
-  .doc(tiendaId)
-  .collection("productos")
-  .get();
-
-  snap.forEach(doc => {
-
-    const p = doc.data();
-
-    cont.innerHTML += `
-  <div class="tienda">
-    <b>${p.name}</b><br>
-
-    Precio: $${p.precio}<br>
-
-    Categoría: ${p.categoria}<br>
-
-    Disponible:
-    ${p.disponible ? "✅ Sí" : "❌ No"}
-
-    <br><br>
-<button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
-  ${p.disponible ? "❌ Agotar" : "✅ Activar"}
-</button>
-
-<br>
-
-    <button onclick="eliminarProducto('${doc.id}','${p.name}')">
-      🗑️ Eliminar
-    </button>
-
-  </div>
-`;
-  });
-}
   async function crearProducto() {
 
   const nombre =
@@ -403,7 +345,50 @@ await db
   function logout() {
     auth.signOut();
   }
+async function cargarProductos() {
 
+  const cont = document.getElementById("listaProductos");
+  cont.innerHTML = "";
+
+  const tiendaId = document.getElementById("tiendaProducto").value;
+
+  if (!tiendaId) {
+    console.log("No hay tienda seleccionada");
+    return;
+  }
+
+  const snap = await db
+    .collection("tiendas")
+    .doc(tiendaId)
+    .collection("productos")
+    .get();
+
+  snap.forEach(doc => {
+
+    const p = doc.data();
+
+    cont.innerHTML += `
+      <div class="tienda">
+        <b>${p.name}</b><br>
+        Precio: $${p.precio}<br>
+        Categoría: ${p.categoria}<br>
+        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
+
+        <br><br>
+
+        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
+          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
+        </button>
+
+        <br>
+
+        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
+          🗑️ Eliminar
+        </button>
+      </div>
+    `;
+  });
+}
 </script>
 
 </body>
