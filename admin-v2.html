@@ -100,43 +100,44 @@ function login() {
 }
 
 // AUTH
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if (user) {
-    loginBox.style.display = "none";
-    panel.style.display = "block";
 
-    cargarTiendas().then(() => {
-      cargarSelectTiendas().then(() => {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
 
-        const select = document.getElementById("tiendaProducto");
+    await cargarTiendas();
+    await cargarSelectTiendas();
 
-        let defaultTienda = "";
+    const select = document.getElementById("tiendaProducto");
 
-        for (let i = 0; i < select.options.length; i++) {
-          const opt = select.options[i];
+    // 🔥 AUTO-SELECCION EY MOTO COMIDAS
+    let defaultTienda = "";
 
-          if (
-            opt.text.toLowerCase().includes("eymoto") ||
-            opt.text.toLowerCase().includes("eymotocomidas")
-          ) {
-            defaultTienda = opt.value;
-            break;
-          }
-        }
+    for (let i = 0; i < select.options.length; i++) {
+      const opt = select.options[i];
 
-        if (!defaultTienda && select.options.length > 1) {
-          defaultTienda = select.options[1].value;
-        }
+      if (
+        opt.text.toLowerCase().includes("eymoto")
+      ) {
+        defaultTienda = opt.value;
+        break;
+      }
+    }
 
-        select.value = defaultTienda;
+    // fallback si no encuentra
+    if (!defaultTienda && select.options.length > 1) {
+      defaultTienda = select.options[1].value;
+    }
 
-        cargarProductos();
-      });
-    });
+    select.value = defaultTienda;
+
+    // 🔥 AQUÍ ES DONDE YA SE ARREGLA TODO
+    cargarProductos();
 
   } else {
-    loginBox.style.display = "block";
-    panel.style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("panel").style.display = "none";
   }
 });
 
