@@ -389,6 +389,37 @@ async function cargarProductos() {
     `;
   });
 }
+  async function migrarProductosAEstructuraTiendas() {
+
+  console.log("🚀 Iniciando migración...");
+
+  const snap = await db.collection("productos").get();
+
+  snap.forEach(async (doc) => {
+
+    const p = doc.data();
+
+    const tiendaId = p.tiendaId || "eymotocomidas"; 
+    // si no tiene tiendaId, lo manda a eymotocomidas
+
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .add({
+        name: p.name,
+        precio: p.precio,
+        categoria: p.categoria,
+        descripcion: p.descripcion,
+        img: p.img,
+        disponible: p.disponible ?? true
+      });
+
+    console.log("✔ Migrado:", p.name);
+  });
+
+  console.log("✅ Migración terminada");
+}
 </script>
 
 </body>
