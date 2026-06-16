@@ -239,16 +239,24 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
   const tiendaId =
     document.getElementById("tiendaProducto").value;
 
-  await db
-    .collection("tiendas")
-    .doc(tiendaId)
-    .collection("productos")
-    .doc(productoId)
-    .update({
-      disponible: !disponibleActual
-    });
+  try {
 
-  cargarProductos();
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .doc(productoId)
+      .update({
+        disponible: !disponibleActual
+      });
+
+    cargarProductos();
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Error al actualizar disponibilidad");
+  }
 }
 
 // ELIMINAR PRODUCTO
@@ -259,16 +267,23 @@ async function eliminarProducto(productoId, nombre) {
 
   if (!confirm(`¿Eliminar ${nombre}?`)) return;
 
-  await db
-    .collection("tiendas")
-    .doc(tiendaId)
-    .collection("productos")
-    .doc(productoId)
-    .delete();
+  try {
 
-  cargarProductos();
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .doc(productoId)
+      .delete();
+
+    cargarProductos();
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Error al eliminar producto");
+  }
 }
-
 // LOGOUT
 function logout() {
   auth.signOut();
