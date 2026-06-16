@@ -111,28 +111,11 @@ auth.onAuthStateChanged(async user => {
 
     const select = document.getElementById("tiendaProducto");
 
-    // 🔥 AUTO-SELECCION EY MOTO COMIDAS
-    let defaultTienda = "";
-
-    for (let i = 0; i < select.options.length; i++) {
-      const opt = select.options[i];
-
-      if (
-        opt.text.toLowerCase().includes("eymoto")
-      ) {
-        defaultTienda = opt.value;
-        break;
-      }
+    // seleccionar primera tienda automáticamente
+    if (select.options.length > 1) {
+      select.selectedIndex = 1;
     }
 
-    // fallback si no encuentra
-    if (!defaultTienda && select.options.length > 1) {
-      defaultTienda = select.options[1].value;
-    }
-
-    select.value = defaultTienda;
-
-    // 🔥 AQUÍ ES DONDE YA SE ARREGLA TODO
     cargarProductos();
 
   } else {
@@ -140,7 +123,6 @@ auth.onAuthStateChanged(async user => {
     document.getElementById("panel").style.display = "none";
   }
 });
-
 // TIENDAS
 async function crearTienda() {
   const id = nombreTienda.value.toLowerCase().replace(/\s/g, "");
@@ -188,10 +170,16 @@ async function cargarSelectTiendas() {
 
 // PRODUCTOS
 async function cargarProductos() {
-  const tiendaId = tiendaProducto.value;
-  listaProductos.innerHTML = "";
 
-  if (!tiendaId) return;
+  const cont = document.getElementById("listaProductos");
+  cont.innerHTML = "";
+
+  const tiendaId = document.getElementById("tiendaProducto").value;
+
+  if (!tiendaId) {
+    console.log("No hay tienda seleccionada");
+    return;
+  }
 
   const snap = await db
     .collection("tiendas")
@@ -200,18 +188,31 @@ async function cargarProductos() {
     .get();
 
   snap.forEach(doc => {
+
     const p = doc.data();
 
-    listaProductos.innerHTML += `
+    cont.innerHTML += `
       <div class="tienda">
         <b>${p.name}</b><br>
-        $${p.precio}<br>
-        ${p.categoria}<br>
-        ${p.disponible ? "✅" : "❌"}
-      </div>`;
+        Precio: $${p.precio}<br>
+        Categoría: ${p.categoria}<br>
+        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
+
+        <br><br>
+
+        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
+          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
+        </button>
+
+        <br><br>
+
+        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
+          🗑️ Eliminar
+        </button>
+      </div>
+    `;
   });
 }
-
 // CREAR PRODUCTO
 async function crearProducto() {
   const tiendaId = tiendaProducto.value;
