@@ -104,8 +104,36 @@ auth.onAuthStateChanged(user => {
   if (user) {
     loginBox.style.display = "none";
     panel.style.display = "block";
-    cargarTiendas();
-    cargarSelectTiendas();
+
+    cargarTiendas().then(() => {
+      cargarSelectTiendas().then(() => {
+
+        const select = document.getElementById("tiendaProducto");
+
+        let defaultTienda = "";
+
+        for (let i = 0; i < select.options.length; i++) {
+          const opt = select.options[i];
+
+          if (
+            opt.text.toLowerCase().includes("eymoto") ||
+            opt.text.toLowerCase().includes("eymotocomidas")
+          ) {
+            defaultTienda = opt.value;
+            break;
+          }
+        }
+
+        if (!defaultTienda && select.options.length > 1) {
+          defaultTienda = select.options[1].value;
+        }
+
+        select.value = defaultTienda;
+
+        cargarProductos();
+      });
+    });
+
   } else {
     loginBox.style.display = "block";
     panel.style.display = "none";
