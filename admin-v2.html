@@ -269,6 +269,36 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
 
   }
 }
+  async function eliminarProducto(productoId, nombre) {
+
+  if (!confirm("¿Eliminar " + nombre + "?")) {
+    return;
+  }
+
+  try {
+
+    const tiendaId =
+      document.getElementById("tiendaProducto").value;
+
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .doc(productoId)
+      .delete();
+
+    alert("Producto eliminado");
+
+    cargarProductos();
+
+  } catch (e) {
+
+    console.error(e);
+    alert("ERROR: " + e.message);
+
+  }
+
+}
 // LOGOUT
 function logout() {
   auth.signOut();
