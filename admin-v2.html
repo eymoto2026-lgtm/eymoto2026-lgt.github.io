@@ -395,12 +395,17 @@ async function cargarProductos() {
 
   const snap = await db.collection("productos").get();
 
-  snap.forEach(async (doc) => {
+  async function migrarProductosAEstructuraTiendas() {
+
+  console.log("🚀 Iniciando migración...");
+
+  const snap = await db.collection("productos").get();
+
+  for (const doc of snap.docs) {
 
     const p = doc.data();
 
-    const tiendaId = p.tiendaId || "eymotocomidas"; 
-    // si no tiene tiendaId, lo manda a eymotocomidas
+    const tiendaId = p.tiendaId || "eymotocomidas";
 
     await db
       .collection("tiendas")
@@ -416,7 +421,7 @@ async function cargarProductos() {
       });
 
     console.log("✔ Migrado:", p.name);
-  });
+  }
 
   console.log("✅ Migración terminada");
 }
