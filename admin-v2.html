@@ -275,16 +275,16 @@ async function cambiarDisponibilidad(id, estadoActual) {
   }
  async function cargarSelectTiendas() {
 
-  const select =
-    document.getElementById("tiendaProducto");
+  const select = document.getElementById("tiendaProducto");
 
-  select.innerHTML =
-    '<option value="">Seleccionar tienda</option>';
+  select.innerHTML = '<option value="">Seleccionar tienda</option>';
 
-  const snap =
-    await db.collection("tiendas").get();
+  const snap = await db.collection("tiendas").get();
+
+  console.log("TOTAL TIENDAS:", snap.size);
 
   snap.forEach(doc => {
+    console.log("TIENDA:", doc.id, doc.data());
 
     const tienda = doc.data();
 
@@ -293,8 +293,8 @@ async function cambiarDisponibilidad(id, estadoActual) {
         ${tienda.nombre}
       </option>
     `;
-
   });
+}
 
   if (select.options.length > 1) {
 
