@@ -5,61 +5,14 @@
   <title>Admin V2 - EyMoto</title>
 
   <style>
-    body {
-      font-family: Arial;
-      background: #111;
-      color: #fff;
-      margin: 0;
-    }
-
-    header {
-      background: #000;
-      padding: 15px;
-      text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .container {
-      padding: 20px;
-    }
-
-    .card {
-      background: #1c1c1c;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-    }
-
-    input, button {
-      padding: 10px;
-      margin: 5px 0;
-      width: 100%;
-      border-radius: 5px;
-      border: none;
-    }
-
-    button {
-      background: #f5c400;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover {
-      opacity: 0.8;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .tienda {
-      border: 1px solid #333;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-    }
+    body { font-family: Arial; background:#111; color:#fff; margin:0; }
+    header { background:#000; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
+    .container { padding:20px; }
+    .card { background:#1c1c1c; padding:15px; margin-bottom:10px; border-radius:10px; }
+    input, button { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; }
+    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
+    .hidden { display:none; }
+    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; }
   </style>
 </head>
 
@@ -72,8 +25,8 @@
   <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
-    <input type="email" id="email" placeholder="Correo">
-    <input type="password" id="password" placeholder="Contraseña">
+    <input type="email" id="email">
+    <input type="password" id="password">
     <button onclick="login()">Iniciar sesión</button>
     <p id="loginMsg"></p>
   </div>
@@ -83,45 +36,40 @@
 
     <div class="card">
       <h3>➕ Crear Tienda</h3>
-      <input type="text" id="nombreTienda" placeholder="Nombre tienda">
-      <input type="text" id="whatsapp" placeholder="WhatsApp">
+      <input id="nombreTienda" placeholder="Nombre tienda">
+      <input id="whatsapp" placeholder="WhatsApp">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
-<div class="card">
 
-<h3>➕ Crear Producto</h3>
+    <div class="card">
+      <h3>➕ Crear Producto</h3>
 
-<select id="tiendaProducto" onchange="cargarProductos()">
-  <option value="">Seleccionar tienda</option>
-</select>
+      <select id="tiendaProducto" onchange="cargarProductos()">
+        <option value="">Seleccionar tienda</option>
+      </select>
 
-<input type="text" id="nuevoNombre" placeholder="Nombre">
+      <input id="nuevoNombre" placeholder="Nombre">
+      <input id="nuevoPrecio" type="number" placeholder="Precio">
+      <input id="nuevoCategoria" placeholder="Categoría">
+      <input id="nuevoDescripcion" placeholder="Descripción">
+      <input id="nuevoImagen" placeholder="Imagen">
 
-<input type="number" id="nuevoPrecio" placeholder="Precio">
+      <button onclick="crearProducto()">Crear Producto</button>
+    </div>
 
-<input type="text" id="nuevoCategoria" placeholder="Categoría">
-
-<input type="text" id="nuevoDescripcion" placeholder="Descripción">
-
-<input type="text" id="nuevoImagen" placeholder="Ruta imagen">
-
-<button onclick="crearProducto()">
-Crear Producto
-</button>
-
-</div>
     <div class="card">
       <h3>🏪 Tiendas</h3>
       <div id="listaTiendas"></div>
     </div>
+
     <div class="card">
-  <h3>📦 Productos</h3>
-  <div id="listaProductos"></div>
-</div>
+      <h3>📦 Productos</h3>
+      <div id="listaProductos"></div>
+    </div>
 
     <button onclick="logout()">Cerrar sesión</button>
-  </div>
 
+  </div>
 </div>
 
 <!-- FIREBASE -->
@@ -130,232 +78,91 @@ Crear Producto
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // CONFIG FIREBASE
-  const firebaseConfig = {
-    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-    authDomain: "eymotocomidas.firebaseapp.com",
-    projectId: "eymotocomidas",
-    storageBucket: "eymotocomidas.firebasestorage.app",
-    messagingSenderId: "670474251560",
-    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
 
-  firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+// LOGIN
+function login() {
+  auth.signInWithEmailAndPassword(
+    email.value,
+    password.value
+  ).catch(e => loginMsg.innerText = e.message);
+}
 
-  // LOGIN
-  function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        document.getElementById("loginMsg").innerText = "✔ Login correcto";
-      })
-      .catch(err => {
-        document.getElementById("loginMsg").innerText = "❌ " + err.message;
-      });
-  }
-
-  // ESTADO LOGIN
- auth.onAuthStateChanged(user => {
+// AUTH
+auth.onAuthStateChanged(user => {
   if (user) {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("panel").style.display = "block";
-
+    loginBox.style.display = "none";
+    panel.style.display = "block";
     cargarTiendas();
     cargarSelectTiendas();
   } else {
-    document.getElementById("loginBox").style.display = "block";
-    document.getElementById("panel").style.display = "none";
+    loginBox.style.display = "block";
+    panel.style.display = "none";
   }
 });
-  // CREAR TIENDA
-  async function crearTienda() {
-    const nombre = document.getElementById("nombreTienda").value;
-    const whatsapp = document.getElementById("whatsapp").value;
 
-    if (!nombre || !whatsapp) return alert("Completa los campos");
+// TIENDAS
+async function crearTienda() {
+  const id = nombreTienda.value.toLowerCase().replace(/\s/g, "");
 
-    const id = nombre.toLowerCase().replace(/\s/g, "");
+  await db.collection("tiendas").doc(id).set({
+    nombre: nombreTienda.value,
+    whatsapp: whatsapp.value,
+    activa: true,
+    abierta: true,
+    createdAt: Date.now()
+  });
 
-    await db.collection("tiendas").doc(id).set({
-  nombre,
-  whatsapp,
-  activa: true,
-  abierta: true,
-  createdAt: Date.now()
-});
-
-cargarTiendas();
-cargarProductos();
-cargarSelectTiendas();
-
+  cargarTiendas();
+  cargarSelectTiendas();
 }
- async function eliminarProducto(id, nombre) {
 
-  const tiendaId =
-    document.getElementById("tiendaProducto").value;
+async function cargarTiendas() {
+  listaTiendas.innerHTML = "";
+  const snap = await db.collection("tiendas").get();
 
-  const confirmar = confirm(
-    `¿Eliminar el producto "${nombre}"?`
-  );
-
-  if (!confirmar) return;
-
-  try {
-
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(id)
-      .delete();
-
-    alert("✅ Producto eliminado");
-
-    cargarProductos();
-
-  } catch (error) {
-
-    alert("❌ Error: " + error.message);
-
-  }
-
+  snap.forEach(doc => {
+    const t = doc.data();
+    listaTiendas.innerHTML += `
+      <div class="tienda">
+        <b>${t.nombre}</b><br>
+        ${t.whatsapp}
+      </div>`;
+  });
 }
-async function cambiarDisponibilidad(id, estadoActual) {
 
-  const tiendaId =
-    document.getElementById("tiendaProducto").value;
-
-  try {
-
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(id)
-      .update({
-        disponible: !estadoActual
-      });
-
-    cargarProductos();
-
-  } catch (error) {
-
-    alert("❌ Error: " + error.message);
-
-  }
-
-}
-  
-  // CARGAR TIENDAS
-  async function cargarTiendas() {
-    const cont = document.getElementById("listaTiendas");
-    cont.innerHTML = "";
-
-    const snap = await db.collection("tiendas").get();
-
-    snap.forEach(doc => {
-      const t = doc.data();
-
-      cont.innerHTML += `
-        <div class="tienda">
-          <b>${t.nombre}</b><br>
-          ${t.whatsapp}<br>
-          Estado: ${t.activa ? "Activa" : "Inactiva"}
-        </div>
-      `;
-    });
-  }
- async function cargarSelectTiendas() {
-
-  const select = document.getElementById("tiendaProducto");
-
-  select.innerHTML = '<option value="">Seleccionar tienda</option>';
+// SELECT TIENDAS
+async function cargarSelectTiendas() {
+  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
 
   const snap = await db.collection("tiendas").get();
 
-  console.log("TOTAL TIENDAS:", snap.size);
-
   snap.forEach(doc => {
-    console.log("TIENDA:", doc.id, doc.data());
-
-    const tienda = doc.data();
-
-    select.innerHTML += `
+    const t = doc.data();
+    tiendaProducto.innerHTML += `
       <option value="${doc.id}">
-        ${tienda.nombre}
-      </option>
-    `;
+        ${t.nombre}
+      </option>`;
   });
 }
 
-  async function crearProducto() {
-
-  const nombre =
-    document.getElementById("nuevoNombre").value;
-
-  const precio =
-    Number(document.getElementById("nuevoPrecio").value);
-
-  const categoria =
-    document.getElementById("nuevoCategoria").value;
-
-  const descripcion =
-    document.getElementById("nuevoDescripcion").value;
-
-  const img =
-    document.getElementById("nuevoImagen").value;
-    const tiendaId =
-  document.getElementById("tiendaProducto").value;
-
-  if (!nombre || !precio) {
-
-    alert("Completa los datos");
-
-    return;
-
-  }
-
- console.log("TIENDA:", tiendaId);
-
-await db
-  .collection("tiendas")
-  .doc(tiendaId)
-  .collection("productos")
-  .add({
-    
-    name: nombre,
-    precio: precio,
-    categoria: categoria,
-    descripcion: descripcion,
-    img: img,
-    disponible: true
-
-  });
-  alert("✅ Producto creado");
-
-  cargarProductos();
-
-}
-  // LOGOUT
-  function logout() {
-    auth.signOut();
-  }
+// PRODUCTOS
 async function cargarProductos() {
+  const tiendaId = tiendaProducto.value;
+  listaProductos.innerHTML = "";
 
-  const cont = document.getElementById("listaProductos");
-  cont.innerHTML = "";
-
-  const tiendaId = document.getElementById("tiendaProducto").value;
-
-  if (!tiendaId) {
-    console.log("No hay tienda seleccionada");
-    return;
-  }
+  if (!tiendaId) return;
 
   const snap = await db
     .collection("tiendas")
@@ -364,68 +171,42 @@ async function cargarProductos() {
     .get();
 
   snap.forEach(doc => {
-
     const p = doc.data();
 
-    cont.innerHTML += `
+    listaProductos.innerHTML += `
       <div class="tienda">
         <b>${p.name}</b><br>
-        Precio: $${p.precio}<br>
-        Categoría: ${p.categoria}<br>
-        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
-
-        <br><br>
-
-        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
-          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
-        </button>
-
-        <br>
-
-        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
-          🗑️ Eliminar
-        </button>
-      </div>
-    `;
+        $${p.precio}<br>
+        ${p.categoria}<br>
+        ${p.disponible ? "✅" : "❌"}
+      </div>`;
   });
 }
-  async function migrarProductosAEstructuraTiendas() {
 
-  console.log("🚀 Iniciando migración...");
+// CREAR PRODUCTO
+async function crearProducto() {
+  const tiendaId = tiendaProducto.value;
 
-  const snap = await db.collection("productos").get();
+  await db
+    .collection("tiendas")
+    .doc(tiendaId)
+    .collection("productos")
+    .add({
+      name: nuevoNombre.value,
+      precio: Number(nuevoPrecio.value),
+      categoria: nuevoCategoria.value,
+      descripcion: nuevoDescripcion.value,
+      img: nuevoImagen.value,
+      disponible: true
+    });
 
-  async function migrarProductosAEstructuraTiendas() {
-
-  console.log("🚀 Iniciando migración...");
-
-  const snap = await db.collection("productos").get();
-
-  for (const doc of snap.docs) {
-
-    const p = doc.data();
-
-    const tiendaId = p.tiendaId || "eymotocomidas";
-
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .add({
-        name: p.name,
-        precio: p.precio,
-        categoria: p.categoria,
-        descripcion: p.descripcion,
-        img: p.img,
-        disponible: p.disponible ?? true
-      });
-
-    console.log("✔ Migrado:", p.name);
-  }
-
-  console.log("✅ Migración terminada");
+  cargarProductos();
 }
-    }
+
+// LOGOUT
+function logout() {
+  auth.signOut();
+}
 </script>
 
 </body>
