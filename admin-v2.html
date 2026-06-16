@@ -261,7 +261,10 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
       .doc(productoId)
       .get();
 
-    console.log("Nuevo valor:", verificacion.data().disponible);
+    console.log(
+      "Nuevo valor:",
+      verificacion.data().disponible
+    );
 
     alert("Actualizado correctamente");
 
@@ -291,14 +294,17 @@ async function eliminarProducto(productoId, nombre) {
       .doc(productoId)
       .delete();
 
+    alert("Producto eliminado");
+
     cargarProductos();
 
   } catch (error) {
 
     console.error(error);
-    alert("Error al eliminar producto");
+    alert(error.message);
   }
 }
+
 // LOGOUT
 function logout() {
   auth.signOut();
