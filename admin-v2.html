@@ -239,12 +239,6 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
   const tiendaId =
     document.getElementById("tiendaProducto").value;
 
-  alert(
-    "Tienda: " + tiendaId +
-    "\nProducto: " + productoId +
-    "\nEstado: " + disponibleActual
-  );
-
   try {
 
     const ref = db
@@ -253,32 +247,28 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
       .collection("productos")
       .doc(productoId);
 
-    const antes = await ref.get();
-alert(
-  "EXISTE: " + antes.exists +
-  "\nDATA: " + JSON.stringify(antes.data())
-);
-    console.log("ANTES:", antes.exists, antes.data());
-
-    await ref.update({
+    await ref.set({
       disponible: !disponibleActual
-    });
-alert("UPDATE EJECUTADO");
-    const despues = await ref.get();
+    }, { merge: true });
 
-    console.log("DESPUES:", despues.data());
+    alert("CAMBIADO A: " + (!disponibleActual));
 
-    alert("Actualización ejecutada");
+    const prueba = await ref.get();
+
+    alert(
+      "VALOR FIREBASE: " +
+      prueba.data().disponible
+    );
 
     cargarProductos();
 
-  } catch (error) {
+  } catch (e) {
 
-    console.error(error);
-    alert("ERROR: " + error.message);
+    alert("ERROR: " + e.message);
+    console.error(e);
+
   }
 }
-
 // LOGOUT
 function logout() {
   auth.signOut();
