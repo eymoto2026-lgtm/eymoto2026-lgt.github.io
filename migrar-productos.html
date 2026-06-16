@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Migrar Productos EyMotoComidas</title>
+<style>
+body{
+    font-family: Arial;
+    padding:20px;
+}
+button{
+    padding:12px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+#log{
+    margin-top:20px;
+    white-space:pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<h2>Migración de Productos</h2>
+
+<button onclick="migrar()">
+Migrar productos a tiendas/eymotocomidas/productos
+</button>
+
+<div id="log"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  databaseURL: "https://eymotocomidas-default-rtdb.firebaseio.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const log = document.getElementById("log");
+
+window.migrar = async () => {
+
+  try {
+
+    log.innerHTML = "Leyendo productos...";
+
+    const snapshot = await getDocs(
+      collection(db, "productos")
+    );
+
+    let total = 0;
+
+    for (const producto of snapshot.docs) {
+
+      await setDoc(
+        doc(
+          db,
+          "tiendas",
+          "eymotocomidas",
+          "productos",
+          producto.id
+        ),
+        producto.data()
+      );
+
+      total++;
+
+      log.innerHTML =
+        `Migrados: ${total} productos`;
+    }
+
+    log.innerHTML +=
+      `\n\n✅ Migración finalizada.\nTotal: ${total} productos`;
+
+  } catch(error) {
+
+    console.error(error);
+
+    log.innerHTML =
+      "❌ Error:\n" + error.message;
+  }
+};
+
+</script>
+
+</body>
+</html>
