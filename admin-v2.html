@@ -254,13 +254,16 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
       .doc(productoId);
 
     const antes = await ref.get();
-
+alert(
+  "EXISTE: " + antes.exists +
+  "\nDATA: " + JSON.stringify(antes.data())
+);
     console.log("ANTES:", antes.exists, antes.data());
 
     await ref.update({
       disponible: !disponibleActual
     });
-
+alert("UPDATE EJECUTADO");
     const despues = await ref.get();
 
     console.log("DESPUES:", despues.data());
