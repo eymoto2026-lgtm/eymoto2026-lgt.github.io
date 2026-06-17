@@ -309,6 +309,51 @@ window.eliminarProducto = async function(productoId, nombre) {
 function logout() {
   auth.signOut();
 }
+  async function eliminarTienda(tiendaId, nombre) {
+
+  if (tiendaId === "eymotocomidas") {
+    alert("No puedes eliminar la tienda principal");
+    return;
+  }
+
+  const confirmar = confirm(
+    `¿Eliminar la tienda ${nombre}?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+
+    const productos = await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .collection("productos")
+      .get();
+
+    for (const docu of productos.docs) {
+      await docu.ref.delete();
+    }
+
+    await db
+      .collection("tiendas")
+      .doc(tiendaId)
+      .delete();
+
+    alert("Tienda eliminada");
+
+    cargarTiendas();
+    cargarSelectTiendas();
+
+    document.getElementById("listaProductos").innerHTML = "";
+
+  } catch (e) {
+
+    alert("Error: " + e.message);
+    console.error(e);
+
+  }
+
+}
 </script>
 
 </body>
