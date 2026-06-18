@@ -277,7 +277,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const firestore = getFirestore(app);
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-  async function cargarDatosTienda() {
+  async function cargarLogoTienda() {
 
   const params = new URLSearchParams(window.location.search);
 
@@ -299,7 +299,8 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase
   document.querySelector("h1").textContent =
     data.nombre || "Tienda";
 
-  document.getElementById("logoTienda").src = data.logo || "img/img1.png";
+  document.getElementById("logoTienda").src =
+data.logo || "img/img1.png";
 
   if (data.banner) {
     document.querySelector(".banner img").src =
@@ -310,7 +311,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase
     (data.whatsapp || "").replace("+", "");
 
 }
-    cargarDatosTienda();
+    cargarLogoTienda();
 const tiendaRef = ref(db, "tiendaAbierta");
     cargarProductosFirestore();
 async function cargarProductosFirestore() {
