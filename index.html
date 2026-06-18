@@ -316,15 +316,19 @@ const tiendaRef = ref(db, "tiendaAbierta");
     cargarProductosFirestore();
 async function cargarProductosFirestore() {
 
+  const params = new URLSearchParams(window.location.search);
+
+  const tiendaId =
+    params.get("tienda") || "eymotocomidas";
+
   const snapshot = await getDocs(
     collection(
       firestore,
       "tiendas",
-      "eymotocomidas",
+      tiendaId,
       "productos"
     )
   );
-
   products = [];
 
   snapshot.forEach(doc => {
