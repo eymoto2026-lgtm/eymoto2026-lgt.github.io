@@ -312,7 +312,6 @@ data.logo || "img/img1.png";
 
 }
     cargarLogoTienda();
-const tiendaRef = ref(db, "tiendaAbierta");
     cargarProductosFirestore();
 async function cargarProductosFirestore() {
 
@@ -356,16 +355,27 @@ async function cargarProductosFirestore() {
   renderProducts();
 
 }
-onValue(tiendaRef, (snapshot) => {
+const params = new URLSearchParams(window.location.search);
 
-  const abierta = snapshot.val();
+const tiendaId =
+  params.get("tienda") || "eymotocomidas";
+
+const tiendaDoc =
+  doc(firestore, "tiendas", tiendaId);
+
+const tiendaSnap =
+  await getDoc(tiendaDoc);
+
+if (tiendaSnap.exists()) {
+
+  const data = tiendaSnap.data();
 
   const estado = document.getElementById("estadoTienda");
   const productos = document.getElementById("products");
   const carrito = document.querySelector(".cart");
   const banner = document.querySelector(".banner");
 
-  if (abierta === false) {
+  if (data.abierta === false) {
 
     document.body.style.backgroundColor = "#e0e0e0";
 
@@ -388,9 +398,10 @@ onValue(tiendaRef, (snapshot) => {
     carrito.style.display = "block";
 
     if (banner) banner.style.opacity = "1";
+
   }
 
-});
+}
 </script>
 </body>
 </html>
