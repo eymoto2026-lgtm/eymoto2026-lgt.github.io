@@ -386,9 +386,12 @@ function logout() {
   }
 
 }
-  document.getElementById("tiendaEstado")
-.addEventListener("change", cargarEstadoTienda);
+  window.addEventListener("load", () => {
 
+  document.getElementById("tiendaEstado")
+    .addEventListener("change", cargarEstadoTienda);
+
+});
 async function cargarEstadoTienda() {
 
   const tiendaId =
