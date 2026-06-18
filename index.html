@@ -163,7 +163,7 @@ color:white;">
 </div>
 
 <script>
-const whatsapp="573169934516";
+let whatsapp = "";
 const delivery=0;
 
 let cart=[];
@@ -277,16 +277,41 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const firestore = getFirestore(app);
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-   async function cargarLogoTienda() {
-  const ref = doc(firestore, "tiendas", "eymotocomidas");
-  const snap = await getDoc(ref);
+  async function cargarDatosTienda() {
 
-  if (snap.exists()) {
-    const data = snap.data();
-    document.getElementById("logoTienda").src = data.logo || "";
+  const params = new URLSearchParams(window.location.search);
+
+  const tiendaId =
+    params.get("tienda") || "eymotocomidas";
+
+  const tiendaDoc =
+    doc(firestore, "tiendas", tiendaId);
+
+  const snap = await getDoc(tiendaDoc);
+
+  if (!snap.exists()) {
+    alert("Tienda no encontrada");
+    return;
   }
+
+  const data = snap.data();
+
+  document.querySelector("h1").textContent =
+    data.nombre || "Tienda";
+
+  document.getElementById("logoTienda").src =
+    data.logo || "";
+
+  if (data.banner) {
+    document.querySelector(".banner img").src =
+      data.banner;
+  }
+
+  window.whatsapp =
+    (data.whatsapp || "").replace("+", "");
+
 }
-    cargarLogoTienda();
+    cargarDatosTienda();
 const tiendaRef = ref(db, "tiendaAbierta");
     cargarProductosFirestore();
 async function cargarProductosFirestore() {
