@@ -154,17 +154,17 @@ async function cargarTiendas() {
     const t = doc.data();
 
     listaTiendas.innerHTML += `
-      <div class="tienda">
-        <b>${t.nombre}</b><br>
-        ${t.whatsapp}
+  <div class="tienda">
+    <b>${t.nombre}</b><br>
+    ${t.whatsapp}
 
-        <br><br>
+    <br><br>
 
-        <button onclick="eliminarTienda('${doc.id}','${t.nombre}')">
-          🗑️ Eliminar Tienda
-        </button>
+    <button onclick="eliminarTienda('${doc.id}','${t.nombre}')">
+      🗑️ Eliminar Tienda
+    </button>
 
-      </div>`;
+  </div>`;
   });
 }
 
