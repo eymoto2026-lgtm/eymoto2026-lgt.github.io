@@ -329,22 +329,9 @@ async function cargarProductosFirestore() {
 
 }
 onValue(tiendaRef, (snapshot) => {
+
   const abierta = snapshot.val();
 
-  const estado = document.getElementById("estadoTienda");
-  const productos = document.getElementById("products");
-  const carrito = document.querySelector(".cart");
-
-  if (!abierta) {
-    estado.innerHTML = "🔴 TIENDA CERRADA";
-    productos.style.display = "none";
-    carrito.style.display = "none";
-  } else {
-    estado.innerHTML = "🟢 TIENDA ABIERTA";
-    productos.style.display = "grid";
-    carrito.style.display = "block";
-  }
-});
   const estado = document.getElementById("estadoTienda");
   const productos = document.getElementById("products");
   const carrito = document.querySelector(".cart");
@@ -360,7 +347,7 @@ onValue(tiendaRef, (snapshot) => {
     productos.style.display = "none";
     carrito.style.display = "none";
 
-    banner.style.opacity = "0.4";
+    if (banner) banner.style.opacity = "0.4";
 
   } else {
 
@@ -372,7 +359,7 @@ onValue(tiendaRef, (snapshot) => {
     productos.style.display = "grid";
     carrito.style.display = "block";
 
-    banner.style.opacity = "1";
+    if (banner) banner.style.opacity = "1";
   }
 
 });
