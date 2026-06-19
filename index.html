@@ -220,30 +220,56 @@ function removeItem(i){
   renderCart();
 }
 
-function sendWhatsApp(){
+async function sendWhatsApp(){
 
-  let msg = "🛵 PEDIDO%0A%0A";
+  const tiendaRef = doc(db, "tiendas", tiendaId);
 
-  // 👇 NOMBRE DINÁMICO DE LA TIENDA
-  msg += `🏪 Restaurante: ${window.tiendaNombre}%0A`;
-  msg += `🆔 ID: ${tiendaId}%0A%0A`;
+  const snap = await getDoc(tiendaRef);
+  const data = snap.data();
+
+  const tiendaNombre = data.nombre || "Tienda";
+  const numeroPedido = Date.now(); // simple y único
 
   let subtotal = 0;
 
+  let items = [];
+
+  let msg = "🛵 PEDIDO%0A%0A";
+  msg += `🏪 Restaurante: ${tiendaNombre}%0A`;
+  msg += `🆔 Pedido #: ${numeroPedido}%0A%0A`;
+
   cart.forEach(p=>{
-    let totalItem = p.price * p.qty;
+    const totalItem = p.price * p.qty;
     subtotal += totalItem;
+
+    items.push({
+      nombre: p.name,
+      cantidad: p.qty,
+      precio: p.price,
+      total: totalItem
+    });
 
     msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
   });
 
-  let domicilio = 0;
-  let total = subtotal + domicilio;
+  const total = subtotal;
 
   msg += `%0A💰 Subtotal: $${subtotal}%0A`;
   msg += `🚚 Domicilio: A convenir%0A`;
   msg += `💰 Total: $${total}`;
 
+  // 🔥 1. GUARDAR EN FIREBASE
+  await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
+    numeroPedido,
+    fecha: new Date().toISOString(),
+    tiendaNombre,
+    items,
+    subtotal,
+    total,
+    whatsapp
+  });
+
+  // 🔥 2. ENVIAR A WHATSAPP
   window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 </script>
@@ -251,7 +277,7 @@ function sendWhatsApp(){
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
+import { addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
