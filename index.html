@@ -122,15 +122,13 @@ justify-content:space-between;
 
 <body>
 
-<div class="header">
+<header>
 
-   <img id="logoTienda" src="...">
+   <img id="logoTienda" class="logo">
 
-   <h1 id="nombreTienda">
-      EyMotoComidas
-   </h1>
+   <h1 id="nombreTienda"></h1>
 
-</div>
+</header>
 
 <div id="estadoTienda" style="
 margin-top:10px;
@@ -141,8 +139,6 @@ background:#28a745;
 color:white;">
 🟢 TIENDA ABIERTA
 </div>
-
-</header>
 
 <div class="banner">
 <img src="img/banner.jpg" alt="Portada">
@@ -408,6 +404,8 @@ if (tiendaSnap.exists()) {
   }
 
 }
+    await cargarLogoTienda();
+await cargarProductosFirestore();
 </script>
 </body>
 </html>
