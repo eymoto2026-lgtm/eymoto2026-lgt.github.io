@@ -22,7 +22,6 @@
 
 <div class="container">
 
-  <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
     <input type="email" id="email">
@@ -31,34 +30,27 @@
     <p id="loginMsg"></p>
   </div>
 
-  <!-- PANEL -->
   <div id="panel" class="hidden">
 
     <div class="card">
       <h3>➕ Crear Tienda</h3>
       <input id="nombreTienda" placeholder="Nombre tienda">
-
-<input id="whatsapp" placeholder="WhatsApp">
-
-<input id="logoTienda" placeholder="URL del logo">
-
-<input id="bannerTienda" placeholder="URL del banner (opcional)">
+      <input id="whatsapp" placeholder="WhatsApp">
+      <input id="logoTienda" placeholder="URL del logo">
+      <input id="bannerTienda" placeholder="URL del banner (opcional)">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
 
     <div class="card">
       <h3>➕ Crear Producto</h3>
-
       <select id="tiendaProducto" onchange="cargarProductos()">
         <option value="">Seleccionar tienda</option>
       </select>
-
       <input id="nuevoNombre" placeholder="Nombre">
       <input id="nuevoPrecio" type="number" placeholder="Precio">
       <input id="nuevoCategoria" placeholder="Categoría">
       <input id="nuevoDescripcion" placeholder="Descripción">
       <input id="nuevoImagen" placeholder="Imagen">
-
       <button onclick="crearProducto()">Crear Producto</button>
     </div>
 
@@ -71,29 +63,21 @@
       <h3>📦 Productos</h3>
       <div id="listaProductos"></div>
     </div>
-<div class="card">
 
-  <h3>🏪 Abrir / Cerrar Tienda</h3>
+    <div class="card">
+      <h3>🏪 Abrir / Cerrar Tienda</h3>
+      <select id="tiendaEstado">
+        <option value="">Seleccionar tienda</option>
+      </select>
+      <p id="estadoActual">Estado: -</p>
+      <button onclick="toggleTienda()">Cambiar Estado</button>
+    </div>
 
-  <select id="tiendaEstado">
-    <option value="">Seleccionar tienda</option>
-  </select>
-
-  <p id="estadoActual">
-    Estado: -
-  </p>
-
-  <button onclick="toggleTienda()">
-    Cambiar Estado
-  </button>
-
-</div>
     <button onclick="logout()">Cerrar sesión</button>
 
   </div>
 </div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -123,7 +107,6 @@ function login() {
 // AUTH
 auth.onAuthStateChanged(async user => {
   if (user) {
-
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("panel").style.display = "block";
 
@@ -131,19 +114,16 @@ auth.onAuthStateChanged(async user => {
     await cargarSelectTiendas();
 
     const select = document.getElementById("tiendaProducto");
-
-    // seleccionar primera tienda automáticamente
     if (select.options.length > 1) {
       select.selectedIndex = 1;
     }
-
     cargarProductos();
-
   } else {
     document.getElementById("loginBox").style.display = "block";
     document.getElementById("panel").style.display = "none";
   }
 });
+
 // TIENDAS
 async function crearTienda() {
   const id = nombreTienda.value.toLowerCase().replace(/\s/g, "");
@@ -166,12 +146,12 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
-  // ⚠️ REEMPLAZA ESTA URL por el enlace real de tu GitHub Pages (debe terminar en /)
-  const urlBaseGitHub = "https://tu-usuario.github.io/eymotocomidas/"; 
+  // Configurado automáticamente usando el subdominio del hosting de Firebase de tu app
+  const urlBaseGitHub = "https://eymotocomidas.firebaseapp.com/"; 
 
   snap.forEach(doc => {
     const t = doc.data();
-    const idTienda = doc.id; // Identificador único (ej: "burgershop")
+    const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
 
     listaTiendas.innerHTML += `
@@ -196,49 +176,39 @@ async function cargarTiendas() {
   });
 }
 
-// NUEVA FUNCIÓN: Se encarga de copiar el texto al portapapeles de forma nativa
+// FUNCIÓN GLOBAL: Copia los links al portapapeles dinámicamente
 window.copiarUrl = function(url, boton) {
   navigator.clipboard.writeText(url).then(() => {
     const textoOriginal = boton.innerHTML;
     boton.innerHTML = "¡Copiado! ✅";
-    boton.style.background = "#28a745"; // Se pone verde temporalmente
+    boton.style.background = "#28a745"; 
     
     setTimeout(() => {
       boton.innerHTML = textoOriginal;
-      boton.style.background = "#333"; // Vuelve a su estado original
+      boton.style.background = "#333"; 
     }, 2000);
   }).catch(err => {
     console.error("No se pudo copiar el enlace: ", err);
-    alert("Error al copiar el enlace de manera automática.");
+    alert("Error al copiar el enlace.");
   });
 }
 
 // SELECT TIENDAS
 async function cargarSelectTiendas() {
-  tiendaProducto.innerHTML =
-'<option value="">Seleccionar tienda</option>';
-
-document.getElementById("tiendaEstado").innerHTML =
-'<option value="">Seleccionar tienda</option>';
+  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
+  document.getElementById("tiendaEstado").innerHTML = '<option value="">Seleccionar tienda</option>';
 
   const snap = await db.collection("tiendas").get();
 
   snap.forEach(doc => {
     const t = doc.data();
-    tiendaProducto.innerHTML += `
-      <option value="${doc.id}">
-        ${t.nombre}
-      </option>`;
-    document.getElementById("tiendaEstado").innerHTML += `
-<option value="${doc.id}">
-${t.nombre}
-</option>`;
+    tiendaProducto.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    document.getElementById("tiendaEstado").innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
   });
 }
 
 // PRODUCTOS
 async function cargarProductos() {
-
   const cont = document.getElementById("listaProductos");
   cont.innerHTML = "";
 
@@ -249,14 +219,9 @@ async function cargarProductos() {
     return;
   }
 
-  const snap = await db
-    .collection("tiendas")
-    .doc(tiendaId)
-    .collection("productos")
-    .get();
+  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
 
   snap.forEach(doc => {
-
     const p = doc.data();
 
     cont.innerHTML += `
@@ -265,213 +230,124 @@ async function cargarProductos() {
         Precio: $${p.precio}<br>
         Categoría: ${p.categoria}<br>
         Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
-
         <br><br>
-
         <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
           ${p.disponible ? "❌ Agotar" : "✅ Activar"}
         </button>
-
         <br><br>
-
         <button onclick="eliminarProducto('${doc.id}','${p.name}')">
           🗑️ Eliminar
         </button>
-      </div>
-    `;
+      </div>`;
   });
 }
+
 // CREAR PRODUCTO
 async function crearProducto() {
   const tiendaId = tiendaProducto.value;
 
-  await db
-    .collection("tiendas")
-    .doc(tiendaId)
-    .collection("productos")
-    .add({
-      name: nuevoNombre.value,
-      precio: Number(nuevoPrecio.value),
-      categoria: nuevoCategoria.value,
-      descripcion: nuevoDescripcion.value,
-      img: nuevoImagen.value,
-      disponible: true
-    });
+  await db.collection("tiendas").doc(tiendaId).collection("productos").add({
+    name: nuevoNombre.value,
+    precio: Number(nuevoPrecio.value),
+    categoria: nuevoCategoria.value,
+    descripcion: nuevoDescripcion.value,
+    img: nuevoImagen.value,
+    disponible: true
+  });
 
   cargarProductos();
 }
 
 // CAMBIAR DISPONIBILIDAD
 async function cambiarDisponibilidad(productoId, disponibleActual) {
-
-  const tiendaId =
-    document.getElementById("tiendaProducto").value;
+  const tiendaId = document.getElementById("tiendaProducto").value;
 
   try {
-
-    const ref = db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId);
-
-    await ref.set({
-      disponible: !disponibleActual
-    }, { merge: true });
-
-    alert("CAMBIADO A: " + (!disponibleActual));
-
-    const prueba = await ref.get();
-
-    alert(
-      "VALOR FIREBASE: " +
-      prueba.data().disponible
-    );
-
+    const ref = db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId);
+    await ref.set({ disponible: !disponibleActual }, { merge: true });
     cargarProductos();
-
   } catch (e) {
-
     alert("ERROR: " + e.message);
     console.error(e);
-
   }
 }
+
 window.eliminarProducto = async function(productoId, nombre) {
-  if (!confirm("¿Eliminar " + nombre + "?")) {
-    return;
-  }
+  if (!confirm("¿Eliminar " + nombre + "?")) return;
 
   try {
-
-    const tiendaId =
-      document.getElementById("tiendaProducto").value;
-
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .doc(productoId)
-      .delete();
-
+    const tiendaId = document.getElementById("tiendaProducto").value;
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).delete();
     alert("Producto eliminado");
-
     cargarProductos();
-
   } catch (e) {
-
     console.error(e);
     alert("ERROR: " + e.message);
-
   }
-
 }
+
 // LOGOUT
 function logout() {
   auth.signOut();
 }
-  async function eliminarTienda(tiendaId, nombre) {
 
+async function eliminarTienda(tiendaId, nombre) {
   if (tiendaId === "eymotocomidas") {
     alert("No puedes eliminar la tienda principal");
     return;
   }
 
-  const confirmar = confirm(
-    `¿Eliminar la tienda ${nombre}?`
-  );
-
+  const confirmar = confirm(`¿Eliminar la tienda ${nombre}?`);
   if (!confirmar) return;
 
   try {
-
-    const productos = await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .collection("productos")
-      .get();
-
+    const productos = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
     for (const docu of productos.docs) {
       await docu.ref.delete();
     }
 
-    await db
-      .collection("tiendas")
-      .doc(tiendaId)
-      .delete();
-
+    await db.collection("tiendas").doc(tiendaId).delete();
     alert("Tienda eliminada");
 
     cargarTiendas();
     cargarSelectTiendas();
-
     document.getElementById("listaProductos").innerHTML = "";
-
   } catch (e) {
-
     alert("Error: " + e.message);
     console.error(e);
-
   }
-
 }
-  window.addEventListener("load", () => {
 
-  document.getElementById("tiendaEstado")
-    .addEventListener("change", cargarEstadoTienda);
-
+window.addEventListener("load", () => {
+  document.getElementById("tiendaEstado").addEventListener("change", cargarEstadoTienda);
 });
+
 async function cargarEstadoTienda() {
-
-  const tiendaId =
-    document.getElementById("tiendaEstado").value;
-
+  const tiendaId = document.getElementById("tiendaEstado").value;
   if (!tiendaId) return;
 
-  const snap = await db
-    .collection("tiendas")
-    .doc(tiendaId)
-    .get();
-
+  const snap = await db.collection("tiendas").doc(tiendaId).get();
   if (!snap.exists) return;
 
   const data = snap.data();
-
-  document.getElementById("estadoActual").innerHTML =
-    data.abierta
-      ? "🟢 Estado: ABIERTA"
-      : "🔴 Estado: CERRADA";
+  document.getElementById("estadoActual").innerHTML = data.abierta ? "🟢 Estado: ABIERTA" : "🔴 Estado: CERRADA";
 }
 
 async function toggleTienda() {
-
-  const tiendaId =
-    document.getElementById("tiendaEstado").value;
-
+  const tiendaId = document.getElementById("tiendaEstado").value;
   if (!tiendaId) {
     alert("Seleccione una tienda");
     return;
   }
 
-  const ref = db
-    .collection("tiendas")
-    .doc(tiendaId);
-
+  const ref = db.collection("tiendas").doc(tiendaId);
   const snap = await ref.get();
-
   const actual = snap.data().abierta;
 
-  await ref.update({
-    abierta: !actual
-  });
-
+  await ref.update({ abierta: !actual });
   await cargarEstadoTienda();
 
-  alert(
-    !actual
-      ? "Tienda ABIERTA"
-      : "Tienda CERRADA"
-  );
+  alert(!actual ? "Tienda ABIERTA" : "Tienda CERRADA");
 }
 </script>
 
