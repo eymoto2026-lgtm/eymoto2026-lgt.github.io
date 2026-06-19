@@ -258,154 +258,123 @@ renderCart();
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-import {
-  getFirestore,
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
-  databaseURL: "https://eymotocomidas-default-rtdb.firebaseio.com",
   projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
-  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 const firestore = getFirestore(app);
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-  async function cargarLogoTienda() {
 
-  const params = new URLSearchParams(window.location.search);
+/* =========================
+   🔥 SOLO 1 PARAMS (FIX REAL)
+========================= */
+const params = new URLSearchParams(location.search);
+const tiendaId = params.get("tienda") || "eymotocomidas";
 
-  const tiendaId =
-    params.get("tienda") || "eymotocomidas";
+/* =========================
+   VARIABLES GLOBALES
+========================= */
+let whatsapp = "";
+let products = [];
+let currentProducts = [];
 
-  const tiendaDoc =
-    doc(firestore, "tiendas", tiendaId);
+/* =========================
+   UI LOADING (APP REAL FEEL)
+========================= */
+document.body.style.opacity = "0.5";
 
-  const snap = await getDoc(tiendaDoc);
+/* =========================
+   CARGAR TIENDA
+========================= */
+async function cargarLogoTienda() {
 
-  if (!snap.exists()) {
-    alert("Tienda no encontrada");
-    return;
-  }
+  const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
+
+  if (!snap.exists()) return;
 
   const data = snap.data();
 
-  document.getElementById("nombreTienda").textContent =
-    data.nombre || "Tienda";
-
-  document.getElementById("logoTienda").src =
-    data.logo || "";
+  document.getElementById("nombreTienda").textContent = data.nombre || "Tienda";
+  document.getElementById("logoTienda").src = data.logo || "";
 
   if (data.banner) {
-    document.querySelector(".banner img").src =
-      data.banner;
+    document.querySelector(".banner img").src = data.banner;
   }
 
-  whatsapp =
-    (data.whatsapp || "").replace("+", "");
-
-  console.log("WHATSAPP TIENDA:", whatsapp);
-
+  whatsapp = (data.whatsapp || "").replace("+", "");
 }
+
+/* =========================
+   CARGAR PRODUCTOS
+========================= */
 async function cargarProductosFirestore() {
 
-  const params = new URLSearchParams(window.location.search);
-
-  const tiendaId =
-    params.get("tienda") || "eymotocomidas";
-
   const snapshot = await getDocs(
-    collection(
-      firestore,
-      "tiendas",
-      tiendaId,
-      "productos"
-    )
+    collection(firestore, "tiendas", tiendaId, "productos")
   );
+
   products = [];
 
-  snapshot.forEach(doc => {
+  snapshot.forEach(d => {
+    const p = d.data();
 
-  const p = doc.data();
+    if (p.disponible === true) {
+      products.push({
+        name: p.name,
+        category: p.categoria,
+        price: p.precio,
+        img: p.img,
+        description: p.descripcion
+      });
+    }
+  });
 
-  console.log("PRODUCTO", doc.id);
-  console.log(p);
-
-  if (p.disponible === true) {
-
-    products.push({
-      name: p.name,
-      category: p.categoria,
-      price: p.precio,
-      img: p.img,
-      description: p.descripcion
-    });
-
-  }
-
-});
   currentProducts = products;
-
   renderProducts();
 
+  /* 🔥 QUITAR LOADING (APP REAL FEEL) */
+  document.body.style.opacity = "1";
 }
-const params = new URLSearchParams(window.location.search);
 
-const tiendaId =
-  params.get("tienda") || "eymotocomidas";
-
-const tiendaDoc =
-  doc(firestore, "tiendas", tiendaId);
-
-const tiendaSnap =
-  await getDoc(tiendaDoc);
-
-if (tiendaSnap.exists()) {
-
-  const data = tiendaSnap.data();
-
-  const estado = document.getElementById("estadoTienda");
-  const productos = document.getElementById("products");
-  const carrito = document.querySelector(".cart");
-  const banner = document.querySelector(".banner");
-
-  if (data.abierta === false) {
-
-    document.body.style.backgroundColor = "#e0e0e0";
-
-    estado.innerHTML = "🔴 TIENDA CERRADA";
-    estado.style.background = "#dc3545";
-
-    productos.style.display = "none";
-    carrito.style.display = "none";
-
-    if (banner) banner.style.opacity = "0.4";
-
-  } else {
-
-    document.body.style.backgroundColor = "#f4f4f4";
-
-    estado.innerHTML = "🟢 TIENDA ABIERTA";
-    estado.style.background = "#28a745";
-
-    productos.style.display = "grid";
-    carrito.style.display = "block";
-
-    if (banner) banner.style.opacity = "1";
-
-  }
-
+/* =========================
+   RENDER
+========================= */
+function renderProducts() {
+  document.getElementById("products").innerHTML =
+    currentProducts.map(p => `
+      <div class="card">
+        <img src="${p.img}">
+        <h3>${p.name}</h3>
+        <p>${p.description || ""}</p>
+        <b>$${p.price}</b>
+      </div>
+    `).join("");
 }
-    await cargarLogoTienda();
-await cargarProductosFirestore();
+
+/* =========================
+   WHATSAPP
+========================= */
+window.sendWhatsApp = function () {
+  let msg = "Pedido%0A%0A";
+
+  products.forEach(p => {
+    msg += `${p.name}%0A`;
+  });
+
+  window.open(`https://wa.me/${whatsapp}?text=${msg}`);
+};
+
+/* =========================
+   START APP (IMPORTANTE)
+========================= */
+(async function initApp() {
+  await cargarLogoTienda();
+  await cargarProductosFirestore();
+})();
 </script>
 </body>
 </html>
