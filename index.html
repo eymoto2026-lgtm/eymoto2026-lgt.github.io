@@ -302,11 +302,11 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase
 
   const data = snap.data();
 
-  document.querySelector("h1").textContent =
+  document.getElementById("nombreTienda").textContent =
     data.nombre || "Tienda";
 
   document.getElementById("logoTienda").src =
-data.logo || "img/img1.png";
+    data.logo || "";
 
   if (data.banner) {
     document.querySelector(".banner img").src =
@@ -314,11 +314,11 @@ data.logo || "img/img1.png";
   }
 
   whatsapp =
-(data.whatsapp || "").replace("+", "");
+    (data.whatsapp || "").replace("+", "");
 
-console.log("WHATSAPP TIENDA:", whatsapp);
-    cargarLogoTienda();
-    cargarProductosFirestore();
+  console.log("WHATSAPP TIENDA:", whatsapp);
+
+}
 async function cargarProductosFirestore() {
 
   const params = new URLSearchParams(window.location.search);
