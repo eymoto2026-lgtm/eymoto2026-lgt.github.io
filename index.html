@@ -83,9 +83,15 @@ header{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs } 
-from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
@@ -93,89 +99,100 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const firestore = getFirestore(app);
 
-/* ================= SOLO 1 VEZ ================= */
-const params = new URLSearchParams(location.search);
-const tiendaId = params.get("tienda");
+/* ================= SOLO 1 TIENDA ================= */
+const tiendaId = new URLSearchParams(location.search).get("tienda");
 
 if (!tiendaId) {
-  document.body.innerHTML = "❌ Falta ?tienda=nombre";
+  document.body.innerHTML = "❌ Falta ?tienda=ID";
   throw new Error("Sin tienda");
 }
 
-/* ================= VARIABLES ================= */
+/* ================= ESTADO GLOBAL ================= */
 let whatsapp = "";
 let products = [];
 let cart = [];
 
 /* ================= TIENDA ================= */
-async function loadStore(){
+async function cargarTienda() {
 
-  const snap = await getDoc(doc(db,"tiendas",tiendaId));
+  const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
 
-  if(!snap.exists()){
-    document.body.innerHTML="❌ Tienda no existe";
+  if (!snap.exists()) {
+    document.body.innerHTML = "❌ Tienda no encontrada";
     return;
   }
 
   const data = snap.data();
 
-  document.getElementById("nombreTienda").textContent = data.nombre || "";
+  document.getElementById("nombreTienda").textContent = data.nombre || "Tienda";
   document.getElementById("logoTienda").src = data.logo || "";
-  document.querySelector(".banner img").src = data.banner || "";
 
-  whatsapp = (data.whatsapp || "").replace("+","");
+  if (data.banner) {
+    document.querySelector(".banner img").src = data.banner;
+  }
 
-  document.getElementById("estadoTienda").innerHTML =
-    data.abierta === false ? "🔴 CERRADA" : "🟢 ABIERTA";
+  whatsapp = (data.whatsapp || "").replace("+", "");
+
+  const estado = document.getElementById("estadoTienda");
+  estado.innerText = data.abierta === false ? "🔴 TIENDA CERRADA" : "🟢 TIENDA ABIERTA";
+  estado.style.background = data.abierta === false ? "#dc3545" : "#28a745";
 }
 
 /* ================= PRODUCTOS ================= */
-async function loadProducts(){
+async function cargarProductos() {
 
-  const snap = await getDocs(collection(db,"tiendas",tiendaId,"productos"));
+  const snap = await getDocs(
+    collection(firestore, "tiendas", tiendaId, "productos")
+  );
 
   products = [];
 
-  snap.forEach(d=>{
+  snap.forEach(d => {
     const p = d.data();
-    if(p.disponible){
-      products.push(p);
+
+    if (p.disponible) {
+      products.push({
+        name: p.name,
+        price: p.precio,
+        img: p.img,
+        description: p.descripcion || ""
+      });
     }
   });
 
   renderProducts();
 }
 
-/* ================= RENDER ================= */
-function renderProducts(){
+/* ================= RENDER PRODUCTOS ================= */
+function renderProducts() {
 
-  document.getElementById("products").innerHTML =
-  products.map((p,i)=>`
+  const html = products.map((p, i) => `
     <div class="card">
-      <img src="${p.img}" style="width:100%;height:120px;object-fit:cover">
+      <img src="${p.img}">
       <h3>${p.name}</h3>
-      <p>${p.descripcion || ""}</p>
-      <b>$${p.precio}</b>
-      <button class="buy" onclick="add(${i})">Comprar</button>
+      <p class="small">${p.description}</p>
+      <b>$${p.price}</b>
+      <button class="buy" onclick="addToCart(${i})">Comprar</button>
     </div>
   `).join("");
+
+  document.getElementById("products").innerHTML = html;
 }
 
 /* ================= CARRITO ================= */
-window.add = function(i){
+window.addToCart = function(i) {
   cart.push(products[i]);
   renderCart();
 };
 
-function renderCart(){
+function renderCart() {
 
   let total = 0;
 
-  document.getElementById("cartItems").innerHTML =
-  cart.map(p=>{
-    total += p.precio;
+  document.getElementById("cartItems").innerHTML = cart.map(p => {
+    total += p.price;
     return `${p.name}<br>`;
   }).join("");
 
@@ -183,23 +200,22 @@ function renderCart(){
 }
 
 /* ================= WHATSAPP ================= */
-window.sendWhatsApp = function(){
+window.sendWhatsApp = function () {
 
-  let msg = "🛵 Pedido%0A%0A";
+  let msg = "🛵 PEDIDO%0A%0A";
 
-  cart.forEach(p=>{
+  cart.forEach(p => {
     msg += `${p.name}%0A`;
   });
 
   window.open(`https://wa.me/${whatsapp}?text=${msg}`);
 };
 
-/* ================= INIT ================= */
-(async function(){
-  await loadStore();
-  await loadProducts();
+/* ================= INICIO APP ================= */
+(async function init() {
+  await cargarTienda();
+  await cargarProductos();
 })();
 </script>
-
 </body>
 </html>
