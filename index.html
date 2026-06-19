@@ -258,43 +258,47 @@ renderCart();
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
+  projectId: "eymotocomidas"
 };
 
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
-/* =========================
-   🔥 SOLO 1 PARAMS (FIX REAL)
-========================= */
+/* ================= SOLO 1 PARAM ================= */
 const params = new URLSearchParams(location.search);
-const tiendaId = params.get("tienda") || "eymotocomidas";
+const tiendaId = params.get("tienda");
 
-/* =========================
-   VARIABLES GLOBALES
-========================= */
+if (!tiendaId) {
+  document.body.innerHTML = "<h2>❌ Tienda no especificada</h2>";
+  throw new Error("Sin tienda");
+}
+
+/* ================= VARIABLES ================= */
 let whatsapp = "";
 let products = [];
 let currentProducts = [];
 
-/* =========================
-   UI LOADING (APP REAL FEEL)
-========================= */
-document.body.style.opacity = "0.5";
-
-/* =========================
-   CARGAR TIENDA
-========================= */
-async function cargarLogoTienda() {
+/* ================= CARGAR TIENDA ================= */
+async function cargarTienda() {
 
   const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
 
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    document.body.innerHTML = "<h2>❌ Tienda no encontrada</h2>";
+    return;
+  }
 
   const data = snap.data();
 
@@ -306,20 +310,29 @@ async function cargarLogoTienda() {
   }
 
   whatsapp = (data.whatsapp || "").replace("+", "");
+
+  /* estado tienda */
+  const estado = document.getElementById("estadoTienda");
+
+  if (data.abierta === false) {
+    estado.innerText = "🔴 TIENDA CERRADA";
+    estado.style.background = "#dc3545";
+  } else {
+    estado.innerText = "🟢 TIENDA ABIERTA";
+    estado.style.background = "#28a745";
+  }
 }
 
-/* =========================
-   CARGAR PRODUCTOS
-========================= */
-async function cargarProductosFirestore() {
+/* ================= PRODUCTOS ================= */
+async function cargarProductos() {
 
-  const snapshot = await getDocs(
+  const snap = await getDocs(
     collection(firestore, "tiendas", tiendaId, "productos")
   );
 
   products = [];
 
-  snapshot.forEach(d => {
+  snap.forEach(d => {
     const p = d.data();
 
     if (p.disponible === true) {
@@ -335,31 +348,26 @@ async function cargarProductosFirestore() {
 
   currentProducts = products;
   renderProducts();
-
-  /* 🔥 QUITAR LOADING (APP REAL FEEL) */
-  document.body.style.opacity = "1";
 }
 
-/* =========================
-   RENDER
-========================= */
+/* ================= RENDER ================= */
 function renderProducts() {
-  document.getElementById("products").innerHTML =
-    currentProducts.map(p => `
-      <div class="card">
-        <img src="${p.img}">
-        <h3>${p.name}</h3>
-        <p>${p.description || ""}</p>
-        <b>$${p.price}</b>
-      </div>
-    `).join("");
+  const container = document.getElementById("products");
+
+  container.innerHTML = currentProducts.map(p => `
+    <div class="card">
+      <img src="${p.img}">
+      <h3>${p.name}</h3>
+      <p>${p.description || ""}</p>
+      <b>$${p.price}</b>
+    </div>
+  `).join("");
 }
 
-/* =========================
-   WHATSAPP
-========================= */
+/* ================= WHATSAPP ================= */
 window.sendWhatsApp = function () {
-  let msg = "Pedido%0A%0A";
+
+  let msg = "🛵 Pedido%0A%0A";
 
   products.forEach(p => {
     msg += `${p.name}%0A`;
@@ -368,12 +376,16 @@ window.sendWhatsApp = function () {
   window.open(`https://wa.me/${whatsapp}?text=${msg}`);
 };
 
-/* =========================
-   START APP (IMPORTANTE)
-========================= */
-(async function initApp() {
-  await cargarLogoTienda();
-  await cargarProductosFirestore();
+/* ================= INIT (APP REAL FLOW) ================= */
+(async function init() {
+
+  document.body.style.opacity = "0.5";
+
+  await cargarTienda();
+  await cargarProductos();
+
+  document.body.style.opacity = "1";
+
 })();
 </script>
 </body>
