@@ -290,7 +290,9 @@ async function cargarProductos(){
 
 cargarTienda(); 
   document.getElementById("btnComprar").addEventListener("click", sendWhatsApp);
-  async function sendWhatsApp(){
+  async function sendWhatsApp() 
+  console.log("WhatsApp:", whatsapp);
+console.log("Carrito:", cart); {
 
   if(!whatsapp){
     alert("No hay WhatsApp configurado");
@@ -331,17 +333,23 @@ msg += `\nSubtotal: $${subtotal}\n`;
 msg += `Domicilio: A convenir\n`;
 msg += `Total: $${subtotal}`;
 
+ try {
+
   await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
-  numeroPedido,
-  fecha: new Date().toISOString(),
-  tiendaNombre,
-  items,
-  subtotal: Number(subtotal),
-  total: Number(subtotal),
-  whatsapp
-});
+    numeroPedido,
+    fecha: new Date().toISOString(),
+    tiendaNombre,
+    items,
+    subtotal,
+    total: subtotal,
+    whatsapp
+  });
 
   window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
+
+} catch(error) {
+
+  console.error(error);
 }
 window.sendWhatsApp = sendWhatsApp;
 </script>
