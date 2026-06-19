@@ -228,33 +228,51 @@ function removeItem(i){
 
 async function sendWhatsApp(){
 
-  const tiendaRef = doc(db, "tiendas", tiendaId);
+  if(!whatsapp){
+    alert("No hay WhatsApp configurado");
+    return;
+  }
 
+  const tiendaRef = doc(db, "tiendas", tiendaId);
   const snap = await getDoc(tiendaRef);
+
+  if(!snap.exists()){
+    alert("Tienda no encontrada");
+    return;
+  }
+
   const data = snap.data();
 
   const tiendaNombre = data.nombre || "Tienda";
-  const numeroPedido = Date.now(); // simple y único
+  const numeroPedido = Date.now();
 
   let subtotal = 0;
-
   let items = [];
 
   let msg = "🛵 PEDIDO%0A";
-msg += `🏪 ${window.tiendaNombre}%0A%0A`;
+  msg += `🏪 ${tiendaNombre}%0A`;
   msg += `🆔 Pedido #: ${numeroPedido}%0A%0A`;
 
- cart.forEach(p=>{
-  const totalItem = p.price * p.qty;
-  subtotal += totalItem;
+  cart.forEach(p=>{
+    const totalItem = p.price * p.qty;
+    subtotal += totalItem;
 
-  msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
-});  const total = subtotal;
+    items.push({
+      nombre: p.name,
+      cantidad: p.qty,
+      total: totalItem
+    });
 
- msg += `%0A💰 Subtotal: $${subtotal}%0A`;
-msg += `🚚 Domicilio: A convenir%0A`;
-msg += `💰 Total: $${subtotal}`;
-  // 🔥 1. GUARDAR EN FIREBASE
+    msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
+  });
+
+  const total = subtotal;
+
+  msg += `%0A💰 Subtotal: $${subtotal}%0A`;
+  msg += `🚚 Domicilio: A convenir%0A`;
+  msg += `💰 Total: $${total}`;
+
+  // 🔥 GUARDAR EN FIREBASE
   await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
     numeroPedido,
     fecha: new Date().toISOString(),
@@ -265,7 +283,7 @@ msg += `💰 Total: $${subtotal}`;
     whatsapp
   });
 
-  // 🔥 2. ENVIAR A WHATSAPP
+  // 🔥 ENVIAR A WHATSAPP
   window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 </script>
