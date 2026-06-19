@@ -18,7 +18,6 @@ header{
   color:white;
   text-align:center;
   padding:20px;
-
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -101,7 +100,8 @@ header{
   overflow:auto;
   box-sizing:border-box;
 }
-  .checkout{
+
+.checkout{
   display:block;
   width:100%;
   background:#333;
@@ -118,7 +118,8 @@ header{
 .checkout:hover{
   background:#000;
 }
-  .cart h3{
+
+.cart h3{
   margin:0 0 10px 0;
 }
 </style>
@@ -130,8 +131,7 @@ header{
   <img id="logoTienda" class="logo">
   <h1>EyMotoComidas</h1>
 
-  <div id="estadoTienda"
-    style="margin-top:10px;padding:10px;border-radius:10px;background:#28a745;color:white;">
+  <div id="estadoTienda" style="margin-top:10px;padding:10px;border-radius:10px;background:#28a745;color:white;">
     🟢 TIENDA ABIERTA
   </div>
 </header>
@@ -158,7 +158,21 @@ header{
   <button id="btnComprar" class="checkout">Comprar</button>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  projectId: "eymotocomidas",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Variables de estado de la aplicación
 let cart = [];
 let products = [];
 let currentProducts = [];
@@ -167,6 +181,7 @@ let whatsapp = "";
 const params = new URLSearchParams(window.location.search);
 const tiendaId = params.get("tienda") || "eymotocomidas";
 
+// Funciones de la Tienda y Renderizado
 function filterProducts(cat){
   currentProducts = (cat === "Todos")
     ? products
@@ -181,7 +196,7 @@ function renderProducts(){
       <div class="card">
         <img src="${p.img}">
         <h3>${p.name}</h3>
-        <p>${p.description}</p>
+        <p>${p.description || ''}</p>
         <p><b>$${p.price}</b></p>
         <button class="buy" onclick="add('${p.name}')">Comprar</button>
       </div>
@@ -192,8 +207,11 @@ function add(name){
   let prod = products.find(p => p.name === name);
   let item = cart.find(x => x.name === name);
 
-  if(item) item.qty++;
-  else cart.push({...prod, qty:1});
+  if(item) {
+    item.qty++;
+  } else {
+    cart.push({...prod, qty:1});
+  }
 
   renderCart();
 }
@@ -220,80 +238,72 @@ function removeItem(i){
   renderCart();
 }
 
-</script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-import { addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-  window.doc = doc;
-window.getDoc = getDoc;
-window.addDoc = addDoc;
-window.collection = collection;
-const firebaseConfig = {
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+// Carga de Datos desde Firebase
 async function cargarTienda(){
+  try {
+    const tiendaRef = doc(db, "tiendas", tiendaId);
+    const snap = await getDoc(tiendaRef);
 
-  const tiendaRef = doc(db, "tiendas", tiendaId);
-  const snap = await getDoc(tiendaRef);
+    if(!snap.exists()) {
+      console.error("La tienda no existe en Firebase");
+      return;
+    }
 
-  if(!snap.exists()) return;
+    const data = snap.data();
+    window.tiendaNombre = data.nombre || "Tienda";
+    document.querySelector("h1").innerText = data.nombre;
+    
+    if(data.logo && data.logo !== ""){
+      document.getElementById("logoTienda").src = data.logo;
+    } else {
+      document.getElementById("logoTienda").src = "img/img1.png";
+    }
+    
+    whatsapp = (data.whatsapp || "").replace("+","").trim();
 
-  const data = snap.data();
-window.tiendaNombre = data.nombre || "Tienda";
-  document.querySelector("h1").innerText = data.nombre;
- if(data.logo && data.logo !== ""){
-  document.getElementById("logoTienda").src = data.logo;
-}else{
-  document.getElementById("logoTienda").src = "img/img1.png";
-}
-  whatsapp = (data.whatsapp || "").replace("+","");
+    if(data.abierta === false){
+      document.getElementById("estadoTienda").innerText = "🔴 TIENDA CERRADA";
+      document.getElementById("estadoTienda").style.background = "red";
+    }
 
-  if(data.abierta === false){
-    document.getElementById("estadoTienda").innerText = "🔴 TIENDA CERRADA";
-    document.getElementById("estadoTienda").style.background = "red";
+    await cargarProductos();
+  } catch (error) {
+    console.error("Error cargando la tienda: ", error);
   }
-
-  cargarProductos();
 }
 
 async function cargarProductos(){
-  const ref = collection(db, "tiendas", tiendaId, "productos");
-  const snap = await getDocs(ref);
+  try {
+    const ref = collection(db, "tiendas", tiendaId, "productos");
+    const snap = await getDocs(ref);
 
-  products = [];
+    products = [];
 
-  snap.forEach(d=>{
-    const p = d.data();
+    snap.forEach(d=>{
+      const p = d.data();
 
-    if(p.disponible){
-      products.push({
-        name:p.name,
-        category:p.categoria,
-        price:p.precio,
-        img:p.img,
-        description:p.descripcion
-      });
-    }
-  });
+      // Aseguramos que solo entren los disponibles
+      if(p.disponible !== false){ 
+        products.push({
+          name: p.name,
+          category: p.categoria,
+          price: Number(p.precio) || 0,
+          img: p.img,
+          description: p.descripcion
+        });
+      }
+    });
 
-  currentProducts = products;
-  renderProducts();
+    currentProducts = products;
+    renderProducts();
+  } catch (error) {
+    console.error("Error cargando productos: ", error);
+  }
 }
 
-cargarTienda(); 
-  document.getElementById("btnComprar").addEventListener("click", sendWhatsApp);
 async function sendWhatsApp(){
-
   if(!whatsapp){
-    alert("No hay WhatsApp configurado");
+    alert("No hay WhatsApp configurado en esta tienda.");
     return;
   }
 
@@ -302,66 +312,83 @@ async function sendWhatsApp(){
     return;
   }
 
-  const tiendaRef = doc(db, "tiendas", tiendaId);
-  const snap = await getDoc(tiendaRef);
+  try {
+    const tiendaRef = doc(db, "tiendas", tiendaId);
+    const snap = await getDoc(tiendaRef);
 
-  if(!snap.exists()){
-    alert("Tienda no encontrada");
-    return;
-  }
+    if(!snap.exists()){
+      alert("Tienda no encontrada");
+      return;
+    }
 
-  const data = snap.data();
+    const data = snap.data();
+    const tiendaNombre = data.nombre || "Tienda";
+    const numeroPedido = Date.now();
 
-  const tiendaNombre = data.nombre || "Tienda";
-  const numeroPedido = Date.now();
+    let subtotal = 0;
+    let items = [];
 
-  let subtotal = 0;
-  let items = [];
+    let msg = `*PEDIDO ${tiendaNombre.toUpperCase()}*\n`;
+    msg += `*Pedido #:* ${numeroPedido}\n\n`;
 
-  let msg = `PEDIDO ${tiendaNombre}\n`;
-  msg += `Pedido #: ${numeroPedido}\n\n`;
+    cart.forEach(p=>{
+      const price = Number(p.price);
+      const qty = Number(p.qty);
+      const totalItem = price * qty;
 
-  cart.forEach(p=>{
+      subtotal += totalItem;
 
-    const price = Number(p.price);
-    const qty = Number(p.qty);
+      items.push({
+        nombre: p.name,
+        cantidad: qty,
+        total: totalItem
+      });
 
-    const totalItem = price * qty;
-
-    subtotal += totalItem;
-
-    items.push({
-      nombre: p.name,
-      cantidad: qty,
-      total: totalItem
+      msg += `• ${p.name} x${qty} = $${totalItem}\n`;
     });
 
-    msg += `${p.name} x${qty} = $${totalItem}\n`;
-  });
+    msg += `\n*Subtotal:* $${subtotal}\n`;
+    msg += `*Domicilio:* A convenir\n`;
+    msg += `*Total:* $${subtotal}`;
 
-  msg += `\nSubtotal: $${subtotal}\n`;
-  msg += `Domicilio: A convenir\n`;
-  msg += `Total: $${subtotal}`;
+    // Guardar el pedido en Firebase
+    await addDoc(
+      collection(db, "tiendas", tiendaId, "pedidos"),
+      {
+        numeroPedido,
+        fecha: new Date().toISOString(),
+        tiendaNombre,
+        items,
+        subtotal,
+        total: subtotal,
+        whatsapp
+      }
+    );
 
-  await addDoc(
-    collection(db, "tiendas", tiendaId, "pedidos"),
-    {
-      numeroPedido,
-      fecha: new Date().toISOString(),
-      tiendaNombre,
-      items,
-      subtotal,
-      total: subtotal,
-      whatsapp
-    }
-  );
-
-  window.open(
-    `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
-    "_blank"
-  );
+    // Abrir WhatsApp en pestaña nueva
+    window.open(
+      `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  } catch (error) {
+    console.error("Error al procesar la compra: ", error);
+    alert("Hubo un error al procesar tu pedido.");
+  }
 } 
-window.sendWhatsApp = sendWhatsApp;
+
+// CRUCIAL: Hacer las funciones visibles para los botones HTML (onclick)
+window.filterProducts = filterProducts;
+window.add = add;
+window.removeItem = removeItem;
+
+// Inicializar la aplicación al cargar
+document.addEventListener("DOMContentLoaded", () => {
+  cargarTienda();
+  const btnComprar = document.getElementById("btnComprar");
+  if(btnComprar) {
+    btnComprar.addEventListener("click", sendWhatsApp);
+  }
+});
 </script>
 </body>
 </html>
