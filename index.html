@@ -3,219 +3,151 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EyMotoComidas Pro</title>
+<title>EyMotoComidas App</title>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:#f4f4f4;
-}
-
-header{
-    background:#333;
-    color:white;
-    text-align:center;
-    padding:20px;
-}
-
-.logo{width:90px;border-radius:12px}
-
+body{margin:0;font-family:Arial;background:#f4f4f4}
+header{background:#333;color:#fff;text-align:center;padding:15px}
+.logo{width:90px;border-radius:10px}
 .banner img{width:100%}
-
-.products{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-    gap:10px;
-    padding:10px;
-}
-
-.card{
-    background:white;
-    padding:10px;
-    border-radius:10px;
-}
-
-.buy{
-    width:100%;
-    background:#333;
-    color:white;
-    padding:10px;
-    border:none;
-    border-radius:10px;
-}
-
-.cart{
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    background:white;
-    padding:10px;
-    border-top:1px solid #ccc;
-}
+.products{display:grid;grid-template-columns:repeat(auto-fill,180px);gap:10px;padding:10px}
+.card{background:#fff;padding:10px;border-radius:10px}
+.card img{width:100%;height:130px;object-fit:cover}
+.buy{width:100%;background:#333;color:#fff;padding:10px;border:none;border-radius:10px}
+.cart{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:10px;border-top:1px solid #ccc}
 </style>
 </head>
 
 <body>
 
 <header>
-    <img id="logoTienda" class="logo">
-    <h1 id="nombreTienda"></h1>
+  <img id="logoTienda" class="logo">
+  <h2 id="nombreTienda"></h2>
 </header>
 
-<div id="estadoTienda" style="padding:10px;font-weight:bold;text-align:center">
-🟢 CARGANDO...
+<div class="banner">
+  <img src="" id="bannerImg">
 </div>
 
-<div class="banner">
-<img src="" alt="">
-</div>
+<div id="estado" style="padding:10px;text-align:center;font-weight:bold"></div>
 
 <div class="products" id="products"></div>
 
 <div class="cart">
-<h3>🛒 Carrito</h3>
-<div id="cartItems"></div>
-<p>Total: $<span id="total">0</span></p>
-<button onclick="sendWhatsApp()">Comprar</button>
+  <div id="cartItems"></div>
+  <b>Total: $<span id="total">0</span></b>
+  <button onclick="sendWhatsApp()">Comprar</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-/* ================= FIREBASE ================= */
-const firebaseConfig = {
+/* FIREBASE */
+const app = initializeApp({
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
   projectId: "eymotocomidas"
-};
+});
 
-const app = initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
+const db = getFirestore(app);
 
-/* ================= SOLO 1 TIENDA ================= */
+/* SOLO UNA VEZ */
 const tiendaId = new URLSearchParams(location.search).get("tienda");
 
 if (!tiendaId) {
-  document.body.innerHTML = "❌ Falta ?tienda=ID";
-  throw new Error("Sin tienda");
+  document.body.innerHTML = "❌ Usa ?tienda=eymotocomidas";
+  throw new Error("sin tienda");
 }
 
-/* ================= ESTADO GLOBAL ================= */
 let whatsapp = "";
 let products = [];
 let cart = [];
 
-/* ================= TIENDA ================= */
-async function cargarTienda() {
+/* TIENDA */
+async function loadStore(){
+  const snap = await getDoc(doc(db,"tiendas",tiendaId));
 
-  const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
-
-  if (!snap.exists()) {
-    document.body.innerHTML = "❌ Tienda no encontrada";
+  if(!snap.exists()){
+    document.body.innerHTML="❌ tienda no existe";
     return;
   }
 
-  const data = snap.data();
+  const d = snap.data();
 
-  document.getElementById("nombreTienda").textContent = data.nombre || "Tienda";
-  document.getElementById("logoTienda").src = data.logo || "";
+  document.getElementById("nombreTienda").textContent = d.nombre;
+  document.getElementById("logoTienda").src = d.logo;
+  document.getElementById("bannerImg").src = d.banner || "";
 
-  if (data.banner) {
-    document.querySelector(".banner img").src = data.banner;
-  }
+  whatsapp = (d.whatsapp||"").replace("+","");
 
-  whatsapp = (data.whatsapp || "").replace("+", "");
-
-  const estado = document.getElementById("estadoTienda");
-  estado.innerText = data.abierta === false ? "🔴 TIENDA CERRADA" : "🟢 TIENDA ABIERTA";
-  estado.style.background = data.abierta === false ? "#dc3545" : "#28a745";
+  document.getElementById("estado").innerText =
+    d.abierta === false ? "🔴 CERRADA" : "🟢 ABIERTA";
 }
 
-/* ================= PRODUCTOS ================= */
-async function cargarProductos() {
-
-  const snap = await getDocs(
-    collection(firestore, "tiendas", tiendaId, "productos")
-  );
+/* PRODUCTOS */
+async function loadProducts(){
+  const snap = await getDocs(collection(db,"tiendas",tiendaId,"productos"));
 
   products = [];
 
-  snap.forEach(d => {
+  snap.forEach(d=>{
     const p = d.data();
-
-    if (p.disponible) {
-      products.push({
-        name: p.name,
-        price: p.precio,
-        img: p.img,
-        description: p.descripcion || ""
-      });
+    if(p.disponible){
+      products.push(p);
     }
   });
 
-  renderProducts();
+  render();
 }
 
-/* ================= RENDER PRODUCTOS ================= */
-function renderProducts() {
-
-  const html = products.map((p, i) => `
-    <div class="card">
-      <img src="${p.img}">
-      <h3>${p.name}</h3>
-      <p class="small">${p.description}</p>
-      <b>$${p.price}</b>
-      <button class="buy" onclick="addToCart(${i})">Comprar</button>
-    </div>
-  `).join("");
-
-  document.getElementById("products").innerHTML = html;
+/* RENDER */
+function render(){
+  document.getElementById("products").innerHTML =
+    products.map((p,i)=>`
+      <div class="card">
+        <img src="${p.img}">
+        <h4>${p.name}</h4>
+        <b>$${p.precio}</b>
+        <button class="buy" onclick="add(${i})">Comprar</button>
+      </div>
+    `).join("");
 }
 
-/* ================= CARRITO ================= */
-window.addToCart = function(i) {
+/* CARRITO */
+window.add = function(i){
   cart.push(products[i]);
-  renderCart();
+  updateCart();
 };
 
-function renderCart() {
-
+function updateCart(){
   let total = 0;
 
-  document.getElementById("cartItems").innerHTML = cart.map(p => {
-    total += p.price;
-    return `${p.name}<br>`;
-  }).join("");
+  document.getElementById("cartItems").innerHTML =
+    cart.map(p=>{
+      total += p.precio;
+      return p.name + "<br>";
+    }).join("");
 
   document.getElementById("total").innerText = total;
 }
 
-/* ================= WHATSAPP ================= */
-window.sendWhatsApp = function () {
+/* WHATSAPP */
+window.sendWhatsApp = function(){
+  let msg="🛵 Pedido%0A%0A";
 
-  let msg = "🛵 PEDIDO%0A%0A";
-
-  cart.forEach(p => {
-    msg += `${p.name}%0A`;
+  cart.forEach(p=>{
+    msg += p.name + "%0A";
   });
 
   window.open(`https://wa.me/${whatsapp}?text=${msg}`);
 };
 
-/* ================= INICIO APP ================= */
-(async function init() {
-  await cargarTienda();
-  await cargarProductos();
-})();
+/* INIT */
+loadStore();
+loadProducts();
+
 </script>
+
 </body>
 </html>
