@@ -240,30 +240,20 @@ async function sendWhatsApp(){
 
   let items = [];
 
-  let msg = "🛵 PEDIDO%0A%0A";
-  msg += `🏪 Restaurante: ${tiendaNombre}%0A`;
+  let msg = "🛵 PEDIDO%0A";
+msg += `🏪 ${window.tiendaNombre}%0A%0A`;
   msg += `🆔 Pedido #: ${numeroPedido}%0A%0A`;
 
-  cart.forEach(p=>{
-    const totalItem = p.price * p.qty;
-    subtotal += totalItem;
+ cart.forEach(p=>{
+  const totalItem = p.price * p.qty;
+  subtotal += totalItem;
 
-    items.push({
-      nombre: p.name,
-      cantidad: p.qty,
-      precio: p.price,
-      total: totalItem
-    });
+  msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
+});  const total = subtotal;
 
-    msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
-  });
-
-  const total = subtotal;
-
-  msg += `%0A💰 Subtotal: $${subtotal}%0A`;
-  msg += `🚚 Domicilio: A convenir%0A`;
-  msg += `💰 Total: $${total}`;
-
+ msg += `%0A💰 Subtotal: $${subtotal}%0A`;
+msg += `🚚 Domicilio: A convenir%0A`;
+msg += `💰 Total: $${subtotal}`;
   // 🔥 1. GUARDAR EN FIREBASE
   await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
     numeroPedido,
