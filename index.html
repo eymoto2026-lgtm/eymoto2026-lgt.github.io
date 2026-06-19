@@ -234,7 +234,11 @@ async function cargarTienda(){
   const data = snap.data();
 
   document.querySelector("h1").innerText = data.nombre;
+ if(data.logo && data.logo !== ""){
   document.getElementById("logoTienda").src = data.logo;
+}else{
+  document.getElementById("logoTienda").src = "img/img1.png";
+}
   whatsapp = (data.whatsapp || "").replace("+","");
 
   if(data.abierta === false){
