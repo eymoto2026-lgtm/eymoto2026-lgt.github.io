@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -9,95 +8,41 @@
 <style>
 body{
     margin:0;
-    font-family:Arial,sans-serif;
+    font-family:Arial;
     background:#f4f4f4;
 }
 
 header{
-    background:#333333;
+    background:#333;
     color:white;
     text-align:center;
     padding:20px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.2);
 }
 
-header h1{
-    margin-top:10px;
-    font-size:42px;
-}
+.logo{width:90px;border-radius:12px}
 
-.logo{
-    width:100px;
-    height:auto;
-    border-radius:15px;
-}
-
-.banner img{
-    width:100%;
-    height:auto;
-    display:block;
-}
-
-.categories{
-    display:flex;
-    overflow:auto;
-    gap:8px;
-    padding:10px;
-    background:#fff;
-}
-
-.categories button{
-    border:none;
-    padding:10px;
-    border-radius:20px;
-}
+.banner img{width:100%}
 
 .products{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(180px,180px));
-justify-content:center;
-gap:10px;
-padding:10px;
-padding-bottom:300px;
-}
-.card{
-background:#fff;
-border-radius:10px;
-padding:10px;
-display:flex;
-flex-direction:column;
-justify-content:space-between;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:10px;
+    padding:10px;
 }
 
-.card img{
-    width:100%;
-    height:140px;
-    object-fit:cover;
-    border-radius:8px;
+.card{
+    background:white;
+    padding:10px;
+    border-radius:10px;
 }
 
 .buy{
     width:100%;
-    background:#333333;
-    color:#fff;
-    border:none;
-    padding:15px;
-    border-radius:15px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.checkout{
-    width:100%;
-    background:#333333;
+    background:#333;
     color:white;
+    padding:10px;
     border:none;
-    padding:12px;
-    border-radius:12px;
-    font-size:15px;
-    font-weight:bold;
-    cursor:pointer;
+    border-radius:10px;
 }
 
 .cart{
@@ -105,52 +50,26 @@ justify-content:space-between;
     bottom:0;
     left:0;
     right:0;
-    background:#fff;
-    border-top:1px solid #ccc;
+    background:white;
     padding:10px;
-    max-height:40vh;
-    overflow:auto;
-}
-
-.small{
-    font-size:13px;
-    color:#555;
+    border-top:1px solid #ccc;
 }
 </style>
-
 </head>
 
 <body>
 
 <header>
-
-   <img id="logoTienda" class="logo">
-
-   <h1 id="nombreTienda"></h1>
-
+    <img id="logoTienda" class="logo">
+    <h1 id="nombreTienda"></h1>
 </header>
 
-<div id="estadoTienda" style="
-margin-top:10px;
-padding:10px;
-border-radius:10px;
-font-weight:bold;
-background:#28a745;
-color:white;">
-🟢 TIENDA ABIERTA
+<div id="estadoTienda" style="padding:10px;font-weight:bold;text-align:center">
+🟢 CARGANDO...
 </div>
 
 <div class="banner">
-<img src="img/banner.jpg" alt="Portada">
-</div>
-
-<div class="categories">
-<button onclick="filterProducts('Todos')">Todos</button>
-<button onclick="filterProducts('Hamburguesas')">🍔 Hamburguesas</button>
-<button onclick="filterProducts('Perros')">🌭 Perros</button>
-<button onclick="filterProducts('Salchipapas')">🍟 Salchipapas</button>
-<button onclick="filterProducts('Burritos')">🌮 Burritos</button>
-<button onclick="filterProducts('Bebidas')">🥤 Bebidas</button>
+<img src="" alt="">
 </div>
 
 <div class="products" id="products"></div>
@@ -158,115 +77,15 @@ color:white;">
 <div class="cart">
 <h3>🛒 Carrito</h3>
 <div id="cartItems"></div>
-<p>Subtotal: $<span id="subtotal">0</span></p>
-<p>Domicilio: <span>A convenir</span></p>
-<p><b>Total: $<span id="total">0</span></b></p>
-<button class="checkout" onclick="sendWhatsApp()">Comprar</button>
+<p>Total: $<span id="total">0</span></p>
+<button onclick="sendWhatsApp()">Comprar</button>
 </div>
 
-<script>
-let whatsapp = "";
-const delivery=0;
-
-let cart=[];
-
-let products = [];
-
-let currentProducts = [];
-
-function filterProducts(category){
-    if(category==="Todos"){
-        currentProducts = products;
-    }else{
-        currentProducts = products.filter(p => p.category === category);
-    }
-    renderProducts();
-}
-
-function renderProducts(){
-document.getElementById('products').innerHTML=currentProducts.map((p,i)=>`
-<div class="card">
-<img src="${p.img}">
-<h3>${p.name}</h3>
-<p class="small">${p.description}</p>
-<p><b>$${p.price.toLocaleString()}</b></p>
-<button class="buy" onclick="add('${p.name}')">Comprar</button>
-</div>`).join('');
-}
-
-function add(name){
-
-let product = products.find(p => p.name === name);
-
-let item = cart.find(x => x.name === product.name);
-
-if(item){
-    item.qty++;
-}else{
-    cart.push({...product, qty:1});
-}
-
-renderCart();
-
-}
-
-function plus(i){
-cart[i].qty++;
-renderCart();
-}
-
-function minus(i){
-cart[i].qty>1 ? cart[i].qty-- : cart.splice(i,1);
-renderCart();
-}
-
-function removeItem(i){
-cart.splice(i,1);
-renderCart();
-}
-
-function renderCart(){
-let subtotal=0;
-
-document.getElementById('cartItems').innerHTML=cart.map((p,i)=>{
-subtotal+=p.price*p.qty;
-return `${p.name} x${p.qty}
-<button onclick="plus(${i})">➕</button>
-<button onclick="minus(${i})">➖</button>
-<button onclick="removeItem(${i})">🗑️</button><br>`;
-}).join('');
-
-document.getElementById('subtotal').innerText=subtotal.toLocaleString();
-document.getElementById('total').innerText=subtotal.toLocaleString();
-}
-
-function sendWhatsApp(){
-let subtotal=0;
-let msg="🛵 PEDIDO EYMOTOCOMIDAS%0A%0A";
-
-cart.forEach(p=>{
-subtotal+=p.price*p.qty;
-msg+=`${p.name} x${p.qty} = $${p.price*p.qty}%0A`;
-});
-
-msg+=`%0ASubtotal: $${subtotal}%0ADomicilio: A convenir%0ATotal: $${subtotal}`;
-
-window.open(`https://wa.me/${whatsapp}?text=${msg}`);
-}
-renderProducts();
-renderCart();
-</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs } 
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
@@ -274,38 +93,29 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
+const db = getFirestore(app);
 
-/* ================= TIENDA ================= */
+/* ================= SOLO 1 VEZ ================= */
 const params = new URLSearchParams(location.search);
 const tiendaId = params.get("tienda");
 
 if (!tiendaId) {
-  document.body.innerHTML = `
-    <h2 style="color:red">
-      ❌ Tienda no especificada<br><br>
-      Usa: ?tienda=el-viejo-kfc
-    </h2>
-  `;
-  throw new Error("Falta tiendaId");
-}
-if (!tiendaId) {
-  document.body.innerHTML = "❌ Falta tienda";
+  document.body.innerHTML = "❌ Falta ?tienda=nombre";
+  throw new Error("Sin tienda");
 }
 
 /* ================= VARIABLES ================= */
 let whatsapp = "";
 let products = [];
-let currentProducts = [];
 let cart = [];
 
 /* ================= TIENDA ================= */
-async function cargarTienda() {
+async function loadStore(){
 
-  const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
+  const snap = await getDoc(doc(db,"tiendas",tiendaId));
 
-  if (!snap.exists()) {
-    document.body.innerHTML = "❌ Tienda no encontrada";
+  if(!snap.exists()){
+    document.body.innerHTML="❌ Tienda no existe";
     return;
   }
 
@@ -313,90 +123,71 @@ async function cargarTienda() {
 
   document.getElementById("nombreTienda").textContent = data.nombre || "";
   document.getElementById("logoTienda").src = data.logo || "";
+  document.querySelector(".banner img").src = data.banner || "";
 
-  if (data.banner) {
-    document.querySelector(".banner img").src = data.banner;
-  }
+  whatsapp = (data.whatsapp || "").replace("+","");
 
-  whatsapp = (data.whatsapp || "").replace("+", "");
-
-  const estado = document.getElementById("estadoTienda");
-
-  estado.innerText = data.abierta === false ? "🔴 TIENDA CERRADA" : "🟢 TIENDA ABIERTA";
-  estado.style.background = data.abierta === false ? "#dc3545" : "#28a745";
+  document.getElementById("estadoTienda").innerHTML =
+    data.abierta === false ? "🔴 CERRADA" : "🟢 ABIERTA";
 }
 
 /* ================= PRODUCTOS ================= */
-async function cargarProductos() {
+async function loadProducts(){
 
-  const snap = await getDocs(
-    collection(firestore, "tiendas", tiendaId, "productos")
-  );
+  const snap = await getDocs(collection(db,"tiendas",tiendaId,"productos"));
 
   products = [];
 
-  snap.forEach(d => {
+  snap.forEach(d=>{
     const p = d.data();
-
-    if (p.disponible === true) {
-      products.push({
-        name: p.name,
-        category: p.categoria,
-        price: p.precio,
-        img: p.img,
-        description: p.descripcion
-      });
+    if(p.disponible){
+      products.push(p);
     }
   });
 
-  currentProducts = products;
   renderProducts();
 }
 
-/* ================= RENDER PRODUCTOS (CON BOTÓN) ================= */
-function renderProducts() {
+/* ================= RENDER ================= */
+function renderProducts(){
 
   document.getElementById("products").innerHTML =
-    currentProducts.map((p, i) => `
-      <div class="card">
-        <img src="${p.img}">
-        <h3>${p.name}</h3>
-        <p>${p.description || ""}</p>
-        <b>$${p.price}</b>
-        <button class="buy" onclick="addToCart(${i})">Comprar</button>
-      </div>
-    `).join("");
+  products.map((p,i)=>`
+    <div class="card">
+      <img src="${p.img}" style="width:100%;height:120px;object-fit:cover">
+      <h3>${p.name}</h3>
+      <p>${p.descripcion || ""}</p>
+      <b>$${p.precio}</b>
+      <button class="buy" onclick="add(${i})">Comprar</button>
+    </div>
+  `).join("");
 }
 
 /* ================= CARRITO ================= */
-window.addToCart = function(index) {
-
-  const product = currentProducts[index];
-
-  cart.push(product);
-
+window.add = function(i){
+  cart.push(products[i]);
   renderCart();
 };
 
-function renderCart() {
+function renderCart(){
 
   let total = 0;
 
   document.getElementById("cartItems").innerHTML =
-    cart.map(p => {
-      total += p.price;
-      return `${p.name}<br>`;
-    }).join("");
+  cart.map(p=>{
+    total += p.precio;
+    return `${p.name}<br>`;
+  }).join("");
 
   document.getElementById("total").innerText = total;
 }
 
 /* ================= WHATSAPP ================= */
-window.sendWhatsApp = function () {
+window.sendWhatsApp = function(){
 
   let msg = "🛵 Pedido%0A%0A";
 
-  cart.forEach(p => {
+  cart.forEach(p=>{
     msg += `${p.name}%0A`;
   });
 
@@ -404,16 +195,11 @@ window.sendWhatsApp = function () {
 };
 
 /* ================= INIT ================= */
-(async function init() {
-
-  document.body.style.opacity = "0.5";
-
-  await cargarTienda();
-  await cargarProductos();
-
-  document.body.style.opacity = "1";
-
+(async function(){
+  await loadStore();
+  await loadProducts();
 })();
 </script>
+
 </body>
 </html>
