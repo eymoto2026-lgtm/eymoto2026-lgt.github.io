@@ -221,17 +221,30 @@ function removeItem(i){
 }
 
 function sendWhatsApp(){
+
   let msg = "🛵 PEDIDO%0A%0A";
-  let total = 0;
+
+  // 👇 NOMBRE DINÁMICO DE LA TIENDA
+  msg += `🏪 Restaurante: ${window.tiendaNombre}%0A`;
+  msg += `🆔 ID: ${tiendaId}%0A%0A`;
+
+  let subtotal = 0;
 
   cart.forEach(p=>{
-    total += p.price * p.qty;
-    msg += `${p.name} x${p.qty} = $${p.price * p.qty}%0A`;
+    let totalItem = p.price * p.qty;
+    subtotal += totalItem;
+
+    msg += `${p.name} x${p.qty} = $${totalItem}%0A`;
   });
 
-  msg += `%0ATotal: $${total}`;
+  let domicilio = 0;
+  let total = subtotal + domicilio;
 
-  window.open(`https://wa.me/${whatsapp}?text=${msg}`);
+  msg += `%0A💰 Subtotal: $${subtotal}%0A`;
+  msg += `🚚 Domicilio: A convenir%0A`;
+  msg += `💰 Total: $${total}`;
+
+  window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 </script>
 
@@ -256,7 +269,7 @@ async function cargarTienda(){
   if(!snap.exists()) return;
 
   const data = snap.data();
-
+window.tiendaNombre = data.nombre || "Tienda";
   document.querySelector("h1").innerText = data.nombre;
  if(data.logo && data.logo !== ""){
   document.getElementById("logoTienda").src = data.logo;
