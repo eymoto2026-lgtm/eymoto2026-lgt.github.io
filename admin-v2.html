@@ -22,6 +22,7 @@
 
 <div class="container">
 
+  <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
     <input type="email" id="email">
@@ -30,6 +31,7 @@
     <p id="loginMsg"></p>
   </div>
 
+  <!-- PANEL -->
   <div id="panel" class="hidden">
 
     <div class="card">
@@ -78,6 +80,7 @@
   </div>
 </div>
 
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -146,8 +149,9 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
-  // Configurado automáticamente usando el subdominio del hosting de Firebase de tu app
-const urlBaseGitHub = "https://tu-usuario.github.io/eymotocomidas/";
+  // URL corregida con tu usuario real de GitHub eymoto
+  const urlBaseGitHub = "https://eymoto.github.io/eymotocomidas/"; 
+
   snap.forEach(doc => {
     const t = doc.data();
     const idTienda = doc.id; 
