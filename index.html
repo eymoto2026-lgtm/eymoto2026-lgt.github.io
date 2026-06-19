@@ -66,15 +66,14 @@ if (!tiendaId) {
   throw new Error("Sin tiendaId");
 }
 
-/* ================= ESTADO GLOBAL ================= */
+/* ================= VARIABLES ================= */
 let whatsapp = "";
 let productos = [];
 let carrito = [];
 
-/* ================= CARGAR TIENDA ================= */
+/* ================= TIENDA ================= */
 async function cargarTienda() {
-  const ref = doc(db, "tiendas", tiendaId);
-  const snap = await getDoc(ref);
+  const snap = await getDoc(doc(db, "tiendas", tiendaId));
 
   if (!snap.exists()) {
     document.body.innerHTML = "❌ Tienda no existe";
@@ -92,12 +91,16 @@ async function cargarTienda() {
 
   whatsapp = (data.whatsapp || "").replace("+", "");
 
-  const estado = document.getElementById("estadoTienda");
-  estado.innerText = data.abierta ? "🟢 ABIERTA" : "🔴 CERRADA";
-  estado.style.background = data.abierta ? "#28a745" : "#dc3545";
+  // 🔥 FIX: tu HTML usa id="estado"
+  const estado = document.getElementById("estado");
+  if (estado) {
+    estado.innerText = data.abierta ? "🟢 ABIERTA" : "🔴 CERRADA";
+    estado.style.background = data.abierta ? "#28a745" : "#dc3545";
+    estado.style.color = "white";
+  }
 }
 
-/* ================= CARGAR PRODUCTOS ================= */
+/* ================= PRODUCTOS ================= */
 async function cargarProductos() {
   const snap = await getDocs(collection(db, "tiendas", tiendaId, "productos"));
 
@@ -105,23 +108,20 @@ async function cargarProductos() {
 
   snap.forEach(d => {
     const p = d.data();
-
-    if (p.disponible) {
-      productos.push(p);
-    }
+    if (p.disponible) productos.push(p);
   });
 
   renderProductos();
 }
 
-/* ================= RENDER PRODUCTOS ================= */
+/* ================= RENDER ================= */
 function renderProductos() {
   document.getElementById("products").innerHTML =
     productos.map((p, i) => `
       <div class="card">
         <img src="${p.img || ''}">
         <h3>${p.name}</h3>
-        <p class="small">${p.descripcion || ""}</p>
+        <p>${p.descripcion || ""}</p>
         <b>$${p.precio}</b>
         <button class="buy" onclick="add(${i})">Comprar</button>
       </div>
@@ -144,7 +144,6 @@ function renderCarrito() {
     }).join("");
 
   document.getElementById("total").innerText = total;
-  document.getElementById("subtotal").innerText = total;
 }
 
 /* ================= WHATSAPP ================= */
@@ -161,15 +160,9 @@ window.sendWhatsApp = function() {
 
 /* ================= INIT ================= */
 (async function init() {
-  try {
-    await cargarTienda();
-    await cargarProductos();
-  } catch (e) {
-    console.error(e);
-    document.body.innerHTML = "❌ Error cargando tienda";
-  }
+  await cargarTienda();
+  await cargarProductos();
 })();
 </script>
-
 </body>
 </html>
