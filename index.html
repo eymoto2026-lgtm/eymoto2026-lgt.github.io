@@ -281,6 +281,15 @@ const params = new URLSearchParams(location.search);
 const tiendaId = params.get("tienda");
 
 if (!tiendaId) {
+  document.body.innerHTML = `
+    <h2 style="color:red">
+      ❌ Tienda no especificada<br><br>
+      Usa: ?tienda=el-viejo-kfc
+    </h2>
+  `;
+  throw new Error("Falta tiendaId");
+}
+if (!tiendaId) {
   document.body.innerHTML = "❌ Falta tienda";
 }
 
