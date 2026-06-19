@@ -290,14 +290,18 @@ async function cargarProductos(){
 
 cargarTienda(); 
   document.getElementById("btnComprar").addEventListener("click", sendWhatsApp);
-  async function sendWhatsApp() 
-  console.log("WhatsApp:", whatsapp);
-console.log("Carrito:", cart); {
+async function sendWhatsApp(){
 
   if(!whatsapp){
     alert("No hay WhatsApp configurado");
     return;
   }
+
+  if(cart.length === 0){
+    alert("El carrito está vacío");
+    return;
+  }
+
   const tiendaRef = doc(db, "tiendas", tiendaId);
   const snap = await getDoc(tiendaRef);
 
@@ -312,41 +316,50 @@ console.log("Carrito:", cart); {
   const numeroPedido = Date.now();
 
   let subtotal = 0;
-let items = [];
+  let items = [];
 
-cart.forEach(p=>{
-  const price = Number(p.price);
-  const qty = Number(p.qty);
+  let msg = `PEDIDO ${tiendaNombre}\n`;
+  msg += `Pedido #: ${numeroPedido}\n\n`;
 
-  const totalItem = price * qty;
-  subtotal += totalItem;
+  cart.forEach(p=>{
 
-  items.push({
-    nombre: p.name,
-    cantidad: qty,
-    total: totalItem
-  });
-});
+    const price = Number(p.price);
+    const qty = Number(p.qty);
 
-const total = subtotal; // SOLO NÚMERO
-msg += `\nSubtotal: $${subtotal}\n`;
-msg += `Domicilio: A convenir\n`;
-msg += `Total: $${subtotal}`;
+    const totalItem = price * qty;
 
- try {
+    subtotal += totalItem;
 
-  await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
-    numeroPedido,
-    fecha: new Date().toISOString(),
-    tiendaNombre,
-    items,
-    subtotal,
-    total: subtotal,
-    whatsapp
+    items.push({
+      nombre: p.name,
+      cantidad: qty,
+      total: totalItem
+    });
+
+    msg += `${p.name} x${qty} = $${totalItem}\n`;
   });
 
-  window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
+  msg += `\nSubtotal: $${subtotal}\n`;
+  msg += `Domicilio: A convenir\n`;
+  msg += `Total: $${subtotal}`;
 
+  await addDoc(
+    collection(db, "tiendas", tiendaId, "pedidos"),
+    {
+      numeroPedido,
+      fecha: new Date().toISOString(),
+      tiendaNombre,
+      items,
+      subtotal,
+      total: subtotal,
+      whatsapp
+    }
+  );
+
+  window.open(
+    `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
+    "_blank"
+  );
 } catch(error) {
 
   console.error(error);
