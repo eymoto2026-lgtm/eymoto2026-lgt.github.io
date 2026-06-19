@@ -276,33 +276,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
 
-/* ================= SOLO 1 PARAM ================= */
+/* ================= TIENDA ================= */
 const params = new URLSearchParams(location.search);
 const tiendaId = params.get("tienda");
 
 if (!tiendaId) {
-  document.body.innerHTML = "<h2>❌ Tienda no especificada</h2>";
-  throw new Error("Sin tienda");
+  document.body.innerHTML = "❌ Falta tienda";
 }
 
 /* ================= VARIABLES ================= */
 let whatsapp = "";
 let products = [];
 let currentProducts = [];
+let cart = [];
 
-/* ================= CARGAR TIENDA ================= */
+/* ================= TIENDA ================= */
 async function cargarTienda() {
 
   const snap = await getDoc(doc(firestore, "tiendas", tiendaId));
 
   if (!snap.exists()) {
-    document.body.innerHTML = "<h2>❌ Tienda no encontrada</h2>";
+    document.body.innerHTML = "❌ Tienda no encontrada";
     return;
   }
 
   const data = snap.data();
 
-  document.getElementById("nombreTienda").textContent = data.nombre || "Tienda";
+  document.getElementById("nombreTienda").textContent = data.nombre || "";
   document.getElementById("logoTienda").src = data.logo || "";
 
   if (data.banner) {
@@ -311,16 +311,10 @@ async function cargarTienda() {
 
   whatsapp = (data.whatsapp || "").replace("+", "");
 
-  /* estado tienda */
   const estado = document.getElementById("estadoTienda");
 
-  if (data.abierta === false) {
-    estado.innerText = "🔴 TIENDA CERRADA";
-    estado.style.background = "#dc3545";
-  } else {
-    estado.innerText = "🟢 TIENDA ABIERTA";
-    estado.style.background = "#28a745";
-  }
+  estado.innerText = data.abierta === false ? "🔴 TIENDA CERRADA" : "🟢 TIENDA ABIERTA";
+  estado.style.background = data.abierta === false ? "#dc3545" : "#28a745";
 }
 
 /* ================= PRODUCTOS ================= */
@@ -350,18 +344,42 @@ async function cargarProductos() {
   renderProducts();
 }
 
-/* ================= RENDER ================= */
+/* ================= RENDER PRODUCTOS (CON BOTÓN) ================= */
 function renderProducts() {
-  const container = document.getElementById("products");
 
-  container.innerHTML = currentProducts.map(p => `
-    <div class="card">
-      <img src="${p.img}">
-      <h3>${p.name}</h3>
-      <p>${p.description || ""}</p>
-      <b>$${p.price}</b>
-    </div>
-  `).join("");
+  document.getElementById("products").innerHTML =
+    currentProducts.map((p, i) => `
+      <div class="card">
+        <img src="${p.img}">
+        <h3>${p.name}</h3>
+        <p>${p.description || ""}</p>
+        <b>$${p.price}</b>
+        <button class="buy" onclick="addToCart(${i})">Comprar</button>
+      </div>
+    `).join("");
+}
+
+/* ================= CARRITO ================= */
+window.addToCart = function(index) {
+
+  const product = currentProducts[index];
+
+  cart.push(product);
+
+  renderCart();
+};
+
+function renderCart() {
+
+  let total = 0;
+
+  document.getElementById("cartItems").innerHTML =
+    cart.map(p => {
+      total += p.price;
+      return `${p.name}<br>`;
+    }).join("");
+
+  document.getElementById("total").innerText = total;
 }
 
 /* ================= WHATSAPP ================= */
@@ -369,14 +387,14 @@ window.sendWhatsApp = function () {
 
   let msg = "🛵 Pedido%0A%0A";
 
-  products.forEach(p => {
+  cart.forEach(p => {
     msg += `${p.name}%0A`;
   });
 
   window.open(`https://wa.me/${whatsapp}?text=${msg}`);
 };
 
-/* ================= INIT (APP REAL FLOW) ================= */
+/* ================= INIT ================= */
 (async function init() {
 
   document.body.style.opacity = "0.5";
