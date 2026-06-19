@@ -310,29 +310,36 @@ cargarTienda();
   const numeroPedido = Date.now();
 
   let subtotal = 0;
-  let items = [];
+let items = [];
 
-let msg = `🛵 PEDIDO ${tiendaNombre}\n\n`;
-msg += `🆔 Pedido #: ${numeroPedido}\n\n`;
+cart.forEach(p=>{
+  const price = Number(p.price);
+  const qty = Number(p.qty);
 
-cart.forEach(p => {
-  const totalItem = Number(p.price) * Number(p.qty);
-  msg += `${p.name} x${p.qty} = $${totalItem}\n`;
+  const totalItem = price * qty;
+  subtotal += totalItem;
+
+  items.push({
+    nombre: p.name,
+    cantidad: qty,
+    total: totalItem
+  });
 });
 
+const total = subtotal; // SOLO NÚMERO
 msg += `\nSubtotal: $${subtotal}\n`;
 msg += `Domicilio: A convenir\n`;
 msg += `Total: $${subtotal}`;
 
   await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
-    numeroPedido,
-    fecha: new Date().toISOString(),
-    tiendaNombre,
-    items,
-    subtotal,
-    total,
-    whatsapp
-  });
+  numeroPedido,
+  fecha: new Date().toISOString(),
+  tiendaNombre,
+  items,
+  subtotal: Number(subtotal),
+  total: Number(subtotal),
+  whatsapp
+});
 
   window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
 }
