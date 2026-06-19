@@ -312,19 +312,17 @@ cargarTienda();
   let subtotal = 0;
   let items = [];
 
-let msg = `PEDIDO ${tiendaNombre}\n\n`;
+let msg = `🛵 PEDIDO ${tiendaNombre}\n\n`;
 msg += `🆔 Pedido #: ${numeroPedido}\n\n`;
 
-cart.forEach(p=>{
-  const totalItem = p.price * p.qty;
-  subtotal += totalItem;
-
+cart.forEach(p => {
+  const totalItem = Number(p.price) * Number(p.qty);
   msg += `${p.name} x${p.qty} = $${totalItem}\n`;
 });
 
-msg += `\nSubtotal: $${subtotal}`;
-msg += `\nDomicilio: A convenir`;
-msg += `\nTotal: $${subtotal}`;
+msg += `\nSubtotal: $${subtotal}\n`;
+msg += `Domicilio: A convenir\n`;
+msg += `Total: $${subtotal}`;
 
   await addDoc(collection(db, "tiendas", tiendaId, "pedidos"), {
     numeroPedido,
@@ -336,7 +334,7 @@ msg += `\nTotal: $${subtotal}`;
     whatsapp
   });
 
-  window.open(`https://wa.me/${whatsapp}?text=${msg}`);
+  window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`);
 }
 window.sendWhatsApp = sendWhatsApp;
 </script>
