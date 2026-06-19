@@ -166,21 +166,50 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
+  // ⚠️ REEMPLAZA ESTA URL por el enlace real de tu GitHub Pages (debe terminar en /)
+  const urlBaseGitHub = "https://tu-usuario.github.io/eymotocomidas/"; 
+
   snap.forEach(doc => {
     const t = doc.data();
+    const idTienda = doc.id; // Identificador único (ej: "burgershop")
+    const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
 
     listaTiendas.innerHTML += `
-  <div class="tienda">
-    <b>${t.nombre}</b><br>
-    ${t.whatsapp}
+      <div class="tienda" style="border: 1px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222;">
+        <b style="font-size: 18px; color: #f5c400;">${t.nombre}</b><br>
+        <span>📞 WhatsApp: ${t.whatsapp}</span><br>
+        
+        <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <a href="${urlCompleta}" target="_blank" style="color: #00bcd4; text-decoration: none; font-weight: bold; word-break: break-all; flex: 1;">
+            🔗 ${urlCompleta}
+          </a>
+          <button onclick="copiarUrl('${urlCompleta}', this)" style="background: #333; color: #fff; width: auto; margin: 0; padding: 8px 12px; font-size: 13px; border-radius: 4px; border: 1px solid #444;">
+            📋 Copiar
+          </button>
+        </div>
 
-    <br><br>
+        <br>
+        <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; border-radius: 4px; margin-top: 5px;">
+          🗑️ Eliminar Tienda
+        </button>
+      </div>`;
+  });
+}
 
-    <button onclick="eliminarTienda('${doc.id}','${t.nombre}')">
-      🗑️ Eliminar Tienda
-    </button>
-
-  </div>`;
+// NUEVA FUNCIÓN: Se encarga de copiar el texto al portapapeles de forma nativa
+window.copiarUrl = function(url, boton) {
+  navigator.clipboard.writeText(url).then(() => {
+    const textoOriginal = boton.innerHTML;
+    boton.innerHTML = "¡Copiado! ✅";
+    boton.style.background = "#28a745"; // Se pone verde temporalmente
+    
+    setTimeout(() => {
+      boton.innerHTML = textoOriginal;
+      boton.style.background = "#333"; // Vuelve a su estado original
+    }, 2000);
+  }).catch(err => {
+    console.error("No se pudo copiar el enlace: ", err);
+    alert("Error al copiar el enlace de manera automática.");
   });
 }
 
