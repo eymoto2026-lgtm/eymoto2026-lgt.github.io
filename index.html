@@ -252,7 +252,7 @@ async function cargarTienda(){
     const data = snap.data();
     window.tiendaNombre = data.nombre || "Tienda";
     document.querySelector("h1").innerText = data.nombre;
-    
+    alert("Firebase dice que abierta es: " + data.abierta + " (Tipo: " + typeof data.abierta + ")");
     if(data.logo && data.logo !== ""){
       document.getElementById("logoTienda").src = data.logo;
     } else {
