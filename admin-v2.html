@@ -66,6 +66,7 @@
       <input id="whatsapp" placeholder="WhatsApp">
       <input id="logoTienda" placeholder="URL del logo">
       <input id="bannerTienda" placeholder="URL del banner (opcional)">
+      <input id="sonidoTiendaNueva" placeholder="URL de sonido personalizado .mp3 (opcional)">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
 
@@ -124,17 +125,18 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Almacena el desvinculador del listener activo para evitar duplicados
+// Variables globales para el monitor
 let pedidosUnsubscribe = null;
+let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); // Tono por defecto
+let cargaInicialCompleta = false; // Evita que suenen los pedidos existentes al abrir la web
 
 // --- DEFINICIÓN DE TODAS LAS FUNCIONES GLOBALES ---
 
-window.escucharPedidosEnTiempoReal = function() {
+window.escucharPedidosEnTiempoReal = async function() {
   const tiendaId = document.getElementById("filtroTiendaPedidos").value;
   const contenedor = document.getElementById("contenedorPedidos");
   if (!contenedor) return;
 
-  // Si había un escuchador previo activo, lo apagamos para no gastar recursos
   if (pedidosUnsubscribe) {
     pedidosUnsubscribe();
   }
@@ -145,15 +147,43 @@ window.escucharPedidosEnTiempoReal = function() {
   }
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
+  
+  // Resetear la bandera para la nueva tienda seleccionada
+  cargaInicialCompleta = false;
 
-  // Escuchador en tiempo real usando onSnapshot (Ordenado por fecha más reciente)
+  // 🔥 1. Cargar el sonido configurado para esta tienda específica
+  try {
+    const tiendaDoc = await db.collection("tiendas").doc(tiendaId).get();
+    if (tiendaDoc.exists && tiendaDoc.data().sonidoUrl) {
+      sonidoAlerta = new Audio(tiendaDoc.data().sonidoUrl);
+    } else {
+      // Sonido de respaldo estándar si no configuraron nada
+      sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav");
+    }
+  } catch (error) {
+    console.error("Error cargando audio de la tienda: ", error);
+  }
+
+  // 2. Escuchar los pedidos en tiempo real
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
+      
+      // 🔥 3. Evaluar si hay alertas de nuevos pedidos ingresando
+      if (cargaInicialCompleta && !snap.metadata.hasPendingWrites) {
+        snap.docChanges().forEach(change => {
+          if (change.type === "added") {
+            // ¡Ha llegado un pedido nuevo de verdad! Ejecutar audio
+            sonidoAlerta.play().catch(e => console.log("Permiso de audio requerido por el navegador: ", e));
+          }
+        });
+      }
+
       contenedor.innerHTML = "";
       
       if (snap.empty) {
         contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">No se han registrado pedidos hoy en esta tienda. 🍔</p>';
+        cargaInicialCompleta = true; // Si está vacío, los siguientes que entren son nuevos
         return;
       }
 
@@ -163,21 +193,18 @@ window.escucharPedidosEnTiempoReal = function() {
         const numPedido = p.numeroPedido || "#----";
         const estado = p.estado || "Pendiente";
         
-        // Formatear Fecha local limpia
         let fechaFormateada = "Verificar Hora";
         if (p.fecha) {
           const d = new Date(p.fecha);
           fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
         }
 
-        // Determinar clases visuales según estado
         let claseBorde = "status-pendiente";
         let claseBadge = "badge-pendiente";
         if (estado === "En Preparación") { claseBorde = "status-preparacion"; claseBadge = "badge-preparacion"; }
         if (estado === "Entregado") { claseBorde = "status-entregado"; claseBadge = "badge-entregado"; }
         if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
 
-        // Mapear los ítems comprados
         let itemsHTML = "";
         if (p.items && p.items.length > 0) {
           p.items.forEach(item => {
@@ -187,7 +214,6 @@ window.escucharPedidosEnTiempoReal = function() {
           itemsHTML = "No se pudieron recuperar los productos.";
         }
 
-        // Datos de entrega seguros
         const cNombre = p.cliente?.nombre || "No registrado";
         const cTelefono = p.cliente?.telefono || "No registrado";
         const cDireccion = p.cliente?.direccion || "No registrado";
@@ -220,13 +246,15 @@ window.escucharPedidosEnTiempoReal = function() {
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
             </div>
 
-            <!-- 🔥 BOTÓN DE ELIMINACIÓN FINAL -->
             <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#333; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; font-weight:normal;">
               🗑️ Eliminar pedido de la pantalla
             </button>
           </div>
         `;
       });
+
+      // Una vez impresos los pedidos existentes, liberamos la bandera de sonido
+      cargaInicialCompleta = true;
     }, error => {
       console.error("Error en Snapshot de pedidos: ", error);
     });
@@ -242,10 +270,8 @@ window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   }
 }
 
-// 🔥 NUEVA FUNCIÓN PARA BORRAR REGISTROS DE LA BASE DE DATOS
 window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
   if (!confirm("¿Estás seguro de que deseas quitar permanentemente este pedido de la pantalla?")) return;
-
   try {
     await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete();
   } catch (e) {
@@ -267,6 +293,7 @@ window.cargarTiendas = async function() {
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
     const whatsappActual = t.whatsapp || "";
     const nombreActual = t.nombre || "";
+    const sonidoActual = t.sonidoUrl || "";
 
     listaTiendas.innerHTML += `
       <div class="tienda" style="border: 1px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222;">
@@ -277,8 +304,11 @@ window.cargarTiendas = async function() {
         <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
         <input id="ws-${idTienda}" value="${whatsappActual}" placeholder="Ej: 573001234567" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
         
+        <label style="font-size: 13px; color: #aaa;">🎵 Enlace del Sonido (.mp3):</label>
+        <input id="snd-${idTienda}" value="${sonidoActual}" placeholder="URL del audio de alerta para comandas" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+
         <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; width: 100%; margin: 5px 0 15px 0; padding: 10px; font-size: 14px; border-radius: 4px;">
-          💾 Guardar Cambios (Nombre y WhatsApp)
+          💾 Guardar Cambios (Nombre, WhatsApp y Sonido)
         </button>
 
         <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
@@ -320,6 +350,7 @@ window.cargarSelectTiendas = async function() {
 window.actualizarTiendaDatos = async function(tiendaId) {
   const nuevoNombre = document.getElementById(`nom-${tiendaId}`).value.trim();
   const nuevoCelu = document.getElementById(`ws-${tiendaId}`).value.trim();
+  const nuevoSonido = document.getElementById(`snd-${tiendaId}`).value.trim();
 
   if(!nuevoNombre || !nuevoCelu) {
     alert("Por favor, llena ambos campos (Nombre y WhatsApp).");
@@ -329,11 +360,16 @@ window.actualizarTiendaDatos = async function(tiendaId) {
   try {
     await db.collection("tiendas").doc(tiendaId).update({
       nombre: nuevoNombre,
-      whatsapp: nuevoCelu
+      whatsapp: nuevoCelu,
+      sonidoUrl: nuevoSonido
     });
-    alert("✅ ¡Datos de la tienda actualizados con éxito!");
+    alert("✅ ¡Datos e historial de sonido actualizados con éxito!");
     await window.cargarTiendas(); 
     await window.cargarSelectTiendas(); 
+    // Si la tienda modificada es la que se está monitoreando, recargar la configuración del audio
+    if(document.getElementById("filtroTiendaPedidos").value === tiendaId){
+      window.escucharPedidosEnTiempoReal();
+    }
   } catch (e) {
     alert("❌ Error al actualizar: " + e.message);
   }
@@ -360,6 +396,7 @@ window.crearTienda = async function() {
   const whatsappVal = document.getElementById("whatsapp").value;
   const logoVal = document.getElementById("logoTienda").value;
   const bannerVal = document.getElementById("bannerTienda").value || "";
+  const sonidoVal = document.getElementById("sonidoTiendaNueva").value || "";
   const id = nombreVal.toLowerCase().replace(/\s/g, "");
 
   await db.collection("tiendas").doc(id).set({
@@ -367,10 +404,18 @@ window.crearTienda = async function() {
     whatsapp: whatsappVal,
     logo: logoVal,
     banner: bannerVal,
+    sonidoUrl: sonidoVal,
     activa: true,
     abierta: true,
     createdAt: Date.now()
   });
+
+  // Limpiar campos
+  document.getElementById("nombreTienda").value = "";
+  document.getElementById("whatsapp").value = "";
+  document.getElementById("logoTienda").value = "";
+  document.getElementById("bannerTienda").value = "";
+  document.getElementById("sonidoTiendaNueva").value = "";
 
   await window.cargarTiendas();
   await window.cargarSelectTiendas();
