@@ -96,7 +96,68 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- FUNCIONES GLOBALES PARA BOTONES HTML ---
+// --- DEFINICIÓN DE TODAS LAS FUNCIONES GLOBALES ---
+
+window.cargarTiendas = async function() {
+  const listaTiendas = document.getElementById("listaTiendas");
+  if (!listaTiendas) return;
+  listaTiendas.innerHTML = "";
+  
+  const snap = await db.collection("tiendas").get();
+  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
+
+  snap.forEach(doc => {
+    const t = doc.data();
+    const idTienda = doc.id; 
+    const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
+    const whatsappActual = t.whatsapp || "";
+    const nombreActual = t.nombre || "";
+
+    listaTiendas.innerHTML += `
+      <div class="tienda" style="border: 1px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222;">
+        
+        <label style="font-size: 13px; color: #f5c400; font-weight: bold;">🏪 Nombre de la Tienda:</label>
+        <input id="nom-${idTienda}" value="${nombreActual}" placeholder="Nombre del restaurante" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+
+        <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
+        <input id="ws-${idTienda}" value="${whatsappActual}" placeholder="Ej: 573001234567" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+        
+        <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; width: 100%; margin: 5px 0 15px 0; padding: 10px; font-size: 14px; border-radius: 4px;">
+          💾 Guardar Cambios (Nombre y WhatsApp)
+        </button>
+
+        <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <a href="${urlCompleta}" target="_blank" style="color: #00bcd4; text-decoration: none; font-weight: bold; word-break: break-all; flex: 1;">
+            🔗 ${urlCompleta}
+          </a>
+          <button onclick="copiarUrl('${urlCompleta}', this)" style="background: #333; color: #fff; width: auto; margin: 0; padding: 8px 12px; font-size: 13px; border-radius: 4px; border: 1px solid #444;">
+            📋 Copiar
+          </button>
+        </div>
+
+        <br>
+        <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; border-radius: 4px; margin-top: 5px;">
+          🗑️ Eliminar Tienda
+        </button>
+      </div>`;
+  });
+}
+
+window.cargarSelectTiendas = async function() {
+  const tiendaProducto = document.getElementById("tiendaProducto");
+  const tiendaEstado = document.getElementById("tiendaEstado");
+  if(!tiendaProducto || !tiendaEstado) return;
+
+  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
+  tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
+
+  const snap = await db.collection("tiendas").get();
+  snap.forEach(doc => {
+    const t = doc.data();
+    tiendaProducto.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    tiendaEstado.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+  });
+}
 
 window.actualizarTiendaDatos = async function(tiendaId) {
   const nuevoNombre = document.getElementById(`nom-${tiendaId}`).value.trim();
@@ -113,8 +174,8 @@ window.actualizarTiendaDatos = async function(tiendaId) {
       whatsapp: nuevoCelu
     });
     alert("✅ ¡Datos de la tienda actualizados con éxito!");
-    cargarTiendas(); 
-    cargarSelectTiendas(); // Actualiza también los menús desplegables de abajo
+    await window.cargarTiendas(); 
+    await window.cargarSelectTiendas(); 
   } catch (e) {
     alert("❌ Error al actualizar: " + e.message);
   }
@@ -131,4 +192,16 @@ window.copiarUrl = function(url, boton) {
       boton.style.background = "#333"; 
     }, 2000);
   }).catch(err => {
-    console.error("No se pudo
+    console.error("No se pudo copiar el enlace: ", err);
+    alert("Error al copiar el enlace.");
+  });
+}
+
+window.crearTienda = async function() {
+  const nombreVal = document.getElementById("nombreTienda").value;
+  const whatsappVal = document.getElementById("whatsapp").value;
+  const logoVal = document.getElementById("logoTienda").value;
+  const bannerVal = document.getElementById("bannerTienda").value || "";
+  const id = nombreVal.toLowerCase().replace(/\s/g, "");
+
+  await db.collection("tiendas").doc(id).
