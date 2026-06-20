@@ -149,7 +149,7 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
-  // URL corregida con la ruta exacta de tu servidor actual
+  // RUTA CORREGIDA BASADA EN TU CAPTURA ACTUAL
   const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
 
   snap.forEach(doc => {
@@ -179,7 +179,7 @@ async function cargarTiendas() {
   });
 }
 
-// FUNCIÓN GLOBAL: Copia los links al portapapeles dinámicamente
+// FUNCIÓN GLOBAL
 window.copiarUrl = function(url, boton) {
   navigator.clipboard.writeText(url).then(() => {
     const textoOriginal = boton.innerHTML;
@@ -218,7 +218,6 @@ async function cargarProductos() {
   const tiendaId = document.getElementById("tiendaProducto").value;
 
   if (!tiendaId) {
-    console.log("No hay tienda seleccionada");
     return;
   }
 
@@ -271,7 +270,6 @@ async function cambiarDisponibilidad(productoId, disponibleActual) {
     cargarProductos();
   } catch (e) {
     alert("ERROR: " + e.message);
-    console.error(e);
   }
 }
 
@@ -281,15 +279,12 @@ window.eliminarProducto = async function(productoId, nombre) {
   try {
     const tiendaId = document.getElementById("tiendaProducto").value;
     await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).delete();
-    alert("Producto eliminado");
     cargarProductos();
   } catch (e) {
-    console.error(e);
     alert("ERROR: " + e.message);
   }
 }
 
-// LOGOUT
 function logout() {
   auth.signOut();
 }
@@ -317,7 +312,6 @@ async function eliminarTienda(tiendaId, nombre) {
     document.getElementById("listaProductos").innerHTML = "";
   } catch (e) {
     alert("Error: " + e.message);
-    console.error(e);
   }
 }
 
