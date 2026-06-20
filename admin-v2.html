@@ -116,11 +116,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
+// 🔥 ACTUALIZADO: Apuntando correctamente al ID de proyecto "tiendas-para-eymoto"
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
+  authDomain: "tiendas-para-eymoto.firebaseapp.com",
+  projectId: "tiendas-para-eymoto",
+  storageBucket: "tiendas-para-eymoto.appspot.com",
   messagingSenderId: "670474251560",
   appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
@@ -128,7 +129,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage(); // Instancia de almacenamiento
+const storage = firebase.storage(); 
 
 let pedidosUnsubscribe = null;
 let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); 
@@ -294,7 +295,6 @@ window.cargarTiendas = async function() {
   });
 }
 
-// 🔥 FUNCIÓN QUE RECIBE EL ARCHIVO DE TU ESCRITORIO Y LO SUBE A FIREBASE
 window.subirAudioEscritorio = function(tiendaId) {
   const fileInput = document.getElementById(`file-${tiendaId}`);
   const statusTxt = document.getElementById(`status-audio-${tiendaId}`);
@@ -306,15 +306,11 @@ window.subirAudioEscritorio = function(tiendaId) {
   labelTxt.innerText = "⏳ Subiendo archivo...";
   statusTxt.style.color = "#f5c400";
 
-  // Crear la ruta del archivo dentro de Firebase Storage (sonidos/id_de_tienda.mp3)
   const storageRef = storage.ref(`sonidos/${tiendaId}_${Date.now()}.mp3`);
   
-  // Iniciar la subida
   storageRef.put(file).then(snapshot => {
-    // Al terminar de subirse, solicitamos el enlace URL público
     return snapshot.ref.getDownloadURL();
   }).then(url => {
-    // Colocamos el link en el input oculto para que se guarde al darle al botón verde
     document.getElementById(`snd-${tiendaId}`).value = url;
     labelTxt.innerText = "📁 Cambiar archivo .mp3";
     statusTxt.innerText = "✅ ¡Sonido cargado listo para guardar!";
@@ -379,7 +375,7 @@ window.crearTienda = async function() {
     whatsapp: whatsappVal,
     logo: logoVal,
     banner: bannerVal,
-    sonidoUrl: "", // Inicialmente vacío (predeterminado)
+    sonidoUrl: "", 
     activa: true,
     abierta: true,
     createdAt: Date.now()
