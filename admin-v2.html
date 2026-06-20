@@ -12,7 +12,7 @@
     input, button, select { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
     .hidden { display:none; }
-    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; }
+    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; background: #222; }
     
     /* ESTILOS DE LA FASE 4 (PANEL DE PEDIDOS) */
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222; }
@@ -29,6 +29,10 @@
 
     .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 10px; }
     .btn-status { font-size: 12px; padding: 6px; }
+    
+    .file-input-wrapper { background: #333; padding: 10px; border-radius: 5px; border: 1px dashed #555; text-align: center; margin: 8px 0; }
+    .file-input-wrapper input { display: none; }
+    .file-input-wrapper label { cursor: pointer; color: #f5c400; font-size: 14px; font-weight: bold; display: block; }
   </style>
 </head>
 
@@ -66,7 +70,6 @@
       <input id="whatsapp" placeholder="WhatsApp">
       <input id="logoTienda" placeholder="URL del logo">
       <input id="bannerTienda" placeholder="URL del banner (opcional)">
-      <input id="sonidoTiendaNueva" placeholder="URL de sonido personalizado .mp3 (opcional)">
       <button onclick="crearTienda()">Crear Tienda</button>
     </div>
 
@@ -110,6 +113,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -124,22 +128,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage(); // Instancia de almacenamiento
 
-// Variables globales para el monitor
 let pedidosUnsubscribe = null;
-let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); // Tono por defecto
-let cargaInicialCompleta = false; // Evita que suenen los pedidos existentes al abrir la web
+let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); 
+let cargaInicialCompleta = false; 
 
-// --- DEFINICIÓN DE TODAS LAS FUNCIONES GLOBALES ---
+// --- MONITOREO EN TIEMPO REAL ---
 
 window.escucharPedidosEnTiempoReal = async function() {
   const tiendaId = document.getElementById("filtroTiendaPedidos").value;
   const contenedor = document.getElementById("contenedorPedidos");
   if (!contenedor) return;
 
-  if (pedidosUnsubscribe) {
-    pedidosUnsubscribe();
-  }
+  if (pedidosUnsubscribe) pedidosUnsubscribe();
 
   if (!tiendaId) {
     contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>';
@@ -147,34 +149,27 @@ window.escucharPedidosEnTiempoReal = async function() {
   }
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
-  
-  // Resetear la bandera para la nueva tienda seleccionada
   cargaInicialCompleta = false;
 
-  // 🔥 1. Cargar el sonido configurado para esta tienda específica
   try {
     const tiendaDoc = await db.collection("tiendas").doc(tiendaId).get();
     if (tiendaDoc.exists && tiendaDoc.data().sonidoUrl) {
       sonidoAlerta = new Audio(tiendaDoc.data().sonidoUrl);
     } else {
-      // Sonido de respaldo estándar si no configuraron nada
       sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav");
     }
   } catch (error) {
-    console.error("Error cargando audio de la tienda: ", error);
+    console.error("Error cargando audio: ", error);
   }
 
-  // 2. Escuchar los pedidos en tiempo real
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
       
-      // 🔥 3. Evaluar si hay alertas de nuevos pedidos ingresando
       if (cargaInicialCompleta && !snap.metadata.hasPendingWrites) {
         snap.docChanges().forEach(change => {
           if (change.type === "added") {
-            // ¡Ha llegado un pedido nuevo de verdad! Ejecutar audio
-            sonidoAlerta.play().catch(e => console.log("Permiso de audio requerido por el navegador: ", e));
+            sonidoAlerta.play().catch(e => console.log("Interacción requerida: ", e));
           }
         });
       }
@@ -182,8 +177,8 @@ window.escucharPedidosEnTiempoReal = async function() {
       contenedor.innerHTML = "";
       
       if (snap.empty) {
-        contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">No se han registrado pedidos hoy en esta tienda. 🍔</p>';
-        cargaInicialCompleta = true; // Si está vacío, los siguientes que entren son nuevos
+        contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">No se han registrado pedidos hoy. 🍔</p>';
+        cargaInicialCompleta = true;
         return;
       }
 
@@ -210,15 +205,7 @@ window.escucharPedidosEnTiempoReal = async function() {
           p.items.forEach(item => {
             itemsHTML += `• ${item.nombre} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
           });
-        } else {
-          itemsHTML = "No se pudieron recuperar los productos.";
         }
-
-        const cNombre = p.cliente?.nombre || "No registrado";
-        const cTelefono = p.cliente?.telefono || "No registrado";
-        const cDireccion = p.cliente?.direccion || "No registrado";
-        const cBarrio = p.cliente?.barrio || "No registrado";
-        const cObservaciones = p.cliente?.observaciones || "Ninguna";
 
         contenedor.innerHTML += `
           <div class="pedido-card ${claseBorde}">
@@ -226,17 +213,14 @@ window.escucharPedidosEnTiempoReal = async function() {
               <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Pedido ${numPedido}</span>
               <span class="badge ${claseBadge}">${estado.toUpperCase()}</span>
             </div>
-            
             <p style="font-size:12px; color:#aaa; margin:2px 0;">🕒 <b>Fecha:</b> ${fechaFormateada}</p>
-            <p style="margin:5px 0; font-size:14px;">👤 <b>Cliente:</b> ${cNombre} (${cTelefono})</p>
-            <p style="margin:5px 0; font-size:14px;">📍 <b>Dirección:</b> ${cDireccion} - <b>Barrio:</b> ${cBarrio}</p>
-            <p style="margin:5px 0; font-size:13px; color:#ffc107;">📝 <b>Notas:</b> ${cObservaciones}</p>
+            <p style="margin:5px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'No registrado'}</p>
+            <p style="margin:5px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'No registrado'}</p>
             
             <div style="background:#111; padding:10px; border-radius:5px; margin:10px 0; font-size:13px;">
-              <span style="color:#aaa; display:block; margin-bottom:4px; font-weight:bold;">🧾 COMANDA:</span>
               ${itemsHTML}
               <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">TOTAL DEL TICKET: $${(p.total || 0).toLocaleString('es-CO')}</span>
+              <span style="font-size:15px; color:#28a745; font-weight:bold;">TOTAL: $${(p.total || 0).toLocaleString('es-CO')}</span>
             </div>
 
             <div class="grid-acciones">
@@ -245,39 +229,26 @@ window.escucharPedidosEnTiempoReal = async function() {
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
             </div>
-
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#333; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; font-weight:normal;">
-              🗑️ Eliminar pedido de la pantalla
-            </button>
+            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#333; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px;">🗑️ Quitar de pantalla</button>
           </div>
         `;
       });
-
-      // Una vez impresos los pedidos existentes, liberamos la bandera de sonido
       cargaInicialCompleta = true;
-    }, error => {
-      console.error("Error en Snapshot de pedidos: ", error);
     });
 }
 
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({
-      estado: nuevoEstado
-    });
-  } catch (e) {
-    alert("❌ Error al cambiar el estado: " + e.message);
-  }
+    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
+  } catch (e) { alert("❌ Error: " + e.message); }
 }
 
 window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
-  if (!confirm("¿Estás seguro de que deseas quitar permanentemente este pedido de la pantalla?")) return;
-  try {
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete();
-  } catch (e) {
-    alert("❌ Error al eliminar el pedido: " + e.message);
-  }
+  if (!confirm("¿Eliminar de la pantalla?")) return;
+  try { await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); } catch (e) { alert("❌ Error: " + e.message); }
 }
+
+// --- GESTIÓN DE TIENDAS ---
 
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
@@ -291,59 +262,69 @@ window.cargarTiendas = async function() {
     const t = doc.data();
     const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
-    const whatsappActual = t.whatsapp || "";
-    const nombreActual = t.nombre || "";
     const sonidoActual = t.sonidoUrl || "";
 
     listaTiendas.innerHTML += `
-      <div class="tienda" style="border: 1px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222;">
-        
+      <div class="tienda">
         <label style="font-size: 13px; color: #f5c400; font-weight: bold;">🏪 Nombre de la Tienda:</label>
-        <input id="nom-${idTienda}" value="${nombreActual}" placeholder="Nombre del restaurante" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+        <input id="nom-${idTienda}" value="${t.nombre || ''}">
 
         <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
-        <input id="ws-${idTienda}" value="${whatsappActual}" placeholder="Ej: 573001234567" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+        <input id="ws-${idTienda}" value="${t.whatsapp || ''}">
         
-        <label style="font-size: 13px; color: #aaa;">🎵 Enlace del Sonido (.mp3):</label>
-        <input id="snd-${idTienda}" value="${sonidoActual}" placeholder="URL del audio de alerta para comandas" style="margin-top: 5px; margin-bottom: 12px; padding: 8px; background:#333; color:#fff; border:1px solid #444; border-radius:4px; width:100%; box-sizing:border-box;">
+        <label style="font-size: 13px; color: #aaa; display:block; margin-top:5px;">🎵 Sonido de Alerta Personalizado:</label>
+        <div class="file-input-wrapper">
+          <label id="lbl-file-${idTienda}" for="file-${idTienda}">📁 Seleccionar archivo .mp3 desde PC</label>
+          <input type="file" id="file-${idTienda}" accept="audio/mp3, audio/mpeg" onchange="subirAudioEscritorio('${idTienda}')">
+        </div>
+        <p id="status-audio-${idTienda}" style="font-size:12px; margin:2px 0; color:#aaa;">
+          ${sonidoActual ? "✅ Sonido activo: " + sonidoActual.substring(0, 50) + "..." : "⚠️ Usando tono por defecto"}
+        </p>
+        <input type="hidden" id="snd-${idTienda}" value="${sonidoActual}">
 
-        <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; width: 100%; margin: 5px 0 15px 0; padding: 10px; font-size: 14px; border-radius: 4px;">
+        <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; margin-top:10px;">
           💾 Guardar Cambios (Nombre, WhatsApp y Sonido)
         </button>
 
-        <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <a href="${urlCompleta}" target="_blank" style="color: #00bcd4; text-decoration: none; font-weight: bold; word-break: break-all; flex: 1;">
-            🔗 ${urlCompleta}
-          </a>
-          <button onclick="copiarUrl('${urlCompleta}', this)" style="background: #333; color: #fff; width: auto; margin: 0; padding: 8px 12px; font-size: 13px; border-radius: 4px; border: 1px solid #444;">
-            📋 Copiar
-          </button>
+        <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
+          <a href="${urlCompleta}" target="_blank" style="color: #00bcd4; font-size:13px; text-decoration: none; word-break: break-all;">🔗 Enlace Cliente</a>
         </div>
-
-        <br>
-        <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; border-radius: 4px; margin-top: 5px;">
-          🗑️ Eliminar Tienda
-        </button>
+        <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; margin-top: 10px;">🗑️ Eliminar Tienda</button>
       </div>`;
   });
 }
 
-window.cargarSelectTiendas = async function() {
-  const tiendaProducto = document.getElementById("tiendaProducto");
-  const tiendaEstado = document.getElementById("tiendaEstado");
-  const filtroTiendaPedidos = document.getElementById("filtroTiendaPedidos");
-  if(!tiendaProducto || !tiendaEstado || !filtroTiendaPedidos) return;
+// 🔥 FUNCIÓN QUE RECIBE EL ARCHIVO DE TU ESCRITORIO Y LO SUBE A FIREBASE
+window.subirAudioEscritorio = function(tiendaId) {
+  const fileInput = document.getElementById(`file-${tiendaId}`);
+  const statusTxt = document.getElementById(`status-audio-${tiendaId}`);
+  const labelTxt = document.getElementById(`lbl-file-${tiendaId}`);
+  
+  if (!fileInput.files || fileInput.files.length === 0) return;
+  
+  const file = fileInput.files[0];
+  labelTxt.innerText = "⏳ Subiendo archivo...";
+  statusTxt.style.color = "#f5c400";
 
-  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
-  tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
-  filtroTiendaPedidos.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
-
-  const snap = await db.collection("tiendas").get();
-  snap.forEach(doc => {
-    const t = doc.data();
-    tiendaProducto.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
-    tiendaEstado.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
-    filtroTiendaPedidos.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+  // Crear la ruta del archivo dentro de Firebase Storage (sonidos/id_de_tienda.mp3)
+  const storageRef = storage.ref(`sonidos/${tiendaId}_${Date.now()}.mp3`);
+  
+  // Iniciar la subida
+  storageRef.put(file).then(snapshot => {
+    // Al terminar de subirse, solicitamos el enlace URL público
+    return snapshot.ref.getDownloadURL();
+  }).then(url => {
+    // Colocamos el link en el input oculto para que se guarde al darle al botón verde
+    document.getElementById(`snd-${tiendaId}`).value = url;
+    labelTxt.innerText = "📁 Cambiar archivo .mp3";
+    statusTxt.innerText = "✅ ¡Sonido cargado listo para guardar!";
+    statusTxt.style.color = "#28a745";
+    alert("¡Archivo subido con éxito! Recuerda hacer clic en 'Guardar Cambios' para aplicar.");
+  }).catch(error => {
+    console.error("Error al subir:", error);
+    labelTxt.innerText = "❌ Error en subida";
+    statusTxt.innerText = "Error: " + error.message;
+    statusTxt.style.color = "#ff3333";
   });
 }
 
@@ -352,10 +333,7 @@ window.actualizarTiendaDatos = async function(tiendaId) {
   const nuevoCelu = document.getElementById(`ws-${tiendaId}`).value.trim();
   const nuevoSonido = document.getElementById(`snd-${tiendaId}`).value.trim();
 
-  if(!nuevoNombre || !nuevoCelu) {
-    alert("Por favor, llena ambos campos (Nombre y WhatsApp).");
-    return;
-  }
+  if(!nuevoNombre || !nuevoCelu) { alert("Llena Nombre y WhatsApp."); return; }
 
   try {
     await db.collection("tiendas").doc(tiendaId).update({
@@ -366,28 +344,26 @@ window.actualizarTiendaDatos = async function(tiendaId) {
     alert("✅ ¡Datos e historial de sonido actualizados con éxito!");
     await window.cargarTiendas(); 
     await window.cargarSelectTiendas(); 
-    // Si la tienda modificada es la que se está monitoreando, recargar la configuración del audio
-    if(document.getElementById("filtroTiendaPedidos").value === tiendaId){
-      window.escucharPedidosEnTiempoReal();
-    }
-  } catch (e) {
-    alert("❌ Error al actualizar: " + e.message);
-  }
+    if(document.getElementById("filtroTiendaPedidos").value === tiendaId) window.escucharPedidosEnTiempoReal();
+  } catch (e) { alert("❌ Error: " + e.message); }
 }
 
-window.copiarUrl = function(url, boton) {
-  navigator.clipboard.writeText(url).then(() => {
-    const textoOriginal = boton.innerHTML;
-    boton.innerHTML = "¡Copiado! ✅";
-    boton.style.background = "#28a745"; 
-    
-    setTimeout(() => {
-      boton.innerHTML = textoOriginal;
-      boton.style.background = "#333"; 
-    }, 2000);
-  }).catch(err => {
-    console.error("No se pudo copiar el enlace: ", err);
-    alert("Error al copiar el enlace.");
+window.cargarSelectTiendas = async function() {
+  const tp = document.getElementById("tiendaProducto");
+  const te = document.getElementById("tiendaEstado");
+  const ftp = document.getElementById("filtroTiendaPedidos");
+  if(!tp || !te || !ftp) return;
+
+  tp.innerHTML = '<option value="">Seleccionar tienda</option>';
+  te.innerHTML = '<option value="">Seleccionar tienda</option>';
+  ftp.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
+
+  const snap = await db.collection("tiendas").get();
+  snap.forEach(doc => {
+    const t = doc.data();
+    tp.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    te.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    ftp.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
   });
 }
 
@@ -396,7 +372,6 @@ window.crearTienda = async function() {
   const whatsappVal = document.getElementById("whatsapp").value;
   const logoVal = document.getElementById("logoTienda").value;
   const bannerVal = document.getElementById("bannerTienda").value || "";
-  const sonidoVal = document.getElementById("sonidoTiendaNueva").value || "";
   const id = nombreVal.toLowerCase().replace(/\s/g, "");
 
   await db.collection("tiendas").doc(id).set({
@@ -404,18 +379,16 @@ window.crearTienda = async function() {
     whatsapp: whatsappVal,
     logo: logoVal,
     banner: bannerVal,
-    sonidoUrl: sonidoVal,
+    sonidoUrl: "", // Inicialmente vacío (predeterminado)
     activa: true,
     abierta: true,
     createdAt: Date.now()
   });
 
-  // Limpiar campos
   document.getElementById("nombreTienda").value = "";
   document.getElementById("whatsapp").value = "";
   document.getElementById("logoTienda").value = "";
   document.getElementById("bannerTienda").value = "";
-  document.getElementById("sonidoTiendaNueva").value = "";
 
   await window.cargarTiendas();
   await window.cargarSelectTiendas();
@@ -423,9 +396,7 @@ window.crearTienda = async function() {
 
 window.cargarProductos = async function() {
   const cont = document.getElementById("listaProductos");
-  if (!cont) return;
-  cont.innerHTML = "";
-
+  if (!cont) return; cont.innerHTML = "";
   const tiendaId = document.getElementById("tiendaProducto").value;
   if (!tiendaId) return;
 
@@ -434,25 +405,15 @@ window.cargarProductos = async function() {
     const p = doc.data();
     cont.innerHTML += `
       <div class="tienda">
-        <b>${p.name}</b><br>
-        Precio: $${p.precio}<br>
-        Categoría: ${p.categoria}<br>
-        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
-        <br><br>
-        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
-          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
-        </button>
-        <br><br>
-        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
-          🗑️ Eliminar
-        </button>
+        <b>${p.name}</b><br>Precio: $${p.precio}<br>Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}<br><br>
+        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">${p.disponible ? "❌ Agotar" : "✅ Activar"}</button>
+        <button onclick="eliminarProducto('${doc.id}','${p.name}')">🗑️ Eliminar</button>
       </div>`;
   });
 }
 
 window.crearProducto = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
-
   await db.collection("tiendas").doc(tiendaId).collection("productos").add({
     name: document.getElementById("nuevoNombre").value,
     precio: Number(document.getElementById("nuevoPrecio").value),
@@ -461,109 +422,73 @@ window.crearProducto = async function() {
     img: document.getElementById("nuevoImagen").value,
     disponible: true
   });
-
   await window.cargarProductos();
 }
 
 window.cambiarDisponibilidad = async function(productoId, disponibleActual) {
   const tiendaId = document.getElementById("tiendaProducto").value;
-
   try {
-    const ref = db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId);
-    await ref.set({ disponible: !disponibleActual }, { merge: true });
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).set({ disponible: !disponibleActual }, { merge: true });
     await window.cargarProductos();
-  } catch (e) {
-    alert("ERROR: " + e.message);
-  }
+  } catch (e) { alert("ERROR: " + e.message); }
 }
 
 window.eliminarProducto = async function(productoId, nombre) {
   if (!confirm("¿Eliminar " + nombre + "?")) return;
-
   try {
     const tiendaId = document.getElementById("tiendaProducto").value;
     await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).delete();
     await window.cargarProductos();
-  } catch (e) {
-    alert("ERROR: " + e.message);
-  }
+  } catch (e) { alert("ERROR: " + e.message); }
 }
 
 window.eliminarTienda = async function(tiendaId, nombre) {
-  if (tiendaId === "eymotocomidas") {
-    alert("No puedes eliminar la tienda principal");
-    return;
-  }
-
-  const confirmar = confirm(`¿Eliminar la tienda ${nombre}?`);
-  if (!confirmar) return;
-
+  if (tiendaId === "eymotocomidas") { alert("No puedes eliminar la tienda principal"); return; }
+  if (!confirm(`¿Eliminar la tienda ${nombre}?`)) return;
   try {
     const productos = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    for (const docu of productos.docs) {
-      await docu.ref.delete();
-    }
-
+    for (const docu of productos.docs) { await docu.ref.delete(); }
     await db.collection("tiendas").doc(tiendaId).delete();
     alert("Tienda eliminada");
-
-    await window.cargarTiendas();
-    await window.cargarSelectTiendas();
+    await window.cargarTiendas(); await window.cargarSelectTiendas();
     document.getElementById("listaProductos").innerHTML = "";
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
+  } catch (e) { alert("Error: " + e.message); }
 }
 
 window.toggleTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
-  if (!tiendaId) {
-    alert("Seleccione una tienda");
-    return;
-  }
-
+  if (!tiendaId) return;
   const ref = db.collection("tiendas").doc(tiendaId);
   const snap = await ref.get();
   const actual = snap.data().abierta;
-
   await ref.update({ abierta: !actual });
   await window.cargarEstadoTienda();
-
-  alert(!actual ? "Tienda ABIERTA" : "Tienda CERRADA");
 }
 
-window.logout = function() {
-  auth.signOut();
-}
+window.logout = function() { auth.signOut(); }
 
 window.cargarEstadoTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
   if (!tiendaId) return;
-
   const docSnap = await db.collection("tiendas").doc(tiendaId).get();
-  if (!docSnap.exists) return;
-
-  const data = docSnap.data();
-  document.getElementById("estadoActual").innerHTML = data.abierta ? "🟢 Estado: ABIERTA" : "🔴 Estado: CERRADA";
+  if (docSnap.exists) {
+    document.getElementById("estadoActual").innerHTML = docSnap.data().abierta ? "🟢 Estado: ABIERTA" : "🔴 Estado: CERRADA";
+  }
 }
 
-// --- ESCUCHADORES DE FLUJO Y AUTENTICACIÓN ---
+// --- FLUJO DE AUTENTICACIÓN ---
 
 auth.onAuthStateChanged(async user => {
   if (user) {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("panel").style.display = "block";
-
     await window.cargarTiendas();
     await window.cargarSelectTiendas();
-
+    
     const select = document.getElementById("tiendaProducto");
-    if (select && select.options.length > 1) {
-      select.selectedIndex = 1;
-    }
+    if (select && select.options.length > 1) { select.selectedIndex = 1; }
     await window.cargarProductos();
     
-    // Auto-seleccionar la primera tienda también en el monitor de pedidos
     const selectPedidos = document.getElementById("filtroTiendaPedidos");
     if(selectPedidos && selectPedidos.options.length > 1) {
       selectPedidos.selectedIndex = 1;
@@ -582,27 +507,10 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => {
       const emailVal = document.getElementById("email").value.trim();
       const passwordVal = document.getElementById("password").value.trim();
-
-      if (!emailVal || !passwordVal) {
-        alert("Por favor, ingresa correo y contraseña.");
-        return;
-      }
-
-      console.log("Intentando conectar con Firebase para:", emailVal);
-      
+      if (!emailVal || !passwordVal) { alert("Ingresa correo y contraseña."); return; }
       auth.signInWithEmailAndPassword(emailVal, passwordVal)
-        .then((userCredential) => {
-          console.log("¡Login exitoso!", userCredential.user);
-          alert("🔑 Conexión exitosa. Cargando panel...");
-        })
-        .catch(e => {
-          console.error("Error de Firebase:", e);
-          document.getElementById("loginMsg").innerText = "Error: " + e.message;
-          alert("❌ Error al iniciar sesión: " + e.message);
-        });
+        .catch(e => { alert("❌ Error: " + e.message); });
     });
-  } else {
-    console.error("No se encontró el botón btnIniciarSesion en el HTML");
   }
 });
 </script>
