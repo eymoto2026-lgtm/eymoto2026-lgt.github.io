@@ -9,7 +9,7 @@
     header { background:#000; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
     .container { padding:20px; }
     .card { background:#1c1c1c; padding:15px; margin-bottom:10px; border-radius:10px; }
-    input, button { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; }
+    input, button, select { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
     .hidden { display:none; }
     .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; }
@@ -98,20 +98,23 @@ const db = firebase.firestore();
 
 // --- FUNCIONES GLOBALES PARA BOTONES HTML ---
 
-window.actualizarWhatsapp = async function(tiendaId) {
+window.actualizarTiendaDatos = async function(tiendaId) {
+  const nuevoNombre = document.getElementById(`nom-${tiendaId}`).value.trim();
   const nuevoCelu = document.getElementById(`ws-${tiendaId}`).value.trim();
 
-  if(!nuevoCelu) {
-    alert("Por favor, ingresa un número de WhatsApp válido.");
+  if(!nuevoNombre || !nuevoCelu) {
+    alert("Por favor, llena ambos campos (Nombre y WhatsApp).");
     return;
   }
 
   try {
     await db.collection("tiendas").doc(tiendaId).update({
+      nombre: nuevoNombre,
       whatsapp: nuevoCelu
     });
-    alert("✅ ¡WhatsApp actualizado con éxito!");
+    alert("✅ ¡Datos de la tienda actualizados con éxito!");
     cargarTiendas(); 
+    cargarSelectTiendas(); // Actualiza también los menús desplegables de abajo
   } catch (e) {
     alert("❌ Error al actualizar: " + e.message);
   }
@@ -128,13 +131,4 @@ window.copiarUrl = function(url, boton) {
       boton.style.background = "#333"; 
     }, 2000);
   }).catch(err => {
-    console.error("No se pudo copiar el enlace: ", err);
-    alert("Error al copiar el enlace.");
-  });
-}
-
-window.crearTienda = async function() {
-  const nombreVal = document.getElementById("nombreTienda").value;
-  const whatsappVal = document.getElementById("whatsapp").value;
-  const logoVal = document.getElementById("logoTienda").value;
-  const bannerVal
+    console.error("No se pudo
