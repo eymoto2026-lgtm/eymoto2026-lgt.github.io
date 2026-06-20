@@ -22,6 +22,7 @@
 
 <div class="container">
 
+  <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
     <input type="email" id="email">
@@ -30,6 +31,7 @@
     <p id="loginMsg"></p>
   </div>
 
+  <!-- PANEL -->
   <div id="panel" class="hidden">
 
     <div class="card">
@@ -78,6 +80,7 @@
   </div>
 </div>
 
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -146,8 +149,8 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
-  // URL corregida con tu repositorio definitivo de GitHub Pages
-  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/"; 
+  // URL corregida con la ruta exacta de tu servidor actual
+  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
 
   snap.forEach(doc => {
     const t = doc.data();
