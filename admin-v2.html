@@ -204,4 +204,185 @@ window.crearTienda = async function() {
   const bannerVal = document.getElementById("bannerTienda").value || "";
   const id = nombreVal.toLowerCase().replace(/\s/g, "");
 
-  await db.collection("tiendas").doc(id).
+  await db.collection("tiendas").doc(id).set({
+    nombre: nombreVal,
+    whatsapp: whatsappVal,
+    logo: logoVal,
+    banner: bannerVal,
+    activa: true,
+    abierta: true,
+    createdAt: Date.now()
+  });
+
+  await window.cargarTiendas();
+  await window.cargarSelectTiendas();
+}
+
+window.cargarProductos = async function() {
+  const cont = document.getElementById("listaProductos");
+  if (!cont) return;
+  cont.innerHTML = "";
+
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  if (!tiendaId) return;
+
+  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+  snap.forEach(doc => {
+    const p = doc.data();
+    cont.innerHTML += `
+      <div class="tienda">
+        <b>${p.name}</b><br>
+        Precio: $${p.precio}<br>
+        Categoría: ${p.categoria}<br>
+        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
+        <br><br>
+        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
+          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
+        </button>
+        <br><br>
+        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
+          🗑️ Eliminar
+        </button>
+      </div>`;
+  });
+}
+
+window.crearProducto = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+
+  await db.collection("tiendas").doc(tiendaId).collection("productos").add({
+    name: document.getElementById("nuevoNombre").value,
+    precio: Number(document.getElementById("nuevoPrecio").value),
+    categoria: document.getElementById("nuevoCategoria").value,
+    descripcion: document.getElementById("nuevoDescripcion").value,
+    img: document.getElementById("nuevoImagen").value,
+    disponible: true
+  });
+
+  await window.cargarProductos();
+}
+
+window.cambiarDisponibilidad = async function(productoId, disponibleActual) {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+
+  try {
+    const ref = db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId);
+    await ref.set({ disponible: !disponibleActual }, { merge: true });
+    await window.cargarProductos();
+  } catch (e) {
+    alert("ERROR: " + e.message);
+  }
+}
+
+window.eliminarProducto = async function(productoId, nombre) {
+  if (!confirm("¿Eliminar " + nombre + "?")) return;
+
+  try {
+    const tiendaId = document.getElementById("tiendaProducto").value;
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).delete();
+    await window.cargarProductos();
+  } catch (e) {
+    alert("ERROR: " + e.message);
+  }
+}
+
+window.eliminarTienda = async function(tiendaId, nombre) {
+  if (tiendaId === "eymotocomidas") {
+    alert("No puedes eliminar la tienda principal");
+    return;
+  }
+
+  const confirmar = confirm(`¿Eliminar la tienda ${nombre}?`);
+  if (!confirmar) return;
+
+  try {
+    const productos = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+    for (const docu of productos.docs) {
+      await docu.ref.delete();
+    }
+
+    await db.collection("tiendas").doc(tiendaId).delete();
+    alert("Tienda eliminada");
+
+    await window.cargarTiendas();
+    await window.cargarSelectTiendas();
+    document.getElementById("listaProductos").innerHTML = "";
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+}
+
+window.toggleTienda = async function() {
+  const tiendaId = document.getElementById("tiendaEstado").value;
+  if (!tiendaId) {
+    alert("Seleccione una tienda");
+    return;
+  }
+
+  const ref = db.collection("tiendas").doc(tiendaId);
+  const snap = await ref.get();
+  const actual = snap.data().abierta;
+
+  await ref.update({ abierta: !actual });
+  await cargarEstadoTienda();
+
+  alert(!actual ? "Tienda ABIERTA" : "Tienda CERRADA");
+}
+
+window.logout = function() {
+  auth.signOut();
+}
+
+async function cargarEstadoTienda() {
+  const tiendaId = document.getElementById("tiendaEstado").value;
+  if (!tiendaId) return;
+
+  const docSnap = await db.collection("tiendas").doc(tiendaId).get();
+  if (!docSnap.exists) return;
+
+  const data = docSnap.data();
+  document.getElementById("estadoActual").innerHTML = data.abierta ? "🟢 Estado: ABIERTA" : "🔴 Estado: CERRADA";
+}
+
+// --- ESCUCHADORES DE FLUJO Y AUTENTICACIÓN ---
+
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+
+    // Llamadas seguras usando la ventana global
+    await window.cargarTiendas();
+    await window.cargarSelectTiendas();
+
+    const select = document.getElementById("tiendaProducto");
+    if (select && select.options.length > 1) {
+      select.selectedIndex = 1;
+    }
+    await window.cargarProductos();
+  } else {
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("panel").style.display = "none";
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnIniciarSesion");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const emailVal = document.getElementById("email").value;
+      const passwordVal = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(emailVal, passwordVal)
+        .catch(e => document.getElementById("loginMsg").innerText = e.message);
+    });
+  }
+  
+  const tiendaEstadoSelect = document.getElementById("tiendaEstado");
+  if (tiendaEstadoSelect) {
+    tiendaEstadoSelect.addEventListener("change", cargarEstadoTienda);
+  }
+});
+</script>
+
+</body>
+</html>
