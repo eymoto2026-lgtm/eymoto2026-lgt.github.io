@@ -22,7 +22,6 @@
 
 <div class="container">
 
-  <!-- LOGIN -->
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
     <input type="email" id="email">
@@ -31,7 +30,6 @@
     <p id="loginMsg"></p>
   </div>
 
-  <!-- PANEL -->
   <div id="panel" class="hidden">
 
     <div class="card">
@@ -80,7 +78,6 @@
   </div>
 </div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -98,6 +95,43 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// DECLARACIÓN TEMPRANA DE FUNCIONES EN WINDOW (CRUCIAL)
+window.actualizarWhatsapp = async function(tiendaId) {
+  const nuevoCelu = document.getElementById(`ws-${tiendaId}`).value.trim();
+
+  if(!nuevoCelu) {
+    alert("Por favor, ingresa un número de WhatsApp válido.");
+    return;
+  }
+
+  try {
+    await db.collection("tiendas").doc(tiendaId).update({
+      whatsapp: nuevoCelu
+    });
+    
+    alert("✅ ¡WhatsApp actualizado con éxito!");
+    cargarTiendas(); 
+  } catch (e) {
+    alert("❌ Error al actualizar: " + e.message);
+  }
+}
+
+window.copiarUrl = function(url, boton) {
+  navigator.clipboard.writeText(url).then(() => {
+    const textoOriginal = boton.innerHTML;
+    boton.innerHTML = "¡Copiado! ✅";
+    boton.style.background = "#28a745"; 
+    
+    setTimeout(() => {
+      boton.innerHTML = textoOriginal;
+      boton.style.background = "#333"; 
+    }, 2000);
+  }).catch(err => {
+    console.error("No se pudo copiar el enlace: ", err);
+    alert("Error al copiar el enlace.");
+  });
+}
 
 // LOGIN
 function login() {
@@ -149,204 +183,18 @@ async function cargarTiendas() {
   listaTiendas.innerHTML = "";
   const snap = await db.collection("tiendas").get();
 
-  // RUTA CORREGIDA BASADA EN TU CAPTURA ACTUAL
   const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
 
   snap.forEach(doc => {
     const t = doc.data();
     const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
+    const whatsappActual = t.whatsapp || "";
 
     listaTiendas.innerHTML += `
       <div class="tienda" style="border: 1px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222;">
-        <b style="font-size: 18px; color: #f5c400;">${t.nombre}</b><br>
-        <span>📞 WhatsApp: ${t.whatsapp}</span><br>
+        <b style="font-size: 18px; color: #f5c400;">${t.nombre}</b><br><br>
         
-        <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <a href="${urlCompleta}" target="_blank" style="color: #00bcd4; text-decoration: none; font-weight: bold; word-break: break-all; flex: 1;">
-            🔗 ${urlCompleta}
-          </a>
-          <button onclick="copiarUrl('${urlCompleta}', this)" style="background: #333; color: #fff; width: auto; margin: 0; padding: 8px 12px; font-size: 13px; border-radius: 4px; border: 1px solid #444;">
-            📋 Copiar
-          </button>
-        </div>
-
-        <br>
-        <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; border-radius: 4px; margin-top: 5px;">
-          🗑️ Eliminar Tienda
-        </button>
-      </div>`;
-  });
-}
-
-// FUNCIÓN GLOBAL
-window.copiarUrl = function(url, boton) {
-  navigator.clipboard.writeText(url).then(() => {
-    const textoOriginal = boton.innerHTML;
-    boton.innerHTML = "¡Copiado! ✅";
-    boton.style.background = "#28a745"; 
-    
-    setTimeout(() => {
-      boton.innerHTML = textoOriginal;
-      boton.style.background = "#333"; 
-    }, 2000);
-  }).catch(err => {
-    console.error("No se pudo copiar el enlace: ", err);
-    alert("Error al copiar el enlace.");
-  });
-}
-
-// SELECT TIENDAS
-async function cargarSelectTiendas() {
-  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
-  document.getElementById("tiendaEstado").innerHTML = '<option value="">Seleccionar tienda</option>';
-
-  const snap = await db.collection("tiendas").get();
-
-  snap.forEach(doc => {
-    const t = doc.data();
-    tiendaProducto.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
-    document.getElementById("tiendaEstado").innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
-  });
-}
-
-// PRODUCTOS
-async function cargarProductos() {
-  const cont = document.getElementById("listaProductos");
-  cont.innerHTML = "";
-
-  const tiendaId = document.getElementById("tiendaProducto").value;
-
-  if (!tiendaId) {
-    return;
-  }
-
-  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-
-  snap.forEach(doc => {
-    const p = doc.data();
-
-    cont.innerHTML += `
-      <div class="tienda">
-        <b>${p.name}</b><br>
-        Precio: $${p.precio}<br>
-        Categoría: ${p.categoria}<br>
-        Disponible: ${p.disponible ? "✅ Sí" : "❌ No"}
-        <br><br>
-        <button onclick="cambiarDisponibilidad('${doc.id}', ${p.disponible})">
-          ${p.disponible ? "❌ Agotar" : "✅ Activar"}
-        </button>
-        <br><br>
-        <button onclick="eliminarProducto('${doc.id}','${p.name}')">
-          🗑️ Eliminar
-        </button>
-      </div>`;
-  });
-}
-
-// CREAR PRODUCTO
-async function crearProducto() {
-  const tiendaId = tiendaProducto.value;
-
-  await db.collection("tiendas").doc(tiendaId).collection("productos").add({
-    name: nuevoNombre.value,
-    precio: Number(nuevoPrecio.value),
-    categoria: nuevoCategoria.value,
-    descripcion: nuevoDescripcion.value,
-    img: nuevoImagen.value,
-    disponible: true
-  });
-
-  cargarProductos();
-}
-
-// CAMBIAR DISPONIBILIDAD
-async function cambiarDisponibilidad(productoId, disponibleActual) {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-
-  try {
-    const ref = db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId);
-    await ref.set({ disponible: !disponibleActual }, { merge: true });
-    cargarProductos();
-  } catch (e) {
-    alert("ERROR: " + e.message);
-  }
-}
-
-window.eliminarProducto = async function(productoId, nombre) {
-  if (!confirm("¿Eliminar " + nombre + "?")) return;
-
-  try {
-    const tiendaId = document.getElementById("tiendaProducto").value;
-    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(productoId).delete();
-    cargarProductos();
-  } catch (e) {
-    alert("ERROR: " + e.message);
-  }
-}
-
-function logout() {
-  auth.signOut();
-}
-
-async function eliminarTienda(tiendaId, nombre) {
-  if (tiendaId === "eymotocomidas") {
-    alert("No puedes eliminar la tienda principal");
-    return;
-  }
-
-  const confirmar = confirm(`¿Eliminar la tienda ${nombre}?`);
-  if (!confirmar) return;
-
-  try {
-    const productos = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    for (const docu of productos.docs) {
-      await docu.ref.delete();
-    }
-
-    await db.collection("tiendas").doc(tiendaId).delete();
-    alert("Tienda eliminada");
-
-    cargarTiendas();
-    cargarSelectTiendas();
-    document.getElementById("listaProductos").innerHTML = "";
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
-}
-
-window.addEventListener("load", () => {
-  document.getElementById("tiendaEstado").addEventListener("change", cargarEstadoTienda);
-});
-
-async function cargarEstadoTienda() {
-  const tiendaId = document.getElementById("tiendaEstado").value;
-  if (!tiendaId) return;
-
-  const snap = await db.collection("tiendas").doc(tiendaId).get();
-  if (!snap.exists) return;
-
-  const data = snap.data();
-  document.getElementById("estadoActual").innerHTML = data.abierta ? "🟢 Estado: ABIERTA" : "🔴 Estado: CERRADA";
-}
-
-async function toggleTienda() {
-  const tiendaId = document.getElementById("tiendaEstado").value;
-  if (!tiendaId) {
-    alert("Seleccione una tienda");
-    return;
-  }
-
-  const ref = db.collection("tiendas").doc(tiendaId);
-  const snap = await ref.get();
-  const actual = snap.data().abierta;
-
-  await ref.update({ abierta: !actual });
-  await cargarEstadoTienda();
-
-  alert(!actual ? "Tienda ABIERTA" : "Tienda CERRADA");
-}
-</script>
-
-</body>
-</html>
+        <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
+        <div style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 10px;">
+          <input id="ws-${idTienda}" value="${whatsappActual}" placeholder="Ej: 57
