@@ -99,6 +99,7 @@ header{
   max-height:40vh;
   overflow:auto;
   box-sizing:border-box;
+  z-index: 999;
 }
 
 .checkout{
@@ -121,6 +122,92 @@ header{
 
 .cart h3{
   margin:0 0 10px 0;
+}
+
+/* MODAL DEL FORMULARIO DE PEDIDO */
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 2000; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgba(0,0,0,0.6); 
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  margin: auto;
+  padding: 20px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 450px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal h2 {
+  margin-top: 0;
+  font-size: 22px;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.modal label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+  color: #555;
+  font-size: 14px;
+}
+
+.modal input, .modal textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 15px;
+}
+
+.modal textarea {
+  resize: none;
+  height: 70px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancelar {
+  flex: 1;
+  background: #eee;
+  color: #333;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-enviar {
+  flex: 2;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
 }
 </style>
 </head>
@@ -156,6 +243,33 @@ header{
   <div id="cartItems"></div>
   <p>Total: $<span id="total">0</span></p>
   <button id="btnComprar" class="checkout">Comprar</button>
+</div>
+
+<!-- VENTANA MODAL FORMULARIO PROFESIONAL -->
+<div id="modalPedido" class="modal">
+  <div class="modal-content">
+    <h2>📋 Datos de Entrega</h2>
+    
+    <label>👤 Nombre Completo *</label>
+    <input type="text" id="formNombre" placeholder="Ej: Juan Pérez" required>
+    
+    <label>📱 Teléfono *</label>
+    <input type="tel" id="formTelefono" placeholder="Ej: 3001234567" required>
+    
+    <label>📍 Dirección *</label>
+    <input type="text" id="formDireccion" placeholder="Ej: Cra 10 #15-20" required>
+    
+    <label>🏘️ Barrio *</label>
+    <input type="text" id="formBarrio" placeholder="Ej: Novalito" required>
+    
+    <label>📝 Observaciones</label>
+    <textarea id="formObservaciones" placeholder="Ej: Sin cebolla, salsas aparte..."></textarea>
+    
+    <div class="modal-buttons">
+      <button class="btn-cancelar" id="btnCerrarModal">Volver</button>
+      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR PEDIDO</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -323,23 +437,42 @@ async function cargarProductos(){
   }
 }
 
-async function sendWhatsApp(){
+// FLUJO DE CONTROL DEL MODAL PROFESIONAL
+function abrirModalPedido() {
   if (!tiendaAbierta) {
     alert("🛑 No puedes realizar compras con el establecimiento cerrado.");
     return;
   }
-
-  if(!whatsapp){
-    alert("No hay WhatsApp configurado en esta tienda.");
-    return;
-  }
-
   if(cart.length === 0){
     alert("El carrito está vacío");
     return;
   }
+  if(!whatsapp){
+    alert("No hay WhatsApp configurado en esta tienda.");
+    return;
+  }
+  
+  document.getElementById("modalPedido").style.display = "flex";
+}
+
+function cerrarModalPedido() {
+  document.getElementById("modalPedido").style.display = "none";
+}
+
+async function procesarYEnviarPedido(){
+  const nombre = document.getElementById("formNombre").value.trim();
+  const telefono = document.getElementById("formTelefono").value.trim();
+  const direccion = document.getElementById("formDireccion").value.trim();
+  const barrio = document.getElementById("formBarrio").value.trim();
+  const observaciones = document.getElementById("formObservaciones").value.trim() || "Ninguna";
+
+  if(!nombre || !telefono || !direccion || !barrio) {
+    alert("Por favor, completa todos los campos obligatorios (*).");
+    return;
+  }
 
   try {
+    // Doble verificación en tiempo real del estado de la tienda
     const tiendaRef = doc(db, "tiendas", tiendaId);
     const snap = await getDoc(tiendaRef);
 
@@ -351,22 +484,37 @@ async function sendWhatsApp(){
     const data = snap.data();
     if (data.abierta === false) {
       alert("🛑 El negocio acaba de cerrar sus servicios.");
+      cerrarModalPedido();
+      window.location.reload();
       return;
     }
 
     const tiendaNombre = data.nombre || "Tienda";
-    const numeroPedido = Date.now();
-    let subtotal = 0;
+    let totalPedido = 0;
     let items = [];
 
-    let msg = `*PEDIDO ${tiendaNombre.toUpperCase()}*\n`;
-    msg += `*Pedido #:* ${numeroPedido}\n\n`;
+    // Capturar fecha y hora actual localmente
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-CO');
+    const horaStr = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+    // Estructurar cabecera del mensaje
+    let msg = `🏪 *${tiendaNombre.toUpperCase()}*\n\n`;
+    msg += `🛵 *NUEVO PEDIDO*\n\n`;
+    msg += `📅 *Fecha:* ${fechaStr}\n`;
+    msg += `⏰ *Hora:* ${horaStr}\n\n`;
+    msg += `👤 *Cliente:*\n${nombre}\n\n`;
+    msg += `📱 *Teléfono:*\n${telefono}\n\n`;
+    msg += `📍 *Dirección:*\n${direccion}\n\n`;
+    msg += `🏘️ *Barrio:*\n${barrio}\n\n`;
+    msg += `📝 *Observaciones:*\n${observaciones}\n\n`;
+    msg += `🧾 *PRODUCTOS*\n\n`;
 
     cart.forEach(p=>{
       const price = Number(p.price);
       const qty = Number(p.qty);
       const totalItem = price * qty;
-      subtotal += totalItem;
+      totalPedido += totalItem;
 
       items.push({
         nombre: p.name,
@@ -374,26 +522,27 @@ async function sendWhatsApp(){
         total: totalItem
       });
 
-      msg += `• ${p.name} x${qty} = $${totalItem}\n`;
+      msg += `🍜 ${p.name} x${qty} = $${totalItem}\n`;
     });
 
-    msg += `\n*Subtotal:* $${subtotal}\n`;
-    msg += `*Domicilio:* A convenir\n`;
-    msg += `*Total:* $${subtotal}`;
+    msg += `\n💰 *TOTAL:* $${totalPedido}`;
 
+    // Fase 4 lista: se guardan los datos completos en Firebase para el futuro panel
     await addDoc(
       collection(db, "tiendas", tiendaId, "pedidos"),
       {
-        numeroPedido,
-        fecha: new Date().toISOString(),
+        fecha: ahora.toISOString(),
         tiendaNombre,
+        cliente: { nombre, telefono, direccion, barrio, observaciones },
         items,
-        subtotal,
-        total: subtotal,
-        whatsapp
+        total: totalPedido,
+        estado: "Pendiente"
       }
     );
 
+    cerrarModalPedido();
+    
+    // Abrir WhatsApp con el número dinámico (Fase 3) y el mensaje formateado (Fase 2)
     window.open(
       `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
       "_blank"
@@ -410,10 +559,14 @@ window.removeItem = removeItem;
 
 document.addEventListener("DOMContentLoaded", () => {
   cargarTienda();
+  
   const btnComprar = document.getElementById("btnComprar");
   if(btnComprar) {
-    btnComprar.addEventListener("click", sendWhatsApp);
+    btnComprar.addEventListener("click", abrirModalPedido);
   }
+
+  document.getElementById("btnCerrarModal").addEventListener("click", cerrarModalPedido);
+  document.getElementById("btnConfirmarPedido").addEventListener("click", procesarYEnviarPedido);
 });
 </script>
 </body>
