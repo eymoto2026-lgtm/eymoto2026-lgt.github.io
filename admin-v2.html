@@ -219,6 +219,11 @@ window.escucharPedidosEnTiempoReal = function() {
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
             </div>
+
+            <!-- 🔥 BOTÓN DE ELIMINACIÓN FINAL -->
+            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#333; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; font-weight:normal;">
+              🗑️ Eliminar pedido de la pantalla
+            </button>
           </div>
         `;
       });
@@ -232,9 +237,19 @@ window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
     await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({
       estado: nuevoEstado
     });
-    // Nota: No necesitas refrescar manualmente, onSnapshot se encarga de redibujar instantáneamente.
   } catch (e) {
     alert("❌ Error al cambiar el estado: " + e.message);
+  }
+}
+
+// 🔥 NUEVA FUNCIÓN PARA BORRAR REGISTROS DE LA BASE DE DATOS
+window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
+  if (!confirm("¿Estás seguro de que deseas quitar permanentemente este pedido de la pantalla?")) return;
+
+  try {
+    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete();
+  } catch (e) {
+    alert("❌ Error al eliminar el pedido: " + e.message);
   }
 }
 
