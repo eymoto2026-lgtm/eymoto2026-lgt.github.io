@@ -496,9 +496,13 @@ async function procesarYEnviarPedido(){
     const fechaStr = ahora.toLocaleDateString('es-CO');
     const horaStr = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-    // Estructura idéntica a tu Fase 2
+    // GENERACIÓN DEL ID ÚNICO DEL PEDIDO (Últimos 4 dígitos del timestamp)
+    const timestampId = Date.now().toString();
+    const numeroPedido = timestampId.substring(timestampId.length - 4);
+
+    // Estructura impecable con ID de Pedido incluido
     let msg = `🏪 *${tiendaNombre.toUpperCase()}*\n\n`;
-    msg += `🛵 *NUEVO PEDIDO*\n\n`;
+    msg += `🛵 *NUEVO PEDIDO #${numeroPedido}*\n\n`; // <-- Aquí se identifica el pedido
     msg += `📅 *Fecha:* ${fechaStr}\n`;
     msg += `⏰ *Hora:* ${horaStr}\n\n`;
     msg += `👤 *Cliente:*\n${nombre}\n\n`;
@@ -509,7 +513,7 @@ async function procesarYEnviarPedido(){
     msg += `🧾 *PRODUCTOS*\n\n`;
 
     cart.forEach(p=>{
-      const price = Number(p.price); // Aquí ya toma el precio corregido del objeto
+      const price = Number(p.price); 
       const qty = Number(p.qty);
       const totalItem = price * qty;
       totalPedido += totalItem;
@@ -520,16 +524,16 @@ async function procesarYEnviarPedido(){
         total: totalItem
       });
 
-      // Estructura limpia: Ramen Especial x2 = $40.000
       msg += `🍜 ${p.name} x${qty} = $${totalItem.toLocaleString('es-CO')}\n`;
     });
 
     msg += `\n💰 *TOTAL:* $${totalPedido.toLocaleString('es-CO')}`;
 
-    // Guarda en la base de datos para la Fase 4
+    // Guardamos en Firebase incluyendo el mismo ID para la Fase 4
     await addDoc(
       collection(db, "tiendas", tiendaId, "pedidos"),
       {
+        numeroPedido: "#" + numeroPedido, // Identificador guardado
         fecha: ahora.toISOString(),
         tiendaNombre,
         cliente: { nombre, telefono, direccion, barrio, observaciones },
