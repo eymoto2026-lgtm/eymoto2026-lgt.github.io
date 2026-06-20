@@ -472,7 +472,6 @@ async function procesarYEnviarPedido(){
   }
 
   try {
-    // Doble verificación en tiempo real del estado de la tienda
     const tiendaRef = doc(db, "tiendas", tiendaId);
     const snap = await getDoc(tiendaRef);
 
@@ -493,12 +492,11 @@ async function procesarYEnviarPedido(){
     let totalPedido = 0;
     let items = [];
 
-    // Capturar fecha y hora actual localmente
     const ahora = new Date();
     const fechaStr = ahora.toLocaleDateString('es-CO');
     const horaStr = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-    // Estructurar cabecera del mensaje
+    // Estructura idéntica a tu Fase 2
     let msg = `🏪 *${tiendaNombre.toUpperCase()}*\n\n`;
     msg += `🛵 *NUEVO PEDIDO*\n\n`;
     msg += `📅 *Fecha:* ${fechaStr}\n`;
@@ -511,7 +509,7 @@ async function procesarYEnviarPedido(){
     msg += `🧾 *PRODUCTOS*\n\n`;
 
     cart.forEach(p=>{
-      const price = Number(p.price);
+      const price = Number(p.price); // Aquí ya toma el precio corregido del objeto
       const qty = Number(p.qty);
       const totalItem = price * qty;
       totalPedido += totalItem;
@@ -522,12 +520,13 @@ async function procesarYEnviarPedido(){
         total: totalItem
       });
 
-      msg += `🍜 ${p.name} x${qty} = $${totalItem}\n`;
+      // Estructura limpia: Ramen Especial x2 = $40.000
+      msg += `🍜 ${p.name} x${qty} = $${totalItem.toLocaleString('es-CO')}\n`;
     });
 
-    msg += `\n💰 *TOTAL:* $${totalPedido}`;
+    msg += `\n💰 *TOTAL:* $${totalPedido.toLocaleString('es-CO')}`;
 
-    // Fase 4 lista: se guardan los datos completos en Firebase para el futuro panel
+    // Guarda en la base de datos para la Fase 4
     await addDoc(
       collection(db, "tiendas", tiendaId, "pedidos"),
       {
@@ -540,6 +539,17 @@ async function procesarYEnviarPedido(){
       }
     );
 
+    cerrarModalPedido();
+    
+    window.open(
+      `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  } catch (error) {
+    console.error("Error al procesar la compra: ", error);
+    alert("Hubo un error al procesar tu pedido.");
+  }
+}
     cerrarModalPedido();
     
     // Abrir WhatsApp con el número dinámico (Fase 3) y el mensaje formateado (Fase 2)
