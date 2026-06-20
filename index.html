@@ -249,22 +249,22 @@ header{
 <div id="modalPedido" class="modal">
   <div class="modal-content">
     <h2>📋 Datos de Entrega</h2>
-    
+     
     <label>👤 Nombre Completo *</label>
     <input type="text" id="formNombre" placeholder="Ej: Juan Pérez" required>
-    
+     
     <label>📱 Teléfono *</label>
     <input type="tel" id="formTelefono" placeholder="Ej: 3001234567" required>
-    
+     
     <label>📍 Dirección *</label>
     <input type="text" id="formDireccion" placeholder="Ej: Cra 10 #15-20" required>
-    
+     
     <label>🏘️ Barrio *</label>
     <input type="text" id="formBarrio" placeholder="Ej: Novalito" required>
-    
+     
     <label>📝 Observaciones</label>
     <textarea id="formObservaciones" placeholder="Ej: Sin cebolla, salsas aparte..."></textarea>
-    
+     
     <div class="modal-buttons">
       <button class="btn-cancelar" id="btnCerrarModal">Volver</button>
       <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR PEDIDO</button>
@@ -370,13 +370,13 @@ async function cargarTienda(){
     const data = snap.data();
     window.tiendaNombre = data.nombre || "Tienda";
     document.querySelector("h1").innerText = data.nombre;
-    
+     
     if(data.logo && data.logo !== ""){
       document.getElementById("logoTienda").src = data.logo;
     } else {
       document.getElementById("logoTienda").src = "img/img1.png";
     }
-    
+     
     whatsapp = (data.whatsapp || "").replace("+","").trim();
 
     const btnComprar = document.getElementById("btnComprar");
@@ -385,7 +385,7 @@ async function cargarTienda(){
       tiendaAbierta = false; 
       document.getElementById("estadoTienda").innerText = "🔴 TIENDA CERRADA";
       document.getElementById("estadoTienda").style.background = "red";
-      
+       
       if(btnComprar) {
         btnComprar.innerText = "🚫 ESTABLECIMIENTO CERRADO";
         btnComprar.style.background = "#555";
@@ -395,7 +395,7 @@ async function cargarTienda(){
       tiendaAbierta = true;
       document.getElementById("estadoTienda").innerText = "🟢 TIENDA ABIERTA";
       document.getElementById("estadoTienda").style.background = "#28a745";
-      
+       
       if(btnComprar) {
         btnComprar.innerText = "Comprar";
         btnComprar.style.background = "#333";
@@ -437,7 +437,6 @@ async function cargarProductos(){
   }
 }
 
-// FLUJO DE CONTROL DEL MODAL PROFESIONAL
 function abrirModalPedido() {
   if (!tiendaAbierta) {
     alert("🛑 No puedes realizar compras con el establecimiento cerrado.");
@@ -451,7 +450,7 @@ function abrirModalPedido() {
     alert("No hay WhatsApp configurado en esta tienda.");
     return;
   }
-  
+   
   document.getElementById("modalPedido").style.display = "flex";
 }
 
@@ -464,7 +463,7 @@ async function procesarYEnviarPedido(){
   const telefono = document.getElementById("formTelefono").value.trim();
   const direccion = document.getElementById("formDireccion").value.trim();
   const barrio = document.getElementById("formBarrio").value.trim();
-  const observaciones = document.getElementById("formObservaciones").value.trim() || "Ninguna";
+  const observaciones = document.getElementById("formObservations") ? document.getElementById("formObservations").value.trim() : document.getElementById("formObservaciones").value.trim() || "Ninguna";
 
   if(!nombre || !telefono || !direccion || !barrio) {
     alert("Por favor, completa todos los campos obligatorios (*).");
@@ -496,13 +495,11 @@ async function procesarYEnviarPedido(){
     const fechaStr = ahora.toLocaleDateString('es-CO');
     const horaStr = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-    // GENERACIÓN DEL ID ÚNICO DEL PEDIDO (Últimos 4 dígitos del timestamp)
     const timestampId = Date.now().toString();
     const numeroPedido = timestampId.substring(timestampId.length - 4);
 
-    // Estructura impecable con ID de Pedido incluido
     let msg = `🏪 *${tiendaNombre.toUpperCase()}*\n\n`;
-    msg += `🛵 *NUEVO PEDIDO #${numeroPedido}*\n\n`; // <-- Aquí se identifica el pedido
+    msg += `🛵 *NUEVO PEDIDO #${numeroPedido}*\n\n`; 
     msg += `📅 *Fecha:* ${fechaStr}\n`;
     msg += `⏰ *Hora:* ${horaStr}\n\n`;
     msg += `👤 *Cliente:*\n${nombre}\n\n`;
@@ -529,11 +526,10 @@ async function procesarYEnviarPedido(){
 
     msg += `\n💰 *TOTAL:* $${totalPedido.toLocaleString('es-CO')}`;
 
-    // Guardamos en Firebase incluyendo el mismo ID para la Fase 4
     await addDoc(
       collection(db, "tiendas", tiendaId, "pedidos"),
       {
-        numeroPedido: "#" + numeroPedido, // Identificador guardado
+        numeroPedido: "#" + numeroPedido,
         fecha: ahora.toISOString(),
         tiendaNombre,
         cliente: { nombre, telefono, direccion, barrio, observaciones },
@@ -544,19 +540,7 @@ async function procesarYEnviarPedido(){
     );
 
     cerrarModalPedido();
-    
-    window.open(
-      `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
-      "_blank"
-    );
-  } catch (error) {
-    console.error("Error al procesar la compra: ", error);
-    alert("Hubo un error al procesar tu pedido.");
-  }
-}
-    cerrarModalPedido();
-    
-    // Abrir WhatsApp con el número dinámico (Fase 3) y el mensaje formateado (Fase 2)
+     
     window.open(
       `https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`,
       "_blank"
@@ -573,7 +557,7 @@ window.removeItem = removeItem;
 
 document.addEventListener("DOMContentLoaded", () => {
   cargarTienda();
-  
+   
   const btnComprar = document.getElementById("btnComprar");
   if(btnComprar) {
     btnComprar.addEventListener("click", abrirModalPedido);
