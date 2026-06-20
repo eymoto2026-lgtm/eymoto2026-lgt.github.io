@@ -370,16 +370,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btnIniciarSesion");
   if (btn) {
     btn.addEventListener("click", () => {
-      const emailVal = document.getElementById("email").value;
-      const passwordVal = document.getElementById("password").value;
+      const emailVal = document.getElementById("email").value.trim();
+      const passwordVal = document.getElementById("password").value.trim();
+
+      if (!emailVal || !passwordVal) {
+        alert("Por favor, ingresa correo y contraseña.");
+        return;
+      }
+
+      console.log("Intentando conectar con Firebase para:", emailVal);
+      
       auth.signInWithEmailAndPassword(emailVal, passwordVal)
-        .catch(e => document.getElementById("loginMsg").innerText = e.message);
+        .then((userCredential) => {
+          console.log("¡Login exitoso!", userCredential.user);
+          alert("🔑 Conexión exitosa. Cargando panel...");
+        })
+        .catch(e => {
+          console.error("Error de Firebase:", e);
+          document.getElementById("loginMsg").innerText = "Error: " + e.message;
+          alert("❌ Error al iniciar sesión: " + e.message);
+        });
     });
-  }
-  
-  const tiendaEstadoSelect = document.getElementById("tiendaEstado");
-  if (tiendaEstadoSelect) {
-    tiendaEstadoSelect.addEventListener("change", cargarEstadoTienda);
+  } else {
+    console.error("No se encontró el botón btnIniciarSesion en el HTML");
   }
 });
 </script>
