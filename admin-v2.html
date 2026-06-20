@@ -13,6 +13,22 @@
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
     .hidden { display:none; }
     .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; }
+    
+    /* ESTILOS DE LA FASE 4 (PANEL DE PEDIDOS) */
+    .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222; }
+    .status-pendiente { border-color: #ffc107; }
+    .status-preparacion { border-color: #17a2b8; }
+    .status-entregado { border-color: #28a745; }
+    .status-cancelado { border-color: #dc3545; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .badge-pendiente { background: #ffc107; color: #000; }
+    .badge-preparacion { background: #17a2b8; color: #fff; }
+    .badge-entregado { background: #28a745; color: #fff; }
+    .badge-cancelado { background: #dc3545; color: #fff; }
+
+    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 10px; }
+    .btn-status { font-size: 12px; padding: 6px; }
   </style>
 </head>
 
@@ -31,6 +47,18 @@
   </div>
 
   <div id="panel" class="hidden">
+
+    <div class="card" style="border: 2px solid #f5c400;">
+      <h3>📋 Monitor de Pedidos en Tiempo Real</h3>
+      <label style="font-size: 13px; color: #aaa;">Filtrar pedidos por Tienda:</label>
+      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
+        <option value="">Seleccionar tienda para monitorear</option>
+      </select>
+      
+      <div id="contenedorPedidos" style="margin-top:15px;">
+        <p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>
+      </div>
+    </div>
 
     <div class="card">
       <h3>➕ Crear Tienda</h3>
@@ -66,14 +94,14 @@
 
     <div class="card">
       <h3>🏪 Abrir / Cerrar Tienda</h3>
-      <select id="tiendaEstado">
+      <select id="tiendaEstado" onchange="cargarEstadoTienda()">
         <option value="">Seleccionar tienda</option>
       </select>
       <p id="estadoActual">Estado: -</p>
       <button onclick="toggleTienda()">Cambiar Estado</button>
     </div>
 
-    <button onclick="logout()">Cerrar sesión</button>
+    <button onclick="logout()" style="background:#555; color:#fff; margin-top:20px;">Cerrar sesión</button>
 
   </div>
 </div>
@@ -96,7 +124,119 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Almacena el desvinculador del listener activo para evitar duplicados
+let pedidosUnsubscribe = null;
+
 // --- DEFINICIÓN DE TODAS LAS FUNCIONES GLOBALES ---
+
+window.escucharPedidosEnTiempoReal = function() {
+  const tiendaId = document.getElementById("filtroTiendaPedidos").value;
+  const contenedor = document.getElementById("contenedorPedidos");
+  if (!contenedor) return;
+
+  // Si había un escuchador previo activo, lo apagamos para no gastar recursos
+  if (pedidosUnsubscribe) {
+    pedidosUnsubscribe();
+  }
+
+  if (!tiendaId) {
+    contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>';
+    return;
+  }
+
+  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
+
+  // Escuchador en tiempo real usando onSnapshot (Ordenado por fecha más reciente)
+  pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
+    .orderBy("fecha", "desc")
+    .onSnapshot(snap => {
+      contenedor.innerHTML = "";
+      
+      if (snap.empty) {
+        contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">No se han registrado pedidos hoy en esta tienda. 🍔</p>';
+        return;
+      }
+
+      snap.forEach(doc => {
+        const p = doc.data();
+        const idPedido = doc.id;
+        const numPedido = p.numeroPedido || "#----";
+        const estado = p.estado || "Pendiente";
+        
+        // Formatear Fecha local limpia
+        let fechaFormateada = "Verificar Hora";
+        if (p.fecha) {
+          const d = new Date(p.fecha);
+          fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
+        }
+
+        // Determinar clases visuales según estado
+        let claseBorde = "status-pendiente";
+        let claseBadge = "badge-pendiente";
+        if (estado === "En Preparación") { claseBorde = "status-preparacion"; claseBadge = "badge-preparacion"; }
+        if (estado === "Entregado") { claseBorde = "status-entregado"; claseBadge = "badge-entregado"; }
+        if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
+
+        // Mapear los ítems comprados
+        let itemsHTML = "";
+        if (p.items && p.items.length > 0) {
+          p.items.forEach(item => {
+            itemsHTML += `• ${item.nombre} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
+          });
+        } else {
+          itemsHTML = "No se pudieron recuperar los productos.";
+        }
+
+        // Datos de entrega seguros
+        const cNombre = p.cliente?.nombre || "No registrado";
+        const cTelefono = p.cliente?.telefono || "No registrado";
+        const cDireccion = p.cliente?.direccion || "No registrado";
+        const cBarrio = p.cliente?.barrio || "No registrado";
+        const cObservaciones = p.cliente?.observaciones || "Ninguna";
+
+        contenedor.innerHTML += `
+          <div class="pedido-card ${claseBorde}">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
+              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Pedido ${numPedido}</span>
+              <span class="badge ${claseBadge}">${estado.toUpperCase()}</span>
+            </div>
+            
+            <p style="font-size:12px; color:#aaa; margin:2px 0;">🕒 <b>Fecha:</b> ${fechaFormateada}</p>
+            <p style="margin:5px 0; font-size:14px;">👤 <b>Cliente:</b> ${cNombre} (${cTelefono})</p>
+            <p style="margin:5px 0; font-size:14px;">📍 <b>Dirección:</b> ${cDireccion} - <b>Barrio:</b> ${cBarrio}</p>
+            <p style="margin:5px 0; font-size:13px; color:#ffc107;">📝 <b>Notas:</b> ${cObservaciones}</p>
+            
+            <div style="background:#111; padding:10px; border-radius:5px; margin:10px 0; font-size:13px;">
+              <span style="color:#aaa; display:block; margin-bottom:4px; font-weight:bold;">🧾 COMANDA:</span>
+              ${itemsHTML}
+              <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
+              <span style="font-size:15px; color:#28a745; font-weight:bold;">TOTAL DEL TICKET: $${(p.total || 0).toLocaleString('es-CO')}</span>
+            </div>
+
+            <div class="grid-acciones">
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocina</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
+            </div>
+          </div>
+        `;
+      });
+    }, error => {
+      console.error("Error en Snapshot de pedidos: ", error);
+    });
+}
+
+window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
+  try {
+    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({
+      estado: nuevoEstado
+    });
+    // Nota: No necesitas refrescar manualmente, onSnapshot se encarga de redibujar instantáneamente.
+  } catch (e) {
+    alert("❌ Error al cambiar el estado: " + e.message);
+  }
+}
 
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
@@ -146,16 +286,19 @@ window.cargarTiendas = async function() {
 window.cargarSelectTiendas = async function() {
   const tiendaProducto = document.getElementById("tiendaProducto");
   const tiendaEstado = document.getElementById("tiendaEstado");
-  if(!tiendaProducto || !tiendaEstado) return;
+  const filtroTiendaPedidos = document.getElementById("filtroTiendaPedidos");
+  if(!tiendaProducto || !tiendaEstado || !filtroTiendaPedidos) return;
 
   tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
   tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
+  filtroTiendaPedidos.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
 
   const snap = await db.collection("tiendas").get();
   snap.forEach(doc => {
     const t = doc.data();
     tiendaProducto.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
     tiendaEstado.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    filtroTiendaPedidos.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
   });
 }
 
@@ -324,7 +467,7 @@ window.toggleTienda = async function() {
   const actual = snap.data().abierta;
 
   await ref.update({ abierta: !actual });
-  await cargarEstadoTienda();
+  await window.cargarEstadoTienda();
 
   alert(!actual ? "Tienda ABIERTA" : "Tienda CERRADA");
 }
@@ -333,7 +476,7 @@ window.logout = function() {
   auth.signOut();
 }
 
-async function cargarEstadoTienda() {
+window.cargarEstadoTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
   if (!tiendaId) return;
 
@@ -351,7 +494,6 @@ auth.onAuthStateChanged(async user => {
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("panel").style.display = "block";
 
-    // Llamadas seguras usando la ventana global
     await window.cargarTiendas();
     await window.cargarSelectTiendas();
 
@@ -360,9 +502,17 @@ auth.onAuthStateChanged(async user => {
       select.selectedIndex = 1;
     }
     await window.cargarProductos();
+    
+    // Auto-seleccionar la primera tienda también en el monitor de pedidos
+    const selectPedidos = document.getElementById("filtroTiendaPedidos");
+    if(selectPedidos && selectPedidos.options.length > 1) {
+      selectPedidos.selectedIndex = 1;
+      window.escucharPedidosEnTiempoReal();
+    }
   } else {
     document.getElementById("loginBox").style.display = "block";
     document.getElementById("panel").style.display = "none";
+    if (pedidosUnsubscribe) pedidosUnsubscribe();
   }
 });
 
