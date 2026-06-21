@@ -12,7 +12,7 @@
     input, button, select { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
     .hidden { display:none; }
-    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; background: #222; }
+    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; background: #222; position: relative; }
     
     /* ESTILOS PANEL DE PEDIDOS */
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222; }
@@ -29,6 +29,9 @@
 
     .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 10px; }
     .btn-status { font-size: 12px; padding: 6px; }
+    
+    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 5px 10px; font-size: 12px; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #333; padding: 8px 0; }
   </style>
 </head>
 
@@ -73,7 +76,7 @@
     </div>
 
     <div class="card">
-      <h3>➕ Crear Producto</h3>
+      <h3>➕ Crear o Editar Producto</h3>
       <select id="tiendaProducto" onchange="cargarProductos()">
         <option value="">Seleccionar tienda</option>
       </select>
@@ -82,16 +85,16 @@
       <input id="nuevoCategoria" placeholder="Categoría">
       <input id="nuevoDescripcion" placeholder="Descripción">
       <input id="nuevoImagen" placeholder="Imagen">
-      <button onclick="crearProducto()">Crear Producto</button>
+      <button onclick="crearProducto()">Guardar Producto</button>
     </div>
 
     <div class="card">
-      <h3>🏪 Tiendas</h3>
+      <h3>🏪 Tiendas registradas</h3>
       <div id="listaTiendas"></div>
     </div>
 
     <div class="card">
-      <h3>📦 Productos</h3>
+      <h3>📦 Lista de Productos (Edición)</h3>
       <div id="listaProductos"></div>
     </div>
 
@@ -130,16 +133,17 @@ const db = firebase.firestore();
 let pedidosUnsubscribe = null;
 let cargaInicialCompleta = false; 
 
-// TU PROPIO AUDIO "EY MOTO" INTEGRADO COMO TEXTO BASE64
-const audioEyMotoBase64 = "data:audio/mpeg;base64,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+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/hAEMAAAALgAEGAAAACvAAsYAAAEAgAKWwAAAGgEAVtgAAAJAAIsYAAAIEAIwYAAAAaAQBi2AAAAsAACYAAAAIAAAwAAAAAYAAAYAAAAUAAgYAAAAaAAAsAAAAIAAAwAAAAYYACBwAAAAsAABgAAAAGgEAGAAAAEgAAMAAAAEmAAwcAAAAFAAAHAAAAAYBAAYAAAAYAAAIAAAABgEAEAAAABgAAAgAAAACAQAEAAAAFAAACAAAAAgEABAAAAAYAABAAAAAMgAEFAAAACwAAHAAAAAUAQAYAAAASAACwAAAAwgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAAEmAAwcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAEQAAMAAAASAACwAAAAYgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAASAAMAAAAEmAAwcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAYgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAwgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAs smash";
-let sonidoAlerta = new Audio(audioEyMotoBase64);
-
+// SISTEMA DE VOZ NATIVO (REEMPLAZA AL BASE64 CORRUPTO)
 window.probarSonidoSistema = function() {
-  console.log("Iniciando audio EyMoto...");
-  sonidoAlerta.currentTime = 0;
-  sonidoAlerta.play()
-    .then(() => alert("🔔 ¡Sonido 'Ey Moto' activado correctamente! El panel ya está listo."))
-    .catch(e => alert("Error: Haz un clic en la pantalla antes de probar. " + e.message));
+  if ('speechSynthesis' in window) {
+    const textToSpeech = new SpeechSynthesisUtterance("Ey Moto");
+    textToSpeech.lang = 'es-CO'; 
+    textToSpeech.rate = 1.1; 
+    window.speechSynthesis.speak(textToSpeech);
+    console.log("Altavoz probado exitosamente.");
+  } else {
+    alert("Tu navegador no soporta alertas de voz automáticas.");
+  }
 }
 
 // --- MONITOREO EN TIEMPO REAL ---
@@ -166,9 +170,8 @@ window.escucharPedidosEnTiempoReal = async function() {
       if (cargaInicialCompleta && !snap.metadata.hasPendingWrites) {
         snap.docChanges().forEach(change => {
           if (change.type === "added") {
-            console.log("¡Pedido recibido! Reproduciendo Ey Moto.");
-            sonidoAlerta.currentTime = 0;
-            sonidoAlerta.play().catch(e => console.log("Permiso requerido de interacción", e));
+            console.log("¡Pedido recibido! Alerta por voz ejecutada.");
+            probarSonidoSistema();
           }
         });
       }
@@ -257,7 +260,6 @@ window.cargarTiendas = async function() {
 
   if (listaTiendas) listaTiendas.innerHTML = "";
   
-  // Limpiar selectores manteniendo primera opción vacía
   if(filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
   if(tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
   if(tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
@@ -276,11 +278,11 @@ window.cargarTiendas = async function() {
           <h4>🏪 ${t.nombre || 'Sin nombre'}</h4>
           <p>📱 WhatsApp: ${t.whatsapp || '-'}</p>
           <p>🔗 <a href="${urlCompleta}" target="_blank" style="color:#f5c400;">Ver menú digital</a></p>
+          <button class="btn-danger" onclick="eliminarTienda('${idTienda}')" style="position:absolute; right:10px; top:10px;">🗑️ Borrar Tienda</button>
         </div>
       `;
     }
 
-    // Llenar selectores dinámicamente
     const opt = `<option value="${idTienda}">${t.nombre || idTienda}</option>`;
     if(filtroTienda) filtroTienda.innerHTML += opt;
     if(tiendaProducto) tiendaProducto.innerHTML += opt;
@@ -303,7 +305,16 @@ window.crearTienda = async function() {
   } catch(e) { alert("Error: " + e.message); }
 }
 
-// --- GESTIÓN DE PRODUCTOS ---
+window.eliminarTienda = async function(idTienda) {
+  if(!confirm("¿Seguro que deseas eliminar esta tienda con todo su contenido?")) return;
+  try {
+    await db.collection("tiendas").doc(idTienda).delete();
+    alert("Tienda eliminada.");
+    cargarTiendas();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+// --- GESTIÓN DE PRODUCTOS (CON EDICIÓN Y ELIMINACIÓN RESTAURADAS) ---
 
 window.crearProducto = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
@@ -319,7 +330,15 @@ window.crearProducto = async function() {
     await db.collection("tiendas").doc(tiendaId).collection("productos").add({
       nombre, precio, categoria, descripcion, imagen
     });
-    alert("🍔 ¡Producto añadido!");
+    alert("🍔 ¡Producto guardado con éxito!");
+    
+    // Limpiar campos de texto
+    document.getElementById("nuevoNombre").value = "";
+    document.getElementById("nuevoPrecio").value = "";
+    document.getElementById("nuevoCategoria").value = "";
+    document.getElementById("nuevoDescripcion").value = "";
+    document.getElementById("nuevoImagen").value = "";
+    
     cargarProductos();
   } catch(e) { alert("Error: " + e.message); }
 }
@@ -335,12 +354,43 @@ window.cargarProductos = async function() {
   const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
   snap.forEach(doc => {
     const p = doc.data();
+    const idProd = doc.id;
     lista.innerHTML += `
-      <div style="border-bottom:1px dashed #333; padding:8px 0;">
-        <b>${p.nombre}</b> - $${p.precio} | <span style="color:#aaa;">${p.categoria}</span>
+      <div class="producto-item">
+        <div>
+          <b>${p.nombre}</b> - $${(p.precio || 0).toLocaleString('es-CO')} | <span style="color:#aaa;">${p.categoria || 'Sin Cat.'}</span>
+        </div>
+        <div>
+          <button onclick="cargarProductoParaEditar('${tiendaId}', '${idProd}', \`${p.nombre}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)" style="width:auto; padding:4px 8px; background:#ffc107; color:#000; font-size:12px; margin-right:5px;">✏️ Editar</button>
+          <button onclick="eliminarProducto('${tiendaId}', '${idProd}')" class="btn-danger">🗑️ Eliminar</button>
+        </div>
       </div>
     `;
   });
+}
+
+window.cargarProductoParaEditar = function(tiendaId, idProd, nombre, precio, categoria, descripcion, imagen) {
+  document.getElementById("nuevoNombre").value = nombre;
+  document.getElementById("nuevoPrecio").value = precio;
+  document.getElementById("nuevoCategoria").value = categoria;
+  document.getElementById("nuevoDescripcion").value = descripcion;
+  document.getElementById("nuevoImagen").value = imagen;
+  
+  // Al volver a guardar lo creará, si prefieres sobreescribir borramos el viejo al guardar
+  window.eliminarProductoSilencioso(tiendaId, idProd);
+  alert("Datos cargados arriba en el formulario. Edita lo que necesites y dale a 'Guardar Producto'.");
+}
+
+window.eliminarProducto = async function(tiendaId, idProd) {
+  if(!confirm("¿Deseas eliminar este producto?")) return;
+  try {
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
+    cargarProductos();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+window.eliminarProductoSilencioso = async function(tiendaId, idProd) {
+  try { await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete(); } catch(e){}
 }
 
 // --- CONTROL DE ESTADO (ABIERTO/CERRADO) ---
@@ -367,7 +417,7 @@ window.toggleTienda = async function() {
     const estadoActual = doc.data().abierta !== false;
     await ref.update({ abierta: !estadoActual });
     cargarEstadoTienda();
-    alert("¡Estado de la tienda actualizado!");
+    alert("¡Estado de la tienda cambiado!");
   } catch(e) { alert("Error: " + e.message); }
 }
 
