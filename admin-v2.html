@@ -49,6 +49,7 @@
 
 <div class="container">
 
+  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -59,8 +60,10 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
+  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
+    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
@@ -72,6 +75,7 @@
       </div>
     </div>
 
+    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -83,6 +87,7 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
+    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -102,6 +107,7 @@
       </div>
     </div>
 
+    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -114,6 +120,7 @@
       </div>
     </div>
 
+    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -128,6 +135,7 @@
   </div>
 </div>
 
+<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -468,19 +476,15 @@ window.cargarProductosOriginal = async function() {
     const idProd = doc.id;
     const descBase = p.descripcion || "";
     
-    // EXTRACCIÓN AVANZADA: Si viene todo metido en la descripción separado por '|'
-    let nombreVerdadero = p.nombre || p.nombreProducto || p.titulo || "";
+    // BARRIDO ABSOLUTO DE PROPIEDADES EN FIRESTORE
+    let nombreVerdadero = p.nombre || p.name || p.titulo || p.title || p.nombreProducto || p.producto || "";
     
-    if (!nombreVerdadero || nombreVerdadero === "undefined") {
-      if (descBase.includes("|")) {
-        // Ejemplo: "Perros | Salchicha y salsas" -> Tomamos lo que esté después de la barra
-        nombreVerdadero = descBase.split("|")[1].trim();
-      } else {
-        nombreVerdadero = "Producto sin nombre";
-      }
+    // Si la propiedad viene como un string literal "undefined" o está totalmente en blanco
+    if (!nombreVerdadero || String(nombreVerdadero).trim() === "undefined" || String(nombreVerdadero).trim() === "") {
+      nombreVerdadero = "Producto sin nombre";
     }
 
-    const nombreEscapado = nombreVerdadero.replace(/`/g, "\\`").replace(/"/g, "&quot;");
+    const nombreEscapado = String(nombreVerdadero).replace(/`/g, "\\`").replace(/"/g, "&quot;");
 
     lista.innerHTML += `
       <div class="producto-item">
@@ -542,7 +546,7 @@ window.cargarEstadoTienda = async function() {
   const doc = await db.collection("tiendas").doc(tiendaId).get();
   if(doc.exists) {
     const abierta = doc.data().abierta !== false;
-    txt.innerHTML = `Estado actual: <b style="color: ${abierta ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
+    txt.innerHTML = `Estado actual: <b style="color: ${open ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
   }
 }
 
