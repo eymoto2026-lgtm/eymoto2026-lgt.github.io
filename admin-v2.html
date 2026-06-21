@@ -11,9 +11,9 @@
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
     .hidden { display:none; }
+    .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
   </style>
 </head>
-
 <body>
 <header>🚀 PANEL DE ADMINISTRACIÓN - EYMOTO</header>
 <div class="container">
@@ -21,16 +21,30 @@
     <h3>🔐 Acceso al Panel</h3>
     <input type="email" id="email" placeholder="Correo">
     <input type="password" id="password" placeholder="Contraseña">
-    <button id="btnIniciarSesion">Ingresar al Panel</button>
-    <p id="errorLogin" style="color:#ff4444;"></p>
+    <button id="btnIniciarSesion">Ingresar</button>
+    <p id="errorLogin" style="color:red;"></p>
   </div>
 
   <div id="panel" class="hidden">
     <div class="card">
-      <h3>📋 Monitor Global</h3>
-      <button onclick="probarVozAlarma()">🔔 Probar Altavoz</button>
-      <div id="contenedorPedidos"></div>
+      <h3>🏪 Gestión de Tiendas</h3>
+      <input id="nombreTienda" placeholder="Nombre de la Tienda">
+      <input id="whatsapp" placeholder="WhatsApp">
+      <button onclick="guardarTiendaOriginal()">Registrar Tienda</button>
+      <div id="listaTiendas"></div>
     </div>
+
+    <div class="card">
+      <h3>🍔 Gestión de Productos</h3>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
+        <option value="">Selecciona una tienda para ver productos</option>
+      </select>
+      <input id="nuevoNombre" placeholder="Nombre del producto">
+      <input id="nuevoPrecio" type="number" placeholder="Precio">
+      <button onclick="guardarProductoOriginal()">Añadir Producto</button>
+      <div id="listaProductos"></div>
+    </div>
+
     <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 </div>
@@ -40,7 +54,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // CONFIGURACIÓN ORIGINAL
   const firebaseConfig = {
     apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
     authDomain: "eymotocomidas.firebaseapp.com",
@@ -49,39 +62,67 @@
     messagingSenderId: "670474251560",
     appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
   };
-
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
 
-  // LOGIN RESTAURADO
+  // LOGIN
   document.getElementById("btnIniciarSesion").addEventListener("click", () => {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-    auth.signInWithEmailAndPassword(email, pass).catch(e => {
-      document.getElementById("errorLogin").innerText = "Error: " + e.message;
-    });
+    auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
+      .catch(e => document.getElementById("errorLogin").innerText = e.message);
   });
 
-  // CONTROL DE ESTADO RESTAURADO
+  // CARGA DE TIENDAS Y PRODUCTOS
+  async function cargarTiendas() {
+    const snap = await db.collection("tiendas").get();
+    const lista = document.getElementById("listaTiendas");
+    const select = document.getElementById("tiendaProducto");
+    lista.innerHTML = "";
+    snap.forEach(doc => {
+      const t = doc.data();
+      lista.innerHTML += `<div class="tienda-card-item"><b>${t.nombre}</b></div>`;
+      select.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    });
+  }
+
+  async function guardarTiendaOriginal() {
+    const nombre = document.getElementById("nombreTienda").value;
+    await db.collection("tiendas").add({ nombre, whatsapp: document.getElementById("whatsapp").value });
+    alert("Tienda guardada");
+    cargarTiendas();
+  }
+
+  async function cargarProductosOriginal() {
+    const tiendaId = document.getElementById("tiendaProducto").value;
+    if(!tiendaId) return;
+    const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
+    const lista = document.getElementById("listaProductos");
+    lista.innerHTML = "";
+    snap.forEach(doc => {
+      lista.innerHTML += `<div>${doc.data().name} - $${doc.data().precio}</div>`;
+    });
+  }
+
+  async function guardarProductoOriginal() {
+    const tiendaId = document.getElementById("tiendaProducto").value;
+    const name = document.getElementById("nuevoNombre").value;
+    const precio = document.getElementById("nuevoPrecio").value;
+    await db.collection("productos").add({ tiendaId, name, precio });
+    alert("Producto guardado");
+    cargarProductosOriginal();
+  }
+
+  // ESTADO DE SESIÓN
   auth.onAuthStateChanged(user => {
     if (user) {
       document.getElementById("loginBox").classList.add("hidden");
       document.getElementById("panel").classList.remove("hidden");
-      console.log("Sesión activa");
-      // AQUÍ PUEDES VOLVER A LLAMAR A TU FUNCIÓN DE CARGA ORIGINAL:
-      // iniciarMonitoreoGlobal(); 
-      // cargarTiendas();
+      cargarTiendas();
     } else {
       document.getElementById("loginBox").classList.remove("hidden");
       document.getElementById("panel").classList.add("hidden");
     }
   });
-
-  window.probarVozAlarma = () => {
-    const msg = new SpeechSynthesisUtterance("Sistema de audio listo");
-    window.speechSynthesis.speak(msg);
-  };
 </script>
 </body>
 </html>
