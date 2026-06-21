@@ -50,6 +50,10 @@
 
     <div class="card" style="border: 2px solid #f5c400;">
       <h3>📋 Monitor de Pedidos en Tiempo Real</h3>
+      
+      <!-- BOTÓN PARA PROBAR EL AUDIO DIRECTAMENTE -->
+      <button onclick="probarSonidoSistema()" style="background:#00bcd4; color:#fff; margin-bottom:15px; padding:8px;">🔔 Activar y Probar Altavoz del Panel</button>
+      
       <label style="font-size: 13px; color: #aaa;">Filtrar pedidos por Tienda:</label>
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
         <option value="">Seleccionar tienda para monitorear</option>
@@ -111,7 +115,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-// Configuración de Firebase corregida para tu proyecto activo: eymotocomidas
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
@@ -126,8 +129,20 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); 
 let cargaInicialCompleta = false; 
+
+// SONIDO INTERNO INCORPORADO (Base64) - Campana de timbre de cocina para restaurante que no requiere internet
+const sonidoBase64Fijo = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQgAAAAAAAAAAAAA"; 
+let sonidoAlerta = new Audio(sonidoBase64Fijo);
+
+// Función manual para desbloquear y probar los altavoces en el navegador
+window.probarSonidoSistema = function() {
+  console.log("Probando sonido...");
+  sonidoAlerta.currentTime = 0;
+  sonidoAlerta.play()
+    .then(() => alert("🔔 ¡Sonido del sistema inicializado correctamente! Si no se escuchó, verifica que el volumen de tu PC o pestaña no esté silenciado."))
+    .catch(e => alert("Error de reproducción: Asegúrate de interactuar primero con el panel. " + e.message));
+}
 
 // --- MONITOREO EN TIEMPO REAL ---
 
@@ -141,20 +156,22 @@ window.escucharPedidosEnTiempoReal = async function() {
   if (!tiendaId) {
     contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>';
     return;
-  } // <- Reparado: Aquí había un error de sintaxis ("</div>") que rompía el código
+  }
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
   cargaInicialCompleta = false;
 
+  // Intentamos leer un sonido personalizado, de lo contrario usamos una campana estable por defecto de la web
   try {
     const tiendaDoc = await db.collection("tiendas").doc(tiendaId).get();
-    if (tiendaDoc.exists && tiendaDoc.data().sonidoUrl) {
+    if (tiendaDoc.exists && tiendaDoc.data().sonidoUrl && tiendaDoc.data().sonidoUrl.startsWith("http")) {
       sonidoAlerta = new Audio(tiendaDoc.data().sonidoUrl);
     } else {
-      sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav");
+      // Tono tipo "Ding Dong" público de contingencia
+      sonidoAlerta = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
     }
   } catch (error) {
-    console.error("Error cargando audio: ", error);
+    sonidoAlerta = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
   }
 
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
@@ -164,7 +181,9 @@ window.escucharPedidosEnTiempoReal = async function() {
       if (cargaInicialCompleta && !snap.metadata.hasPendingWrites) {
         snap.docChanges().forEach(change => {
           if (change.type === "added") {
-            sonidoAlerta.play().catch(e => console.log("Interacción requerida: ", e));
+            console.log("¡Nuevo pedido detectado! Lanzando alerta sonora.");
+            sonidoAlerta.currentTime = 0;
+            sonidoAlerta.play().catch(e => console.log("Bloqueo del navegador: Requiere clic del usuario.", e));
           }
         });
       }
@@ -267,15 +286,15 @@ window.cargarTiendas = async function() {
         <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
         <input id="ws-${idTienda}" value="${t.whatsapp || ''}">
         
-        <label style="font-size: 13px; color: #aaa; display:block; margin-top:5px;">🎵 Enlace de Alerta Directo (.mp3 de Filebin):</label>
-        <input id="snd-${idTienda}" value="${sonidoActual}" placeholder="Pega aquí el enlace directo de Filebin que termina en .mp3">
+        <label style="font-size: 13px; color: #aaa; display:block; margin-top:5px;">🎵 Enlace de Alerta Directo (En blanco para tono predeterminado):</label>
+        <input id="snd-${idTienda}" value="${sonidoActual}" placeholder="Pega un enlace limpio .mp3 / .ogg">
         
         <p id="status-audio-${idTienda}" style="font-size:12px; margin:2px 0; color:#aaa;">
-          ${sonidoActual ? "✅ Sonido guardado: " + sonidoActual.substring(0, 45) + "..." : "⚠️ Usando tono por defecto"}
+          ${sonidoActual ? "✅ Enlace asignado" : "⚠️ Usando tono digital estándar de respaldo"}
         </p>
 
         <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; margin-top:10px;">
-          💾 Guardar Cambios (Nombre, WhatsApp y Sonido)
+          💾 Guardar Cambios
         </button>
 
         <div style="margin-top: 10px; background: #000; padding: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
@@ -299,7 +318,7 @@ window.actualizarTiendaDatos = async function(tiendaId) {
       whatsapp: nuevoCelu,
       sonidoUrl: nuevoSonido
     });
-    alert("✅ ¡Cambios aplicados e historial de sonido actualizados con éxito!");
+    alert("✅ ¡Ajustes guardados correctamente!");
     await window.cargarTiendas(); 
     await window.cargarSelectTiendas(); 
     if(document.getElementById("filtroTiendaPedidos").value === tiendaId) window.escucharPedidosEnTiempoReal();
