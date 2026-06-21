@@ -2,121 +2,149 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin V2 - EyMoto</title>
+  <title>Admin V2 Completo - EyMoto</title>
 
   <style>
-    body { font-family: Arial; background:#111; color:#fff; margin:0; }
-    header { background:#000; padding:15px; text-align:center; font-size:20px; font-weight:bold; }
-    .container { padding:20px; }
-    .card { background:#1c1c1c; padding:15px; margin-bottom:10px; border-radius:10px; }
-    input, button, select { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; box-sizing: border-box; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
+    body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
+    header { background:#000; padding:15px; text-align:center; font-size:22px; font-weight:bold; color: #f5c400; border-bottom: 2px solid #222; }
+    .container { padding:20px; max-width: 1200px; margin: 0 auto; }
+    .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
+    input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
+    input:focus, select:focus, textarea:focus { border-color: #f5c400; outline: none; }
+    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
+    button:hover { background: #e0b300; }
     .hidden { display:none; }
-    .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; background: #222; position: relative; }
     
-    /* ESTILOS PANEL DE PEDIDOS */
-    .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222; }
+    /* SECCIÓN TIENDAS Y PRODUCTOS */
+    .tienda-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; display: flex; justify-content: space-between; align-items: center; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
+    .producto-info { flex-grow: 1; }
+
+    /* PANEL DE PEDIDOS */
+    .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
     .status-pendiente { border-color: #ffc107; }
     .status-preparacion { border-color: #17a2b8; }
     .status-entregado { border-color: #28a745; }
     .status-cancelado { border-color: #dc3545; }
     
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
     .badge-pendiente { background: #ffc107; color: #000; }
     .badge-preparacion { background: #17a2b8; color: #fff; }
     .badge-entregado { background: #28a745; color: #fff; }
     .badge-cancelado { background: #dc3545; color: #fff; }
 
-    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 10px; }
-    .btn-status { font-size: 12px; padding: 6px; }
+    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
+    .btn-status { font-size: 12px; padding: 8px; margin: 0; }
+    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
+    .btn-danger:hover { background: #bd2130; }
+    .btn-edit { background: #ffc107; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
     
-    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 5px 10px; font-size: 12px; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #333; padding: 8px 0; }
+    .flex-buttons { display: flex; gap: 5px; }
   </style>
 </head>
 
 <body>
 
-<header>ADMIN V2 - EYMOTO</header>
+<header>🚀 PANEL DE ADMINISTRACIÓN - EYMOTO</header>
 
 <div class="container">
 
+  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
-    <h3>🔐 Login Administrador</h3>
-    <input type="email" id="email" placeholder="Correo Electrónico">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="btnIniciarSesion">Iniciar sesión</button>
-    <p id="loginMsg" style="color: red;"></p>
+    <h3>🔐 Acceso al Sistema Administrativo</h3>
+    <label>Correo Electrónico:</label>
+    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
+    <label>Contraseña:</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button id="btnIniciarSesion">Ingresar al Panel</button>
+    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
+  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
-    <div class="card" style="border: 2px solid #f5c400;">
-      <h3>📋 Monitor de Pedidos en Tiempo Real</h3>
+    <!-- MONITOR DE COMANDAS -->
+    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
+      <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       
-      <button onclick="probarSonidoSistema()" style="background:#00bcd4; color:#000; margin-bottom:15px; padding:10px; font-weight:bold;">🔔 Inicializar / Probar Altavoz ("Ey Moto")</button>
+      <button onclick="probarSonidoSistema()" style="background:#00bcd4; color:#000; margin-bottom:15px; padding:12px; font-weight:bold;">🔔 Forzar / Activar Permiso de Audio</button>
       
-      <label style="font-size: 13px; color: #aaa;">Filtrar pedidos por Tienda:</label>
+      <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para escuchar comandas:</label>
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
-        <option value="">Seleccionar tienda para monitorear</option>
+        <option value="">Seleccionar tienda para monitorear...</option>
       </select>
       
       <div id="contenedorPedidos" style="margin-top:15px;">
-        <p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>
+        <p style="color: #aaa; text-align: center; padding: 20px;">Filtra una tienda arriba para activar la recepción en tiempo real.</p>
       </div>
     </div>
 
+    <!-- CREADOR DE TIENDAS -->
     <div class="card">
-      <h3>➕ Crear Tienda</h3>
-      <input id="nombreTienda" placeholder="Nombre tienda">
-      <input id="whatsapp" placeholder="WhatsApp">
-      <input id="logoTienda" placeholder="URL del logo">
-      <input id="bannerTienda" placeholder="URL del banner (opcional)">
-      <button onclick="crearTienda()">Crear Tienda</button>
+      <h3>➕ Registro de Nueva Tienda</h3>
+      <input id="nombreTienda" placeholder="Nombre Comercial de la Tienda">
+      <input id="whatsapp" placeholder="WhatsApp (Ej: 573000000000)">
+      <input id="logoTienda" placeholder="URL de la imagen del Logo">
+      <input id="bannerTienda" placeholder="URL de la imagen de Portada/Banner (Opcional)">
+      <button onclick="crearTienda()">Registrar Tienda</button>
     </div>
 
+    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card">
-      <h3>➕ Crear o Editar Producto</h3>
-      <select id="tiendaProducto" onchange="cargarProductos()">
-        <option value="">Seleccionar tienda</option>
+      <h3>🍔 Gestión Integral de Productos</h3>
+      <label>1. Elige la Tienda:</label>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
+        <option value="">Seleccionar tienda...</option>
       </select>
-      <input id="nuevoNombre" placeholder="Nombre">
-      <input id="nuevoPrecio" type="number" placeholder="Precio">
-      <input id="nuevoCategoria" placeholder="Categoría">
-      <input id="nuevoDescripcion" placeholder="Descripción">
-      <input id="nuevoImagen" placeholder="Imagen">
-      <button onclick="crearProducto()">Guardar Producto</button>
+      
+      <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
+        <h4 id="tituloFormProducto">Añadir Nuevo Producto</h4>
+        <input type="hidden" id="editProductoId" value="">
+        <input id="nuevoNombre" placeholder="Nombre del platillo o producto">
+        <input id="nuevoPrecio" type="number" placeholder="Precio en COP ($)">
+        <input id="nuevoCategoria" placeholder="Categoría (Ej: Hamburguesas, Bebidas, Combos)">
+        <textarea id="nuevoDescripcion" placeholder="Descripción de ingredientes o detalles..." rows="2"></textarea>
+        <input id="nuevoImagen" placeholder="URL de la foto del producto">
+        <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
+        <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición</button>
+      </div>
     </div>
 
+    <!-- LISTADOS COMPLETOS DE EDICIÓN ORIGINALES -->
     <div class="card">
-      <h3>🏪 Tiendas registradas</h3>
+      <h3>🏪 Listado de Tiendas Habilitadas</h3>
       <div id="listaTiendas"></div>
     </div>
 
     <div class="card">
-      <h3>📦 Lista de Productos (Edición)</h3>
-      <div id="listaProductos"></div>
+      <h3>📦 Inventario de Productos Disponibles</h3>
+      <div id="listaProductos">
+        <p style="color: #aaa;">Selecciona una tienda en el panel superior para cargar sus productos.</p>
+      </div>
     </div>
 
+    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
-      <h3>🏪 Abrir / Cerrar Tienda</h3>
+      <h3>🏪 Estado Operativo (Abrir / Cerrar)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
-        <option value="">Seleccionar tienda</option>
+        <option value="">Seleccionar tienda...</option>
       </select>
-      <p id="estadoActual">Estado: -</p>
-      <button onclick="toggleTienda()">Cambiar Estado</button>
+      <p id="estadoActual" style="font-size: 16px; margin: 10px 0;">Estado actual: <b>-</b></p>
+      <button onclick="toggleTienda()" style="background: #28a745; color: #fff;">Invertir Estado de la Tienda</button>
     </div>
 
-    <button onclick="logout()" style="background:#555; color:#fff; margin-top:20px;">Cerrar sesión</button>
+    <button onclick="logout()" style="background:#444; color:#fff; margin-top:20px; font-size: 14px;">🚪 Cerrar Sesión del Administrador</button>
 
   </div>
 </div>
 
+<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
+// CONFIGURACIÓN OFICIAL
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
@@ -131,24 +159,40 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let cargaInicialCompleta = false; 
+let cargaInicialCompleta = false;
 
-// SISTEMA DE VOZ NATIVO (REEMPLAZA AL BASE64 CORRUPTO)
-window.probarSonidoSistema = function() {
-  if ('speechSynthesis' in window) {
-    const textToSpeech = new SpeechSynthesisUtterance("Ey Moto");
-    textToSpeech.lang = 'es-CO'; 
-    textToSpeech.rate = 1.1; 
-    window.speechSynthesis.speak(textToSpeech);
-    console.log("Altavoz probado exitosamente.");
-  } else {
-    alert("Tu navegador no soporta alertas de voz automáticas.");
+// REPRODUCTOR DE SONIDO CORREGIDO (Audio alternativo web libre de fallos de codificación)
+let audioContext = null;
+function reproducirAlertaComanda() {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // Generador de tono sintetizado limpio para alertas de negocio (Doble beep fuerte)
+    let t = audioContext.currentTime;
+    let osc1 = audioContext.createOscillator();
+    let gain = audioContext.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, t); // Tono alto
+    osc1.frequency.setValueAtTime(1200, t + 0.15);
+    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    osc1.connect(gain);
+    gain.connect(audioContext.destination);
+    osc1.start(t);
+    osc1.stop(t + 0.4);
+  } catch(e) {
+    console.error("Fallo al reproducir el tono de alerta: ", e);
   }
 }
 
-// --- MONITOREO EN TIEMPO REAL ---
+window.probarSonidoSistema = function() {
+  reproducirAlertaComanda();
+  alert("🔔 Tono de alerta inicializado. ¡El sistema sonará inmediatamente al entrar un pedido!");
+}
 
-window.escucharPedidosEnTiempoReal = async function() {
+// --- ESCUCHA EN TIEMPO REAL ---
+window.escucharPedidosEnTiempoReal = function() {
   const tiendaId = document.getElementById("filtroTiendaPedidos").value;
   const contenedor = document.getElementById("contenedorPedidos");
   if (!contenedor) return;
@@ -156,11 +200,11 @@ window.escucharPedidosEnTiempoReal = async function() {
   if (pedidosUnsubscribe) pedidosUnsubscribe();
 
   if (!tiendaId) {
-    contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>';
+    contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Filtra una tienda arriba para activar la recepción en tiempo real.</p>';
     return;
   }
 
-  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
+  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando flujo de comandas... ⏳</p>';
   cargaInicialCompleta = false;
 
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
@@ -170,8 +214,7 @@ window.escucharPedidosEnTiempoReal = async function() {
       if (cargaInicialCompleta && !snap.metadata.hasPendingWrites) {
         snap.docChanges().forEach(change => {
           if (change.type === "added") {
-            console.log("¡Pedido recibido! Alerta por voz ejecutada.");
-            probarSonidoSistema();
+            reproducirAlertaComanda();
           }
         });
       }
@@ -179,7 +222,7 @@ window.escucharPedidosEnTiempoReal = async function() {
       contenedor.innerHTML = "";
       
       if (snap.empty) {
-        contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">No se han registrado pedidos hoy. 🍔</p>';
+        contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados el día de hoy en esta tienda. 🍔</p>';
         cargaInicialCompleta = true;
         return;
       }
@@ -190,7 +233,7 @@ window.escucharPedidosEnTiempoReal = async function() {
         const numPedido = p.numeroPedido || "#----";
         const estado = p.estado || "Pendiente";
         
-        let fechaFormateada = "Verificar Hora";
+        let fechaFormateada = "Hora no definida";
         if (p.fecha) {
           const d = new Date(p.fecha);
           fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
@@ -212,26 +255,26 @@ window.escucharPedidosEnTiempoReal = async function() {
         contenedor.innerHTML += `
           <div class="pedido-card ${claseBorde}">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Pedido ${numPedido}</span>
-              <span class="badge ${claseBadge}">${estado.toUpperCase()}</span>
+              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${numPedido}</span>
+              <span class="badge ${claseBadge}">${estado}</span>
             </div>
-            <p style="font-size:12px; color:#aaa; margin:2px 0;">🕒 <b>Fecha:</b> ${fechaFormateada}</p>
-            <p style="margin:5px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'No registrado'}</p>
-            <p style="margin:5px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'No registrado'}</p>
+            <p style="font-size:13px; margin:4px 0;">🕒 <b>Recibido:</b> ${fechaFormateada}</p>
+            <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
+            <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
             
-            <div style="background:#111; padding:10px; border-radius:5px; margin:10px 0; font-size:13px;">
+            <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
               ${itemsHTML}
               <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">TOTAL: $${(p.total || 0).toLocaleString('es-CO')}</span>
+              <span style="font-size:15px; color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
             </div>
 
             <div class="grid-acciones">
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocina</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
             </div>
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#333; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px;">🗑️ Quitar de pantalla</button>
+            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#2b2b2b; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; width: auto;">🗑️ Remover Vista</button>
           </div>
         `;
       });
@@ -242,16 +285,15 @@ window.escucharPedidosEnTiempoReal = async function() {
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
     await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
-  } catch (e) { alert("❌ Error: " + e.message); }
+  } catch (e) { alert("Error al actualizar estado: " + e.message); }
 }
 
 window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
-  if (!confirm("¿Eliminar de la pantalla?")) return;
-  try { await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); } catch (e) { alert("❌ Error: " + e.message); }
+  if (!confirm("¿Deseas dar de baja este pedido de la pantalla principal?")) return;
+  try { await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); } catch (e) { alert("Error: " + e.message); }
 }
 
-// --- GESTIÓN DE TIENDAS ---
-
+// --- MANEJO DE TIENDAS ORIGINAL ---
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
   const filtroTienda = document.getElementById("filtroTiendaPedidos");
@@ -259,10 +301,9 @@ window.cargarTiendas = async function() {
   const tiendaEstado = document.getElementById("tiendaEstado");
 
   if (listaTiendas) listaTiendas.innerHTML = "";
-  
-  if(filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
-  if(tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
-  if(tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
+  if (filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
+  if (tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  if (tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
 
   const snap = await db.collection("tiendas").get();
   const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
@@ -274,11 +315,13 @@ window.cargarTiendas = async function() {
     
     if (listaTiendas) {
       listaTiendas.innerHTML += `
-        <div class="tienda">
-          <h4>🏪 ${t.nombre || 'Sin nombre'}</h4>
-          <p>📱 WhatsApp: ${t.whatsapp || '-'}</p>
-          <p>🔗 <a href="${urlCompleta}" target="_blank" style="color:#f5c400;">Ver menú digital</a></p>
-          <button class="btn-danger" onclick="eliminarTienda('${idTienda}')" style="position:absolute; right:10px; top:10px;">🗑️ Borrar Tienda</button>
+        <div class="tienda-item">
+          <div>
+            <b style="font-size:16px; color:#f5c400;">🏪 ${t.nombre || 'Tienda sin Nombre'}</b><br>
+            <span style="font-size:13px; color:#aaa;">WhatsApp: ${t.whatsapp || '-'}</span><br>
+            <a href="${urlCompleta}" target="_blank" style="color:#00bcd4; font-size:13px;">🔗 Ver Menú Digital</a>
+          </div>
+          <button class="btn-danger" onclick="eliminarTiendaOriginal('${idTienda}')">🗑️ Eliminar</button>
         </div>
       `;
     }
@@ -296,105 +339,132 @@ window.crearTienda = async function() {
   const logo = document.getElementById("logoTienda").value.trim();
   const banner = document.getElementById("bannerTienda").value.trim();
 
-  if(!nombre || !whatsapp) return alert("Escribe el nombre y WhatsApp de la tienda");
+  if(!nombre || !whatsapp) return alert("Por favor completa los campos de Nombre y WhatsApp.");
 
   try {
     await db.collection("tiendas").add({ nombre, whatsapp, logo, banner, abierta: true });
-    alert("🏪 ¡Tienda creada con éxito!");
+    alert("🏪 ¡Tienda dada de alta correctamente!");
+    document.getElementById("nombreTienda").value = "";
+    document.getElementById("whatsapp").value = "";
+    document.getElementById("logoTienda").value = "";
+    document.getElementById("bannerTienda").value = "";
     cargarTiendas();
   } catch(e) { alert("Error: " + e.message); }
 }
 
-window.eliminarTienda = async function(idTienda) {
-  if(!confirm("¿Seguro que deseas eliminar esta tienda con todo su contenido?")) return;
+window.eliminarTiendaOriginal = async function(idTienda) {
+  if(!confirm("¿Estás absolutamente seguro de borrar esta tienda? Se perderán menús e historial asociado.")) return;
   try {
     await db.collection("tiendas").doc(idTienda).delete();
-    alert("Tienda eliminada.");
+    alert("Tienda destruida correctamente.");
     cargarTiendas();
   } catch(e) { alert("Error: " + e.message); }
 }
 
-// --- GESTIÓN DE PRODUCTOS (CON EDICIÓN Y ELIMINACIÓN RESTAURADAS) ---
-
-window.crearProducto = async function() {
+// --- EDICIÓN COMPLETA DE PRODUCTOS (FUNCIONES ORIGINALES RECONSTRUIDAS) ---
+window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
+  const prodId = document.getElementById("editProductoId").value;
+  
   const nombre = document.getElementById("nuevoNombre").value.trim();
   const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
   const categoria = document.getElementById("nuevoCategoria").value.trim();
   const descripcion = document.getElementById("nuevoDescripcion").value.trim();
   const imagen = document.getElementById("nuevoImagen").value.trim();
 
-  if(!tiendaId || !nombre || !precio) return alert("Selecciona tienda, pon nombre y precio válido");
+  if(!tiendaId || !nombre || !precio) return alert("Selecciona una tienda asignada, define nombre y precio de venta.");
+
+  const datosProducto = { nombre, precio, categoria, descripcion, imagen };
 
   try {
-    await db.collection("tiendas").doc(tiendaId).collection("productos").add({
-      nombre, precio, categoria, descripcion, imagen
-    });
-    alert("🍔 ¡Producto guardado con éxito!");
-    
-    // Limpiar campos de texto
-    document.getElementById("nuevoNombre").value = "";
-    document.getElementById("nuevoPrecio").value = "";
-    document.getElementById("nuevoCategoria").value = "";
-    document.getElementById("nuevoDescripcion").value = "";
-    document.getElementById("nuevoImagen").value = "";
-    
-    cargarProductos();
-  } catch(e) { alert("Error: " + e.message); }
+    if (prodId) {
+      // EDICIÓN DE EXISTENTE
+      await db.collection("tiendas").doc(tiendaId).collection("productos").doc(prodId).set(datosProducto, { merge: true });
+      alert("🍔 ¡Producto modificado exitosamente!");
+    } else {
+      // NUEVO REGISTRO
+      await db.collection("tiendas").doc(tiendaId).collection("productos").add(datosProducto);
+      alert("🍔 ¡Producto añadido al catálogo!");
+    }
+    cancelarEdicionProducto();
+    cargarProductosOriginal();
+  } catch(e) { alert("Error al procesar el producto: " + e.message); }
 }
 
-window.cargarProductos = async function() {
+window.cargarProductosOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const lista = document.getElementById("listaProductos");
   if(!lista) return;
   lista.innerHTML = "";
 
-  if(!tiendaId) return;
+  if(!tiendaId) {
+    lista.innerHTML = '<p style="color: #aaa;">Selecciona una tienda en el panel superior para cargar sus productos.</p>';
+    return;
+  }
 
   const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+  
+  if(snap.empty) {
+    lista.innerHTML = '<p style="color: #aaa;">Esta tienda no posee productos en su inventario actualmente.</p>';
+    return;
+  }
+
   snap.forEach(doc => {
     const p = doc.data();
     const idProd = doc.id;
     lista.innerHTML += `
       <div class="producto-item">
-        <div>
-          <b>${p.nombre}</b> - $${(p.precio || 0).toLocaleString('es-CO')} | <span style="color:#aaa;">${p.categoria || 'Sin Cat.'}</span>
+        <div class="producto-info">
+          <b style="color: #f5c400; font-size:15px;">${p.nombre}</b> - $${(p.precio || 0).toLocaleString('es-CO')}<br>
+          <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${p.descripcion || 'Sin descripción'}</small>
         </div>
-        <div>
-          <button onclick="cargarProductoParaEditar('${tiendaId}', '${idProd}', \`${p.nombre}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)" style="width:auto; padding:4px 8px; background:#ffc107; color:#000; font-size:12px; margin-right:5px;">✏️ Editar</button>
-          <button onclick="eliminarProducto('${tiendaId}', '${idProd}')" class="btn-danger">🗑️ Eliminar</button>
+        <div class="flex-buttons">
+          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${p.nombre}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
+          <button class="btn-danger" onclick="eliminarProductoOriginal('${tiendaId}', '${idProd}')">🗑️ Borrar</button>
         </div>
       </div>
     `;
   });
 }
 
-window.cargarProductoParaEditar = function(tiendaId, idProd, nombre, precio, categoria, descripcion, imagen) {
+window.activarEdicionProducto = function(id, nombre, precio, categoria, descripcion, imagen) {
+  document.getElementById("editProductoId").value = id;
   document.getElementById("nuevoNombre").value = nombre;
   document.getElementById("nuevoPrecio").value = precio;
   document.getElementById("nuevoCategoria").value = categoria;
   document.getElementById("nuevoDescripcion").value = descripcion;
   document.getElementById("nuevoImagen").value = imagen;
+
+  document.getElementById("tituloFormProducto").innerText = "✏️ Editando Producto Activo";
+  document.getElementById("btnGuardarProducto").innerText = "Actualizar Cambios";
+  document.getElementById("btnCancelarEdicion").classList.remove("hidden");
   
-  // Al volver a guardar lo creará, si prefieres sobreescribir borramos el viejo al guardar
-  window.eliminarProductoSilencioso(tiendaId, idProd);
-  alert("Datos cargados arriba en el formulario. Edita lo que necesites y dale a 'Guardar Producto'.");
+  // Desplazar pantalla al formulario de edición automáticamente
+  document.getElementById("tituloFormProducto").scrollIntoView({ behavior: 'smooth' });
 }
 
-window.eliminarProducto = async function(tiendaId, idProd) {
-  if(!confirm("¿Deseas eliminar este producto?")) return;
+window.cancelarEdicionProducto = function() {
+  document.getElementById("editProductoId").value = "";
+  document.getElementById("nuevoNombre").value = "";
+  document.getElementById("nuevoPrecio").value = "";
+  document.getElementById("nuevoCategoria").value = "";
+  document.getElementById("nuevoDescripcion").value = "";
+  document.getElementById("nuevoImagen").value = "";
+
+  document.getElementById("tituloFormProducto").innerText = "Añadir Nuevo Producto";
+  document.getElementById("btnGuardarProducto").innerText = "Añadir Producto";
+  document.getElementById("btnCancelarEdicion").classList.add("hidden");
+}
+
+window.eliminarProductoOriginal = async function(tiendaId, idProd) {
+  if(!confirm("¿Seguro que deseas remover este artículo de las ventas de la tienda?")) return;
   try {
     await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
-    cargarProductos();
+    cargarProductosOriginal();
   } catch(e) { alert("Error: " + e.message); }
 }
 
-window.eliminarProductoSilencioso = async function(tiendaId, idProd) {
-  try { await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete(); } catch(e){}
-}
-
-// --- CONTROL DE ESTADO (ABIERTO/CERRADO) ---
-
+// --- INTERRUPTOR DISPONIBILIDAD ---
 window.cargarEstadoTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
   const txt = document.getElementById("estadoActual");
@@ -403,13 +473,13 @@ window.cargarEstadoTienda = async function() {
   const doc = await db.collection("tiendas").doc(tiendaId).get();
   if(doc.exists) {
     const abierta = doc.data().abierta !== false;
-    txt.innerHTML = `Estado: <b>${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
+    txt.innerHTML = `Estado actual: <b style="color: ${abierta ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO (Recibiendo pedidos)' : '🔴 CERRADO (Menú Desactivado)'}</b>`;
   }
 }
 
 window.toggleTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
-  if(!tiendaId) return alert("Selecciona una tienda");
+  if(!tiendaId) return alert("Por favor selecciona una tienda operativa.");
 
   try {
     const ref = db.collection("tiendas").doc(tiendaId);
@@ -417,21 +487,21 @@ window.toggleTienda = async function() {
     const estadoActual = doc.data().abierta !== false;
     await ref.update({ abierta: !estadoActual });
     cargarEstadoTienda();
-    alert("¡Estado de la tienda cambiado!");
+    alert("¡Disponibilidad modificada exitosamente en la base de datos!");
   } catch(e) { alert("Error: " + e.message); }
 }
 
-// --- SISTEMA DE LOGUEO Y AUTENTICACIÓN ---
-
+// --- CONTROL ACCESOS ---
 document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const msg = document.getElementById("loginMsg");
 
   try {
+    msg.innerText = "";
     await auth.signInWithEmailAndPassword(email, password);
   } catch (e) {
-    msg.innerText = "Error en credenciales: " + e.message;
+    msg.innerText = "Error en credenciales de acceso: " + e.message;
   }
 });
 
