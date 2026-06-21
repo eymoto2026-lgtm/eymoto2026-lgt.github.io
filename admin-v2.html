@@ -22,14 +22,13 @@
     <input type="email" id="email" placeholder="Correo">
     <input type="password" id="password" placeholder="Contraseña">
     <button id="btnIniciarSesion">Ingresar</button>
+    <p id="errorLogin" style="color:red;"></p>
   </div>
 
   <div id="panel" class="hidden">
     <div class="card" style="border: 2px solid #f5c400;">
       <h3>📋 Monitor Global de Pedidos</h3>
-      <p style="color: #00ff00; font-size: 12px;">✅ Sistema con cola de voz inteligente activo.</p>
       <button onclick="probarVozAlarma()" style="background: #008b9b; color: #fff;">🔔 Inicializar Altavoz</button>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()"></select>
       <div id="contenedorPedidos"></div>
     </div>
   </div>
@@ -40,10 +39,31 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = { /* ... tu config ... */ };
+// --- CONFIGURACIÓN (Asegúrate de copiar tu config real aquí) ---
+const firebaseConfig = {
+    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+    authDomain: "eymotocomidas.firebaseapp.com",
+    projectId: "eymotocomidas",
+    storageBucket: "eymotocomidas.firebasestorage.app",
+    messagingSenderId: "670474251560",
+    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// --- LÓGICA DE LOGIN (Lo que faltaba) ---
+document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorLogin");
+    
+    try {
+        await auth.signInWithEmailAndPassword(email, pass);
+    } catch (e) {
+        errorMsg.innerText = "Error: " + e.message;
+    }
+});
 
 // --- LÓGICA DE COLA DE AUDIO ---
 let colaAlertas = [];
@@ -66,21 +86,17 @@ async function procesarCola() {
   }
   
   procesandoCola = false;
-  setTimeout(procesarCola, 800); // Pausa corta entre anuncios
+  setTimeout(procesarCola, 800);
 }
 
 // --- MONITOREO GLOBAL ---
-let globalListeners = [];
 function iniciarMonitoreoGlobal() {
-  globalListeners.forEach(unsub => unsub());
-  globalListeners = [];
-
   db.collection("tiendas").get().then(snap => {
     snap.forEach(doc => {
       const tiendaId = doc.id;
       const nombreTienda = doc.data().nombre;
       
-      const unsub = db.collection("tiendas").doc(tiendaId).collection("pedidos")
+      db.collection("tiendas").doc(tiendaId).collection("pedidos")
         .where("estado", "==", "Pendiente")
         .onSnapshot(snapPedidos => {
           snapPedidos.docChanges().forEach(change => {
@@ -90,17 +106,14 @@ function iniciarMonitoreoGlobal() {
             }
           });
         });
-      globalListeners.push(unsub);
     });
   });
 }
 
-// --- RESTO DE FUNCIONES ---
 window.probarVozAlarma = () => {
   const msg = new SpeechSynthesisUtterance("Sistema de audio listo");
   msg.lang = 'es-CO';
   window.speechSynthesis.speak(msg);
-  alert("Altavoz inicializado.");
 };
 
 auth.onAuthStateChanged(user => {
