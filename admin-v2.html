@@ -14,7 +14,7 @@
     .hidden { display:none; }
     .tienda { border:1px solid #333; padding:10px; margin-top:10px; border-radius:8px; background: #222; }
     
-    /* ESTILOS DE LA FASE 4 (PANEL DE PEDIDOS) */
+    /* ESTILOS PANEL DE PEDIDOS */
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 10px; border-radius: 8px; background: #222; }
     .status-pendiente { border-color: #ffc107; }
     .status-preparacion { border-color: #17a2b8; }
@@ -29,10 +29,6 @@
 
     .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; margin-top: 10px; }
     .btn-status { font-size: 12px; padding: 6px; }
-    
-    .file-input-wrapper { background: #333; padding: 10px; border-radius: 5px; border: 1px dashed #555; text-align: center; margin: 8px 0; }
-    .file-input-wrapper input { display: none; }
-    .file-input-wrapper label { cursor: pointer; color: #f5c400; font-size: 14px; font-weight: bold; display: block; }
   </style>
 </head>
 
@@ -44,8 +40,8 @@
 
   <div id="loginBox" class="card">
     <h3>🔐 Login Administrador</h3>
-    <input type="email" id="email">
-    <input type="password" id="password">
+    <input type="email" id="email" placeholder="Correo Electrónico">
+    <input type="password" id="password" placeholder="Contraseña">
     <button id="btnIniciarSesion">Iniciar sesión</button>
     <p id="loginMsg" style="color: red;"></p>
   </div>
@@ -113,10 +109,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script>
-// 🔥 ACTUALIZADO: Apuntando correctamente al ID de proyecto "tiendas-para-eymoto"
+// Configuración de Firebase para tu proyecto activo
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "tiendas-para-eymoto.firebaseapp.com",
@@ -129,7 +124,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage(); 
 
 let pedidosUnsubscribe = null;
 let sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"); 
@@ -147,7 +141,7 @@ window.escucharPedidosEnTiempoReal = async function() {
   if (!tiendaId) {
     contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda arriba para ver sus comandas...</p>';
     return;
-  }
+  </div>
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Conectando con el canal de comandas... ⏳</p>';
   cargaInicialCompleta = false;
@@ -273,15 +267,12 @@ window.cargarTiendas = async function() {
         <label style="font-size: 13px; color: #aaa;">📞 Número de WhatsApp:</label>
         <input id="ws-${idTienda}" value="${t.whatsapp || ''}">
         
-        <label style="font-size: 13px; color: #aaa; display:block; margin-top:5px;">🎵 Sonido de Alerta Personalizado:</label>
-        <div class="file-input-wrapper">
-          <label id="lbl-file-${idTienda}" for="file-${idTienda}">📁 Seleccionar archivo .mp3 desde PC</label>
-          <input type="file" id="file-${idTienda}" accept="audio/mp3, audio/mpeg" onchange="subirAudioEscritorio('${idTienda}')">
-        </div>
+        <label style="font-size: 13px; color: #aaa; display:block; margin-top:5px;">🎵 Enlace de Alerta Directo (.mp3 de Filebin):</label>
+        <input id="snd-${idTienda}" value="${sonidoActual}" placeholder="Pega aquí el enlace directo de Filebin que termina en .mp3">
+        
         <p id="status-audio-${idTienda}" style="font-size:12px; margin:2px 0; color:#aaa;">
-          ${sonidoActual ? "✅ Sonido activo: " + sonidoActual.substring(0, 50) + "..." : "⚠️ Usando tono por defecto"}
+          ${sonidoActual ? "✅ Sonido guardado: " + sonidoActual.substring(0, 45) + "..." : "⚠️ Usando tono por defecto"}
         </p>
-        <input type="hidden" id="snd-${idTienda}" value="${sonidoActual}">
 
         <button onclick="actualizarTiendaDatos('${idTienda}')" style="background: #28a745; color: #fff; margin-top:10px;">
           💾 Guardar Cambios (Nombre, WhatsApp y Sonido)
@@ -292,35 +283,6 @@ window.cargarTiendas = async function() {
         </div>
         <button onclick="eliminarTienda('${idTienda}','${t.nombre}')" style="background:#ff3333; color:#fff; width:auto; padding: 6px 12px; font-size:12px; margin-top: 10px;">🗑️ Eliminar Tienda</button>
       </div>`;
-  });
-}
-
-window.subirAudioEscritorio = function(tiendaId) {
-  const fileInput = document.getElementById(`file-${tiendaId}`);
-  const statusTxt = document.getElementById(`status-audio-${tiendaId}`);
-  const labelTxt = document.getElementById(`lbl-file-${tiendaId}`);
-  
-  if (!fileInput.files || fileInput.files.length === 0) return;
-  
-  const file = fileInput.files[0];
-  labelTxt.innerText = "⏳ Subiendo archivo...";
-  statusTxt.style.color = "#f5c400";
-
-  const storageRef = storage.ref(`sonidos/${tiendaId}_${Date.now()}.mp3`);
-  
-  storageRef.put(file).then(snapshot => {
-    return snapshot.ref.getDownloadURL();
-  }).then(url => {
-    document.getElementById(`snd-${tiendaId}`).value = url;
-    labelTxt.innerText = "📁 Cambiar archivo .mp3";
-    statusTxt.innerText = "✅ ¡Sonido cargado listo para guardar!";
-    statusTxt.style.color = "#28a745";
-    alert("¡Archivo subido con éxito! Recuerda hacer clic en 'Guardar Cambios' para aplicar.");
-  }).catch(error => {
-    console.error("Error al subir:", error);
-    labelTxt.innerText = "❌ Error en subida";
-    statusTxt.innerText = "Error: " + error.message;
-    statusTxt.style.color = "#ff3333";
   });
 }
 
@@ -337,7 +299,7 @@ window.actualizarTiendaDatos = async function(tiendaId) {
       whatsapp: nuevoCelu,
       sonidoUrl: nuevoSonido
     });
-    alert("✅ ¡Datos e historial de sonido actualizados con éxito!");
+    alert("✅ ¡Cambios aplicados e historial de sonido actualizados con éxito!");
     await window.cargarTiendas(); 
     await window.cargarSelectTiendas(); 
     if(document.getElementById("filtroTiendaPedidos").value === tiendaId) window.escucharPedidosEnTiempoReal();
