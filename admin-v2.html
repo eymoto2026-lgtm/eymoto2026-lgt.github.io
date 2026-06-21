@@ -3,136 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin V2 - Gestión Total EyMoto</title>
-
   <style>
     body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
     header { background:#000; padding:15px; text-align:center; font-size:22px; font-weight:bold; color: #f5c400; border-bottom: 2px solid #222; }
     .container { padding:20px; max-width: 1200px; margin: 0 auto; }
     .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
-    input:focus, select:focus, textarea:focus { border-color: #f5c400; outline: none; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
-    button:hover { background: #e0b300; }
+    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
     .hidden { display:none; }
-    
-    /* SECCIÓN TIENDAS Y PRODUCTOS */
     .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
-    .producto-info { flex-grow: 1; }
-
-    /* PANEL DE PEDIDOS */
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
     .status-pendiente { border-color: #ffc107; }
-    .status-preparacion { border-color: #17a2b8; }
-    .status-entregado { border-color: #28a745; }
-    .status-cancelado { border-color: #dc3545; }
-    
-    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-    .badge-pendiente { background: #ffc107; color: #000; }
-    .badge-preparacion { background: #17a2b8; color: #fff; }
-    .badge-entregado { background: #28a745; color: #fff; }
-    .badge-cancelado { background: #dc3545; color: #fff; }
-
     .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
     .btn-status { font-size: 12px; padding: 8px; margin: 0; }
-    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
-    .btn-danger:hover { background: #bd2130; }
-    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
-    
-    .flex-buttons { display: flex; gap: 5px; }
   </style>
 </head>
-
 <body>
 
 <header>🚀 PANEL DE ADMINISTRACIÓN GENERAL - EYMOTO</header>
-
 <div class="container">
-
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso al Panel Administrativo</h3>
-    <label>Correo Electrónico:</label>
-    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
-    <label>Contraseña:</label>
-    <input type="password" id="password" placeholder="••••••••">
-    <button id="btnIniciarSesion">Ingresar al Panel</button>
-    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
+    <h3>🔐 Acceso al Panel</h3>
+    <input type="email" id="email" placeholder="Correo">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button id="btnIniciarSesion">Ingresar</button>
   </div>
 
   <div id="panel" class="hidden">
-
-    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
-      <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
-      <button id="btnProbarAltavoz" onclick="probarVozAlarma()" style="background: #008b9b; color: #fff; font-size: 13px; margin-bottom: 10px;">🔔 Inicializar / Probar Altavoz ("Ey Moto")</button>
-      <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
-        <option value="">Seleccionar tienda para monitorear...</option>
-      </select>
-      <div id="contenedorPedidos" style="margin-top:15px;">
-        <p style="color: #aaa; text-align: center; padding: 20px;">Filtra una tienda arriba para ver el flujo de pedidos.</p>
-      </div>
+    <div class="card" style="border: 2px solid #f5c400;">
+      <h3>📋 Monitor Global de Pedidos</h3>
+      <button onclick="probarVozAlarma()">🔔 Probar Altavoz</button>
+      <div id="contenedorPedidos"></div>
     </div>
-
-    <div class="card" style="border-left: 5px solid #00bcd4;">
-      <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
-      <input type="hidden" id="editTiendaId" value="">
-      <input id="nombreTienda" placeholder="Nombre Comercial de la Tienda">
-      <input id="whatsapp" placeholder="WhatsApp (Ej: 573000000000)">
-      <input id="logoTienda" placeholder="URL de la imagen del Logo">
-      <input id="bannerTienda" placeholder="URL de la imagen de Portada/Banner">
-      <button id="btnGuardarTienda" onclick="guardarTiendaOriginal()">Registrar Tienda</button>
-      <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
-    </div>
-
-    <div class="card" style="border-left: 5px solid #ffc107;">
-      <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
-      <label>Asignar a la Tienda:</label>
-      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
-        <option value="">Seleccionar tienda para ver/añadir productos...</option>
-      </select>
-      
-      <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
-        <input type="hidden" id="editProductoId" value="">
-        <input id="nuevoNombre" placeholder="Nombre del platillo o producto">
-        <input id="nuevoPrecio" type="number" placeholder="Precio en COP ($)">
-        <input id="nuevoCategoria" placeholder="Categoría (Ej: Hamburguesas, Bebidas)">
-        <textarea id="nuevoDescripcion" placeholder="Descripción de ingredientes o detalles..." rows="2"></textarea>
-        <input id="nuevoImagen" placeholder="URL de la foto del producto">
-        <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
-        <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Producto</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🏪 Lista de Tiendas Disponibles</h3>
-      <div id="listaTiendas"></div>
-    </div>
-
-    <div class="card">
-      <h3>📦 Lista de Productos por Tienda</h3>
-      <div id="listaProductos">
-        <p style="color: #aaa;">Selecciona una tienda en el formulario de arriba para inspeccionar e inventariar sus productos.</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
-      <select id="tiendaEstado" onchange="cargarEstadoTienda()">
-        <option value="">Seleccionar tienda...</option>
-      </select>
-      <p id="estadoActual" style="font-size: 16px; margin: 10px 0;">Estado actual: <b>-</b></p>
-      <button onclick="toggleTienda()" style="background: #28a745; color: #fff;">Cambiar Estado Disponible</button>
-    </div>
-
-    <button onclick="logout()" style="background:#444; color:#fff; margin-top:20px; font-size: 14px;">🚪 Cerrar Sesión del Administrador</button>
-
+    <button onclick="auth.signOut()" style="background:#444; color:#fff;">Cerrar Sesión</button>
   </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
@@ -147,107 +57,68 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let pedidosUnsubscribe = null;
-let colaPedidosPendientes = []; // Array de IDs pendientes
+let colaPedidosPendientes = [];
 let esReproduciendo = false;
 
-// --- SISTEMA DE VOZ PERSISTENTE ---
 function procesarColaDeVoz() {
     if (colaPedidosPendientes.length > 0 && !esReproduciendo && 'speechSynthesis' in window) {
         esReproduciendo = true;
-        const mensaje = new SpeechSynthesisUtterance(`Atención, tienes pedidos pendientes por confirmar.`);
-        mensaje.lang = 'es-CO';
-        mensaje.rate = 1.0;
-        
-        mensaje.onend = () => {
+        const msg = new SpeechSynthesisUtterance("Atención, tienes pedidos pendientes por confirmar.");
+        msg.lang = 'es-CO';
+        msg.onend = () => {
             esReproduciendo = false;
-            // Espera 5 segundos y vuelve a sonar si sigue habiendo pendientes
             setTimeout(procesarColaDeVoz, 5000);
         };
-        window.speechSynthesis.speak(mensaje);
+        window.speechSynthesis.speak(msg);
     }
 }
 
-window.probarVozAlarma = function() {
+window.probarVozAlarma = () => {
     window.speechSynthesis.cancel();
-    const mensaje = new SpeechSynthesisUtterance("Sistema de alerta inicializado.");
-    mensaje.lang = 'es-CO';
-    window.speechSynthesis.speak(mensaje);
-    alert("Altavoz listo. Escuchando todos los pedidos...");
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Sistema de alerta listo."));
 }
 
-// --- ESCUCHA CENTRALIZADA (TODAS LAS TIENDAS) ---
-window.escucharPedidosEnTiempoReal = function() {
-    const contenedor = document.getElementById("contenedorPedidos");
-    if (!contenedor) return;
-
-    if (pedidosUnsubscribe) pedidosUnsubscribe();
-
-    // CollectionGroup escucha la colección "pedidos" en cualquier nivel
-    pedidosUnsubscribe = db.collectionGroup("pedidos")
-        .orderBy("fecha", "desc")
-        .onSnapshot(snap => {
-            contenedor.innerHTML = "";
-            let nuevosPendientes = [];
-
-            snap.forEach(doc => {
-                const p = doc.data();
-                const idPedido = doc.id;
-                const tiendaId = doc.ref.parent.parent.id; // Obtiene el ID de la tienda dueña del pedido
-
-                // Si es pendiente, lo añadimos a la cola de voz si no está ya
-                if (p.estado === "Pendiente" && !colaPedidosPendientes.includes(idPedido)) {
-                    colaPedidosPendientes.push(idPedido);
-                }
-
-                // Renderizado en pantalla
-                let claseBorde = "status-pendiente";
-                if (p.estado === "En Preparación") claseBorde = "status-preparacion";
-                if (p.estado === "Entregado") claseBorde = "status-entregado";
-                if (p.estado === "Cancelado") claseBorde = "status-cancelado";
-
-                contenedor.innerHTML += `
-                    <div class="pedido-card ${claseBorde}">
-                        <p><b>Tienda:</b> ${tiendaId} | <b>#${p.numeroPedido || '---'}</b></p>
-                        <p>👤 ${p.cliente?.nombre || 'Cliente'} - ${p.total || 0}$</p>
-                        <div class="grid-acciones">
-                            <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
-                            <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
-                            <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
-                        </div>
+window.escucharPedidosEnTiempoReal = () => {
+    const cont = document.getElementById("contenedorPedidos");
+    db.collectionGroup("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
+        cont.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            const tienda = doc.ref.parent.parent.id;
+            
+            if (p.estado === "Pendiente" && !colaPedidosPendientes.includes(id)) {
+                colaPedidosPendientes.push(id);
+            }
+            
+            cont.innerHTML += `
+                <div class="pedido-card status-pendiente">
+                    <p><b>Tienda:</b> ${tienda} | <b>Pedido:</b> ${p.numeroPedido || '---'}</p>
+                    <div class="grid-acciones">
+                        <button onclick="cambiarEstado('${tienda}', '${id}', 'En Preparación')" class="btn-status">🔵 Cocinar</button>
+                        <button onclick="cambiarEstado('${tienda}', '${id}', 'Entregado')" class="btn-status">🟢 Entregado</button>
                     </div>
-                `;
-            });
-
-            // Si hay pendientes, inicia el ciclo de voz
-            if (colaPedidosPendientes.length > 0) procesarColaDeVoz();
+                </div>`;
         });
+        if (colaPedidosPendientes.length > 0) procesarColaDeVoz();
+    });
 }
 
-window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
-    // Eliminamos de la cola al atender
-    colaPedidosPendientes = colaPedidosPendientes.filter(id => id !== idPedido);
-    
-    try {
-        await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
-        if (colaPedidosPendientes.length === 0) window.speechSynthesis.cancel();
-    } catch (e) { alert("Error: " + e.message); }
-}
+window.cambiarEstado = async (tId, pId, estado) => {
+    colaPedidosPendientes = colaPedidosPendientes.filter(id => id !== pId);
+    await db.collection("tiendas").doc(tId).collection("pedidos").doc(pId).update({ estado });
+    if (colaPedidosPendientes.length === 0) window.speechSynthesis.cancel();
+};
 
-// --- MANTENEMOS TUS OTRAS FUNCIONES ORIGINALES AQUÍ ---
-// (Puedes dejar tal cual tus funciones cargarTiendas, guardarTiendaOriginal, etc.)
+document.getElementById("btnIniciarSesion").addEventListener("click", () => {
+    auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value);
+});
 
 auth.onAuthStateChanged(user => {
-    const loginBox = document.getElementById("loginBox");
-    const panel = document.getElementById("panel");
     if (user) {
-        loginBox.classList.add("hidden");
-        panel.classList.remove("hidden");
-        cargarTiendas();
-        escucharPedidosEnTiempoReal(); // Inicia el monitoreo global
-    } else {
-        loginBox.classList.remove("hidden");
-        panel.classList.add("hidden");
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("panel").classList.remove("hidden");
+        escucharPedidosEnTiempoReal();
     }
 });
 </script>
