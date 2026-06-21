@@ -1,92 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin V2 - Gestión Total EyMoto</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
-    .container { padding:20px; max-width: 1000px; margin: 0 auto; }
-    .card { background:#1c1c1c; padding:20px; border-radius:12px; border: 1px solid #333; }
-    input, button { padding:12px; margin:8px 0; width:100%; border-radius:6px; background: #252525; color: #fff; border:1px solid #444; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
-    .hidden { display:none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - EyMotoComidas</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e1e1e; padding: 2rem; border-radius: 10px; width: 300px; text-align: center; border: 1px solid #333; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #f5c400; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: #000; }
+        .hidden { display: none; }
+        #errorLogin { color: #ff6b6b; font-size: 0.9rem; margin-top: 10px; }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <!-- LOGIN -->
-  <div id="loginBox" class="card">
-    <h3>🔐 Acceso al Panel Administrativo</h3>
-    <input type="email" id="email" placeholder="Correo electrónico">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="btnIniciarSesion">Ingresar al Panel</button>
-    <p id="errorLogin" style="color: #ff4444;"></p>
-  </div>
-
-  <!-- PANEL -->
-  <div id="panel" class="hidden">
-    <div class="card">
-      <h3>🚀 Panel EyMoto Activo</h3>
-      <p>Sistema cargado correctamente.</p>
-      <button id="btnCerrarSesion" style="background:#444; color:#fff;">Cerrar Sesión</button>
+    <!-- CAJA DE LOGIN -->
+    <div id="loginBox" class="card">
+        <h3>EyMoto Administrador</h3>
+        <input type="email" id="email" placeholder="Correo electrónico">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button id="btnIniciarSesion">Ingresar</button>
+        <p id="errorLogin"></p>
     </div>
-  </div>
-</div>
 
-<script type="module">
-  // 1. IMPORTACIONES MODERNAS
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    <!-- PANEL PRINCIPAL -->
+    <div id="panel" class="card hidden">
+        <h3>Panel Activo</h3>
+        <p>Has iniciado sesión correctamente.</p>
+        <button id="btnCerrarSesion" style="background: #444; color: #fff;">Cerrar Sesión</button>
+    </div>
 
-  // 2. CONFIGURACIÓN
-  const firebaseConfig = {
-    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-    authDomain: "eymotocomidas.firebaseapp.com",
-    projectId: "eymotocomidas",
-    storageBucket: "eymotocomidas.firebasestorage.app",
-    messagingSenderId: "670474251560",
-    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d",
-    measurementId: "G-L9JLNVSVTL"
-  };
+    <script type="module">
+        // 1. IMPORTACIONES
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // 3. INICIALIZACIÓN
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+        // 2. CONFIGURACIÓN
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+            authDomain: "eymotocomidas.firebaseapp.com",
+            projectId: "eymotocomidas",
+            storageBucket: "eymotocomidas.firebasestorage.app",
+            messagingSenderId: "670474251560",
+            appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+        };
 
-  // 4. LÓGICA DE LOGIN
-  document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
-    const email = document.getElementById("email").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    const errorMsg = document.getElementById("errorLogin");
+        // 3. INICIALIZACIÓN
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (e) {
-      errorMsg.innerText = "Error: " + e.message;
-      console.error("Detalle del error:", e.code, e.message);
-    }
-  });
+        // 4. LÓGICA DE EVENTOS
+        document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            const errorMsg = document.getElementById("errorLogin");
 
-  // 5. CONTROL DE ESTADO
-  onAuthStateChanged(auth, (user) => {
-    const loginBox = document.getElementById("loginBox");
-    const panel = document.getElementById("panel");
-    if (user) {
-      loginBox.classList.add("hidden");
-      panel.classList.remove("hidden");
-    } else {
-      loginBox.classList.remove("hidden");
-      panel.classList.add("hidden");
-    }
-  });
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                errorMsg.innerText = "Error: " + e.message;
+            }
+        });
 
-  // 6. CERRAR SESIÓN
-  document.getElementById("btnCerrarSesion").addEventListener("click", () => {
-    signOut(auth);
-  });
-</script>
+        document.getElementById("btnCerrarSesion").addEventListener("click", () => {
+            signOut(auth);
+        });
+
+        // 5. ESTADO DE SESIÓN
+        onAuthStateChanged(auth, (user) => {
+            const loginBox = document.getElementById("loginBox");
+            const panel = document.getElementById("panel");
+            
+            if (user) {
+                loginBox.classList.add("hidden");
+                panel.classList.remove("hidden");
+            } else {
+                loginBox.classList.remove("hidden");
+                panel.classList.add("hidden");
+            }
+        });
+    </script>
 </body>
 </html>
