@@ -49,6 +49,7 @@
 
 <div class="container">
 
+  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -59,8 +60,10 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
+  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
+    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
@@ -72,6 +75,7 @@
       </div>
     </div>
 
+    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -83,6 +87,7 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
+    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -102,6 +107,7 @@
       </div>
     </div>
 
+    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -114,6 +120,7 @@
       </div>
     </div>
 
+    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -128,6 +135,7 @@
   </div>
 </div>
 
+<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -147,6 +155,52 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
+let despertadorInterval = null; // Guardará el bucle del despertador
+
+// Función nativa para simular un sonido de alarma (Despertador)
+function reproducirSonidoDespertador() {
+  try {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Una ráfaga rápida de 3 pitidos continuos
+    const tiempos = [0.0, 0.15, 0.30];
+    tiempos.forEach(delay => {
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(580, context.currentTime + delay); // Tono un poco más agudo y llamativo
+      
+      gainNode.gain.setValueAtTime(0.3, context.currentTime + delay);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+      
+      oscillator.start(context.currentTime + delay);
+      oscillator.stop(context.currentTime + delay + 0.08); // Pitidos cortos y secos
+    });
+  } catch (e) {
+    console.log("Audio bloqueado esperando interacción del usuario.", e);
+  }
+}
+
+// Detiene la alarma por completo
+function detenerAlarma() {
+  if (despertadorInterval) {
+    clearInterval(despertadorInterval);
+    despertadorInterval = null;
+    console.log("⏰ Alarma apagada.");
+  }
+}
+
+// Inicia la alarma repetitiva cada 2.5 segundos
+function activarAlarma() {
+  if (!despertadorInterval) {
+    reproducirSonidoDespertador(); // Toca el primero de inmediato
+    despertadorInterval = setInterval(reproducirSonidoDespertador, 2500);
+    console.log("⏰ Alarma despertador activada!");
+  }
+}
 
 // --- ESCUCHA EN TIEMPO REAL ---
 window.escucharPedidosEnTiempoReal = function() {
@@ -155,6 +209,7 @@ window.escucharPedidosEnTiempoReal = function() {
   if (!contenedor) return;
 
   if (pedidosUnsubscribe) pedidosUnsubscribe();
+  detenerAlarma(); // Resetear alarma al cambiar de tienda
 
   if (!tiendaId) {
     contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Filtra una tienda arriba para ver el flujo de pedidos.</p>';
@@ -163,7 +218,6 @@ window.escucharPedidosEnTiempoReal = function() {
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
 
-  // Control para evitar la saturación al cargar la página
   let esCargaInicial = true;
 
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
@@ -173,36 +227,35 @@ window.escucharPedidosEnTiempoReal = function() {
       
       if (snap.empty) {
         contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
-        esCargaInicial = false; // Desactivar si está vacío
+        detenerAlarma();
+        esCargaInicial = false;
         return;
       }
 
       let tienePedidoNuevoPendiente = false;
 
-      // Evaluar cambios específicos en el Snapshot
+      // REGLA DE ORO: Analizar únicamente las modificaciones de documentos en Firestore
       snap.docChanges().forEach(change => {
-        // Solo suena si el pedido es NUEVO (added) y su estado es "Pendiente"
+        // change.type === "added" significa que es un registro NUEVO que acaba de entrar
         if (change.type === "added" && change.doc.data().estado === "Pendiente") {
           tienePedidoNuevoPendiente = true;
         }
       });
 
-      // DISPARAR TU AUDIO ORIGINAL SOLO SI NO ES LA CARGA INICIAL Y HAY UN PEDIDO NUEVO
+      // Si no es la carga inicial y hay un pedido verdaderamente nuevo entrante, encendemos el despertador
       if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        try {
-          const context = new (window.AudioContext || window.webkitAudioContext)();
-          const oscillator = context.createOscillator();
-          oscillator.type = 'sine';
-          oscillator.frequency.setValueAtTime(440, context.currentTime); // Tono de 440Hz
-          oscillator.connect(context.destination);
-          oscillator.start();
-          oscillator.stop(context.currentTime + 0.4); // Duración corta y limpia
-        } catch (e) { 
-          console.log("El navegador bloqueó el audio automático. Haz clic en la pantalla.", e); 
-        }
+        activarAlarma();
       }
 
-      // Una vez procesada la primera tanda de lecturas, se quita el bloqueo
+      // Si por alguna razón ya no quedan pedidos en estado "Pendiente", apagamos la alarma automáticamente
+      let conteoPendientes = 0;
+      snap.forEach(doc => {
+        if (doc.data().estado === "Pendiente") conteoPendientes++;
+      });
+      if (conteoPendientes === 0) {
+        detenerAlarma();
+      }
+
       esCargaInicial = false;
 
       snap.forEach(doc => {
@@ -261,16 +314,21 @@ window.escucharPedidosEnTiempoReal = function() {
 
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
+    // Al interactuar tú mismo con las acciones, apagamos el despertador preventivamente
+    detenerAlarma();
     await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
   } catch (e) { alert("Error: " + e.message); }
 }
 
 window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
   if (!confirm("¿Deseas dar de baja este pedido?")) return;
-  try { await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); } catch (e) { alert("Error: " + e.message); }
+  try { 
+    detenerAlarma();
+    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); 
+  } catch (e) { alert("Error: " + e.message); }
 }
 
-// --- MANEJO COMPLETO DE TIENDAS CORREGIDO ---
+// --- MANEJO COMPLETO DE TIENDAS ---
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
   const filtroTienda = document.getElementById("filtroTiendaPedidos");
@@ -378,7 +436,7 @@ window.eliminarTiendaOriginal = async function(idTienda) {
   } catch(e) { alert("Error: " + e.message); }
 }
 
-// --- EDICIÓN COMPLETA DE PRODUCTOS CON FILTRO ---
+// --- EDICIÓN COMPLETA DE PRODUCTOS ---
 window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
@@ -520,6 +578,7 @@ document.getElementById("btnIniciarSesion").addEventListener("click", async () =
 });
 
 window.logout = function() {
+  detenerAlarma();
   auth.signOut();
 }
 
@@ -534,6 +593,7 @@ auth.onAuthStateChanged(user => {
   } else {
     loginBox.classList.remove("hidden");
     panel.classList.add("hidden");
+    detenerAlarma();
   }
 });
 </script>
