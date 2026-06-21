@@ -49,7 +49,6 @@
 
 <div class="container">
 
-  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -60,10 +59,8 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
-  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
-    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
@@ -75,7 +72,6 @@
       </div>
     </div>
 
-    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -87,7 +83,6 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
-    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -107,7 +102,6 @@
       </div>
     </div>
 
-    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -120,7 +114,6 @@
       </div>
     </div>
 
-    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -135,7 +128,6 @@
   </div>
 </div>
 
-<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -171,6 +163,9 @@ window.escucharPedidosEnTiempoReal = function() {
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
 
+  // Control para evitar la saturación al cargar la página
+  let esCargaInicial = true;
+
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
@@ -178,19 +173,37 @@ window.escucharPedidosEnTiempoReal = function() {
       
       if (snap.empty) {
         contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
+        esCargaInicial = false; // Desactivar si está vacío
         return;
       }
 
-      // TU SISTEMA ORIGINAL DE AUDIO NATIVO
-      try {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = context.createOscillator();
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, context.currentTime);
-        oscillator.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.5);
-      } catch (e) { console.log("Audio blocado o esperando acción:", e); }
+      let tienePedidoNuevoPendiente = false;
+
+      // Evaluar cambios específicos en el Snapshot
+      snap.docChanges().forEach(change => {
+        // Solo suena si el pedido es NUEVO (added) y su estado es "Pendiente"
+        if (change.type === "added" && change.doc.data().estado === "Pendiente") {
+          tienePedidoNuevoPendiente = true;
+        }
+      });
+
+      // DISPARAR TU AUDIO ORIGINAL SOLO SI NO ES LA CARGA INICIAL Y HAY UN PEDIDO NUEVO
+      if (!esCargaInicial && tienePedidoNuevoPendiente) {
+        try {
+          const context = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = context.createOscillator();
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(440, context.currentTime); // Tono de 440Hz
+          oscillator.connect(context.destination);
+          oscillator.start();
+          oscillator.stop(context.currentTime + 0.4); // Duración corta y limpia
+        } catch (e) { 
+          console.log("El navegador bloqueó el audio automático. Haz clic en la pantalla.", e); 
+        }
+      }
+
+      // Una vez procesada la primera tanda de lecturas, se quita el bloqueo
+      esCargaInicial = false;
 
       snap.forEach(doc => {
         const p = doc.data();
@@ -213,7 +226,6 @@ window.escucharPedidosEnTiempoReal = function() {
         let itemsHTML = "";
         if (p.items && p.items.length > 0) {
           p.items.forEach(item => {
-            // CORREGIDO: Usar item.nombre del pedido para que no salga vacío
             itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
           });
         }
@@ -278,7 +290,6 @@ window.cargarTiendas = async function() {
     const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
     
-    // CORREGIDO: Escapes limpios de strings para que no rompa las comillas en los botones
     const nombreEscapado = (t.nombre || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
     const logoEscapado = (t.logo || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
     const bannerEscapado = (t.banner || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
