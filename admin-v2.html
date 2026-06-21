@@ -49,7 +49,6 @@
 
 <div class="container">
 
-  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -60,12 +59,11 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
-  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
-    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
+      <button id="btnProbarAltavoz" onclick="probarVozAlarma()" style="background: #008b9b; color: #fff; font-size: 13px; margin-bottom: 10px;">🔔 Inicializar / Probar Altavoz ("Ey Moto")</button>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
         <option value="">Seleccionar tienda para monitorear...</option>
@@ -75,7 +73,6 @@
       </div>
     </div>
 
-    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -87,7 +84,6 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
-    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -107,7 +103,6 @@
       </div>
     </div>
 
-    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -120,7 +115,6 @@
       </div>
     </div>
 
-    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -135,7 +129,6 @@
   </div>
 </div>
 
-<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -159,24 +152,30 @@ let despertadorInterval = null;
 
 function reproducirSonidoDespertador() {
   try {
-    const context = new (window.AudioContext || window.webkitAudioContext)();
-    const tiempos = [0.0, 0.15, 0.30];
-    tiempos.forEach(delay => {
-      const oscillator = context.createOscillator();
-      const gainNode = context.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(580, context.currentTime + delay); 
-      gainNode.gain.setValueAtTime(0.3, context.currentTime + delay);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(context.destination);
-      
-      oscillator.start(context.currentTime + delay);
-      oscillator.stop(context.currentTime + delay + 0.08); 
-    });
+    if ('speechSynthesis' in window) {
+      const mensaje = new SpeechSynthesisUtterance("Ey Moto, tienes un nuevo pedido pendiente");
+      mensaje.lang = 'es-CO';
+      mensaje.rate = 1.1; 
+      window.speechSynthesis.speak(mensaje);
+    }
   } catch (e) {
-    console.log("Audio bloqueado esperando interacción del usuario.", e);
+    console.log("Error con la alarma de voz: ", e);
+  }
+}
+
+window.probarVozAlarma = function() {
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const mensaje = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
+      mensaje.lang = 'es-CO';
+      window.speechSynthesis.speak(mensaje);
+      alert("¡Altavoz inicializado con éxito!");
+    } else {
+      alert("Tu navegador no soporta alertas de voz.");
+    }
+  } catch(e) {
+    alert("Haz clic en la pantalla antes de probar de nuevo.");
   }
 }
 
@@ -184,6 +183,7 @@ function detenerAlarma() {
   if (despertadorInterval) {
     clearInterval(despertadorInterval);
     despertadorInterval = null;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     console.log("⏰ Alarma apagada.");
   }
 }
@@ -191,7 +191,7 @@ function detenerAlarma() {
 function activarAlarma() {
   if (!despertadorInterval) {
     reproducirSonidoDespertador(); 
-    despertadorInterval = setInterval(reproducirSonidoDespertador, 2500);
+    despertadorInterval = setInterval(reproducirSonidoDespertador, 5000);
     console.log("⏰ Alarma despertador activada!");
   }
 }
@@ -430,22 +430,22 @@ window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
   
-  const nombre = document.getElementById("nuevoNombre").value.trim();
+  const name = document.getElementById("nuevoNombre").value.trim();
   const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
   const categoria = document.getElementById("nuevoCategoria").value.trim();
   const descripcion = document.getElementById("nuevoDescripcion").value.trim();
-  const imagen = document.getElementById("nuevoImagen").value.trim();
+  const img = document.getElementById("nuevoImagen").value.trim();
 
-  if(!tiendaId || !nombre || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
+  if(!tiendaId || !name || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
 
-  const datosProducto = { nombre, precio, categoria, descripcion, imagen };
+  const datosProducto = { name, precio, categoria, descripcion, img, tiendaId };
 
   try {
     if (prodId) {
-      await db.collection("tiendas").doc(tiendaId).collection("productos").doc(prodId).set(datosProducto, { merge: true });
+      await db.collection("productos").doc(prodId).set(datosProducto, { merge: true });
       alert("🍔 ¡Producto modificado exitosamente!");
     } else {
-      await db.collection("tiendas").doc(tiendaId).collection("productos").add(datosProducto);
+      await db.collection("productos").add(datosProducto);
       alert("🍔 ¡Producto añadido al catálogo!");
     }
     cancelarEdicionProducto();
@@ -464,7 +464,8 @@ window.cargarProductosOriginal = async function() {
     return;
   }
 
-  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+  // CORRECCIÓN CLAVE: Buscamos en la colección raíz 'productos' filtrando por 'tiendaId'
+  const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
   
   if(snap.empty) {
     lista.innerHTML = '<p style="color: #aaa;">Esta tienda no posee productos en su menú.</p>';
@@ -474,17 +475,13 @@ window.cargarProductosOriginal = async function() {
   snap.forEach(doc => {
     const p = doc.data();
     const idProd = doc.id;
-    const descBase = p.descripcion || "";
     
-    // BARRIDO ABSOLUTO DE PROPIEDADES EN FIRESTORE
-    let nombreVerdadero = p.nombre || p.name || p.titulo || p.title || p.nombreProducto || p.producto || "";
-    
-    // Si la propiedad viene como un string literal "undefined" o está totalmente en blanco
-    if (!nombreVerdadero || String(nombreVerdadero).trim() === "undefined" || String(nombreVerdadero).trim() === "") {
-      nombreVerdadero = "Producto sin nombre";
-    }
+    // Leemos el campo exacto 'name' de tu Firestore
+    let nombreVerdadero = p.name || "Producto sin nombre";
+    let descBase = p.descripcion || "";
 
     const nombreEscapado = String(nombreVerdadero).replace(/`/g, "\\`").replace(/"/g, "&quot;");
+    const descEscapada = String(descBase).replace(/`/g, "\\`").replace(/"/g, "&quot;");
 
     lista.innerHTML += `
       <div class="producto-item">
@@ -493,8 +490,8 @@ window.cargarProductosOriginal = async function() {
           <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${descBase}</small>
         </div>
         <div class="flex-buttons">
-          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descBase.replace(/`/g, "\\`").replace(/"/g, "&quot;")}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
-          <button class="btn-danger" onclick="eliminarProductoOriginal('${tiendaId}', '${idProd}')">🗑️ Borrar</button>
+          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descEscapada}\`, \`${p.img || ''}\`)">✏️ Editar</button>
+          <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
         </div>
       </div>
     `;
@@ -529,10 +526,10 @@ window.cancelarEdicionProducto = function() {
   document.getElementById("btnCancelarEdicion").classList.add("hidden");
 }
 
-window.eliminarProductoOriginal = async function(tiendaId, idProd) {
+window.eliminarProductoOriginal = async function(idProd) {
   if(!confirm("¿Seguro que deseas remover este producto?")) return;
   try {
-    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
+    await db.collection("productos").doc(idProd).delete();
     cargarProductosOriginal();
   } catch(e) { alert("Error: " + e.message); }
 }
@@ -546,7 +543,7 @@ window.cargarEstadoTienda = async function() {
   const doc = await db.collection("tiendas").doc(tiendaId).get();
   if(doc.exists) {
     const abierta = doc.data().abierta !== false;
-    txt.innerHTML = `Estado actual: <b style="color: ${open ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
+    txt.innerHTML = `Estado actual: <b style="color: ${abierta ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
   }
 }
 
