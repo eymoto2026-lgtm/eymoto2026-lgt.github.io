@@ -49,7 +49,6 @@
 
 <div class="container">
 
-  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -60,10 +59,8 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
-  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
-    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
@@ -75,7 +72,6 @@
       </div>
     </div>
 
-    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -87,7 +83,6 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
-    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -107,7 +102,6 @@
       </div>
     </div>
 
-    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -120,7 +114,6 @@
       </div>
     </div>
 
-    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -135,7 +128,6 @@
   </div>
 </div>
 
-<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -474,19 +466,30 @@ window.cargarProductosOriginal = async function() {
   snap.forEach(doc => {
     const p = doc.data();
     const idProd = doc.id;
+    const descBase = p.descripcion || "";
     
-    // CORRECCIÓN INTELIGENTE AQUÍ: Asegura leer el nombre sin importar cómo se guardó en Firestore
-    const nombreVerdadero = p.nombre || p.nombreProducto || p.titulo || "Producto sin nombre";
+    // EXTRACCIÓN AVANZADA: Si viene todo metido en la descripción separado por '|'
+    let nombreVerdadero = p.nombre || p.nombreProducto || p.titulo || "";
+    
+    if (!nombreVerdadero || nombreVerdadero === "undefined") {
+      if (descBase.includes("|")) {
+        // Ejemplo: "Perros | Salchicha y salsas" -> Tomamos lo que esté después de la barra
+        nombreVerdadero = descBase.split("|")[1].trim();
+      } else {
+        nombreVerdadero = "Producto sin nombre";
+      }
+    }
+
     const nombreEscapado = nombreVerdadero.replace(/`/g, "\\`").replace(/"/g, "&quot;");
 
     lista.innerHTML += `
       <div class="producto-item">
         <div class="producto-info">
           <b style="color: #f5c400; font-size:15px;">${nombreVerdadero}</b> - $${(p.precio || 0).toLocaleString('es-CO')}<br>
-          <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${p.descripcion || 'Sin descripción'}</small>
+          <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${descBase}</small>
         </div>
         <div class="flex-buttons">
-          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
+          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descBase.replace(/`/g, "\\`").replace(/"/g, "&quot;")}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
           <button class="btn-danger" onclick="eliminarProductoOriginal('${tiendaId}', '${idProd}')">🗑️ Borrar</button>
         </div>
       </div>
