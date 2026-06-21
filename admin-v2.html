@@ -113,8 +113,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<script src="sonido.js"></script>
-
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
@@ -132,7 +130,8 @@ const db = firebase.firestore();
 let pedidosUnsubscribe = null;
 let cargaInicialCompleta = false; 
 
-// Inicializa el Audio utilizando la variable 'audioEyMotoBase64' expuesta por sonido.js
+// TU PROPIO AUDIO "EY MOTO" INTEGRADO COMO TEXTO BASE64
+const audioEyMotoBase64 = "data:audio/mpeg;base64,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+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/LgAD/lwGCBB/CBAf/LgP8uAwQIP4QID/5cAAf8uAwQIH8IEB/8uA/y4DBAg/hAgP/lwAB/y4DBAg/hAgP/lwH+XAYIEH8IEB/8uAAP+XAYIED+ECA/+XAf5cBggQfwgQH/y4AA/5cBggQfwgQH/y4D/LgMECB/CBAf/hAEMAAAALgAEGAAAACvAAsYAAAEAgAKWwAAAGgEAVtgAAAJAAIsYAAAIEAIwYAAAAaAQBi2AAAAsAACYAAAAIAAAwAAAAAYAAAYAAAAUAAgYAAAAaAAAsAAAAIAAAwAAAAYYACBwAAAAsAABgAAAAGgEAGAAAAEgAAMAAAAEmAAwcAAAAFAAAHAAAAAYBAAYAAAAYAAAIAAAABgEAEAAAABgAAAgAAAACAQAEAAAAFAAACAAAAAgEABAAAAAYAABAAAAAMgAEFAAAACwAAHAAAAAUAQAYAAAASAACwAAAAwgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAAEmAAwcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAEQAAMAAAASAACwAAAAYgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAASAAMAAAAEmAAwcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAACAQAUAAAALAAAcAAAAAUBAAYAAAASAADgAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAYgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAwgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAEQAAMAAAASAACwAAAAsBABQAAAAsAABwAAAACwEAGAAAAEgAAIAAAAAsgADFAAAACwAAHAAAAAQAgAcAAAAFAAAHAAAAAsBABQAAAAs smash";
 let sonidoAlerta = new Audio(audioEyMotoBase64);
 
 window.probarSonidoSistema = function() {
@@ -252,9 +251,17 @@ window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
 
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
-  if (!listaTiendas) return;
-  listaTiendas.innerHTML = "";
+  const filtroTienda = document.getElementById("filtroTiendaPedidos");
+  const tiendaProducto = document.getElementById("tiendaProducto");
+  const tiendaEstado = document.getElementById("tiendaEstado");
+
+  if (listaTiendas) listaTiendas.innerHTML = "";
   
+  // Limpiar selectores manteniendo primera opción vacía
+  if(filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear</option>';
+  if(tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda</option>';
+  if(tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda</option>';
+
   const snap = await db.collection("tiendas").get();
   const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
 
@@ -263,20 +270,138 @@ window.cargarTiendas = async function() {
     const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
     
-    listaTiendas.innerHTML += `
-      <div class="tienda">
-        <h4>🏪 ${t.nombre || 'Sin nombre'}</h4>
-        <p>📱 WhatsApp: ${t.whatsapp || '-'}</p>
-        <p>🔗 <a href="${urlCompleta}" target="_blank" style="color:#f5c400;">Ver menú digital</a></p>
+    if (listaTiendas) {
+      listaTiendas.innerHTML += `
+        <div class="tienda">
+          <h4>🏪 ${t.nombre || 'Sin nombre'}</h4>
+          <p>📱 WhatsApp: ${t.whatsapp || '-'}</p>
+          <p>🔗 <a href="${urlCompleta}" target="_blank" style="color:#f5c400;">Ver menú digital</a></p>
+        </div>
+      `;
+    }
+
+    // Llenar selectores dinámicamente
+    const opt = `<option value="${idTienda}">${t.nombre || idTienda}</option>`;
+    if(filtroTienda) filtroTienda.innerHTML += opt;
+    if(tiendaProducto) tiendaProducto.innerHTML += opt;
+    if(tiendaEstado) tiendaEstado.innerHTML += opt;
+  });
+}
+
+window.crearTienda = async function() {
+  const nombre = document.getElementById("nombreTienda").value.trim();
+  const whatsapp = document.getElementById("whatsapp").value.trim();
+  const logo = document.getElementById("logoTienda").value.trim();
+  const banner = document.getElementById("bannerTienda").value.trim();
+
+  if(!nombre || !whatsapp) return alert("Escribe el nombre y WhatsApp de la tienda");
+
+  try {
+    await db.collection("tiendas").add({ nombre, whatsapp, logo, banner, abierta: true });
+    alert("🏪 ¡Tienda creada con éxito!");
+    cargarTiendas();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+// --- GESTIÓN DE PRODUCTOS ---
+
+window.crearProducto = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const nombre = document.getElementById("nuevoNombre").value.trim();
+  const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
+  const categoria = document.getElementById("nuevoCategoria").value.trim();
+  const descripcion = document.getElementById("nuevoDescripcion").value.trim();
+  const imagen = document.getElementById("nuevoImagen").value.trim();
+
+  if(!tiendaId || !nombre || !precio) return alert("Selecciona tienda, pon nombre y precio válido");
+
+  try {
+    await db.collection("tiendas").doc(tiendaId).collection("productos").add({
+      nombre, precio, categoria, descripcion, imagen
+    });
+    alert("🍔 ¡Producto añadido!");
+    cargarProductos();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+window.cargarProductos = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const lista = document.getElementById("listaProductos");
+  if(!lista) return;
+  lista.innerHTML = "";
+
+  if(!tiendaId) return;
+
+  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+  snap.forEach(doc => {
+    const p = doc.data();
+    lista.innerHTML += `
+      <div style="border-bottom:1px dashed #333; padding:8px 0;">
+        <b>${p.nombre}</b> - $${p.precio} | <span style="color:#aaa;">${p.categoria}</span>
       </div>
     `;
   });
 }
 
-// Ejecutar la carga inicial de tiendas si es necesario al iniciar el panel
-// (Puedes descomentar o enlazar según tu lógica de login actual)
-// auth.onAuthStateChanged(user => { if(user) { cargarTiendas(); } });
+// --- CONTROL DE ESTADO (ABIERTO/CERRADO) ---
 
+window.cargarEstadoTienda = async function() {
+  const tiendaId = document.getElementById("tiendaEstado").value;
+  const txt = document.getElementById("estadoActual");
+  if(!tiendaId || !txt) return;
+
+  const doc = await db.collection("tiendas").doc(tiendaId).get();
+  if(doc.exists) {
+    const abierta = doc.data().abierta !== false;
+    txt.innerHTML = `Estado: <b>${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
+  }
+}
+
+window.toggleTienda = async function() {
+  const tiendaId = document.getElementById("tiendaEstado").value;
+  if(!tiendaId) return alert("Selecciona una tienda");
+
+  try {
+    const ref = db.collection("tiendas").doc(tiendaId);
+    const doc = await ref.get();
+    const estadoActual = doc.data().abierta !== false;
+    await ref.update({ abierta: !estadoActual });
+    cargarEstadoTienda();
+    alert("¡Estado de la tienda actualizado!");
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+// --- SISTEMA DE LOGUEO Y AUTENTICACIÓN ---
+
+document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("loginMsg");
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    msg.innerText = "Error en credenciales: " + e.message;
+  }
+});
+
+window.logout = function() {
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(user => {
+  const loginBox = document.getElementById("loginBox");
+  const panel = document.getElementById("panel");
+
+  if (user) {
+    loginBox.classList.add("hidden");
+    panel.classList.remove("hidden");
+    cargarTiendas();
+  } else {
+    loginBox.classList.remove("hidden");
+    panel.classList.add("hidden");
+  }
+});
 </script>
 </body>
 </html>
