@@ -155,36 +155,31 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let despertadorInterval = null; // Guardará el bucle del despertador
+let despertadorInterval = null; 
 
-// Función nativa para simular un sonido de alarma (Despertador)
 function reproducirSonidoDespertador() {
   try {
     const context = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Una ráfaga rápida de 3 pitidos continuos
     const tiempos = [0.0, 0.15, 0.30];
     tiempos.forEach(delay => {
       const oscillator = context.createOscillator();
       const gainNode = context.createGain();
       
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(580, context.currentTime + delay); // Tono un poco más agudo y llamativo
-      
+      oscillator.frequency.setValueAtTime(580, context.currentTime + delay); 
       gainNode.gain.setValueAtTime(0.3, context.currentTime + delay);
       
       oscillator.connect(gainNode);
       gainNode.connect(context.destination);
       
       oscillator.start(context.currentTime + delay);
-      oscillator.stop(context.currentTime + delay + 0.08); // Pitidos cortos y secos
+      oscillator.stop(context.currentTime + delay + 0.08); 
     });
   } catch (e) {
     console.log("Audio bloqueado esperando interacción del usuario.", e);
   }
 }
 
-// Detiene la alarma por completo
 function detenerAlarma() {
   if (despertadorInterval) {
     clearInterval(despertadorInterval);
@@ -193,10 +188,9 @@ function detenerAlarma() {
   }
 }
 
-// Inicia la alarma repetitiva cada 2.5 segundos
 function activarAlarma() {
   if (!despertadorInterval) {
-    reproducirSonidoDespertador(); // Toca el primero de inmediato
+    reproducirSonidoDespertador(); 
     despertadorInterval = setInterval(reproducirSonidoDespertador, 2500);
     console.log("⏰ Alarma despertador activada!");
   }
@@ -209,7 +203,7 @@ window.escucharPedidosEnTiempoReal = function() {
   if (!contenedor) return;
 
   if (pedidosUnsubscribe) pedidosUnsubscribe();
-  detenerAlarma(); // Resetear alarma al cambiar de tienda
+  detenerAlarma(); 
 
   if (!tiendaId) {
     contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Filtra una tienda arriba para ver el flujo de pedidos.</p>';
@@ -234,20 +228,16 @@ window.escucharPedidosEnTiempoReal = function() {
 
       let tienePedidoNuevoPendiente = false;
 
-      // REGLA DE ORO: Analizar únicamente las modificaciones de documentos en Firestore
       snap.docChanges().forEach(change => {
-        // change.type === "added" significa que es un registro NUEVO que acaba de entrar
         if (change.type === "added" && change.doc.data().estado === "Pendiente") {
           tienePedidoNuevoPendiente = true;
         }
       });
 
-      // Si no es la carga inicial y hay un pedido verdaderamente nuevo entrante, encendemos el despertador
       if (!esCargaInicial && tienePedidoNuevoPendiente) {
         activarAlarma();
       }
 
-      // Si por alguna razón ya no quedan pedidos en estado "Pendiente", apagamos la alarma automáticamente
       let conteoPendientes = 0;
       snap.forEach(doc => {
         if (doc.data().estado === "Pendiente") conteoPendientes++;
@@ -314,7 +304,6 @@ window.escucharPedidosEnTiempoReal = function() {
 
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
-    // Al interactuar tú mismo con las acciones, apagamos el despertador preventivamente
     detenerAlarma();
     await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
   } catch (e) { alert("Error: " + e.message); }
@@ -485,14 +474,19 @@ window.cargarProductosOriginal = async function() {
   snap.forEach(doc => {
     const p = doc.data();
     const idProd = doc.id;
+    
+    // CORRECCIÓN INTELIGENTE AQUÍ: Asegura leer el nombre sin importar cómo se guardó en Firestore
+    const nombreVerdadero = p.nombre || p.nombreProducto || p.titulo || "Producto sin nombre";
+    const nombreEscapado = nombreVerdadero.replace(/`/g, "\\`").replace(/"/g, "&quot;");
+
     lista.innerHTML += `
       <div class="producto-item">
         <div class="producto-info">
-          <b style="color: #f5c400; font-size:15px;">${p.nombre}</b> - $${(p.precio || 0).toLocaleString('es-CO')}<br>
+          <b style="color: #f5c400; font-size:15px;">${nombreVerdadero}</b> - $${(p.precio || 0).toLocaleString('es-CO')}<br>
           <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${p.descripcion || 'Sin descripción'}</small>
         </div>
         <div class="flex-buttons">
-          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${p.nombre}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
+          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${p.descripcion || ''}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
           <button class="btn-danger" onclick="eliminarProductoOriginal('${tiendaId}', '${idProd}')">🗑️ Borrar</button>
         </div>
       </div>
