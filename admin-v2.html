@@ -49,6 +49,7 @@
 
 <div class="container">
 
+  <!-- LOGIN BOX -->
   <div id="loginBox" class="card">
     <h3>🔐 Acceso al Panel Administrativo</h3>
     <label>Correo Electrónico:</label>
@@ -59,8 +60,10 @@
     <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
+  <!-- PANEL PRINCIPAL AUTENTICADO -->
   <div id="panel" class="hidden">
 
+    <!-- MONITOR DE COMANDAS -->
     <div class="card" style="border: 2px solid #f5c400; background: #151515;">
       <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
       <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
@@ -72,6 +75,7 @@
       </div>
     </div>
 
+    <!-- FORMULARIO INTEGRAL DE TIENDAS (CREAR Y EDITAR) -->
     <div class="card" style="border-left: 5px solid #00bcd4;">
       <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
       <input type="hidden" id="editTiendaId" value="">
@@ -83,6 +87,7 @@
       <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
     </div>
 
+    <!-- CONFIGURADOR Y EDITOR DE PRODUCTOS -->
     <div class="card" style="border-left: 5px solid #ffc107;">
       <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
       <label>Asignar a la Tienda:</label>
@@ -102,6 +107,7 @@
       </div>
     </div>
 
+    <!-- LISTADOS EN VIVO -->
     <div class="card">
       <h3>🏪 Lista de Tiendas Disponibles</h3>
       <div id="listaTiendas"></div>
@@ -114,6 +120,7 @@
       </div>
     </div>
 
+    <!-- INTERRUPTOR ABIERTO / CERRADO -->
     <div class="card">
       <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
       <select id="tiendaEstado" onchange="cargarEstadoTienda()">
@@ -128,6 +135,7 @@
   </div>
 </div>
 
+<!-- LIBRERÍAS FIREBASE COMPAT V10 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -147,10 +155,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let esCargaInicial = true; // Evita que pite con todo lo viejo al abrir la página
-
-// Audio de notificación optimizado
-const sonidoAlerta = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
 
 // --- ESCUCHA EN TIEMPO REAL ---
 window.escucharPedidosEnTiempoReal = function() {
@@ -166,30 +170,33 @@ window.escucharPedidosEnTiempoReal = function() {
   }
 
   contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
-  esCargaInicial = true;
 
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
       contenedor.innerHTML = "";
-      let tieneNuevos = false;
       
       if (snap.empty) {
         contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
-        esCargaInicial = false;
         return;
       }
+
+      // TU SISTEMA ORIGINAL DE AUDIO NATIVO
+      try {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = context.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, context.currentTime);
+        oscillator.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.5);
+      } catch (e) { console.log("Audio blocado o esperando acción:", e); }
 
       snap.forEach(doc => {
         const p = doc.data();
         const idPedido = doc.id;
         const numPedido = p.numeroPedido || "#----";
         const estado = p.estado || "Pendiente";
-        
-        // Detectar si hay un pedido nuevo en estado "Pendiente" después de la carga inicial
-        if (!esCargaInicial && estado === "Pendiente") {
-          tieneNuevos = true;
-        }
         
         let fechaFormateada = "Hora no definida";
         if (p.fecha) {
@@ -206,7 +213,7 @@ window.escucharPedidosEnTiempoReal = function() {
         let itemsHTML = "";
         if (p.items && p.items.length > 0) {
           p.items.forEach(item => {
-            // CORREGIDO: Muestra el nombre real del producto que viene en el pedido
+            // CORREGIDO: Usar item.nombre del pedido para que no salga vacío
             itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
           });
         }
@@ -237,12 +244,6 @@ window.escucharPedidosEnTiempoReal = function() {
           </div>
         `;
       });
-
-      // Si hay un cambio con pedidos nuevos reales, ejecútalo
-      if (tieneNuevos) {
-        sonidoAlerta.play().catch(e => console.log("Interacción requerida para audio:", e));
-      }
-      esCargaInicial = false;
     });
 }
 
@@ -277,7 +278,7 @@ window.cargarTiendas = async function() {
     const idTienda = doc.id; 
     const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
     
-    // CORREGIDO: Escapar correctamente las cadenas para que no rompan el botón de edición
+    // CORREGIDO: Escapes limpios de strings para que no rompa las comillas en los botones
     const nombreEscapado = (t.nombre || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
     const logoEscapado = (t.logo || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
     const bannerEscapado = (t.banner || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
@@ -331,7 +332,6 @@ window.guardarTiendaOriginal = async function() {
   } catch(e) { alert("Error: " + e.message); }
 }
 
-// CORREGIDO: Mapea de vuelta todas las variables al formulario incluyendo Logo y Banner
 window.activarEdicionTienda = function(id, nombre, whatsapp, logo, banner) {
   document.getElementById("editTiendaId").value = id;
   document.getElementById("nombreTienda").value = nombre;
