@@ -150,13 +150,12 @@ const db = firebase.firestore();
 let pedidosUnsubscribe = null;
 let despertadorInterval = null; 
 
-function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
+function reproducirSonidoDespertador() {
   try {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const mensaje = new SpeechSynthesisUtterance(`Atención, nuevo pedido para la tienda ${nombreTienda}`);
+      const mensaje = new SpeechSynthesisUtterance("Ey Moto, tienes un nuevo pedido pendiente");
       mensaje.lang = 'es-CO';
-      mensaje.rate = 1.0; 
+      mensaje.rate = 1.1; 
       window.speechSynthesis.speak(mensaje);
     }
   } catch (e) {
@@ -170,7 +169,7 @@ window.probarVozAlarma = function() {
       window.speechSynthesis.cancel();
       const mensaje = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
       mensaje.lang = 'es-CO';
-      mensaje.speak(mensaje);
+      window.speechSynthesis.speak(mensaje);
       alert("¡Altavoz inicializado con éxito!");
     } else {
       alert("Tu navegador no soporta alertas de voz.");
@@ -189,11 +188,11 @@ function detenerAlarma() {
   }
 }
 
-function activarAlarma(nombreTienda) {
+function activarAlarma() {
   if (!despertadorInterval) {
-    reproducirSonidoDespertador(nombreTienda); 
-    despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombreTienda), 5000);
-    console.log("⏰ Alarma activada para: " + nombreTienda);
+    reproducirSonidoDespertador(); 
+    despertadorInterval = setInterval(reproducirSonidoDespertador, 5000);
+    console.log("⏰ Alarma despertador activada!");
   }
 }
 
@@ -236,9 +235,7 @@ window.escucharPedidosEnTiempoReal = function() {
       });
 
       if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        const selectTienda = document.getElementById("filtroTiendaPedidos");
-        const nombreTiendaSeleccionada = selectTienda.options[selectTienda.selectedIndex].text;
-        activarAlarma(nombreTiendaSeleccionada);
+        activarAlarma();
       }
 
       let conteoPendientes = 0;
@@ -467,6 +464,7 @@ window.cargarProductosOriginal = async function() {
     return;
   }
 
+  // CORRECCIÓN CLAVE: Buscamos en la colección raíz 'productos' filtrando por 'tiendaId'
   const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
   
   if(snap.empty) {
@@ -478,6 +476,7 @@ window.cargarProductosOriginal = async function() {
     const p = doc.data();
     const idProd = doc.id;
     
+    // Leemos el campo exacto 'name' de tu Firestore
     let nombreVerdadero = p.name || "Producto sin nombre";
     let descBase = p.descripcion || "";
 
