@@ -145,7 +145,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-  let despertadorInterval = null;
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
@@ -596,29 +595,6 @@ auth.onAuthStateChanged(user => {
     detenerAlarma();
   }
 });
-  function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(`Atención, hay pedidos nuevos en ${nombreTienda}`);
-        msg.lang = 'es-CO';
-        window.speechSynthesis.speak(msg);
-    }
-}
-
-function detenerAlarma() {
-    if (despertadorInterval) {
-        clearInterval(despertadorInterval);
-        despertadorInterval = null;
-        window.speechSynthesis.cancel();
-    }
-}
-
-function activarAlarma(nombreTienda) {
-    if (!despertadorInterval) {
-        reproducirSonidoDespertador(nombreTienda); 
-        despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombreTienda), 5000);
-    }
-}
 </script>
 </body>
 </html>
