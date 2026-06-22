@@ -226,11 +226,11 @@ window.escucharPedidosEnTiempoReal = function() {
   contenedor.innerHTML = `
     <div style="background: #000; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c400; text-align: center;">
         <div style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
-            <label style="color:#fff; font-size:14px;">Valor x Km: 
+            <label style="color:#fff; font-size:14px;">Valor x Km = 
                 <input type="number" id="valorKm" value="${VALOR_KM}" style="width: 80px; padding: 5px; color:#000; font-weight:bold; border-radius:4px;">
             </label>
-            <label style="color:#fff; font-size:14px;">Distancia (Km): 
-                <input type="number" step="0.1" id="distanciaKm" value="${DISTANCIA_DEFAULT}" style="width: 60px; padding: 5px; color:#000; font-weight:bold; border-radius:4px;">
+            <label style="color:#fff; font-size:14px;">Distancia = 
+                <input type="number" step="0.1" id="distanciaKm" value="${DISTANCIA_DEFAULT}" style="width: 60px; padding: 5px; color:#000; font-weight:bold; border-radius:4px;"> km
             </label>
             <button onclick="actualizarCalculos()" style="background: #28a745; color: #fff; padding: 5px 15px; border:none; cursor:pointer; border-radius:4px; font-weight:bold;">💾 Guardar</button>
         </div>
@@ -245,7 +245,7 @@ window.escucharPedidosEnTiempoReal = function() {
       // Limpiamos solo los pedidos, dejando el bloque de control arriba
       const headerCostos = contenedor.querySelector('div');
       contenedor.innerHTML = "";
-      contenedor.appendChild(headerCostos);
+      if (headerCostos) contenedor.appendChild(headerCostos);
       
       if (snap.empty) {
         contenedor.innerHTML += '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
@@ -267,15 +267,13 @@ window.escucharPedidosEnTiempoReal = function() {
         const p = doc.data();
         const idPedido = doc.id;
         
-        // --- AQUÍ ESTÁ LA CORRECCIÓN ---
-        // Leemos directamente del input en pantalla, si no existen, usamos valores por defecto
+        // --- LECTURA DINÁMICA DE LOS INPUTS ---
         const inputKm = document.getElementById("valorKm");
         const inputDist = document.getElementById("distanciaKm");
         
         const valorActualKm = inputKm ? parseFloat(inputKm.value) : VALOR_KM;
         const valorActualDist = inputDist ? parseFloat(inputDist.value) : DISTANCIA_DEFAULT;
         const valorDomicilio = valorActualDist * valorActualKm;
-        // --------------------------------
 
         let itemsHTML = "";
         if (p.items) p.items.forEach(item => itemsHTML += `• ${item.nombre} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`);
@@ -287,15 +285,14 @@ window.escucharPedidosEnTiempoReal = function() {
               <span class="badge badge-${p.estado?.toLowerCase().replace(' ', '-')}">${p.estado}</span>
             </div>
             <p>📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
-            <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center;">
-                Valor domicilio: $${valorDomicilio.toLocaleString('es-CO')}
+            <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center; font-size: 16px;">
+                valor a cobrar x el Domicilio = ${valorDomicilio.toLocaleString('es-CO')} cop
             </div>
             <div style="background:#111; padding:12px; border-radius:6px;">${itemsHTML}
                 <hr style="border-top:1px dashed #333;">
-                <span style="color:#28a745; font-weight:bold;">Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
+                <span style="color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
             </div>
             
-            <!-- Nuevos Botones de Acción -->
             <div class="grid-acciones">
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
               <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
@@ -305,7 +302,9 @@ window.escucharPedidosEnTiempoReal = function() {
             <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" class="btn-danger" style="width:100%; margin-top:10px;">🗑️ Eliminar Pedido del Sistema</button>
           </div>
         `;
-
+      });
+    });
+}
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
     detenerAlarma();
