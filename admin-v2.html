@@ -11,11 +11,8 @@
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
     .hidden { display:none; }
-    .producto-item { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; background: #2a2a2a; padding: 10px; margin-top:5px; border-radius: 4px; }
-    .pedido-card { border: 1px solid #555; padding: 15px; margin-bottom: 10px; background: #222; }
-    /* Estilos para el desplegable */
-    .tienda-header { cursor: pointer; padding: 15px; background: #333; margin-top: 10px; border-radius: 8px; font-weight: bold; }
-    .tienda-header:hover { background: #444; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
+    .btn-action { width: auto; padding: 5px 10px; margin-left: 5px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -31,22 +28,24 @@
   </div>
 
   <div id="panel" class="hidden">
+    <div id="editorProducto" class="card hidden" style="border: 2px solid #f5c400;">
+      <h3>✏️ Editar Producto</h3>
+      <input type="hidden" id="editId">
+      <input id="editNombre" placeholder="Nombre del producto">
+      <input id="editPrecio" type="number" placeholder="Precio">
+      <input id="editCategoria" placeholder="Categoría">
+      <textarea id="editDesc" placeholder="Descripción"></textarea>
+      <button onclick="guardarEdicion()">Guardar Cambios</button>
+      <button onclick="document.getElementById('editorProducto').classList.add('hidden')" style="background:#555;">Cancelar</button>
+    </div>
+
     <div class="card">
-      <h3>📋 Monitor de Pedidos</h3>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
-        <option value="">Selecciona una tienda</option>
+      <h3>🍔 Gestión de Productos</h3>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
+        <option value="">Selecciona tienda para ver productos</option>
       </select>
-      <div id="contenedorPedidos"></div>
+      <div id="listaProductos"></div>
     </div>
-
-    <div class="card">
-      <h3>🍔 Gestión de Productos (Desplegable)</h3>
-      <div id="listaTiendasDesplegables">
-        <p style="color:#777;">Cargando tiendas...</p>
-      </div>
-    </div>
-
-    <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -57,45 +56,72 @@
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
   projectId: "eymotocomidas",
   storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
   appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-window.cargarTiendas = async function() {
+// Cargar tiendas
+async function cargarTiendas() {
+  const selectProd = document.getElementById("tiendaProducto");
   const snap = await db.collection("tiendas").get();
-  const contenedor = document.getElementById("listaTiendasDesplegables");
-  const selectPedidos = document.getElementById("filtroTiendaPedidos");
-  
-  contenedor.innerHTML = "";
   snap.forEach(doc => {
-    const t = doc.data();
-    // Creamos el acordeón
-    contenedor.innerHTML += `
-      <div class="tienda-header" onclick="toggleProductos('${doc.id}')">🏪 ${t.nombre}</div>
-      <div id="productos-${doc.id}" class="hidden" style="padding:10px;">Cargando productos...</div>
-    `;
-    selectPedidos.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    selectProd.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`;
+  });
+}
+
+// Listar productos con botones de acción
+window.cargarProductosOriginal = async function() {
+  const tId = document.getElementById("tiendaProducto").value;
+  const lista = document.getElementById("listaProductos");
+  if(!tId) return;
+  const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
+  lista.innerHTML = "";
+  snap.forEach(doc => {
+    const p = doc.data();
+    lista.innerHTML += `
+      <div class="producto-item">
+        <span><b>${p.name}</b> - $${p.precio}</span>
+        <div>
+          <button class="btn-action" onclick="abrirEdicion('${doc.id}', '${p.name}', ${p.precio}, '${p.categoria || ''}', '${p.descripcion || ''}')">✏️ Editar</button>
+          <button class="btn-action" style="background:#dc3545;" onclick="borrarProducto('${doc.id}')">🗑️ Borrar</button>
+        </div>
+      </div>`;
   });
 };
 
-window.toggleProductos = async function(tId) {
-  const div = document.getElementById(`productos-${tId}`);
-  div.classList.toggle("hidden");
-  
-  // Si se abre y está vacío, cargamos los datos
-  if(!div.classList.contains("hidden") && div.innerHTML === "Cargando productos...") {
-    const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
-    div.innerHTML = snap.empty ? "No hay productos" : "";
-    snap.forEach(pDoc => {
-      const p = pDoc.data();
-      div.innerHTML += `<div class="producto-item"><span>${p.name}</span><span>$${p.precio}</span></div>`;
-    });
+// Abrir editor
+window.abrirEdicion = (id, nombre, precio, cat, desc) => {
+  document.getElementById("editId").value = id;
+  document.getElementById("editNombre").value = nombre;
+  document.getElementById("editPrecio").value = precio;
+  document.getElementById("editCategoria").value = cat;
+  document.getElementById("editDesc").value = desc;
+  document.getElementById("editorProducto").classList.remove("hidden");
+};
+
+// Guardar cambios
+window.guardarEdicion = async () => {
+  const id = document.getElementById("editId").value;
+  await db.collection("productos").doc(id).update({
+    name: document.getElementById("editNombre").value,
+    precio: parseFloat(document.getElementById("editPrecio").value),
+    categoria: document.getElementById("editCategoria").value,
+    descripcion: document.getElementById("editDesc").value
+  });
+  alert("Producto actualizado correctamente");
+  document.getElementById("editorProducto").classList.add("hidden");
+  cargarProductosOriginal();
+};
+
+// Borrar
+window.borrarProducto = async (id) => {
+  if(confirm("¿Seguro que quieres borrar este producto?")) {
+    await db.collection("productos").doc(id).delete();
+    cargarProductosOriginal();
   }
 };
 
