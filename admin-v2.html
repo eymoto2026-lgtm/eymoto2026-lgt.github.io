@@ -11,11 +11,9 @@
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
     .hidden { display:none; }
-    .producto-item { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; background: #2a2a2a; padding: 10px; margin-top:5px; border-radius: 4px; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; background: #222; margin-top:5px; padding: 10px; }
     .pedido-card { border: 1px solid #555; padding: 15px; margin-bottom: 10px; background: #222; }
-    /* Estilos para el desplegable */
-    .tienda-header { cursor: pointer; padding: 15px; background: #333; margin-top: 10px; border-radius: 8px; font-weight: bold; }
-    .tienda-header:hover { background: #444; }
+    .tienda-header { cursor: pointer; padding: 15px; background: #333; margin-top: 10px; border-radius: 8px; font-weight: bold; border: 1px solid #f5c400; }
   </style>
 </head>
 <body>
@@ -40,10 +38,8 @@
     </div>
 
     <div class="card">
-      <h3>🍔 Gestión de Productos (Desplegable)</h3>
-      <div id="listaTiendasDesplegables">
-        <p style="color:#777;">Cargando tiendas...</p>
-      </div>
+      <h3>🍔 Gestión de Productos (Haz clic en una tienda)</h3>
+      <div id="listaTiendasDesplegables"></div>
     </div>
 
     <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
@@ -67,36 +63,41 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Carga de Tiendas
 window.cargarTiendas = async function() {
   const snap = await db.collection("tiendas").get();
   const contenedor = document.getElementById("listaTiendasDesplegables");
-  const selectPedidos = document.getElementById("filtroTiendaPedidos");
-  
   contenedor.innerHTML = "";
   snap.forEach(doc => {
-    const t = doc.data();
-    // Creamos el acordeón
     contenedor.innerHTML += `
-      <div class="tienda-header" onclick="toggleProductos('${doc.id}')">🏪 ${t.nombre}</div>
-      <div id="productos-${doc.id}" class="hidden" style="padding:10px;">Cargando productos...</div>
+      <div class="tienda-header" onclick="toggleProductos('${doc.id}')">🏪 ${doc.data().nombre}</div>
+      <div id="productos-${doc.id}" class="hidden"></div>
     `;
-    selectPedidos.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
   });
 };
 
+// Carga de Productos y acciones (Editar/Borrar)
 window.toggleProductos = async function(tId) {
   const div = document.getElementById(`productos-${tId}`);
   div.classList.toggle("hidden");
-  
-  // Si se abre y está vacío, cargamos los datos
-  if(!div.classList.contains("hidden") && div.innerHTML === "Cargando productos...") {
+  if(!div.classList.contains("hidden") && div.innerHTML === "") {
     const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
-    div.innerHTML = snap.empty ? "No hay productos" : "";
-    snap.forEach(pDoc => {
-      const p = pDoc.data();
-      div.innerHTML += `<div class="producto-item"><span>${p.name}</span><span>$${p.precio}</span></div>`;
+    snap.forEach(doc => {
+      const p = doc.data();
+      div.innerHTML += `
+        <div class="producto-item">
+          <span><b>${p.name}</b> - $${p.precio}</span>
+          <div>
+            <button onclick="alert('Funcionalidad de edición aquí')">✏️</button>
+            <button onclick="borrarProducto('${doc.id}')" style="background:#dc3545;">🗑️</button>
+          </div>
+        </div>`;
     });
   }
+};
+
+window.borrarProducto = async (id) => {
+  if(confirm("¿Borrar producto?")) { await db.collection("productos").doc(id).delete(); alert("Eliminado"); }
 };
 
 document.getElementById("btnIniciarSesion").addEventListener("click", () => {
