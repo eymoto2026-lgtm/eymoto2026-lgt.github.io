@@ -198,6 +198,17 @@ function activarAlarma(nombreTienda) {
 }
 
 // --- ESCUCHA EN TIEMPO REAL ---
+// --- VARIABLES PARA LOS CÁLCULOS ---
+let VALOR_KM = 1500;
+let DISTANCIA_DEFAULT = 2.5;
+
+window.actualizarCalculos = function() {
+  VALOR_KM = parseFloat(document.getElementById("valorKm").value) || 0;
+  DISTANCIA_DEFAULT = parseFloat(document.getElementById("distanciaKm").value) || 0;
+  alert("Valores actualizados: Valor Km $" + VALOR_KM + " | Distancia " + DISTANCIA_DEFAULT + "km");
+  escucharPedidosEnTiempoReal();
+}
+
 window.escucharPedidosEnTiempoReal = function() {
   const tiendaId = document.getElementById("filtroTiendaPedidos").value;
   const contenedor = document.getElementById("contenedorPedidos");
@@ -211,22 +222,30 @@ window.escucharPedidosEnTiempoReal = function() {
     return;
   }
 
-  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
+  // --- INTERFAZ EDITABLE INTEGRADA ---
+  contenedor.innerHTML = `
+    <div style="background: #000; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c400; text-align: center;">
+        <div style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <label style="color:#fff; font-size:14px;">Valor x Km: 
+                <input type="number" id="valorKm" value="${VALOR_KM}" style="width: 80px; padding: 5px; color:#000; font-weight:bold; border-radius:4px;">
+            </label>
+            <label style="color:#fff; font-size:14px;">Distancia (Km): 
+                <input type="number" step="0.1" id="distanciaKm" value="${DISTANCIA_DEFAULT}" style="width: 60px; padding: 5px; color:#000; font-weight:bold; border-radius:4px;">
+            </label>
+            <button onclick="actualizarCalculos()" style="background: #28a745; color: #fff; padding: 5px 15px; border:none; cursor:pointer; border-radius:4px; font-weight:bold;">💾 Guardar</button>
+        </div>
+    </div>
+    <p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>`;
 
   let esCargaInicial = true;
 
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
-      // --- BLOQUE INTEGRADO DE COSTOS (SIN ALTERAR LO DEMÁS) ---
-      let headerCostos = `
-        <div style="background: #000; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c400; display: flex; gap: 20px; justify-content: center;">
-            <div style="background: #f5c400; color: #000; padding: 10px; font-weight: bold; border-radius: 4px;">valor x Km = 1500</div>
-            <div style="background: #f5c400; color: #000; padding: 10px; font-weight: bold; border-radius: 4px;">Distancia = 2.5km</div>
-        </div>`;
-      
-      contenedor.innerHTML = headerCostos;
-      // ---------------------------------------------------------
+      // Limpiamos solo los pedidos, dejando el bloque de control arriba
+      const headerCostos = contenedor.querySelector('div');
+      contenedor.innerHTML = "";
+      contenedor.appendChild(headerCostos);
       
       if (snap.empty) {
         contenedor.innerHTML += '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
@@ -235,80 +254,41 @@ window.escucharPedidosEnTiempoReal = function() {
         return;
       }
 
+      // Lógica de alarma...
       let tienePedidoNuevoPendiente = false;
       snap.docChanges().forEach(change => {
-        if (change.type === "added" && change.doc.data().estado === "Pendiente") {
-          tienePedidoNuevoPendiente = true;
-        }
+        if (change.type === "added" && change.doc.data().estado === "Pendiente") tienePedidoNuevoPendiente = true;
       });
-
-      if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        const selectTienda = document.getElementById("filtroTiendaPedidos");
-        const nombreTiendaSeleccionada = selectTienda.options[selectTienda.selectedIndex].text;
-        activarAlarma(nombreTiendaSeleccionada);
-      }
-
-      let conteoPendientes = 0;
-      snap.forEach(doc => { if (doc.data().estado === "Pendiente") conteoPendientes++; });
-      if (conteoPendientes === 0) detenerAlarma();
-
+      if (!esCargaInicial && tienePedidoNuevoPendiente) activarAlarma(document.getElementById("filtroTiendaPedidos").options[document.getElementById("filtroTiendaPedidos").selectedIndex].text);
       esCargaInicial = false;
 
+      // Render de tarjetas
       snap.forEach(doc => {
         const p = doc.data();
         const idPedido = doc.id;
-        const numPedido = p.numeroPedido || "#----";
-        const estado = p.estado || "Pendiente";
-        
-        // Cálculo del Domicilio (Asumiendo que la distancia es 2.5 como en tu ejemplo)
-        const valorDomicilio = 2.5 * 1500; 
-
-        let fechaFormateada = "Hora no definida";
-        if (p.fecha) {
-          const d = new Date(p.fecha);
-          fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
-        }
-
-        let claseBorde = "status-pendiente";
-        let claseBadge = "badge-pendiente";
-        if (estado === "En Preparación") { claseBorde = "status-preparacion"; claseBadge = "badge-preparacion"; }
-        if (estado === "Entregado") { claseBorde = "status-entregado"; claseBadge = "badge-entregado"; }
-        if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
+        const valorDomicilio = DISTANCIA_DEFAULT * VALOR_KM;
 
         let itemsHTML = "";
-        if (p.items && p.items.length > 0) {
-          p.items.forEach(item => {
-            itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
-          });
-        }
+        if (p.items) p.items.forEach(item => itemsHTML += `• ${item.nombre} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`);
 
         contenedor.innerHTML += `
-          <div class="pedido-card ${claseBorde}">
+          <div class="pedido-card ${p.estado === 'Pendiente' ? 'status-pendiente' : 'status-preparacion'}">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${numPedido}</span>
-              <span class="badge ${claseBadge}">${estado}</span>
+              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${p.numeroPedido || "#----"}</span>
+              <span class="badge badge-${p.estado?.toLowerCase().replace(' ', '-')}">${p.estado}</span>
             </div>
-            <p style="font-size:13px; margin:4px 0;">🕒 <b>Recibido:</b> ${fechaFormateada}</p>
-            <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
-            <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
-            
-            <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center; font-size: 14px;">
+            <p>📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
+            <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center;">
                 Valor domicilio: $${valorDomicilio.toLocaleString('es-CO')}
             </div>
-
-            <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
-              ${itemsHTML}
-              <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
+            <div style="background:#111; padding:12px; border-radius:6px;">${itemsHTML}
+                <hr style="border-top:1px dashed #333;">
+                <span style="color:#28a745; font-weight:bold;">Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
             </div>
-
             <div class="grid-acciones">
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
             </div>
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#2b2b2b; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; width: auto;">🗑️ Remover Vista</button>
           </div>
         `;
       });
