@@ -150,7 +150,6 @@ const db = firebase.firestore();
 let pedidosUnsubscribe = null;
 let despertadorInterval = null; 
 
-// --- NUEVA FUNCIÓN DE SONIDO INTEGRADA ---
 function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
   try {
     if ('speechSynthesis' in window) {
@@ -171,7 +170,7 @@ window.probarVozAlarma = function() {
       window.speechSynthesis.cancel();
       const mensaje = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
       mensaje.lang = 'es-CO';
-      window.speechSynthesis.speak(mensaje);
+      mensaje.speak(mensaje);
       alert("¡Altavoz inicializado con éxito!");
     } else {
       alert("Tu navegador no soporta alertas de voz.");
@@ -200,9 +199,7 @@ function activarAlarma(nombreTienda) {
 
 // --- ESCUCHA EN TIEMPO REAL ---
 window.escucharPedidosEnTiempoReal = function() {
-  const selectTienda = document.getElementById("filtroTiendaPedidos");
-  const tiendaId = selectTienda.value;
-  const nombreTienda = selectTienda.options[selectTienda.selectedIndex].text;
+  const tiendaId = document.getElementById("filtroTiendaPedidos").value;
   const contenedor = document.getElementById("contenedorPedidos");
   if (!contenedor) return;
 
@@ -239,7 +236,9 @@ window.escucharPedidosEnTiempoReal = function() {
       });
 
       if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        activarAlarma(nombreTienda);
+        const selectTienda = document.getElementById("filtroTiendaPedidos");
+        const nombreTiendaSeleccionada = selectTienda.options[selectTienda.selectedIndex].text;
+        activarAlarma(nombreTiendaSeleccionada);
       }
 
       let conteoPendientes = 0;
@@ -351,6 +350,8 @@ window.cargarTiendas = async function() {
           <div style="margin-bottom: 10px;">
             <b style="font-size:18px; color:#f5c400;">🏪 ${t.nombre || 'Sin Nombre'}</b><br>
             <span style="font-size:13px; color:#ccc;"><b>WhatsApp:</b> ${t.whatsapp || '-'}</span><br>
+            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Logo:</b> ${t.logo || 'No asignado'}</span>
+            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Banner:</b> ${t.banner || 'No asignado'}</span>
             <a href="${urlCompleta}" target="_blank" style="color:#00bcd4; font-size:13px; display:inline-block; margin-top:5px;">🔗 Ver Menú Digital</a>
           </div>
           <div class="flex-buttons">
@@ -432,15 +433,15 @@ window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
   
-  const nombre = document.getElementById("nuevoNombre").value.trim();
+  const name = document.getElementById("nuevoNombre").value.trim();
   const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
   const categoria = document.getElementById("nuevoCategoria").value.trim();
   const descripcion = document.getElementById("nuevoDescripcion").value.trim();
-  const imagen = document.getElementById("nuevoImagen").value.trim();
+  const img = document.getElementById("nuevoImagen").value.trim();
 
-  if(!tiendaId || !nombre || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
+  if(!tiendaId || !name || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
 
-  const datosProducto = { nombre, precio, categoria, descripcion, imagen, tiendaId };
+  const datosProducto = { name, precio, categoria, descripcion, img, tiendaId };
 
   try {
     if (prodId) {
@@ -476,10 +477,12 @@ window.cargarProductosOriginal = async function() {
   snap.forEach(doc => {
     const p = doc.data();
     const idProd = doc.id;
-    const descBase = p.descripcion || "";
-    let nombreVerdadero = p.nombre || p.name || "Producto sin nombre";
+    
+    let nombreVerdadero = p.name || "Producto sin nombre";
+    let descBase = p.descripcion || "";
 
     const nombreEscapado = String(nombreVerdadero).replace(/`/g, "\\`").replace(/"/g, "&quot;");
+    const descEscapada = String(descBase).replace(/`/g, "\\`").replace(/"/g, "&quot;");
 
     lista.innerHTML += `
       <div class="producto-item">
@@ -488,7 +491,7 @@ window.cargarProductosOriginal = async function() {
           <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${descBase}</small>
         </div>
         <div class="flex-buttons">
-          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descBase.replace(/`/g, "\\`").replace(/"/g, "&quot;")}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
+          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descEscapada}\`, \`${p.img || ''}\`)">✏️ Editar</button>
           <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
         </div>
       </div>
