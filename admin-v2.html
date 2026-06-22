@@ -9,27 +9,13 @@
     .container { padding:20px; max-width: 1200px; margin: 0 auto; }
     .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
-    input:focus, select:focus, textarea:focus { border-color: #f5c400; outline: none; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
     button:hover { background: #e0b300; }
     .hidden { display:none; }
-    .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
-    .producto-info { flex-grow: 1; }
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
     .status-pendiente { border-color: #ffc107; }
-    .status-preparacion { border-color: #17a2b8; }
-    .status-entregado { border-color: #28a745; }
-    .status-cancelado { border-color: #dc3545; }
-    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-    .badge-pendiente { background: #ffc107; color: #000; }
-    .badge-preparacion { background: #17a2b8; color: #fff; }
-    .badge-entregado { background: #28a745; color: #fff; }
-    .badge-cancelado { background: #dc3545; color: #fff; }
-    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
-    .btn-status { font-size: 12px; padding: 8px; margin: 0; }
-    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
-    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
+    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
     .flex-buttons { display: flex; gap: 5px; }
   </style>
 </head>
@@ -39,40 +25,31 @@
 
 <div class="container">
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso al Panel Administrativo</h3>
-    <input type="email" id="email" placeholder="Correo">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="btnIniciarSesion">Ingresar</button>
-    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
+    <h3>🔐 Acceso Administrativo</h3>
+    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
+    <input type="password" id="password" placeholder="••••••••">
+    <button id="btnIniciarSesion">Ingresar al Panel</button>
+    <p id="loginMsg" style="color: #ff4444; font-weight: bold;"></p>
   </div>
 
   <div id="panel" class="hidden">
-    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
+    <div class="card" style="border: 2px solid #f5c400;">
       <h3>📋 Monitor de Pedidos</h3>
+      <button onclick="probarVozAlarma()" style="background: #008b9b; color: #fff;">🔔 Probar Altavoz ("Ey Moto")</button>
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()"></select>
       <div id="contenedorPedidos"></div>
     </div>
 
-    <div class="card" style="border-left: 5px solid #ffc107;">
-      <h3>🍔 Formulario de Producto</h3>
-      <select id="tiendaProducto" onchange="cargarProductosOriginal()"></select>
-      <div style="margin-top: 15px;">
-        <input type="hidden" id="editProductoId">
-        <input id="nuevoNombre" placeholder="Nombre del platillo">
-        <input id="nuevoPrecio" type="number" placeholder="Precio">
-        <input id="nuevoCategoria" placeholder="Categoría">
-        <textarea id="nuevoDescripcion" placeholder="Descripción..."></textarea>
-        <input id="nuevoImagen" placeholder="URL imagen">
-        <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
-      </div>
-    </div>
-
     <div class="card">
-      <h3>📦 Lista de Productos</h3>
+      <h3>🍔 Gestión de Productos</h3>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()"></select>
+      <input id="nuevoNombre" placeholder="Nombre">
+      <input id="nuevoPrecio" type="number" placeholder="Precio">
+      <button onclick="guardarProductoOriginal()">Guardar Producto</button>
       <div id="listaProductos"></div>
     </div>
-
-    <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
+    
+    <button onclick="logout()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -81,64 +58,81 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
-  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
-};
+const firebaseConfig = { /* ... tu configuración ... */ };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- FUNCIÓN CORREGIDA ---
-window.cargarProductosOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-  if(!tiendaId) return;
+let pedidosUnsubscribe = null;
+let despertadorInterval = null;
 
-  // BUSCA EN LA COLECCIÓN RAÍZ 'productos' DONDE EL 'tiendaId' COINCIDA
-  const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
-  
-  lista.innerHTML = "";
-  snap.forEach(doc => {
-    const p = doc.data();
-    lista.innerHTML += `
-      <div class="producto-item">
-        <div><b>${p.nombre || p.name}</b> - $${p.precio}</div>
-        <button onclick="eliminarProducto('${doc.id}')" style="background:#dc3545; color:#fff;">Borrar</button>
-      </div>`;
-  });
-};
-
-window.eliminarProducto = async (id) => {
-    if(confirm("¿Borrar?")) {
-        await db.collection("productos").doc(id).delete();
-        cargarProductosOriginal();
-    }
-};
-
-// Autenticación mínima
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("panel").classList.remove("hidden");
-    cargarTiendasParaSelects();
+// --- FUNCIONES DE ALARMA ---
+function reproducirSonidoDespertador(nombreTienda) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(`Atención, nuevo pedido para ${nombreTienda}`);
+    msg.lang = 'es-CO';
+    window.speechSynthesis.speak(msg);
   }
-});
+}
 
-async function cargarTiendasParaSelects() {
-    const snap = await db.collection("tiendas").get();
-    const select = document.getElementById("tiendaProducto");
-    snap.forEach(doc => {
-        select.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`;
+window.probarVozAlarma = function() {
+  const msg = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
+  msg.lang = 'es-CO';
+  window.speechSynthesis.speak(msg);
+}
+
+function detenerAlarma() {
+  clearInterval(despertadorInterval);
+  despertadorInterval = null;
+  window.speechSynthesis.cancel();
+}
+
+function activarAlarma(nombreTienda) {
+  if (!despertadorInterval) {
+    reproducirSonidoDespertador(nombreTienda);
+    despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombreTienda), 5000);
+  }
+}
+
+// --- LÓGICA DE PEDIDOS ---
+window.escucharPedidosEnTiempoReal = function() {
+  const tiendaId = document.getElementById("filtroTiendaPedidos").value;
+  if (pedidosUnsubscribe) pedidosUnsubscribe();
+  detenerAlarma();
+  if (!tiendaId) return;
+
+  const select = document.getElementById("filtroTiendaPedidos");
+  const nombreTienda = select.options[select.selectedIndex].text;
+
+  let esCargaInicial = true;
+  pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
+    .orderBy("fecha", "desc").onSnapshot(snap => {
+      let nuevoPendiente = false;
+      snap.docChanges().forEach(c => {
+        if (c.type === "added" && c.doc.data().estado === "Pendiente") nuevoPendiente = true;
+      });
+      
+      if (!esCargaInicial && nuevoPendiente) activarAlarma(nombreTienda);
+      
+      // Renderizado...
+      esCargaInicial = false;
     });
 }
 
+// ... Mantén el resto de tus funciones de cargarTiendas, guardarProducto, etc.
+// Asegúrate de que cargarProductosOriginal consulte db.collection("productos").where("tiendaId", "==", tiendaId)
+
 document.getElementById("btnIniciarSesion").addEventListener("click", () => {
     auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value);
+});
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("panel").classList.remove("hidden");
+        cargarTiendas(); // Función que llena los selects
+    }
 });
 </script>
 </body>
