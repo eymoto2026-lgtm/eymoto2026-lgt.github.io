@@ -218,17 +218,24 @@ window.escucharPedidosEnTiempoReal = function() {
   pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
     .orderBy("fecha", "desc")
     .onSnapshot(snap => {
-      contenedor.innerHTML = "";
+      // --- BLOQUE INTEGRADO DE COSTOS (SIN ALTERAR LO DEMÁS) ---
+      let headerCostos = `
+        <div style="background: #000; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f5c400; display: flex; gap: 20px; justify-content: center;">
+            <div style="background: #f5c400; color: #000; padding: 10px; font-weight: bold; border-radius: 4px;">valor x Km = 1500</div>
+            <div style="background: #f5c400; color: #000; padding: 10px; font-weight: bold; border-radius: 4px;">Distancia = 2.5km</div>
+        </div>`;
+      
+      contenedor.innerHTML = headerCostos;
+      // ---------------------------------------------------------
       
       if (snap.empty) {
-        contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
+        contenedor.innerHTML += '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
         detenerAlarma();
         esCargaInicial = false;
         return;
       }
 
       let tienePedidoNuevoPendiente = false;
-
       snap.docChanges().forEach(change => {
         if (change.type === "added" && change.doc.data().estado === "Pendiente") {
           tienePedidoNuevoPendiente = true;
@@ -242,12 +249,8 @@ window.escucharPedidosEnTiempoReal = function() {
       }
 
       let conteoPendientes = 0;
-      snap.forEach(doc => {
-        if (doc.data().estado === "Pendiente") conteoPendientes++;
-      });
-      if (conteoPendientes === 0) {
-        detenerAlarma();
-      }
+      snap.forEach(doc => { if (doc.data().estado === "Pendiente") conteoPendientes++; });
+      if (conteoPendientes === 0) detenerAlarma();
 
       esCargaInicial = false;
 
@@ -257,6 +260,9 @@ window.escucharPedidosEnTiempoReal = function() {
         const numPedido = p.numeroPedido || "#----";
         const estado = p.estado || "Pendiente";
         
+        // Cálculo del Domicilio (Asumiendo que la distancia es 2.5 como en tu ejemplo)
+        const valorDomicilio = 2.5 * 1500; 
+
         let fechaFormateada = "Hora no definida";
         if (p.fecha) {
           const d = new Date(p.fecha);
@@ -286,6 +292,10 @@ window.escucharPedidosEnTiempoReal = function() {
             <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
             <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
             
+            <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center; font-size: 14px;">
+                Valor domicilio: $${valorDomicilio.toLocaleString('es-CO')}
+            </div>
+
             <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
               ${itemsHTML}
               <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
