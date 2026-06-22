@@ -266,7 +266,16 @@ window.escucharPedidosEnTiempoReal = function() {
       snap.forEach(doc => {
         const p = doc.data();
         const idPedido = doc.id;
-        const valorDomicilio = DISTANCIA_DEFAULT * VALOR_KM;
+        
+        // --- AQUÍ ESTÁ LA CORRECCIÓN ---
+        // Leemos directamente del input en pantalla, si no existen, usamos valores por defecto
+        const inputKm = document.getElementById("valorKm");
+        const inputDist = document.getElementById("distanciaKm");
+        
+        const valorActualKm = inputKm ? parseFloat(inputKm.value) : VALOR_KM;
+        const valorActualDist = inputDist ? parseFloat(inputDist.value) : DISTANCIA_DEFAULT;
+        const valorDomicilio = valorActualDist * valorActualKm;
+        // --------------------------------
 
         let itemsHTML = "";
         if (p.items) p.items.forEach(item => itemsHTML += `• ${item.nombre} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`);
@@ -281,19 +290,8 @@ window.escucharPedidosEnTiempoReal = function() {
             <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center;">
                 Valor domicilio: $${valorDomicilio.toLocaleString('es-CO')}
             </div>
-            <div style="background:#111; padding:12px; border-radius:6px;">${itemsHTML}
-                <hr style="border-top:1px dashed #333;">
-                <span style="color:#28a745; font-weight:bold;">Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
-            </div>
-            <div class="grid-acciones">
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
-            </div>
-          </div>
-        `;
+            `;
       });
-    });
-}
 
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
