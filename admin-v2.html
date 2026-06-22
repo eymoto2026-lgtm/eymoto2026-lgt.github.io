@@ -3,129 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin V2 - Gestión Total EyMoto</title>
-
   <style>
     body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
     header { background:#000; padding:15px; text-align:center; font-size:22px; font-weight:bold; color: #f5c400; border-bottom: 2px solid #222; }
     .container { padding:20px; max-width: 1200px; margin: 0 auto; }
     .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
-    input:focus, select:focus, textarea:focus { border-color: #f5c400; outline: none; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
     button:hover { background: #e0b300; }
     .hidden { display:none; }
-    
-    /* SECCIÓN TIENDAS Y PRODUCTOS */
     .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
     .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
-    .producto-info { flex-grow: 1; }
-
-    /* PANEL DE PEDIDOS */
     .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
-    .status-pendiente { border-color: #ffc107; }
-    .status-preparacion { border-color: #17a2b8; }
-    .status-entregado { border-color: #28a745; }
-    .status-cancelado { border-color: #dc3545; }
-    
-    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-    .badge-pendiente { background: #ffc107; color: #000; }
-    .badge-preparacion { background: #17a2b8; color: #fff; }
-    .badge-entregado { background: #28a745; color: #fff; }
-    .badge-cancelado { background: #dc3545; color: #fff; }
-
-    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
-    .btn-status { font-size: 12px; padding: 8px; margin: 0; }
-    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
-    .btn-danger:hover { background: #bd2130; }
-    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
-    
+    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     .flex-buttons { display: flex; gap: 5px; }
   </style>
 </head>
-
 <body>
 
-<header>🚀 PANEL DE ADMINISTRACIÓN GENERAL - EYMOTO</header>
+<header>🚀 PANEL DE ADMINISTRACIÓN - EYMOTO</header>
 
 <div class="container">
-
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso al Panel Administrativo</h3>
-    <label>Correo Electrónico:</label>
-    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
-    <label>Contraseña:</label>
-    <input type="password" id="password" placeholder="••••••••">
-    <button id="btnIniciarSesion">Ingresar al Panel</button>
-    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
+    <h3>🔐 Acceso al Panel</h3>
+    <input type="email" id="email" placeholder="Correo">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button id="btnIniciarSesion">Ingresar</button>
+    <p id="loginMsg" style="color: #ff4444;"></p>
   </div>
 
   <div id="panel" class="hidden">
-
-    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
-      <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos en Tiempo Real</h3>
-      <button id="btnProbarAltavoz" onclick="probarVozAlarma()" style="background: #008b9b; color: #fff; font-size: 13px; margin-bottom: 10px;">🔔 Inicializar / Probar Altavoz ("Ey Moto")</button>
-      <label style="font-size: 14px; color: #ccc;">Selecciona la Tienda para ver comandas:</label>
+    <div class="card" style="border: 2px solid #f5c400;">
+      <h3>📋 Monitor de Pedidos</h3>
+      <button onclick="probarVozAlarma()">🔔 Probar Altavoz</button>
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
-        <option value="">Seleccionar tienda para monitorear...</option>
-      </select>
-      <div id="contenedorPedidos" style="margin-top:15px;">
-        <p style="color: #aaa; text-align: center; padding: 20px;">Filtra una tienda arriba para ver el flujo de pedidos.</p>
-      </div>
-    </div>
-
-    <div class="card" style="border-left: 5px solid #00bcd4;">
-      <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
-      <input type="hidden" id="editTiendaId" value="">
-      <input id="nombreTienda" placeholder="Nombre Comercial de la Tienda">
-      <input id="whatsapp" placeholder="WhatsApp (Ej: 573000000000)">
-      <input id="logoTienda" placeholder="URL de la imagen del Logo">
-      <input id="bannerTienda" placeholder="URL de la imagen de Portada/Banner">
-      <button id="btnGuardarTienda" onclick="guardarTiendaOriginal()">Registrar Tienda</button>
-      <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
-    </div>
-
-    <div class="card" style="border-left: 5px solid #ffc107;">
-      <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
-      <label>Asignar a la Tienda:</label>
-      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
-        <option value="">Seleccionar tienda para ver/añadir productos...</option>
-      </select>
-      
-      <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
-        <input type="hidden" id="editProductoId" value="">
-        <input id="nuevoNombre" placeholder="Nombre del platillo o producto">
-        <input id="nuevoPrecio" type="number" placeholder="Precio en COP ($)">
-        <input id="nuevoCategoria" placeholder="Categoría (Ej: Hamburguesas, Bebidas)">
-        <textarea id="nuevoDescripcion" placeholder="Descripción de ingredientes o detalles..." rows="2"></textarea>
-        <input id="nuevoImagen" placeholder="URL de la foto del producto">
-        <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
-        <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Producto</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🏪 Lista de Tiendas Disponibles</h3>
-      <div id="listaTiendas"></div>
-    </div>
-
-    <div class="card">
-      <h3>📦 Lista de Productos por Tienda</h3>
-      <div id="listaProductos">
-        <p style="color: #aaa;">Selecciona una tienda en el formulario de arriba para inspeccionar e inventariar sus productos.</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🏪 Estado de Operación de la Tienda (Abierto / Cerrado)</h3>
-      <select id="tiendaEstado" onchange="cargarEstadoTienda()">
         <option value="">Seleccionar tienda...</option>
       </select>
-      <p id="estadoActual" style="font-size: 16px; margin: 10px 0;">Estado actual: <b>-</b></p>
-      <button onclick="toggleTienda()" style="background: #28a745; color: #fff;">Cambiar Estado Disponible</button>
+      <div id="contenedorPedidos"></div>
     </div>
 
-    <button onclick="logout()" style="background:#444; color:#fff; margin-top:20px; font-size: 14px;">🚪 Cerrar Sesión del Administrador</button>
-
+    <div class="card">
+      <h3 id="tituloFormProducto">🍔 Gestión de Productos</h3>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()"></select>
+      <input id="nuevoNombre" placeholder="Nombre">
+      <input id="nuevoPrecio" type="number" placeholder="Precio">
+      <input id="nuevoCategoria" placeholder="Categoría">
+      <textarea id="nuevoDescripcion" placeholder="Descripción"></textarea>
+      <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Guardar Producto</button>
+      <div id="listaProductos"></div>
+    </div>
+    <button onclick="logout()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -148,450 +75,103 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let despertadorInterval = null; 
+let despertadorInterval = null;
 
-// --- NUEVA FUNCIÓN DE SONIDO INTEGRADA ---
-function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const mensaje = new SpeechSynthesisUtterance(`Atención, nuevo pedido para la tienda ${nombreTienda}`);
-      mensaje.lang = 'es-CO';
-      mensaje.rate = 1.0; 
-      window.speechSynthesis.speak(mensaje);
-    }
-  } catch (e) {
-    console.log("Error con la alarma de voz: ", e);
+// --- FUNCIONES SONIDO ---
+function reproducirSonidoDespertador(nombreTienda) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(`Atención, nuevo pedido en ${nombreTienda}`);
+    msg.lang = 'es-CO';
+    window.speechSynthesis.speak(msg);
   }
 }
 
-window.probarVozAlarma = function() {
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const mensaje = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
-      mensaje.lang = 'es-CO';
-      window.speechSynthesis.speak(mensaje);
-      alert("¡Altavoz inicializado con éxito!");
-    } else {
-      alert("Tu navegador no soporta alertas de voz.");
-    }
-  } catch(e) {
-    alert("Haz clic en la pantalla antes de probar de nuevo.");
+window.probarVozAlarma = () => reproducirSonidoDespertador("Ey Moto");
+
+function activarAlarma(nombre) {
+  if (!despertadorInterval) {
+    reproducirSonidoDespertador(nombre);
+    despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombre), 5000);
   }
 }
 
 function detenerAlarma() {
-  if (despertadorInterval) {
-    clearInterval(despertadorInterval);
-    despertadorInterval = null;
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    console.log("⏰ Alarma apagada.");
-  }
+  clearInterval(despertadorInterval);
+  despertadorInterval = null;
+  window.speechSynthesis.cancel();
 }
 
-function activarAlarma(nombreTienda) {
-  if (!despertadorInterval) {
-    reproducirSonidoDespertador(nombreTienda); 
-    despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombreTienda), 5000);
-    console.log("⏰ Alarma activada para: " + nombreTienda);
-  }
-}
-
-// --- ESCUCHA EN TIEMPO REAL ---
-window.escucharPedidosEnTiempoReal = function() {
-  const selectTienda = document.getElementById("filtroTiendaPedidos");
-  const tiendaId = selectTienda.value;
-  const nombreTienda = selectTienda.options[selectTienda.selectedIndex].text;
-  const contenedor = document.getElementById("contenedorPedidos");
-  if (!contenedor) return;
-
-  if (pedidosUnsubscribe) pedidosUnsubscribe();
-  detenerAlarma(); 
-
-  if (!tiendaId) {
-    contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Filtra una tienda arriba para ver el flujo de pedidos.</p>';
-    return;
-  }
-
-  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
-
-  let esCargaInicial = true;
-
-  pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
-    .orderBy("fecha", "desc")
-    .onSnapshot(snap => {
-      contenedor.innerHTML = "";
-      
-      if (snap.empty) {
-        contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
-        detenerAlarma();
-        esCargaInicial = false;
-        return;
-      }
-
-      let tienePedidoNuevoPendiente = false;
-
-      snap.docChanges().forEach(change => {
-        if (change.type === "added" && change.doc.data().estado === "Pendiente") {
-          tienePedidoNuevoPendiente = true;
-        }
-      });
-
-      if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        activarAlarma(nombreTienda);
-      }
-
-      let conteoPendientes = 0;
-      snap.forEach(doc => {
-        if (doc.data().estado === "Pendiente") conteoPendientes++;
-      });
-      if (conteoPendientes === 0) {
-        detenerAlarma();
-      }
-
-      esCargaInicial = false;
-
-      snap.forEach(doc => {
-        const p = doc.data();
-        const idPedido = doc.id;
-        const numPedido = p.numeroPedido || "#----";
-        const estado = p.estado || "Pendiente";
-        
-        let fechaFormateada = "Hora no definida";
-        if (p.fecha) {
-          const d = new Date(p.fecha);
-          fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
-        }
-
-        let claseBorde = "status-pendiente";
-        let claseBadge = "badge-pendiente";
-        if (estado === "En Preparación") { claseBorde = "status-preparacion"; claseBadge = "badge-preparacion"; }
-        if (estado === "Entregado") { claseBorde = "status-entregado"; claseBadge = "badge-entregado"; }
-        if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
-
-        let itemsHTML = "";
-        if (p.items && p.items.length > 0) {
-          p.items.forEach(item => {
-            itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
-          });
-        }
-
-        contenedor.innerHTML += `
-          <div class="pedido-card ${claseBorde}">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${numPedido}</span>
-              <span class="badge ${claseBadge}">${estado}</span>
-            </div>
-            <p style="font-size:13px; margin:4px 0;">🕒 <b>Recibido:</b> ${fechaFormateada}</p>
-            <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
-            <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
-            
-            <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
-              ${itemsHTML}
-              <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
-            </div>
-
-            <div class="grid-acciones">
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
-            </div>
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#2b2b2b; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; width: auto;">🗑️ Remover Vista</button>
-          </div>
-        `;
-      });
-    });
-}
-
-window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
-  try {
-    detenerAlarma();
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
-  } catch (e) { alert("Error: " + e.message); }
-}
-
-window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
-  if (!confirm("¿Deseas dar de baja este pedido?")) return;
-  try { 
-    detenerAlarma();
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); 
-  } catch (e) { alert("Error: " + e.message); }
-}
-
-// --- MANEJO COMPLETO DE TIENDAS ---
-window.cargarTiendas = async function() {
-  const listaTiendas = document.getElementById("listaTiendas");
-  const filtroTienda = document.getElementById("filtroTiendaPedidos");
-  const tiendaProducto = document.getElementById("tiendaProducto");
-  const tiendaEstado = document.getElementById("tiendaEstado");
-
-  if (listaTiendas) listaTiendas.innerHTML = "";
-  if (filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
-  if (tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda para ver/añadir productos...</option>';
-  if (tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
-
-  const snap = await db.collection("tiendas").get();
-  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
-
-  snap.forEach(doc => {
-    const t = doc.data();
-    const idTienda = doc.id; 
-    const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
-    
-    const nombreEscapado = (t.nombre || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const logoEscapado = (t.logo || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const bannerEscapado = (t.banner || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-
-    if (listaTiendas) {
-      listaTiendas.innerHTML += `
-        <div class="tienda-card-item">
-          <div style="margin-bottom: 10px;">
-            <b style="font-size:18px; color:#f5c400;">🏪 ${t.nombre || 'Sin Nombre'}</b><br>
-            <span style="font-size:13px; color:#ccc;"><b>WhatsApp:</b> ${t.whatsapp || '-'}</span><br>
-            <a href="${urlCompleta}" target="_blank" style="color:#00bcd4; font-size:13px; display:inline-block; margin-top:5px;">🔗 Ver Menú Digital</a>
-          </div>
-          <div class="flex-buttons">
-            <button class="btn-edit" onclick="activarEdicionTienda('${idTienda}', \`${nombreEscapado}\`, \`${t.whatsapp || ''}\`, \`${logoEscapado}\`, \`${bannerEscapado}\`)">✏️ Editar Configuración</button>
-            <button class="btn-danger" onclick="eliminarTiendaOriginal('${idTienda}')">🗑️ Eliminar Tienda</button>
-          </div>
-        </div>
-      `;
-    }
-
-    const opt = `<option value="${idTienda}">${t.nombre || idTienda}</option>`;
-    if(filtroTienda) filtroTienda.innerHTML += opt;
-    if(tiendaProducto) tiendaProducto.innerHTML += opt;
-    if(tiendaEstado) tiendaEstado.innerHTML += opt;
-  });
-}
-
-window.guardarTiendaOriginal = async function() {
-  const idTienda = document.getElementById("editTiendaId").value;
-  const nombre = document.getElementById("nombreTienda").value.trim();
-  const whatsapp = document.getElementById("whatsapp").value.trim();
-  const logo = document.getElementById("logoTienda").value.trim();
-  const banner = document.getElementById("bannerTienda").value.trim();
-
-  if(!nombre || !whatsapp) return alert("Por favor define por lo menos Nombre y número de WhatsApp.");
-
-  const datosTienda = { nombre, whatsapp, logo, banner };
-
-  try {
-    if(idTienda) {
-      await db.collection("tiendas").doc(idTienda).update(datosTienda);
-      alert("🏪 ¡Tienda actualizada con éxito!");
-    } else {
-      await db.collection("tiendas").add({ ...datosTienda, abierta: true });
-      alert("🏪 ¡Tienda registrada de forma exitosa!");
-    }
-    cancelarEdicionTienda();
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-window.activarEdicionTienda = function(id, nombre, whatsapp, logo, banner) {
-  document.getElementById("editTiendaId").value = id;
-  document.getElementById("nombreTienda").value = nombre;
-  document.getElementById("whatsapp").value = whatsapp;
-  document.getElementById("logoTienda").value = logo;
-  document.getElementById("bannerTienda").value = banner;
-
-  document.getElementById("tituloFormTienda").innerText = "✏️ Editando Datos de Tienda";
-  document.getElementById("btnGuardarTienda").innerText = "Guardar Cambios de Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.remove("hidden");
-
-  document.getElementById("tituloFormTienda").scrollIntoView({ behavior: 'smooth' });
-}
-
-window.cancelarEdicionTienda = function() {
-  document.getElementById("editTiendaId").value = "";
-  document.getElementById("nombreTienda").value = "";
-  document.getElementById("whatsapp").value = "";
-  document.getElementById("logoTienda").value = "";
-  document.getElementById("bannerTienda").value = "";
-
-  document.getElementById("tituloFormTienda").innerText = "🏪 Formulario de Tienda (Crear / Modificar)";
-  document.getElementById("btnGuardarTienda").innerText = "Registrar Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.add("hidden");
-}
-
-window.eliminarTiendaOriginal = async function(idTienda) {
-  if(!confirm("¿Deseas eliminar permanentemente esta tienda?")) return;
-  try {
-    await db.collection("tiendas").doc(idTienda).delete();
-    alert("Tienda eliminada.");
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-// --- EDICIÓN COMPLETA DE PRODUCTOS ---
-window.guardarProductoOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const prodId = document.getElementById("editProductoId").value;
-  
-  const nombre = document.getElementById("nuevoNombre").value.trim();
-  const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
-  const categoria = document.getElementById("nuevoCategoria").value.trim();
-  const descripcion = document.getElementById("nuevoDescripcion").value.trim();
-  const imagen = document.getElementById("nuevoImagen").value.trim();
-
-  if(!tiendaId || !nombre || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
-
-  const datosProducto = { nombre, precio, categoria, descripcion, imagen, tiendaId };
-
-  try {
-    if (prodId) {
-      await db.collection("productos").doc(prodId).set(datosProducto, { merge: true });
-      alert("🍔 ¡Producto modificado exitosamente!");
-    } else {
-      await db.collection("productos").add(datosProducto);
-      alert("🍔 ¡Producto añadido al catálogo!");
-    }
-    cancelarEdicionProducto();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
+// --- LOGICA PRODUCTOS (SUBCOLECCIÓN) ---
 window.cargarProductosOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const lista = document.getElementById("listaProductos");
-  if(!lista) return;
   lista.innerHTML = "";
+  if (!tiendaId) return;
 
-  if(!tiendaId) {
-    lista.innerHTML = '<p style="color: #aaa;">Selecciona una tienda en el formulario de arriba para inspeccionar e inventariar sus productos.</p>';
-    return;
-  }
-
-  const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
-  
-  if(snap.empty) {
-    lista.innerHTML = '<p style="color: #aaa;">Esta tienda no posee productos en su menú.</p>';
-    return;
-  }
-
+  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
   snap.forEach(doc => {
     const p = doc.data();
-    const idProd = doc.id;
-    const descBase = p.descripcion || "";
-    let nombreVerdadero = p.nombre || p.name || "Producto sin nombre";
-
-    const nombreEscapado = String(nombreVerdadero).replace(/`/g, "\\`").replace(/"/g, "&quot;");
-
     lista.innerHTML += `
       <div class="producto-item">
-        <div class="producto-info">
-          <b style="color: #f5c400; font-size:15px;">${nombreVerdadero}</b> - $${(p.precio || 0).toLocaleString('es-CO')}<br>
-          <small style="color:#aaa;">Categoría: ${p.categoria || 'General'} | ${descBase}</small>
-        </div>
-        <div class="flex-buttons">
-          <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombreEscapado}\`, ${p.precio}, \`${p.categoria || ''}\`, \`${descBase.replace(/`/g, "\\`").replace(/"/g, "&quot;")}\`, \`${p.imagen || ''}\`)">✏️ Editar</button>
-          <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
-        </div>
-      </div>
-    `;
+        <div><b>${p.nombre || p.name}</b> - $${p.precio}</div>
+        <button onclick="eliminarProducto('${doc.id}')">🗑️</button>
+      </div>`;
   });
 }
 
-window.activarEdicionProducto = function(id, nombre, precio, categoria, descripcion, imagen) {
-  document.getElementById("editProductoId").value = id;
-  document.getElementById("nuevoNombre").value = nombre;
-  document.getElementById("nuevoPrecio").value = precio;
-  document.getElementById("nuevoCategoria").value = categoria;
-  document.getElementById("nuevoDescripcion").value = descripcion;
-  document.getElementById("nuevoImagen").value = imagen;
-
-  document.getElementById("tituloFormProducto").innerText = "✏️ Editando Producto Activo";
-  document.getElementById("btnGuardarProducto").innerText = "Actualizar Cambios del Producto";
-  document.getElementById("btnCancelarEdicion").classList.remove("hidden");
-  
-  document.getElementById("tituloFormProducto").scrollIntoView({ behavior: 'smooth' });
+window.guardarProductoOriginal = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const data = {
+    nombre: document.getElementById("nuevoNombre").value,
+    precio: parseFloat(document.getElementById("nuevoPrecio").value),
+    categoria: document.getElementById("nuevoCategoria").value,
+    descripcion: document.getElementById("nuevoDescripcion").value
+  };
+  await db.collection("tiendas").doc(tiendaId).collection("productos").add(data);
+  alert("Producto guardado");
+  cargarProductosOriginal();
 }
 
-window.cancelarEdicionProducto = function() {
-  document.getElementById("editProductoId").value = "";
-  document.getElementById("nuevoNombre").value = "";
-  document.getElementById("nuevoPrecio").value = "";
-  document.getElementById("nuevoCategoria").value = "";
-  document.getElementById("nuevoDescripcion").value = "";
-  document.getElementById("nuevoImagen").value = "";
-
-  document.getElementById("tituloFormProducto").innerText = "🍔 Formulario de Producto (Crear / Modificar)";
-  document.getElementById("btnGuardarProducto").innerText = "Añadir Producto";
-  document.getElementById("btnCancelarEdicion").classList.add("hidden");
-}
-
-window.eliminarProductoOriginal = async function(idProd) {
-  if(!confirm("¿Seguro que deseas remover este producto?")) return;
-  try {
-    await db.collection("productos").doc(idProd).delete();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-// --- INTERRUPTOR DISPONIBILIDAD ---
-window.cargarEstadoTienda = async function() {
-  const tiendaId = document.getElementById("tiendaEstado").value;
-  const txt = document.getElementById("estadoActual");
-  if(!tiendaId || !txt) return;
-
-  const doc = await db.collection("tiendas").doc(tiendaId).get();
-  if(doc.exists) {
-    const abierta = doc.data().abierta !== false;
-    txt.innerHTML = `Estado actual: <b style="color: ${abierta ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
-  }
-}
-
-window.toggleTienda = async function() {
-  const tiendaId = document.getElementById("tiendaEstado").value;
-  if(!tiendaId) return alert("Por favor selecciona una tienda operativa.");
-
-  try {
-    const ref = db.collection("tiendas").doc(tiendaId);
-    const doc = await ref.get();
-    const estadoActual = doc.data().abierta !== false;
-    await ref.update({ abierta: !estadoActual });
-    cargarEstadoTienda();
-    alert("¡Estado de la tienda actualizado!");
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-// --- CONTROL ACCESOS ---
-document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  const msg = document.getElementById("loginMsg");
-
-  try {
-    msg.innerText = "";
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch (e) {
-    msg.innerText = "Error: " + e.message;
-  }
-});
-
-window.logout = function() {
+// --- LOGICA PEDIDOS ---
+window.escucharPedidosEnTiempoReal = function() {
+  const select = document.getElementById("filtroTiendaPedidos");
+  const tiendaId = select.value;
+  if (pedidosUnsubscribe) pedidosUnsubscribe();
   detenerAlarma();
-  auth.signOut();
+  if (!tiendaId) return;
+
+  let esInicial = true;
+  pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
+    .orderBy("fecha", "desc").onSnapshot(snap => {
+      let nuevo = false;
+      snap.docChanges().forEach(c => { if(c.type==='added' && c.doc.data().estado==='Pendiente') nuevo=true; });
+      if (!esInicial && nuevo) activarAlarma(select.options[select.selectedIndex].text);
+      esInicial = false;
+    });
 }
 
+// Inicialización
 auth.onAuthStateChanged(user => {
-  const loginBox = document.getElementById("loginBox");
-  const panel = document.getElementById("panel");
-
   if (user) {
-    loginBox.classList.add("hidden");
-    panel.classList.remove("hidden");
-    cargarTiendas();
-  } else {
-    loginBox.classList.remove("hidden");
-    panel.classList.add("hidden");
-    detenerAlarma();
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    db.collection("tiendas").get().then(snap => {
+      snap.forEach(doc => {
+        const opt = `<option value="${doc.id}">${doc.data().nombre}</option>`;
+        document.getElementById("filtroTiendaPedidos").innerHTML += opt;
+        document.getElementById("tiendaProducto").innerHTML += opt;
+      });
+    });
   }
 });
+
+document.getElementById("btnIniciarSesion").onclick = () => {
+  auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
+    .catch(e => document.getElementById("loginMsg").innerText = e.message);
+};
+
+window.logout = () => { detenerAlarma(); auth.signOut().then(() => location.reload()); }
 </script>
 </body>
 </html>
