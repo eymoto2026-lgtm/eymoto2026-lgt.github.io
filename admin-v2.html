@@ -11,8 +11,7 @@
     input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; }
     button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
     .hidden { display:none; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
-    .btn-action { width: auto; padding: 5px 10px; margin-left: 5px; font-size: 12px; }
+    .producto-item { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; }
   </style>
 </head>
 <body>
@@ -28,15 +27,12 @@
   </div>
 
   <div id="panel" class="hidden">
-    <div id="editorProducto" class="card hidden" style="border: 2px solid #f5c400;">
-      <h3>✏️ Editar Producto</h3>
-      <input type="hidden" id="editId">
-      <input id="editNombre" placeholder="Nombre del producto">
-      <input id="editPrecio" type="number" placeholder="Precio">
-      <input id="editCategoria" placeholder="Categoría">
-      <textarea id="editDesc" placeholder="Descripción"></textarea>
-      <button onclick="guardarEdicion()">Guardar Cambios</button>
-      <button onclick="document.getElementById('editorProducto').classList.add('hidden')" style="background:#555;">Cancelar</button>
+    <div class="card">
+      <h3>📋 Monitor de Pedidos</h3>
+      <select id="filtroTiendaPedidos" onchange="console.log('Cambio en pedidos')">
+        <option value="">Selecciona una tienda</option>
+      </select>
+      <div id="contenedorPedidos"></div>
     </div>
 
     <div class="card">
@@ -46,6 +42,13 @@
       </select>
       <div id="listaProductos"></div>
     </div>
+
+    <div class="card">
+      <h3>🏪 Tiendas</h3>
+      <div id="listaTiendas"></div>
+    </div>
+
+    <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -56,72 +59,57 @@
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
   projectId: "eymotocomidas",
   storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
   appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Cargar tiendas
-async function cargarTiendas() {
-  const selectProd = document.getElementById("tiendaProducto");
-  const snap = await db.collection("tiendas").get();
-  snap.forEach(doc => {
-    selectProd.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`;
-  });
-}
+window.cargarTiendas = async function() {
+  try {
+    const snap = await db.collection("tiendas").get();
+    const selectPedidos = document.getElementById("filtroTiendaPedidos");
+    const selectProd = document.getElementById("tiendaProducto");
+    const lista = document.getElementById("listaTiendas");
+    
+    // Limpiar antes de llenar
+    selectPedidos.innerHTML = '<option value="">Selecciona una tienda</option>';
+    selectProd.innerHTML = '<option value="">Selecciona tienda para ver productos</option>';
+    lista.innerHTML = "";
 
-// Listar productos con botones de acción
+    snap.forEach(doc => {
+      const t = doc.data();
+      lista.innerHTML += `<div class="card"><b>${t.nombre}</b> (ID: ${doc.id})</div>`;
+      selectPedidos.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+      selectProd.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+    });
+  } catch (e) { console.error("Error al cargar tiendas:", e); }
+};
+
 window.cargarProductosOriginal = async function() {
   const tId = document.getElementById("tiendaProducto").value;
   const lista = document.getElementById("listaProductos");
-  if(!tId) return;
-  const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
-  lista.innerHTML = "";
-  snap.forEach(doc => {
-    const p = doc.data();
-    lista.innerHTML += `
-      <div class="producto-item">
-        <span><b>${p.name}</b> - $${p.precio}</span>
-        <div>
-          <button class="btn-action" onclick="abrirEdicion('${doc.id}', '${p.name}', ${p.precio}, '${p.categoria || ''}', '${p.descripcion || ''}')">✏️ Editar</button>
-          <button class="btn-action" style="background:#dc3545;" onclick="borrarProducto('${doc.id}')">🗑️ Borrar</button>
-        </div>
-      </div>`;
-  });
-};
-
-// Abrir editor
-window.abrirEdicion = (id, nombre, precio, cat, desc) => {
-  document.getElementById("editId").value = id;
-  document.getElementById("editNombre").value = nombre;
-  document.getElementById("editPrecio").value = precio;
-  document.getElementById("editCategoria").value = cat;
-  document.getElementById("editDesc").value = desc;
-  document.getElementById("editorProducto").classList.remove("hidden");
-};
-
-// Guardar cambios
-window.guardarEdicion = async () => {
-  const id = document.getElementById("editId").value;
-  await db.collection("productos").doc(id).update({
-    name: document.getElementById("editNombre").value,
-    precio: parseFloat(document.getElementById("editPrecio").value),
-    categoria: document.getElementById("editCategoria").value,
-    descripcion: document.getElementById("editDesc").value
-  });
-  alert("Producto actualizado correctamente");
-  document.getElementById("editorProducto").classList.add("hidden");
-  cargarProductosOriginal();
-};
-
-// Borrar
-window.borrarProducto = async (id) => {
-  if(confirm("¿Seguro que quieres borrar este producto?")) {
-    await db.collection("productos").doc(id).delete();
-    cargarProductosOriginal();
+  
+  if(!tId) { lista.innerHTML = ""; return; }
+  
+  lista.innerHTML = "Cargando productos...";
+  
+  try {
+    const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
+    lista.innerHTML = "";
+    if(snap.empty) { lista.innerHTML = "No hay productos registrados para esta tienda."; return; }
+    
+    snap.forEach(doc => {
+      const p = doc.data();
+      lista.innerHTML += `<div class="producto-item"><span>${p.name || 'Sin nombre'}</span><span>$${p.precio || 0}</span></div>`;
+    });
+  } catch (e) { 
+    console.error("Error al cargar productos:", e); 
+    lista.innerHTML = "Error al cargar datos.";
   }
 };
 
@@ -134,6 +122,9 @@ auth.onAuthStateChanged(user => {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("panel").classList.remove("hidden");
     cargarTiendas();
+  } else {
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("panel").classList.add("hidden");
   }
 });
 </script>
