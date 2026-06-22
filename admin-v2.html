@@ -290,8 +290,21 @@ window.escucharPedidosEnTiempoReal = function() {
             <div style="background: #f5c400; color: #000; padding: 8px; margin: 8px 0; font-weight: bold; border-radius: 4px; text-align: center;">
                 Valor domicilio: $${valorDomicilio.toLocaleString('es-CO')}
             </div>
-            `;
-      });
+            <div style="background:#111; padding:12px; border-radius:6px;">${itemsHTML}
+                <hr style="border-top:1px dashed #333;">
+                <span style="color:#28a745; font-weight:bold;">Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
+            </div>
+            
+            <!-- Nuevos Botones de Acción -->
+            <div class="grid-acciones">
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745;">🟢 Entregado</button>
+              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545;">❌ Cancelar</button>
+            </div>
+            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" class="btn-danger" style="width:100%; margin-top:10px;">🗑️ Eliminar Pedido del Sistema</button>
+          </div>
+        `;
 
 window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
   try {
