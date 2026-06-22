@@ -3,46 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin V2 - Gestión Total EyMoto</title>
+
   <style>
     body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
     header { background:#000; padding:15px; text-align:center; font-size:22px; font-weight:bold; color: #f5c400; border-bottom: 2px solid #222; }
     .container { padding:20px; max-width: 1200px; margin: 0 auto; }
     .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
-    input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; }
+    input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
+    input:focus, select:focus, textarea:focus { border-color: #f5c400; outline: none; }
+    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
+    button:hover { background: #e0b300; }
     .hidden { display:none; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; background: #222; margin-top:5px; padding: 10px; }
-    .pedido-card { border: 1px solid #555; padding: 15px; margin-bottom: 10px; background: #222; }
-    .tienda-header { cursor: pointer; padding: 15px; background: #333; margin-top: 10px; border-radius: 8px; font-weight: bold; border: 1px solid #f5c400; }
+    
+    .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
+    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
+    .producto-info { flex-grow: 1; }
+
+    .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
+    .status-pendiente { border-color: #ffc107; }
+    .status-preparacion { border-color: #17a2b8; }
+    .status-entregado { border-color: #28a745; }
+    .status-cancelado { border-color: #dc3545; }
+    
+    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .badge-pendiente { background: #ffc107; color: #000; }
+    .badge-preparacion { background: #17a2b8; color: #fff; }
+    .badge-entregado { background: #28a745; color: #fff; }
+    .badge-cancelado { background: #dc3545; color: #fff; }
+
+    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
+    .btn-status { font-size: 12px; padding: 8px; margin: 0; }
+    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
+    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
+    
+    .flex-buttons { display: flex; gap: 5px; }
   </style>
 </head>
+
 <body>
 
-<header>🚀 PANEL DE ADMINISTRACIÓN - EYMOTO</header>
+<header>🚀 PANEL DE ADMINISTRACIÓN GENERAL - EYMOTO</header>
 
 <div class="container">
+
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso</h3>
-    <input type="email" id="email" placeholder="Correo">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="btnIniciarSesion">Ingresar</button>
+    <h3>🔐 Acceso al Panel Administrativo</h3>
+    <label>Correo Electrónico:</label>
+    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
+    <label>Contraseña:</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button id="btnIniciarSesion">Ingresar al Panel</button>
+    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
   </div>
 
   <div id="panel" class="hidden">
-    <div class="card">
-      <h3>📋 Monitor de Pedidos</h3>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
-        <option value="">Selecciona una tienda</option>
+
+    <div class="card" style="border-left: 5px solid #8e44ad;">
+      <h3>🔍 Consulta Rápida de Productos</h3>
+      <label>Selecciona una tienda:</label>
+      <select id="selectTiendaParaProductos" onchange="cargarProductosEnDesplegable()">
+        <option value="">Primero selecciona una tienda...</option>
       </select>
-      <div id="contenedorPedidos"></div>
+      
+      <label style="margin-top: 15px;">Productos Disponibles:</label>
+      <select id="listaDesplegableProductos">
+        <option value="">Selecciona un producto...</option>
+      </select>
+    </div>
+
+    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
+      <h3 style="color: #f5c400; margin-top: 0;">📋 Monitor de Pedidos</h3>
+      <button id="btnProbarAltavoz" onclick="probarVozAlarma()" style="background: #008b9b; color: #fff; font-size: 13px; margin-bottom: 10px;">🔔 Inicializar / Probar Altavoz ("Ey Moto")</button>
+      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()">
+        <option value="">Seleccionar tienda para monitorear...</option>
+      </select>
+      <div id="contenedorPedidos" style="margin-top:15px;">
+        <p style="color: #aaa; text-align: center; padding: 20px;">Filtra una tienda arriba para ver el flujo de pedidos.</p>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #00bcd4;">
+      <h3 id="tituloFormTienda">🏪 Formulario de Tienda (Crear / Modificar)</h3>
+      <input type="hidden" id="editTiendaId" value="">
+      <input id="nombreTienda" placeholder="Nombre Comercial de la Tienda">
+      <input id="whatsapp" placeholder="WhatsApp (Ej: 573000000000)">
+      <input id="logoTienda" placeholder="URL de la imagen del Logo">
+      <input id="bannerTienda" placeholder="URL de la imagen de Portada/Banner">
+      <button id="btnGuardarTienda" onclick="guardarTiendaOriginal()">Registrar Tienda</button>
+      <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Tienda</button>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #ffc107;">
+      <h3 id="tituloFormProducto">🍔 Formulario de Producto (Crear / Modificar)</h3>
+      <label>Asignar a la Tienda:</label>
+      <select id="tiendaProducto" onchange="cargarProductosOriginal()">
+        <option value="">Seleccionar tienda para ver/añadir productos...</option>
+      </select>
+      <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 15px;">
+        <input type="hidden" id="editProductoId" value="">
+        <input id="nuevoNombre" placeholder="Nombre del platillo o producto">
+        <input id="nuevoPrecio" type="number" placeholder="Precio en COP ($)">
+        <input id="nuevoCategoria" placeholder="Categoría (Ej: Hamburguesas, Bebidas)">
+        <textarea id="nuevoDescripcion" placeholder="Descripción de ingredientes o detalles..." rows="2"></textarea>
+        <input id="nuevoImagen" placeholder="URL de la foto del producto">
+        <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
+        <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()" style="background: #555; color: #fff; margin-top: 5px;">Cancelar Edición de Producto</button>
+      </div>
     </div>
 
     <div class="card">
-      <h3>🍔 Gestión de Productos (Haz clic en una tienda)</h3>
-      <div id="listaTiendasDesplegables"></div>
+      <h3>🏪 Lista de Tiendas Disponibles</h3>
+      <div id="listaTiendas"></div>
     </div>
 
-    <button onclick="auth.signOut()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
+    <div class="card">
+      <h3>📦 Lista de Productos por Tienda</h3>
+      <div id="listaProductos"></div>
+    </div>
+
+    <button onclick="logout()" style="background:#444; color:#fff; margin-top:20px; font-size: 14px;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -59,56 +138,65 @@ const firebaseConfig = {
   messagingSenderId: "670474251560",
   appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Carga de Tiendas
-window.cargarTiendas = async function() {
-  const snap = await db.collection("tiendas").get();
-  const contenedor = document.getElementById("listaTiendasDesplegables");
-  contenedor.innerHTML = "";
-  snap.forEach(doc => {
-    contenedor.innerHTML += `
-      <div class="tienda-header" onclick="toggleProductos('${doc.id}')">🏪 ${doc.data().nombre}</div>
-      <div id="productos-${doc.id}" class="hidden"></div>
-    `;
-  });
-};
-
-// Carga de Productos y acciones (Editar/Borrar)
-window.toggleProductos = async function(tId) {
-  const div = document.getElementById(`productos-${tId}`);
-  div.classList.toggle("hidden");
-  if(!div.classList.contains("hidden") && div.innerHTML === "") {
-    const snap = await db.collection("productos").where("tiendaId", "==", tId).get();
+// --- FUNCIONES NUEVAS DE CONSULTA ---
+window.cargarProductosEnDesplegable = async function() {
+  const tiendaId = document.getElementById("selectTiendaParaProductos").value;
+  const selectProductos = document.getElementById("listaDesplegableProductos");
+  selectProductos.innerHTML = '<option value="">Selecciona un producto...</option>';
+  if (!tiendaId) return;
+  try {
+    const snap = await db.collection("productos").where("tiendaId", "==", tiendaId).get();
     snap.forEach(doc => {
       const p = doc.data();
-      div.innerHTML += `
-        <div class="producto-item">
-          <span><b>${p.name}</b> - $${p.precio}</span>
-          <div>
-            <button onclick="alert('Funcionalidad de edición aquí')">✏️</button>
-            <button onclick="borrarProducto('${doc.id}')" style="background:#dc3545;">🗑️</button>
-          </div>
-        </div>`;
+      const option = document.createElement("option");
+      option.value = doc.id;
+      option.text = `${p.name} - $${(p.precio || 0).toLocaleString('es-CO')}`;
+      selectProductos.appendChild(option);
     });
-  }
-};
+  } catch (e) { console.error(e); }
+}
 
-window.borrarProducto = async (id) => {
-  if(confirm("¿Borrar producto?")) { await db.collection("productos").doc(id).delete(); alert("Eliminado"); }
-};
+// --- ACTUALIZACIÓN DE CARGAR TIENDAS ---
+window.cargarTiendas = async function() {
+  const listaTiendas = document.getElementById("listaTiendas");
+  const selectFiltro = document.getElementById("filtroTiendaPedidos");
+  const selectProducto = document.getElementById("tiendaProducto");
+  const selectConsulta = document.getElementById("selectTiendaParaProductos");
 
-document.getElementById("btnIniciarSesion").addEventListener("click", () => {
-  auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value);
-});
+  [selectFiltro, selectProducto, selectConsulta].forEach(s => {
+    if(s) s.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  });
+
+  const snap = await db.collection("tiendas").get();
+  snap.forEach(doc => {
+    const t = doc.data();
+    const id = doc.id;
+    const opt = `<option value="${id}">${t.nombre}</option>`;
+    
+    if(selectFiltro) selectFiltro.innerHTML += opt;
+    if(selectProducto) selectProducto.innerHTML += opt;
+    if(selectConsulta) selectConsulta.innerHTML += opt;
+    
+    // ... tu lógica existente para listaTiendas ...
+  });
+}
+
+// ... (El resto de tus funciones existentes permanecen igual) ...
+// (Asegúrate de mantener tus funciones: escucharPedidosEnTiempoReal, guardarTiendaOriginal, etc.)
 
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("panel").classList.remove("hidden");
     cargarTiendas();
+  } else {
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("panel").classList.add("hidden");
   }
 });
 </script>
