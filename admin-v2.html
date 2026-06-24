@@ -7,7 +7,7 @@
     body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:20px; }
     .card { background:#1c1c1c; padding:20px; border-radius:12px; border: 1px solid #333; margin-bottom: 20px; }
     input, button, select { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; }
+    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border:none; }
     .pedido-card { border: 2px solid #f5c400; padding: 20px; margin-top: 15px; border-radius: 12px; background: #000; }
     .grid-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
     .btn-status { padding: 10px; border: none; border-radius: 4px; color: #000; font-weight: bold; cursor: pointer; }
@@ -29,54 +29,69 @@
       <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()"><option value="">Selecciona tienda...</option></select>
       <div id="contenedorPedidos"></div>
     </div>
+    <button onclick="auth.signOut(); location.reload();" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-  // ... (Tu configuración firebaseConfig sigue igual) ...
-  const auth = firebase.auth(); const db = firebase.firestore();
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  window.escucharPedidosEnTiempoReal = function() {
-    const tiendaId = document.getElementById("filtroTiendaPedidos").value;
-    if (!tiendaId) return;
-    db.collection("tiendas").doc(tiendaId).collection("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
-        const cont = document.getElementById("contenedorPedidos");
-        cont.innerHTML = "";
-        snap.forEach(doc => {
-            const p = doc.data();
-            cont.innerHTML += `
-              <div class="pedido-card">
-                <h3 style="color:#f5c400;">📦 Comanda #${p.numeroPedido || '---'}</h3>
-                <p>📍 Dirección: ${p.cliente?.direccion || 'N/A'}</p>
-                <div style="background:#f5c400; color:#000; padding:10px; font-weight:bold; text-align:center;">
-                    valor a cobrar x el Domicilio = $3.750
-                </div>
-                <div class="grid-acciones">
-                  <button class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
-                  <button class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
-                  <button class="btn-status" style="background:#28a745;">🟢 Entregado</button>
-                  <button class="btn-status" style="background:#dc3545;">❌ Cancelar</button>
-                </div>
-                <button class="btn-danger">🗑️ Eliminar Pedido</button>
-              </div>`;
+  <script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", 
+        authDomain: "eymotocomidas.firebaseapp.com", 
+        projectId: "eymotocomidas", 
+        storageBucket: "eymotocomidas.firebasestorage.app", 
+        messagingSenderId: "670474251560", 
+        appId: "1:670474251560:web:eab1fbbb744af4e0b8341d" 
+    };
+    
+    // Inicializar Firebase ANTES de cualquier otra cosa
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(); 
+    const db = firebase.firestore();
+
+    // Lógica de aplicación
+    window.escucharPedidosEnTiempoReal = function() {
+        const tiendaId = document.getElementById("filtroTiendaPedidos").value;
+        if (!tiendaId) return;
+        db.collection("tiendas").doc(tiendaId).collection("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
+            const cont = document.getElementById("contenedorPedidos");
+            cont.innerHTML = "";
+            snap.forEach(doc => {
+                const p = doc.data();
+                cont.innerHTML += `
+                  <div class="pedido-card">
+                    <h3 style="color:#f5c400;">📦 Comanda #${p.numeroPedido || '---'}</h3>
+                    <p>📍 Dirección: ${p.cliente?.direccion || 'N/A'}</p>
+                    <div class="grid-acciones">
+                      <button class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
+                      <button class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
+                      <button class="btn-status" style="background:#28a745;">🟢 Entregado</button>
+                      <button class="btn-status" style="background:#dc3545;">❌ Cancelar</button>
+                    </div>
+                    <button class="btn-danger">🗑️ Eliminar Pedido</button>
+                  </div>`;
+            });
         });
+    };
+
+    document.getElementById("btnIniciarSesion").onclick = async () => {
+        try { 
+            await auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value); 
+        } catch(e) { document.getElementById("loginMsg").innerText = e.message; }
+    };
+
+    auth.onAuthStateChanged(user => {
+        if(user) {
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("panel").style.display = "block";
+            db.collection("tiendas").get().then(snap => {
+                const select = document.getElementById("filtroTiendaPedidos");
+                snap.forEach(doc => select.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`);
+            });
+        }
     });
-  };
-
-  // Lógica de Login
-  document.getElementById("btnIniciarSesion").onclick = async () => {
-    try { await auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value); }
-    catch(e) { document.getElementById("loginMsg").innerText = e.message; }
-  };
-
-  auth.onAuthStateChanged(user => {
-    if(user) {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("panel").style.display = "block";
-    }
-  });
-</script>
+  </script>
 </body>
 </html>
