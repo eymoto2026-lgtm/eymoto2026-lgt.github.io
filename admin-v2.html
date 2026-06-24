@@ -429,80 +429,7 @@ window.eliminarTiendaOriginal = async function(idTienda) {
 }
 
 // --- EDICIÓN COMPLETA DE PRODUCTOS ---
-window.guardarProductoOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const prodId = document.getElementById("editProductoId").value;
-  
-  const name = document.getElementById("nuevoNombre").value.trim();
-  const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
-  const categoria = document.getElementById("nuevoCategoria").value.trim();
-  const descripcion = document.getElementById("nuevoDescripcion").value.trim();
-  const img = document.getElementById("nuevoImagen").value.trim();
-
-  if(!tiendaId || !name || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
-
-  const datosProducto = { name, precio, categoria, descripcion, img, tiendaId };
-
-  try {
-    if (prodId) {
-      await db.collection("productos").doc(prodId).set(datosProducto, { merge: true });
-      alert("🍔 ¡Producto modificado exitosamente!");
-    } else {
-      await db.collection("productos").add(datosProducto);
-      alert("🍔 ¡Producto añadido al catálogo!");
-    }
-    cancelarEdicionProducto();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-window.cargarProductosOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-  
-  if(!lista) return;
-  
-  if(!tiendaId) {
-    lista.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda para ver su inventario.</p>';
-    return;
-  }
-
-  lista.innerHTML = '<p style="color: #f5c400;">Cargando productos...</p>';
-
-  try {
-    // Lectura desde la subcolección tal como se ve en image_226542.jpg
-    const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    
-    lista.innerHTML = "";
-    
-    if(snap.empty) {
-      lista.innerHTML = `<p style="color: #aaa; text-align: center;">Esta tienda no posee productos en su menú.</p>`;
-      return;
-    }
-
-    snap.forEach(doc => {
-      const p = doc.data();
-      const idProd = doc.id;
-      const nombre = p.name || "Sin nombre";
-      
-      lista.innerHTML += `
-        <div class="producto-item" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding:10px 0;">
-          <div class="producto-info">
-            <b style="color: #fff;">${nombre}</b><br>
-            <small style="color: #ccc;">$${(p.precio || 0).toLocaleString('es-CO')} | ${p.categoria || 'Sin categoría'}</small>
-          </div>
-          <div class="flex-buttons" style="display:flex; gap:5px;">
-            <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombre.replace(/'/g, "\\'")}\`, ${p.precio || 0}, \`${(p.categoria || '').replace(/'/g, "\\'")}\`, \`${(p.descripcion || '').replace(/'/g, "\\'")}\`, \`${(p.img || '').replace(/'/g, "\\'")}\`)">✏️ Editar</button>
-            <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
-          </div>
-        </div>
-      `;
-    });
-  } catch (error) {
-    console.error("Error al cargar productos:", error);
-    lista.innerHTML = `<p style="color: #ff4444;">Error al cargar. Revisa la consola.</p>`;
-  }
-}
+// --- FUNCIONES DE PRODUCTOS (CORREGIDAS: UNIFICADAS) ---
 
 window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
@@ -537,6 +464,7 @@ window.guardarProductoOriginal = async function() {
 
 window.eliminarProductoOriginal = async function(idProd) {
   const tiendaId = document.getElementById("tiendaProducto").value;
+  if(!tiendaId) return alert("Selecciona la tienda primero.");
   if(!confirm("¿Estás seguro de eliminar este producto?")) return;
   try {
     // Eliminación de la subcolección correspondiente
@@ -547,6 +475,22 @@ window.eliminarProductoOriginal = async function(idProd) {
   }
 }
 
+// --- LISTENER DE ESTADO (ASEGURA QUE EL PANEL SE MUESTRE) ---
+
+auth.onAuthStateChanged(user => {
+  const loginBox = document.getElementById("loginBox");
+  const panel = document.getElementById("panel");
+
+  if (user) {
+    loginBox.style.display = "none"; // Forzado para evitar conflictos
+    panel.classList.remove("hidden");
+    cargarTiendas();
+  } else {
+    loginBox.style.display = "block";
+    panel.classList.add("hidden");
+    detenerAlarma();
+  }
+});
 window.activarEdicionProducto = function(id, nombre, precio, categoria, descripcion, imagen) {
   document.getElementById("editProductoId").value = id;
   document.getElementById("nuevoNombre").value = nombre;
