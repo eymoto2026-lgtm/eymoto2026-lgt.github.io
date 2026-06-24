@@ -26,10 +26,10 @@
   <div id="panel" style="display:none;">
     <div class="card">
       <h3>📋 Monitor de Pedidos</h3>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()"><option value="">Selecciona tienda...</option></select>
+      <select id="filtroTiendaPedidos"><option value="">Selecciona tienda...</option></select>
       <div id="contenedorPedidos"></div>
     </div>
-    <button onclick="auth.signOut(); location.reload();" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
+    <button onclick="location.reload()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -37,60 +37,64 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", 
-        authDomain: "eymotocomidas.firebaseapp.com", 
-        projectId: "eymotocomidas", 
-        storageBucket: "eymotocomidas.firebasestorage.app", 
-        messagingSenderId: "670474251560", 
-        appId: "1:670474251560:web:eab1fbbb744af4e0b8341d" 
-    };
-    
-    // Inicializar Firebase ANTES de cualquier otra cosa
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(); 
-    const db = firebase.firestore();
+    // Esperar a que todo el DOM y scripts estén listos
+    document.addEventListener("DOMContentLoaded", () => {
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", 
+            authDomain: "eymotocomidas.firebaseapp.com", 
+            projectId: "eymotocomidas", 
+            storageBucket: "eymotocomidas.firebasestorage.app", 
+            messagingSenderId: "670474251560", 
+            appId: "1:670474251560:web:eab1fbbb744af4e0b8341d" 
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(); 
+        const db = firebase.firestore();
 
-    // Lógica de aplicación
-    window.escucharPedidosEnTiempoReal = function() {
-        const tiendaId = document.getElementById("filtroTiendaPedidos").value;
-        if (!tiendaId) return;
-        db.collection("tiendas").doc(tiendaId).collection("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
+        // Función definida en el ámbito global para que el HTML la encuentre
+        window.escucharPedidosEnTiempoReal = function() {
+            const tiendaId = document.getElementById("filtroTiendaPedidos").value;
             const cont = document.getElementById("contenedorPedidos");
-            cont.innerHTML = "";
-            snap.forEach(doc => {
-                const p = doc.data();
-                cont.innerHTML += `
-                  <div class="pedido-card">
-                    <h3 style="color:#f5c400;">📦 Comanda #${p.numeroPedido || '---'}</h3>
-                    <p>📍 Dirección: ${p.cliente?.direccion || 'N/A'}</p>
-                    <div class="grid-acciones">
-                      <button class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
-                      <button class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
-                      <button class="btn-status" style="background:#28a745;">🟢 Entregado</button>
-                      <button class="btn-status" style="background:#dc3545;">❌ Cancelar</button>
-                    </div>
-                    <button class="btn-danger">🗑️ Eliminar Pedido</button>
-                  </div>`;
+            if (!tiendaId) return;
+            
+            db.collection("tiendas").doc(tiendaId).collection("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
+                cont.innerHTML = "";
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    cont.innerHTML += `
+                      <div class="pedido-card">
+                        <h3>📦 Comanda #${p.numeroPedido || '---'}</h3>
+                        <p>📍 Dirección: ${p.cliente?.direccion || 'N/A'}</p>
+                        <div class="grid-acciones">
+                          <button class="btn-status" style="background:#ffc107;">🟡 Pendiente</button>
+                          <button class="btn-status" style="background:#17a2b8;">🔵 Cocinar</button>
+                          <button class="btn-status" style="background:#28a745;">🟢 Entregado</button>
+                          <button class="btn-status" style="background:#dc3545;">❌ Cancelar</button>
+                        </div>
+                      </div>`;
+                });
             });
+        };
+
+        document.getElementById("filtroTiendaPedidos").addEventListener("change", window.escucharPedidosEnTiempoReal);
+
+        document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
+            try { 
+                await auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value); 
+            } catch(e) { document.getElementById("loginMsg").innerText = e.message; }
         });
-    };
 
-    document.getElementById("btnIniciarSesion").onclick = async () => {
-        try { 
-            await auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value); 
-        } catch(e) { document.getElementById("loginMsg").innerText = e.message; }
-    };
-
-    auth.onAuthStateChanged(user => {
-        if(user) {
-            document.getElementById("loginBox").style.display = "none";
-            document.getElementById("panel").style.display = "block";
-            db.collection("tiendas").get().then(snap => {
-                const select = document.getElementById("filtroTiendaPedidos");
-                snap.forEach(doc => select.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`);
-            });
-        }
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById("loginBox").style.display = "none";
+                document.getElementById("panel").style.display = "block";
+                db.collection("tiendas").get().then(snap => {
+                    const select = document.getElementById("filtroTiendaPedidos");
+                    snap.forEach(doc => select.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`);
+                });
+            }
+        });
     });
   </script>
 </body>
