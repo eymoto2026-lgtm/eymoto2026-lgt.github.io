@@ -73,7 +73,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
@@ -87,12 +87,10 @@ const db = getFirestore(app);
 let cart = [];
 let products = [];
 let whatsapp = "";
-let tiendaAbierta = true;
 
 const urlParams = new URLSearchParams(window.location.search);
 const idTienda = urlParams.get('tienda');
 
-// --- LÓGICA DE TIEMPO REAL ---
 if(idTienda) {
   onSnapshot(doc(db, "tiendas", idTienda), (doc) => {
     if (doc.exists()) {
@@ -103,7 +101,6 @@ if(idTienda) {
     }
   });
 
-  // Carga inicial
   async function cargarTodo() {
     const snap = await getDoc(doc(db, "tiendas", idTienda));
     if(snap.exists()){
@@ -135,18 +132,12 @@ window.filterProducts = (cat) => {
     const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
     render(filtered);
 };
-// --- FUNCIONES PARA EL CARRITO ---
 
 window.add = (name) => {
-    // Busca el producto en tu lista cargada
     let prod = products.find(p => p.name === name);
     let item = cart.find(x => x.name === name);
-
-    if(item) {
-        item.qty++;
-    } else {
-        cart.push({...prod, qty: 1});
-    }
+    if(item) item.qty++;
+    else cart.push({...prod, qty: 1});
     renderCart();
 };
 
@@ -158,22 +149,28 @@ window.removeItem = (i) => {
 function renderCart() {
     let total = 0;
     const cartContainer = document.getElementById("cartItems");
-    
     cartContainer.innerHTML = cart.map((p, i) => {
-        total += p.precio * p.qty;
+        total += Number(p.precio) * p.qty;
         return `
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                 <span>${p.name} x${p.qty}</span>
-                <div>
-                    <button onclick="window.add('${p.name}')">+</button>
-                    <button onclick="window.removeItem(${i})">🗑️</button>
-                </div>
+                <button onclick="window.removeItem(${i})">🗑️</button>
             </div>
         `;
     }).join('');
-    
     document.getElementById("total").innerText = total;
 }
+
+// Lógica de Enviar a WhatsApp
+document.getElementById("btnConfirmarPedido").onclick = () => {
+    const nombre = document.getElementById("formNombre").value;
+    const dir = document.getElementById("formDireccion").value;
+    let msg = `Nuevo Pedido para ${document.getElementById("tituloTienda").innerText}\n\n`;
+    cart.forEach(p => msg += `${p.name} x${p.qty} - $${p.precio * p.qty}\n`);
+    msg += `\nTotal: $${document.getElementById("total").innerText}\nCliente: ${nombre}\nDirección: ${dir}`;
+    
+    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+};
 
 document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
 document.getElementById("btnCerrarModal").onclick = () => document.getElementById("modalPedido").style.display = "none";
