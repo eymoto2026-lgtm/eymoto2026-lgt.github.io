@@ -40,11 +40,11 @@
 </div>
 
 <div class="categories">
-  <button onclick="filterProducts('Todos')">Todos</button>
-  <button onclick="filterProducts('Hamburguesas')">🍔 Hamburguesas</button>
-  <button onclick="filterProducts('Perros')">🌭 Perros</button>
-  <button onclick="filterProducts('Salchipapas')">🍟 Salchipapas</button>
-  <button onclick="filterProducts('Bebidas')">🥤 Bebidas</button>
+  <button onclick="window.filterProducts('Todos')">Todos</button>
+  <button onclick="window.filterProducts('Hamburguesas')">🍔 Hamburguesas</button>
+  <button onclick="window.filterProducts('Perros')">🌭 Perros</button>
+  <button onclick="window.filterProducts('Salchipapas')">🍟 Salchipapas</button>
+  <button onclick="window.filterProducts('Bebidas')">🥤 Bebidas</button>
 </div>
 
 <div class="products" id="products"></div>
@@ -59,19 +59,14 @@
 <div id="modalPedido" class="modal">
   <div class="modal-content">
     <h2>📋 Datos de Entrega</h2>
-    <label>👤 Nombre Completo *</label>
-    <input type="text" id="formNombre" required>
-    <label>📱 Teléfono *</label>
-    <input type="tel" id="formTelefono" required>
-    <label>📍 Dirección *</label>
-    <input type="text" id="formDireccion" required>
-    <label>🏘️ Barrio *</label>
-    <input type="text" id="formBarrio" required>
-    <label>📝 Observaciones</label>
-    <textarea id="formObservaciones"></textarea>
+    <input type="text" id="formNombre" placeholder="Nombre">
+    <input type="tel" id="formTelefono" placeholder="Teléfono">
+    <input type="text" id="formDireccion" placeholder="Dirección">
+    <input type="text" id="formBarrio" placeholder="Barrio">
+    <textarea id="formObservaciones" placeholder="Observaciones"></textarea>
     <div class="modal-buttons">
       <button class="btn-cancelar" id="btnCerrarModal">Volver</button>
-      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR PEDIDO</button>
+      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR</button>
     </div>
   </div>
 </div>
@@ -91,32 +86,65 @@ const db = getFirestore(app);
 
 let cart = [];
 let products = [];
-let currentProducts = [];
 let whatsapp = "";
 let tiendaAbierta = true;
 
 const urlParams = new URLSearchParams(window.location.search);
 const idTienda = urlParams.get('tienda');
 
-// Escucha en tiempo real
+// --- LÓGICA DE TIEMPO REAL ---
 if(idTienda) {
   onSnapshot(doc(db, "tiendas", idTienda), (doc) => {
     if (doc.exists()) {
         const datos = doc.data();
-        const bannerElement = document.getElementById("bannerTiendaEnMenu");
-        if (bannerElement && datos.banner) bannerElement.src = datos.banner;
-        document.title = datos.nombre;
+        const banner = document.getElementById("bannerTiendaEnMenu");
+        if (banner) banner.src = datos.banner || "";
+        document.title = datos.nombre || "EyMoto";
     }
   });
+
+  // Carga inicial
+  async function cargarTodo() {
+    const snap = await getDoc(doc(db, "tiendas", idTienda));
+    if(snap.exists()){
+        const data = snap.data();
+        document.getElementById("tituloTienda").innerText = data.nombre;
+        document.getElementById("logoTienda").src = data.logo || "";
+        whatsapp = data.whatsapp;
+        
+        const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
+        products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        render(products);
+    }
+  }
+  cargarTodo();
 }
 
-// ... resto de tus funciones (renderProducts, add, etc) igual a como las tenías ...
-// Asegúrate de que las funciones como add() y removeItem() estén expuestas globalmente:
-window.add = (name) => { /* tu lógica */ };
-window.removeItem = (i) => { /* tu lógica */ };
-window.filterProducts = (cat) => { /* tu lógica */ };
+function render(list) {
+    document.getElementById("products").innerHTML = list.map(p => `
+        <div class="card">
+            <img src="${p.img}">
+            <h3>${p.name}</h3>
+            <p>$${p.precio}</p>
+            <button class="buy" onclick="window.add('${p.name}')">Comprar</button>
+        </div>
+    `).join('');
+}
 
-// Solo asegúrate de llamar a cargarTienda() al final
+window.filterProducts = (cat) => {
+    const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
+    render(filtered);
+};
+
+window.add = (name) => {
+    const p = products.find(x => x.name === name);
+    cart.push(p);
+    let total = cart.reduce((sum, item) => sum + Number(item.precio), 0);
+    document.getElementById("total").innerText = total;
+};
+
+document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
+document.getElementById("btnCerrarModal").onclick = () => document.getElementById("modalPedido").style.display = "none";
 </script>
 </body>
 </html>
