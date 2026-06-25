@@ -10,14 +10,14 @@
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     /* Banner Ajustado */
    .banner {
-  width: 100% !important;
-  height: 200px !important; /* Fuerza una altura fija para que no se encoja */
-  background-size: cover !important; /* Asegura que la imagen llene todo el espacio */
-  background-position: center center !important; /* Mantiene el centro de la imagen visible */
-  background-repeat: no-repeat !important;
-  background-color: #f4f4f4 !important;
-  display: block !important;
-  flex: none !important; /* Evita que el flexbox lo aplaste */
+  width: 100%;
+  height: 25vw; /* Esto hace que la altura sea el 25% del ancho de la pantalla, manteniendo la proporción automáticamente */
+  min-height: 150px; /* Para que nunca sea demasiado pequeña en celulares */
+  max-height: 300px; /* Para que no sea gigante en pantallas de PC */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #f4f4f4;
 }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
