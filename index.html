@@ -135,13 +135,45 @@ window.filterProducts = (cat) => {
     const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
     render(filtered);
 };
+// --- FUNCIONES PARA EL CARRITO ---
 
 window.add = (name) => {
-    const p = products.find(x => x.name === name);
-    cart.push(p);
-    let total = cart.reduce((sum, item) => sum + Number(item.precio), 0);
-    document.getElementById("total").innerText = total;
+    // Busca el producto en tu lista cargada
+    let prod = products.find(p => p.name === name);
+    let item = cart.find(x => x.name === name);
+
+    if(item) {
+        item.qty++;
+    } else {
+        cart.push({...prod, qty: 1});
+    }
+    renderCart();
 };
+
+window.removeItem = (i) => {
+    cart.splice(i, 1);
+    renderCart();
+};
+
+function renderCart() {
+    let total = 0;
+    const cartContainer = document.getElementById("cartItems");
+    
+    cartContainer.innerHTML = cart.map((p, i) => {
+        total += p.precio * p.qty;
+        return `
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>${p.name} x${p.qty}</span>
+                <div>
+                    <button onclick="window.add('${p.name}')">+</button>
+                    <button onclick="window.removeItem(${i})">🗑️</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    document.getElementById("total").innerText = total;
+}
 
 document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
 document.getElementById("btnCerrarModal").onclick = () => document.getElementById("modalPedido").style.display = "none";
