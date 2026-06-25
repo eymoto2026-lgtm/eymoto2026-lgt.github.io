@@ -70,7 +70,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 let cart = [], products = [], whatsapp = "";
-let tiendaAbierta = false; // Variable global de estado
+let tiendaAbierta = false;
 const idTienda = new URLSearchParams(window.location.search).get('tienda');
 
 async function init() {
@@ -90,12 +90,17 @@ async function init() {
       if (tiendaAbierta) {
           estadoDiv.innerText = "🟢 TIENDA ABIERTA";
           estadoDiv.style.backgroundColor = "#28a745";
+          estadoDiv.style.color = "white";
       } else {
           estadoDiv.innerText = "🔴 TIENDA CERRADA";
           estadoDiv.style.backgroundColor = "#dc3545";
-          document.getElementById("btnComprar").disabled = true;
-          document.getElementById("btnComprar").innerText = "TIENDA CERRADA";
-          document.getElementById("btnComprar").style.background = "#666";
+          estadoDiv.style.color = "white";
+          const btn = document.getElementById("btnComprar");
+          if(btn) {
+            btn.disabled = true;
+            btn.innerText = "TIENDA CERRADA";
+            btn.style.background = "#666";
+          }
       }
       
       const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
@@ -111,43 +116,39 @@ function render(list) {
             <h3>${p.name}</h3>
             <p>$${p.precio}</p>
             <button class="buy" onclick="window.add('${p.name}')">
-    ${tiendaAbierta ? 'Añadir' : 'Tienda Cerrada'}
-</button>
+                ${tiendaAbierta ? 'Añadir' : 'Tienda Cerrada'}
+            </button>
         </div>
     `).join('');
 }
 
+window.filterProducts = (cat) => {
+    const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
+    render(filtered);
+};
+
 window.add = (name) => {
-    // Si la tienda está cerrada, mostramos un mensaje amigable
     if (!tiendaAbierta) {
-        alert("⚠️ ¡Lo sentimos! La tienda está CERRADA en este momento. Por favor, intenta más tarde para realizar tu pedido.");
+        alert("⚠️ ¡Lo sentimos! La tienda está CERRADA.");
         return; 
     }
-
-    // Si está abierta, seguimos con la lógica normal
     let prod = products.find(p => p.name === name);
     let item = cart.find(x => x.name === name);
     if(item) item.qty++;
     else cart.push({...prod, qty: 1});
     renderCart();
 };
+
 window.updateQty = (index, change) => {
     cart[index].qty += change;
-    if (cart[index].qty <= 0) {
-        cart.splice(index, 1);
-    }
+    if (cart[index].qty <= 0) cart.splice(index, 1);
     renderCart();
-};
-
-window.add = (name) => {
-    // ... tu código ...
 };
 
 window.removeItem = (i) => { 
     cart.splice(i, 1); 
     renderCart(); 
 };
-window.removeItem = (i) => { cart.splice(i, 1); renderCart(); };
 
 function renderCart() {
     let total = 0;
@@ -170,7 +171,7 @@ function renderCart() {
 }
 
 document.getElementById("btnConfirmarPedido").onclick = () => {
-    const msg = `Pedido: ` + cart.map(p => p.name).join(', ');
+    const msg = `Pedido:\n` + cart.map(p => `${p.name} x${p.qty}`).join('\n') + `\nTotal: $${document.getElementById("total").innerText}`;
     window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
