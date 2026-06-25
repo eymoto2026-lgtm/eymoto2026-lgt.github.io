@@ -26,7 +26,7 @@
 <header>
   <img id="logoTienda" class="logo" src="" alt="Logo">
   <h1 id="tituloTienda">Cargando...</h1>
-<div id="estadoTienda" style="padding:10px; border-radius:10px; font-weight:bold;">🟢 TIENDA ABIERTA</div>
+  <div id="estadoTienda" style="padding:10px; border-radius:10px; font-weight:bold;">🟢 TIENDA ABIERTA</div>
 </header>
 
 <img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
@@ -70,6 +70,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 
 let cart = [], products = [], whatsapp = "";
+let tiendaAbierta = false; // Variable global de estado
 const idTienda = new URLSearchParams(window.location.search).get('tienda');
 
 async function init() {
@@ -77,48 +78,50 @@ async function init() {
   const snap = await getDoc(doc(db, "tiendas", idTienda));
   if(snap.exists()){
       const data = snap.data();
-      
-      // Actualizar nombre, logo y banner
+      tiendaAbierta = (data.abierta === true || data.abierta === "true");
+
       const titulo = document.getElementById("tituloTienda");
       if(titulo) titulo.innerText = data.nombre || "Tienda";
       document.getElementById("logoTienda").src = data.logo || "";
       document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
       whatsapp = data.whatsapp;
       
-      // --- CÓDIGO NUEVO PARA EL ESTADO ---
       const estadoDiv = document.getElementById("estadoTienda");
-      if (data.abierta === true || data.abierta === "true") {
+      if (tiendaAbierta) {
           estadoDiv.innerText = "🟢 TIENDA ABIERTA";
           estadoDiv.style.backgroundColor = "#28a745";
-          estadoDiv.style.color = "white";
       } else {
           estadoDiv.innerText = "🔴 TIENDA CERRADA";
           estadoDiv.style.backgroundColor = "#dc3545";
-          estadoDiv.style.color = "white";
-          // Opcional: Deshabilitar el botón de comprar si está cerrada
           document.getElementById("btnComprar").disabled = true;
           document.getElementById("btnComprar").innerText = "TIENDA CERRADA";
           document.getElementById("btnComprar").style.background = "#666";
       }
-      // -----------------------------------
       
       const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
       products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
       render(products);
   }
 }
+
 function render(list) {
     document.getElementById("products").innerHTML = list.map(p => `
         <div class="card">
             <img src="${p.img || ''}">
             <h3>${p.name}</h3>
             <p>$${p.precio}</p>
-            <button class="buy" onclick="window.add('${p.name}')">Añadir</button>
+            <button class="buy" onclick="window.add('${p.name}')" ${!tiendaAbierta ? 'disabled style="background:#ccc"' : ''}>
+                ${tiendaAbierta ? 'Añadir' : 'Cerrada'}
+            </button>
         </div>
     `).join('');
 }
 
 window.add = (name) => {
+    if (!tiendaAbierta) {
+        alert("Lo sentimos, la tienda está cerrada actualmente.");
+        return;
+    }
     let prod = products.find(p => p.name === name);
     let item = cart.find(x => x.name === name);
     if(item) item.qty++;
