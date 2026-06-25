@@ -11,15 +11,16 @@
     /* Banner Ajustado */
    .banner {
   width: 100%;
-  /* Esto crea un banner que siempre mantendrá la proporción de tu imagen (3:1) */
+  /* Mantenemos una proporción 3:1 para que no sea ni muy pequeña ni muy grande */
   aspect-ratio: 3 / 1; 
-  /* Asegura que la imagen se muestre completa sin recortes */
-  background-size: contain; 
+  /* 'cover' llena todo el contenedor sin dejar huecos */
+  background-size: cover; 
+  /* Centra la imagen para que el recorte sea equilibrado */
   background-position: center;
   background-repeat: no-repeat;
   background-color: #f4f4f4;
-  /* Eliminamos alturas fijas que estaban aplastando la imagen */
-  min-height: 100px; 
+  /* Asegura que no se encoja */
+  min-height: 150px; 
 }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
