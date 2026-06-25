@@ -9,19 +9,14 @@
     header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     /* Banner Ajustado */
-  .banner {
-  width: 100%;
-  /* 1. Definimos la forma del banner (3 ancho por 1 alto) */
-  aspect-ratio: 3 / 1; 
-  /* 2. 'cover' hace que la imagen se expanda para llenar todo el espacio */
-  background-size: cover;
-  /* 3. 'center' asegura que siempre veamos el centro de tu link de imagen */
-  background-position: center center;
-  background-repeat: no-repeat;
-  /* 4. Color de fondo para mientras carga el link */
-  background-color: #f4f4f4;
-  /* 5. Asegura que no se aplaste */
-  min-height: 120px;
+ .banner-img{
+    width:100%;
+    height:auto;
+    display:block;
+    background-size: contain;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:#fff;
 }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
@@ -46,7 +41,7 @@
   <div id="estadoTienda" style="margin-top:10px;padding:10px;border-radius:10px;background:#28a745;color:white;font-weight:bold;">🟢 TIENDA ABIERTA</div>
 </header>
 
-<div id="bannerTiendaEnMenu" class="banner"></div>
+<img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
 
 <div class="categories">
   <button onclick="window.filterProducts('Todos')">Todos</button>
@@ -106,7 +101,7 @@ if(idTienda) {
         const datos = docSnap.data();
         const banner = document.getElementById("bannerTiendaEnMenu");
         if (banner && datos.banner) {
-            banner.style.backgroundImage = `url('${datos.banner}')`;
+            banner.src = datos.banner;
         }
     }
   });
