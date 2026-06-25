@@ -8,7 +8,7 @@
     body { margin:0; font-family:Arial,sans-serif; background:#f4f4f4; padding-bottom:180px; }
     header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
-    .banner-img { width:100%; height:auto; display:block; }
+    .banner-img { width:100%; height:auto; display:block; min-height:100px; background:#eee; }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
     .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; }
@@ -19,10 +19,6 @@
     .checkout { display:block; width:100%; background:#333; color:#fff; border:none; padding:16px; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 450px; }
-    .modal-content input, .modal-content textarea { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
-    .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-    .btn-cancelar { flex: 1; background: #eee; border: none; padding: 14px; border-radius: 10px; cursor: pointer; }
-    .btn-enviar { flex: 2; background: #28a745; color: #fff; border: none; padding: 14px; border-radius: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -56,14 +52,9 @@
   <div class="modal-content">
     <h2>📋 Datos de Entrega</h2>
     <input type="text" id="formNombre" placeholder="Nombre">
-    <input type="tel" id="formTelefono" placeholder="Teléfono">
     <input type="text" id="formDireccion" placeholder="Dirección">
-    <input type="text" id="formBarrio" placeholder="Barrio">
-    <textarea id="formObservaciones" placeholder="Observaciones"></textarea>
-    <div class="modal-buttons">
-      <button class="btn-cancelar" id="btnCerrarModal">Volver</button>
-      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR PEDIDO</button>
-    </div>
+    <button onclick="document.getElementById('modalPedido').style.display='none'">Volver</button>
+    <button id="btnConfirmarPedido" style="background:#28a745; color:#fff;">ENVIAR PEDIDO</button>
   </div>
 </div>
 
@@ -71,27 +62,23 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
   projectId: "eymotocomidas",
-};
-
-const app = initializeApp(firebaseConfig);
+});
 const db = getFirestore(app);
 
-let cart = [];
-let products = [];
-let whatsapp = "";
-
+let cart = [], products = [], whatsapp = "";
 const idTienda = new URLSearchParams(window.location.search).get('tienda');
 
-async function cargarTienda() {
+async function init() {
   if(!idTienda) return;
   const snap = await getDoc(doc(db, "tiendas", idTienda));
   if(snap.exists()){
       const data = snap.data();
-      document.getElementById("tituloTienda").innerText = data.nombre || "Tienda";
+      const titulo = document.getElementById("tituloTienda");
+      if(titulo) titulo.innerText = data.nombre || "Tienda";
       document.getElementById("logoTienda").src = data.logo || "";
       document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
       whatsapp = data.whatsapp;
@@ -105,18 +92,13 @@ async function cargarTienda() {
 function render(list) {
     document.getElementById("products").innerHTML = list.map(p => `
         <div class="card">
-            <img src="${p.img || ''}" alt="${p.name}">
+            <img src="${p.img || ''}">
             <h3>${p.name}</h3>
             <p>$${p.precio}</p>
             <button class="buy" onclick="window.add('${p.name}')">Añadir</button>
         </div>
     `).join('');
 }
-
-window.filterProducts = (cat) => {
-    const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
-    render(filtered);
-};
 
 window.add = (name) => {
     let prod = products.find(p => p.name === name);
@@ -126,37 +108,26 @@ window.add = (name) => {
     renderCart();
 };
 
-window.removeItem = (i) => {
-    cart.splice(i, 1);
-    renderCart();
-};
+window.removeItem = (i) => { cart.splice(i, 1); renderCart(); };
 
 function renderCart() {
     let total = 0;
     const cartContainer = document.getElementById("cartItems");
     cartContainer.innerHTML = cart.map((p, i) => {
         total += Number(p.precio) * p.qty;
-        return `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                  <span>${p.name} x${p.qty}</span>
-                  <button onclick="window.removeItem(${i})">🗑️</button>
-                </div>`;
+        return `<div>${p.name} x${p.qty} <button onclick="window.removeItem(${i})">🗑️</button></div>`;
     }).join('');
     document.getElementById("total").innerText = total;
 }
 
 document.getElementById("btnConfirmarPedido").onclick = () => {
-    const msg = `Pedido para ${document.getElementById("tituloTienda").innerText}\n\n` +
-                cart.map(p => `${p.name} x${p.qty} - $${p.precio * p.qty}`).join('\n') +
-                `\n\nTotal: $${document.getElementById("total").innerText}` +
-                `\nCliente: ${document.getElementById("formNombre").value}` +
-                `\nDirección: ${document.getElementById("formDireccion").value}`;
+    const msg = `Pedido: ` + cart.map(p => p.name).join(', ');
     window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
-document.getElementById("btnCerrarModal").onclick = () => document.getElementById("modalPedido").style.display = "none";
 
-cargarTienda();
+init();
 </script>
 </body>
 </html>
