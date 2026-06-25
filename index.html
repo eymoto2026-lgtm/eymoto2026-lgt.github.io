@@ -10,14 +10,13 @@
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     /* Banner Ajustado */
     .banner {
-      width: 100% !important;
-      height: 100px !important; /* Altura fija para evitar cortes */
-      background-size: cover !important; /* Llena todo el espacio sin dejar huecos */
-      background-position: center center !important; /* Centra la imagen siempre */
-      background-repeat: no-repeat !important;
-      background-color: #f4f4f4 !important;
-      display: flex !important;
-    }
+  width: 100%;
+  aspect-ratio: 16 / 9; /* Esto obliga al banner a tener forma de pantalla */
+  background-size: contain; /* Muestra toda la imagen sin recortar nada */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #f4f4f4;
+}
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
     .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; padding-bottom:300px; }
