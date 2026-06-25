@@ -11,13 +11,15 @@
     /* Banner Ajustado */
    .banner {
   width: 100%;
-  height: 25vw; /* Esto hace que la altura sea el 25% del ancho de la pantalla, manteniendo la proporción automáticamente */
-  min-height: 150px; /* Para que nunca sea demasiado pequeña en celulares */
-  max-height: 300px; /* Para que no sea gigante en pantallas de PC */
-  background-size: cover;
+  /* Esto crea un banner que siempre mantendrá la proporción de tu imagen (3:1) */
+  aspect-ratio: 3 / 1; 
+  /* Asegura que la imagen se muestre completa sin recortes */
+  background-size: contain; 
   background-position: center;
   background-repeat: no-repeat;
   background-color: #f4f4f4;
+  /* Eliminamos alturas fijas que estaban aplastando la imagen */
+  min-height: 100px; 
 }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
