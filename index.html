@@ -9,16 +9,15 @@
     header{ background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .logo{ width:70px; height:70px; object-fit:cover; border-radius:15px; }
     
-   .banner {
+ /* Borra el antiguo .banner y .banner img y coloca esto: */
+.banner {
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden; /* Esto oculta cualquier excedente de la imagen */
-  height: 200px;    /* Altura fija para que todas las tiendas se vean iguales */
-  background-color: #f4f4f4; /* Color de fondo que combina con el resto de la página */
+  height: 200px; /* Puedes ajustar esta altura a tu gusto */
+  background-size: contain; /* Esto asegura que la imagen se vea COMPLETA */
+  background-position: center; /* Centra la imagen */
+  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-color: #f4f4f4; /* El color de fondo de tu web */
 }
-
 .banner img {
   width: 100%;
   height: 100%;
@@ -53,7 +52,7 @@
 </header>
 
 <div class="banner">
-  <img id="bannerTiendaEnMenu" src="" alt="Banner">
+  <div id="bannerTiendaEnMenu" class="banner"></div>
 </div>
 
 <div class="categories">
@@ -112,10 +111,10 @@ if(idTienda) {
   onSnapshot(doc(db, "tiendas", idTienda), (doc) => {
     if (doc.exists()) {
         const datos = doc.data();
-        const banner = document.getElementById("bannerTiendaEnMenu");
-        if (banner) banner.src = datos.banner || "";
-        document.title = datos.nombre || "EyMoto";
-    }
+       const banner = document.getElementById("bannerTiendaEnMenu");
+if (banner) {
+    banner.style.backgroundImage = `url('${datos.banner}')`;
+}
   });
 
   async function cargarTodo() {
