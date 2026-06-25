@@ -5,42 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EyMotoComidas Pro</title>
   <style>
-    <body>
-
-<header>
-  <img id="logoTienda" class="logo" src="" alt="Logo">
-
-  <h1 id="tituloTienda">EyMotoComidas</h1>
-
-  <div id="estadoTienda"
-       style="margin-top:10px;
-              padding:10px;
-              border-radius:10px;
-              background:#28a745;
-              color:white;
-              font-weight:bold;">
-      🟢 TIENDA ABIERTA
-  </div>
-</header>
-
-<img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
+    body { margin:0; font-family:Arial,sans-serif; background:#f4f4f4; padding-bottom:180px; }
+    header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
+    .banner-img { width:100%; height:auto; display:block; }
     .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
     .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
-    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; padding-bottom:300px; }
+    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; }
     .card { background:#fff; border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; }
     .card img { width:100%; height:140px; object-fit:cover; border-radius:8px; }
     .buy { width:100%; margin-top:10px; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
-    .cart { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #ccc; padding:15px; max-height:40vh; overflow:auto; box-sizing:border-box; z-index: 999; }
+    .cart { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #ccc; padding:15px; max-height:40vh; overflow:auto; z-index: 999; }
     .checkout { display:block; width:100%; background:#333; color:#fff; border:none; padding:16px; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 450px; }
+    .modal-content input, .modal-content textarea { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
     .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
     .btn-cancelar { flex: 1; background: #eee; border: none; padding: 14px; border-radius: 10px; cursor: pointer; }
     .btn-enviar { flex: 2; background: #28a745; color: #fff; border: none; padding: 14px; border-radius: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
-d;">🟢 TIENDA ABIERTA</div>
+
+<header>
+  <img id="logoTienda" class="logo" src="" alt="Logo">
+  <h1 id="tituloTienda">Cargando...</h1>
+  <div style="color:#0f0;">🟢 TIENDA ABIERTA</div>
 </header>
 
 <img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
@@ -72,14 +62,14 @@ d;">🟢 TIENDA ABIERTA</div>
     <textarea id="formObservaciones" placeholder="Observaciones"></textarea>
     <div class="modal-buttons">
       <button class="btn-cancelar" id="btnCerrarModal">Volver</button>
-      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR</button>
+      <button class="btn-enviar" id="btnConfirmarPedido">ENVIAR PEDIDO</button>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
@@ -94,43 +84,31 @@ let cart = [];
 let products = [];
 let whatsapp = "";
 
-const urlParams = new URLSearchParams(window.location.search);
-const idTienda = urlParams.get('tienda');
+const idTienda = new URLSearchParams(window.location.search).get('tienda');
 
-if(idTienda) {
-  onSnapshot(doc(db, "tiendas", idTienda), (docSnap) => {
-    if (docSnap.exists()) {
-        const datos = docSnap.data();
-        const banner = document.getElementById("bannerTiendaEnMenu");
-        if (banner && datos.banner) {
-            banner.src = datos.banner;
-          console.log("Banner URL:", datos.banner);
-        }
-    }
-  });
-
-  async function cargarTodo() {
-    const snap = await getDoc(doc(db, "tiendas", idTienda));
-    if(snap.exists()){
-        const data = snap.data();
-        document.getElementById("tituloTienda").innerText = data.nombre;
-        document.getElementById("logoTienda").src = data.logo || "";
-        whatsapp = data.whatsapp;
-        const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
-        products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
-        render(products);
-    }
+async function cargarTienda() {
+  if(!idTienda) return;
+  const snap = await getDoc(doc(db, "tiendas", idTienda));
+  if(snap.exists()){
+      const data = snap.data();
+      document.getElementById("tituloTienda").innerText = data.nombre || "Tienda";
+      document.getElementById("logoTienda").src = data.logo || "";
+      document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
+      whatsapp = data.whatsapp;
+      
+      const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
+      products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
+      render(products);
   }
-  cargarTodo();
 }
 
 function render(list) {
     document.getElementById("products").innerHTML = list.map(p => `
         <div class="card">
-            <img src="${p.img}">
+            <img src="${p.img || ''}" alt="${p.name}">
             <h3>${p.name}</h3>
             <p>$${p.precio}</p>
-            <button class="buy" onclick="window.add('${p.name}')">Comprar</button>
+            <button class="buy" onclick="window.add('${p.name}')">Añadir</button>
         </div>
     `).join('');
 }
@@ -158,27 +136,27 @@ function renderCart() {
     const cartContainer = document.getElementById("cartItems");
     cartContainer.innerHTML = cart.map((p, i) => {
         total += Number(p.precio) * p.qty;
-        return `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>${p.name} x${p.qty}</span>
-                <button onclick="window.removeItem(${i})">🗑️</button>
-            </div>
-        `;
+        return `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                  <span>${p.name} x${p.qty}</span>
+                  <button onclick="window.removeItem(${i})">🗑️</button>
+                </div>`;
     }).join('');
     document.getElementById("total").innerText = total;
 }
 
 document.getElementById("btnConfirmarPedido").onclick = () => {
-    const nombre = document.getElementById("formNombre").value;
-    const dir = document.getElementById("formDireccion").value;
-    let msg = `Nuevo Pedido para ${document.getElementById("tituloTienda").innerText}\n\n`;
-    cart.forEach(p => msg += `${p.name} x${p.qty} - $${p.precio * p.qty}\n`);
-    msg += `\nTotal: $${document.getElementById("total").innerText}\nCliente: ${nombre}\nDirección: ${dir}`;
+    const msg = `Pedido para ${document.getElementById("tituloTienda").innerText}\n\n` +
+                cart.map(p => `${p.name} x${p.qty} - $${p.precio * p.qty}`).join('\n') +
+                `\n\nTotal: $${document.getElementById("total").innerText}` +
+                `\nCliente: ${document.getElementById("formNombre").value}` +
+                `\nDirección: ${document.getElementById("formDireccion").value}`;
     window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
 document.getElementById("btnCerrarModal").onclick = () => document.getElementById("modalPedido").style.display = "none";
+
+cargarTienda();
 </script>
 </body>
 </html>
