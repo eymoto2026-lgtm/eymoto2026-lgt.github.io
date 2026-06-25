@@ -110,18 +110,21 @@ function render(list) {
             <img src="${p.img || ''}">
             <h3>${p.name}</h3>
             <p>$${p.precio}</p>
-            <button class="buy" onclick="window.add('${p.name}')" ${!tiendaAbierta ? 'disabled style="background:#ccc"' : ''}>
-                ${tiendaAbierta ? 'Añadir' : 'Cerrada'}
-            </button>
+            <button class="buy" onclick="window.add('${p.name}')">
+    ${tiendaAbierta ? 'Añadir' : 'Tienda Cerrada'}
+</button>
         </div>
     `).join('');
 }
 
 window.add = (name) => {
+    // Si la tienda está cerrada, mostramos un mensaje amigable
     if (!tiendaAbierta) {
-        alert("Lo sentimos, la tienda está cerrada actualmente.");
-        return;
+        alert("⚠️ ¡Lo sentimos! La tienda está CERRADA en este momento. Por favor, intenta más tarde para realizar tu pedido.");
+        return; 
     }
+
+    // Si está abierta, seguimos con la lógica normal
     let prod = products.find(p => p.name === name);
     let item = cart.find(x => x.name === name);
     if(item) item.qty++;
