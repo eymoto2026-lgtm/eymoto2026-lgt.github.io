@@ -291,8 +291,25 @@ let currentProducts = [];
 let whatsapp = "";
 let tiendaAbierta = true; 
 
-const params = new URLSearchParams(window.location.search);
-const tiendaId = params.get("tienda") || "eymotocomidas";
+const urlParams = new URLSearchParams(window.location.search);
+const idTienda = urlParams.get('tienda');
+
+// Escucha en tiempo real para actualizar el banner automáticamente
+db.collection("tiendas").doc(idTienda).onSnapshot((doc) => {
+    if (doc.exists) {
+        const datos = doc.data();
+        const bannerElement = document.getElementById("bannerTiendaEnMenu");
+        
+        if (bannerElement && datos.banner) {
+            // Actualiza la imagen solo si el banner en Firebase es distinto al actual
+            if (bannerElement.src !== datos.banner) {
+                bannerElement.src = datos.banner;
+            }
+        }
+        // Opcional: Actualizar el título de la página
+        document.title = datos.nombre;
+    }
+});
 
 function filterProducts(cat){
   currentProducts = (cat === "Todos")
