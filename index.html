@@ -9,10 +9,13 @@
     header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     /* Banner Ajustado */
-    .banner {
+   .banner {
   width: 100%;
-  aspect-ratio: 16 / 9; /* Esto obliga al banner a tener forma de pantalla */
-  background-size: contain; /* Muestra toda la imagen sin recortar nada */
+  /* Esto garantiza que el banner siempre mida al menos 200px */
+  min-height: 200px; 
+  /* Esto permite que crezca si la pantalla es muy grande */
+  max-height: 300px; 
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-color: #f4f4f4;
