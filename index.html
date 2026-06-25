@@ -131,7 +131,22 @@ window.add = (name) => {
     else cart.push({...prod, qty: 1});
     renderCart();
 };
+window.updateQty = (index, change) => {
+    cart[index].qty += change;
+    if (cart[index].qty <= 0) {
+        cart.splice(index, 1);
+    }
+    renderCart();
+};
 
+window.add = (name) => {
+    // ... tu código ...
+};
+
+window.removeItem = (i) => { 
+    cart.splice(i, 1); 
+    renderCart(); 
+};
 window.removeItem = (i) => { cart.splice(i, 1); renderCart(); };
 
 function renderCart() {
@@ -139,7 +154,17 @@ function renderCart() {
     const cartContainer = document.getElementById("cartItems");
     cartContainer.innerHTML = cart.map((p, i) => {
         total += Number(p.precio) * p.qty;
-        return `<div>${p.name} x${p.qty} <button onclick="window.removeItem(${i})">🗑️</button></div>`;
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <span>${p.name}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="window.updateQty(${i}, -1)">-</button>
+                    <span>${p.qty}</span>
+                    <button onclick="window.updateQty(${i}, 1)">+</button>
+                    <button onclick="window.removeItem(${i})" style="color:red; border:none; background:none; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `;
     }).join('');
     document.getElementById("total").innerText = total;
 }
