@@ -5,34 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EyMotoComidas Pro</title>
   <style>
-    body{ margin:0; font-family:Arial,sans-serif; background:#f4f4f4; padding-bottom:180px; }
-    header{ background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .logo{ width:70px; height:70px; object-fit:cover; border-radius:15px; }
+    body { margin:0; font-family:Arial,sans-serif; background:#f4f4f4; padding-bottom:180px; }
+    header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     
- /* Borra el antiguo .banner y .banner img y coloca esto: */
-.banner {
-  width: 100%;
-  height: 200px; /* Puedes ajustar esta altura a tu gusto */
-  background-size: contain; /* Esto asegura que la imagen se vea COMPLETA */
-  background-position: center; /* Centra la imagen */
-  background-repeat: no-repeat; /* Evita que la imagen se repita */
-  background-color: #f4f4f4; /* El color de fondo de tu web */
-}
-.banner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Esto asegura que la imagen cubra todo el espacio de 200px */
-  object-position: center; /* Centra la imagen para que el recorte sea equilibrado */
-}
+    /* Banner Ajustado para cubrir espacio sin dejar bordes */
+    .banner {
+      width: 100%;
+      height: 200px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #f4f4f4;
+    }
     
-    .categories{ display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
-    .categories button{ flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
-    .products{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; padding-bottom:300px; }
-    .card{ background:#fff; border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; }
-    .card img{ width:100%; height:140px; object-fit:cover; border-radius:8px; }
-    .buy{ width:100%; margin-top:10px; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
-    .cart{ position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #ccc; padding:15px; max-height:40vh; overflow:auto; box-sizing:border-box; z-index: 999; }
-    .checkout{ display:block; width:100%; background:#333; color:#fff; border:none; padding:16px; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
+    .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
+    .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
+    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; padding-bottom:300px; }
+    .card { background:#fff; border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; }
+    .card img { width:100%; height:140px; object-fit:cover; border-radius:8px; }
+    .buy { width:100%; margin-top:10px; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
+    .cart { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #ccc; padding:15px; max-height:40vh; overflow:auto; box-sizing:border-box; z-index: 999; }
+    .checkout { display:block; width:100%; background:#333; color:#fff; border:none; padding:16px; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 450px; }
     .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
@@ -51,9 +45,7 @@
   </div>
 </header>
 
-<div class="banner">
-  <div id="bannerTiendaEnMenu" class="banner"></div>
-</div>
+<div id="bannerTiendaEnMenu" class="banner"></div>
 
 <div class="categories">
   <button onclick="window.filterProducts('Todos')">Todos</button>
@@ -111,10 +103,11 @@ if(idTienda) {
   onSnapshot(doc(db, "tiendas", idTienda), (doc) => {
     if (doc.exists()) {
         const datos = doc.data();
-       const banner = document.getElementById("bannerTiendaEnMenu");
-if (banner) {
-    banner.style.backgroundImage = `url('${datos.banner}')`;
-}
+        const banner = document.getElementById("bannerTiendaEnMenu");
+        if (banner && datos.banner) {
+            banner.style.backgroundImage = `url('${datos.banner}')`;
+        }
+    }
   });
 
   async function cargarTodo() {
@@ -124,7 +117,6 @@ if (banner) {
         document.getElementById("tituloTienda").innerText = data.nombre;
         document.getElementById("logoTienda").src = data.logo || "";
         whatsapp = data.whatsapp;
-        
         const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
         products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
         render(products);
