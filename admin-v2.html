@@ -13,7 +13,7 @@
     .hidden { display:none; }
     .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
     .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
-    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; }
+    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; margin-right: 5px; }
     .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; }
     .flex-buttons { display: flex; gap: 5px; }
   </style>
@@ -21,37 +21,37 @@
 <body>
 
 <header>🚀 PANEL DE ADMINISTRACIÓN GENERAL - EYMOTO</header>
-
 <div class="container">
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso Administrativo</h3>
+    <h3>🔐 Acceso al Panel</h3>
     <input type="email" id="email" placeholder="Correo">
     <input type="password" id="password" placeholder="Contraseña">
     <button id="btnIniciarSesion">Ingresar</button>
+    <p id="loginMsg" style="color: #ff4444;"></p>
   </div>
 
   <div id="panel" class="hidden">
     <div class="card">
-      <h3>🍔 Formulario de Producto</h3>
+      <h3 id="tituloFormProducto">🍔 Formulario de Producto</h3>
       <select id="tiendaProducto" onchange="cargarProductosOriginal()">
         <option value="">Seleccionar tienda...</option>
       </select>
       <input type="hidden" id="editProductoId">
-      <input id="nuevoNombre" placeholder="Nombre del producto">
-      <input id="nuevoPrecio" type="number" placeholder="Precio ($)">
-      <input id="nuevoCategoria" placeholder="Categoría (Ej: Hamburguesas)">
-      <textarea id="nuevoDescripcion" placeholder="Descripción..." rows="2"></textarea>
-      <input id="nuevoImagen" placeholder="URL de la foto">
-      <button onclick="guardarProductoOriginal()">Guardar Producto</button>
+      <input id="nuevoNombre" placeholder="Nombre">
+      <input id="nuevoPrecio" type="number" placeholder="Precio">
+      <input id="nuevoCategoria" placeholder="Categoría">
+      <textarea id="nuevoDescripcion" placeholder="Descripción" rows="2"></textarea>
+      <input id="nuevoImagen" placeholder="URL imagen">
+      <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir Producto</button>
       <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()" style="background:#555; color:#fff;">Cancelar</button>
     </div>
 
     <div class="card">
-      <h3>📦 Lista de Productos</h3>
+      <h3>📦 Productos</h3>
       <div id="listaProductos"></div>
     </div>
-
-    <button onclick="logout()" style="background:#444; color:#fff;">🚪 Cerrar Sesión</button>
+    
+    <button onclick="logout()" style="background:#444; color:#fff; width:100%;">🚪 Cerrar Sesión</button>
   </div>
 </div>
 
@@ -64,7 +64,7 @@ const firebaseConfig = { apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", auth
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 1. CARGAR PRODUCTOS (CORREGIDA)
+// --- Funciones de Productos ---
 window.cargarProductosOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const lista = document.getElementById("listaProductos");
@@ -72,7 +72,6 @@ window.cargarProductosOriginal = async function() {
 
   lista.innerHTML = "Cargando...";
   const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-  
   lista.innerHTML = "";
   snap.forEach(doc => {
     const p = doc.data();
@@ -87,11 +86,10 @@ window.cargarProductosOriginal = async function() {
   });
 }
 
-// 2. GUARDAR PRODUCTO (CORREGIDA)
 window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
-  if (!tiendaId) return alert("Selecciona una tienda primero");
+  if (!tiendaId) return alert("Selecciona una tienda");
 
   const datos = {
     name: document.getElementById("nuevoNombre").value,
@@ -105,20 +103,18 @@ window.guardarProductoOriginal = async function() {
   if (prodId) await ref.doc(prodId).update(datos);
   else await ref.add(datos);
   
-  alert("Guardado");
   cancelarEdicionProducto();
   cargarProductosOriginal();
 }
 
-// 3. ELIMINAR PRODUCTO (CORREGIDA)
 window.eliminarProductoOriginal = async function(idProd) {
   const tiendaId = document.getElementById("tiendaProducto").value;
-  if (!confirm("¿Eliminar?")) return;
-  await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
-  cargarProductosOriginal();
+  if (confirm("¿Eliminar?")) {
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
+    cargarProductosOriginal();
+  }
 }
 
-// AYUDAS DE EDICIÓN
 window.activarEdicionProducto = (id, n, p, c, d, i) => {
   document.getElementById("editProductoId").value = id;
   document.getElementById("nuevoNombre").value = n;
@@ -127,20 +123,20 @@ window.activarEdicionProducto = (id, n, p, c, d, i) => {
   document.getElementById("nuevoDescripcion").value = d;
   document.getElementById("nuevoImagen").value = i;
   document.getElementById("btnCancelarEdicion").classList.remove("hidden");
+  document.getElementById("btnGuardarProducto").innerText = "Actualizar Producto";
 }
 
 window.cancelarEdicionProducto = () => {
   document.getElementById("editProductoId").value = "";
-  // Limpiar campos...
   document.getElementById("btnCancelarEdicion").classList.add("hidden");
+  document.getElementById("btnGuardarProducto").innerText = "Añadir Producto";
 }
 
-// AUTH Y CARGA INICIAL
+// --- Inicio de sesión y carga ---
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("panel").classList.remove("hidden");
-    // Cargar tiendas en el select
     db.collection("tiendas").get().then(snap => {
       const sel = document.getElementById("tiendaProducto");
       snap.forEach(doc => sel.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`);
@@ -149,9 +145,8 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 document.getElementById("btnIniciarSesion").onclick = () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-  firebase.auth().signInWithEmailAndPassword(email, pass);
+  firebase.auth().signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value)
+  .catch(e => document.getElementById("loginMsg").innerText = e.message);
 };
 
 window.logout = () => firebase.auth().signOut().then(() => location.reload());
