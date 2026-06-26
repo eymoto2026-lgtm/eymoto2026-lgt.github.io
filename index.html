@@ -9,29 +9,24 @@
     header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
     .banner-img { width:100%; height:auto; display:block; min-height:100px; background:#eee; }
-    .categories { display:flex; gap:8px; padding:10px; background:#fff; overflow-x:auto; white-space:nowrap; }
-    .categories button { flex:0 0 auto; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; background:#eee; }
-    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; padding:10px; }
-    .card { background:#fff; border-radius:10px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; }
-    .card img { width:100%; height:140px; object-fit:cover; border-radius:8px; }
-    .buy { width:100%; margin-top:10px; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
     
-    /* CORRECCIÓN: Punto añadido y estilos específicos */
-    .card .descripcion-text {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      font-size: 13px;
-      color: #333;
-      margin: 5px 0;
-      min-height: 3em;
-    }
+    /* Contenedor de categorías */
+    .categories { display:flex; gap:8px; padding:15px; background:#fff; overflow-x:auto; white-space:nowrap; border-bottom: 1px solid #ddd; }
+    .categories button { border:none; padding:8px 16px; border-radius:20px; cursor:pointer; background:#f0f0f0; font-weight:bold; transition: 0.3s; }
+    .categories button:hover { background: #333; color: #fff; }
 
+    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:15px; padding:15px; }
+    
+    /* Tarjeta del producto limpia */
+    .card { background:#fff; border-radius:12px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .card img { width:100%; height:140px; object-fit:cover; border-radius:8px; }
+    .card h3 { margin: 10px 0 5px 0; font-size: 16px; }
+    .descripcion-text { font-size: 13px; color: #666; margin: 5px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; }
+    .precio { font-weight: bold; color: #28a745; font-size: 18px; margin: 10px 0; }
+    
+    .buy { width:100%; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
     .cart { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #ccc; padding:15px; max-height:40vh; overflow:auto; z-index: 999; }
     .checkout { display:block; width:100%; background:#333; color:#fff; border:none; padding:16px; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
-    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-    .modal-content { background-color: #fff; margin: auto; padding: 20px; border-radius: 15px; width: 90%; max-width: 450px; }
   </style>
 </head>
 <body>
@@ -39,7 +34,7 @@
 <header>
   <img id="logoTienda" class="logo" src="" alt="Logo">
   <h1 id="tituloTienda">Cargando...</h1>
-  <div id="estadoTienda" style="padding:10px; border-radius:10px; font-weight:bold;">🟢 TIENDA ABIERTA</div>
+  <div id="estadoTienda" style="padding:5px 15px; border-radius:15px; font-size: 14px;"></div>
 </header>
 
 <img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
@@ -55,25 +50,12 @@
   <button id="btnComprar" class="checkout">Comprar</button>
 </div>
 
-<div id="modalPedido" class="modal">
-  <div class="modal-content">
-    <h2>📋 Datos de Entrega</h2>
-    <input type="text" id="formNombre" placeholder="Nombre">
-    <input type="text" id="formDireccion" placeholder="Dirección">
-    <button onclick="document.getElementById('modalPedido').style.display='none'">Volver</button>
-    <button id="btnConfirmarPedido" style="background:#28a745; color:#fff;">ENVIAR PEDIDO</button>
-  </div>
-</div>
-
 <script type="module">
+// ... (Mantén tu lógica de importación y Firebase igual)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-});
+const app = initializeApp({ apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", authDomain: "eymotocomidas.firebaseapp.com", projectId: "eymotocomidas" });
 const db = getFirestore(app);
 
 let cart = [], products = [], whatsapp = "";
@@ -91,6 +73,7 @@ async function init() {
       document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
       whatsapp = data.whatsapp;
       
+      // Categorías en la parte superior
       const catContainer = document.getElementById("categoriasContainer");
       catContainer.innerHTML = `<button onclick="window.filterProducts('Todos')">Todos</button>`;
       if (data.categorias && Array.isArray(data.categorias)) {
@@ -109,22 +92,15 @@ async function init() {
 }
 
 function render(list) {
-    document.getElementById("products").innerHTML = list.map(p => {
-        // Debug: si no ves descripción, revisa la consola (F12)
-        console.log("Producto:", p.name, "Desc:", p.descripcion); 
-        
-        return `
+    document.getElementById("products").innerHTML = list.map(p => `
         <div class="card">
             <img src="${p.img || ''}" alt="${p.name}">
             <h3>${p.name}</h3>
-            <p style="font-size: 12px; color: #666; margin: 0;"><b>${p.categoria || ''}</b></p>
             <p class="descripcion-text">${p.descripcion || ''}</p>
-            <p style="font-weight: bold; margin: 5px 0;">$${(p.precio || 0).toLocaleString()}</p>
-            <button class="buy" onclick="window.add('${p.name}')">
-                ${tiendaAbierta ? 'Añadir al pedido' : 'Tienda Cerrada'}
-            </button>
-        </div>`;
-    }).join('');
+            <p class="precio">$${(Number(p.precio) || 0).toLocaleString()}</p>
+            <button class="buy" onclick="window.add('${p.name}')">Añadir</button>
+        </div>
+    `).join('');
 }
 
 window.filterProducts = (cat) => {
