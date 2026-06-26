@@ -138,24 +138,24 @@ window.updateQty = (index, change) => {
 window.removeItem = (i) => { cart.splice(i, 1); renderCart(); };
 
 function renderCart() {
-    let total = 0;
     const cartContainer = document.getElementById("cartItems");
-    cartContainer.innerHTML = cart.map((p, i) => {
-        total += Number(p.precio) * p.qty;
-        return `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding:5px 0;">
-                <span style="font-size:14px;">${p.name}</span>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <button onclick="window.updateQty(${i}, -1)" style="padding:2px 8px;">-</button>
-                    <span style="min-width:20px; text-align:center;">${p.qty}</span>
-                    <button onclick="window.updateQty(${i}, 1)" style="padding:2px 8px;">+</button>
-                    <button onclick="window.removeItem(${i})" style="color:red; background:none; border:none; margin-left:10px; cursor:pointer;">🗑️</button>
-                </div>
-            </div>`;
-    }).join('');
-    document.getElementById("total").innerText = total.toLocaleString();
+    cartContainer.innerHTML = cart.map((p, i) => `
+        <div class="cart-item">
+            <span>${p.name}</span>
+            <div class="qty-controls">
+                <button class="btn-qty" onclick="updateQty(${i}, -1)">-</button>
+                <span>${p.qty}</span>
+                <button class="btn-qty" onclick="updateQty(${i}, 1)">+</button>
+                <button onclick="removeItem(${i})" style="border:none; background:none; cursor:pointer;">🗑️</button>
+            </div>
+        </div>
+    `).join('');
 }
 
+window.removeItem = (index) => {
+    cart.splice(index, 1);
+    renderCart();
+};
 // Estos eventos ahora SÍ tienen elementos en el DOM para ejecutarse
 document.getElementById("btnConfirmarPedido").onclick = () => {
     const msg = `Pedido:\n` + cart.map(p => `${p.name} x${p.qty}`).join('\n') + `\nTotal: $${document.getElementById("total").innerText}`;
