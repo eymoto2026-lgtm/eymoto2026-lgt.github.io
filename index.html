@@ -31,13 +31,7 @@
 
 <img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
 
-<div class="categories">
-  <button onclick="window.filterProducts('Todos')">Todos</button>
-  <button onclick="window.filterProducts('Hamburguesas')">🍔 Hamburguesas</button>
-  <button onclick="window.filterProducts('Perros')">🌭 Perros</button>
-  <button onclick="window.filterProducts('Salchipapas')">🍟 Salchipapas</button>
-  <button onclick="window.filterProducts('Bebidas')">🥤 Bebidas</button>
-</div>
+<div class="categories" id="categoriasContainer"></div>
 
 <div class="products" id="products"></div>
 
@@ -80,27 +74,34 @@ async function init() {
       const data = snap.data();
       tiendaAbierta = (data.abierta === true || data.abierta === "true");
 
-      const titulo = document.getElementById("tituloTienda");
-      if(titulo) titulo.innerText = data.nombre || "Tienda";
+      document.getElementById("tituloTienda").innerText = data.nombre || "Tienda";
       document.getElementById("logoTienda").src = data.logo || "";
       document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
       whatsapp = data.whatsapp;
+      
+      // CARGAR CATEGORÍAS DINÁMICAS
+      const catContainer = document.getElementById("categoriasContainer");
+      catContainer.innerHTML = `<button onclick="window.filterProducts('Todos')">Todos</button>`;
+      if (data.categorias && Array.isArray(data.categorias)) {
+          data.categorias.forEach(cat => {
+              const btn = document.createElement("button");
+              btn.innerText = cat;
+              btn.onclick = () => window.filterProducts(cat);
+              catContainer.appendChild(btn);
+          });
+      }
       
       const estadoDiv = document.getElementById("estadoTienda");
       if (tiendaAbierta) {
           estadoDiv.innerText = "🟢 TIENDA ABIERTA";
           estadoDiv.style.backgroundColor = "#28a745";
-          estadoDiv.style.color = "white";
       } else {
           estadoDiv.innerText = "🔴 TIENDA CERRADA";
           estadoDiv.style.backgroundColor = "#dc3545";
-          estadoDiv.style.color = "white";
           const btn = document.getElementById("btnComprar");
-          if(btn) {
-            btn.disabled = true;
-            btn.innerText = "TIENDA CERRADA";
-            btn.style.background = "#666";
-          }
+          btn.disabled = true;
+          btn.innerText = "TIENDA CERRADA";
+          btn.style.background = "#666";
       }
       
       const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
