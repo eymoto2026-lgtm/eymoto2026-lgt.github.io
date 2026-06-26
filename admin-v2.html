@@ -275,32 +275,35 @@ window.escucharPedidosEnTiempoReal = function() {
             itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
           });
         }
+// ... dentro de la función escucharPedidosEnTiempoReal, en el bucle snap.forEach
+contenedor.innerHTML += `
+  <div class="pedido-card ${claseBorde}">
+    <div style="font-size:18px; font-weight:bold; color:#f5c400; margin-bottom:10px;">
+      🏪 ${nombreTiendaSeleccionada || "EYMOTOCOMIDAS"}
+    </div>
+    
+    <div style="background:#000; padding:10px; border-radius:8px;">
+      <p style="color:#f5c400; font-weight:bold; margin:0;">🛵 NUEVO PEDIDO ${numPedido}</p>
+      <p style="margin:5px 0;">📅 <b>Fecha:</b> ${p.fecha?.split('T')[0]} <br> ⏰ <b>Hora:</b> ${p.fecha?.split('T')[1]?.substring(0,5)}</p>
+    </div>
 
-        contenedor.innerHTML += `
-          <div class="pedido-card ${claseBorde}">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${numPedido}</span>
-              <span class="badge ${claseBadge}">${estado}</span>
-            </div>
-            <p style="font-size:13px; margin:4px 0;">🕒 <b>Recibido:</b> ${fechaFormateada}</p>
-            <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
-            <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
-            
-            <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
-              ${itemsHTML}
-              <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
-            </div>
+    <div style="margin:10px 0;">
+      <p>👤 <b>Cliente:</b> ${p.cliente?.nombre || 'N/A'}</p>
+      <p>📱 <b>Teléfono:</b> ${p.cliente?.telefono || 'N/A'}</p>
+      <p>📍 <b>Dirección:</b> ${p.cliente?.direccion || 'N/A'}</p>
+      <p>🏘️ <b>Barrio:</b> ${p.cliente?.barrio || 'N/A'}</p>
+      <p>📝 <b>Observaciones:</b> ${p.notas || 'Ninguna'}</p>
+    </div>
 
-            <div class="grid-acciones">
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
-            </div>
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#2b2b2b; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; width: auto;">🗑️ Remover Vista</button>
-          </div>
-        `;
+    <div style="border-top:1px solid #444; margin:10px 0; padding-top:10px;">
+      <p style="font-weight:bold;">🧾 PRODUCTOS</p>
+      ${itemsHTML}
+    </div>
+
+    <p style="font-size:18px; color:#28a745; font-weight:bold;">💰 TOTAL: $${(p.total || 0).toLocaleString('es-CO')}</p>
+    
+    </div>
+`;
       });
     });
 }
