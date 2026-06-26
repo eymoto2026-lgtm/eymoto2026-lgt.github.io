@@ -102,8 +102,16 @@ function render(list) {
 }
 
 window.filterProducts = (cat) => {
-    const filtered = cat === "Todos" ? products : products.filter(p => p.categoria === cat);
-    render(filtered);
+    // Si la categoría seleccionada es "Todos", mostramos todo
+    if (cat === "Todos") {
+        render(products);
+    } else {
+        // Comparamos convirtiendo ambos lados a minúsculas
+        const filtered = products.filter(p => 
+            (p.categoria || "").toLowerCase() === cat.toLowerCase()
+        );
+        render(filtered);
+    }
 };
 
 window.add = (name) => {
