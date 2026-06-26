@@ -323,49 +323,61 @@ window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
 // --- MANEJO COMPLETO DE TIENDAS ---
 window.cargarTiendas = async function() {
   const listaTiendas = document.getElementById("listaTiendas");
-  const filtroTienda = document.getElementById("filtroTiendaPedidos");
-  const tiendaProducto = document.getElementById("tiendaProducto");
-  const tiendaEstado = document.getElementById("tiendaEstado");
+  const filtros = [
+    document.getElementById("filtroTiendaPedidos"),
+    document.getElementById("tiendaProducto"),
+    document.getElementById("tiendaEstado")
+  ];
 
   if (listaTiendas) listaTiendas.innerHTML = "";
-  if (filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
-  if (tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda para ver/añadir productos...</option>';
-  if (tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  filtros.forEach(f => {
+      if(f) f.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  });
 
   const snap = await db.collection("tiendas").get();
-  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
-
+  
   snap.forEach(doc => {
     const t = doc.data();
-    const idTienda = doc.id; 
-    const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
+    const idTienda = doc.id;
     
-    const nombreEscapado = (t.nombre || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const logoEscapado = (t.logo || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const bannerEscapado = (t.banner || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-
     if (listaTiendas) {
       listaTiendas.innerHTML += `
         <div class="tienda-card-item">
-          <div style="margin-bottom: 10px;">
-            <b style="font-size:18px; color:#f5c400;">🏪 ${t.nombre || 'Sin Nombre'}</b><br>
-            <span style="font-size:13px; color:#ccc;"><b>WhatsApp:</b> ${t.whatsapp || '-'}</span><br>
-            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Logo:</b> ${t.logo || 'No asignado'}</span>
-            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Banner:</b> ${t.banner || 'No asignado'}</span>
-            <a href="${urlCompleta}" target="_blank" style="color:#00bcd4; font-size:13px; display:inline-block; margin-top:5px;">🔗 Ver Menú Digital</a>
+          <b>🏪 ${t.nombre}</b>
+          <div class="flex-buttons" style="margin-top:10px;">
+            <button class="btn-edit" onclick="activarEdicionTienda('${idTienda}', '${t.nombre}')">✏️ Editar</button>
+            <button class="btn-danger" onclick="eliminarTiendaOriginal('${idTienda}')">🗑️ Eliminar</button>
           </div>
-          <div class="flex-buttons">
-            <button class="btn-edit" onclick="activarEdicionTienda('${idTienda}', \`${nombreEscapado}\`, \`${t.whatsapp || ''}\`, \`${logoEscapado}\`, \`${bannerEscapado}\`)">✏️ Editar Configuración</button>
-            <button class="btn-danger" onclick="eliminarTiendaOriginal('${idTienda}')">🗑️ Eliminar Tienda</button>
-          </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    const opt = `<option value="${idTienda}">${t.nombre || idTienda}</option>`;
-    if(filtroTienda) filtroTienda.innerHTML += opt;
-    if(tiendaProducto) tiendaProducto.innerHTML += opt;
-    if(tiendaEstado) tiendaEstado.innerHTML += opt;
+    const opt = `<option value="${idTienda}">${t.nombre}</option>`;
+    filtros.forEach(f => { if(f) f.innerHTML += opt; });
+  });
+}
+
+// --- MANEJO DE PRODUCTOS (CORREGIDO) ---
+window.cargarProductosOriginal = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const lista = document.getElementById("listaProductos");
+  
+  if(!tiendaId) {
+    lista.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda primero.</p>';
+    return;
+  }
+
+  const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+  lista.innerHTML = "";
+  
+  snap.forEach(doc => {
+    const p = doc.data();
+    const idProd = doc.id;
+    lista.innerHTML += `
+      <div class="producto-item">
+        <div><b>${p.name}</b> - $${p.precio}</div>
+        <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', '${p.name}', ${p.precio}, '${p.categoria}', '${p.descripcion}', '${p.img}')">✏️</button>
+        <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️</button>
+      </div>`;
   });
 }
 
@@ -373,94 +385,36 @@ window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
   
-  if(!tiendaId) return alert("Por favor selecciona una tienda primero.");
+  if(!tiendaId) return alert("Selecciona la tienda.");
 
   const datos = {
-    name: document.getElementById("nuevoNombre").value.trim(),
-    precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
-    categoria: document.getElementById("nuevoCategoria").value.trim(),
-    descripcion: document.getElementById("nuevoDescripcion").value.trim(),
-    img: document.getElementById("nuevoImagen").value.trim()
+    name: document.getElementById("nuevoNombre").value,
+    precio: parseFloat(document.getElementById("nuevoPrecio").value),
+    categoria: document.getElementById("nuevoCategoria").value,
+    descripcion: document.getElementById("nuevoDescripcion").value,
+    img: document.getElementById("nuevoImagen").value
   };
-
-  if(!datos.name || !datos.precio) return alert("Nombre y precio son obligatorios.");
 
   try {
     const ref = db.collection("tiendas").doc(tiendaId).collection("productos");
     if (prodId) {
-      await ref.doc(prodId).set(datos, { merge: true });
-      alert("✅ Producto actualizado exitosamente.");
+      await ref.doc(prodId).update(datos);
+      alert("✅ Producto actualizado");
     } else {
       await ref.add(datos);
-      alert("✅ Producto añadido exitosamente.");
+      alert("✅ Producto agregado");
     }
     cancelarEdicionProducto();
     cargarProductosOriginal();
-  } catch(e) {
-    alert("Error al guardar: " + e.message);
-  }
-}
-
-window.cargarProductosOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-  
-  if(!lista) return;
-  
-  if(!tiendaId) {
-    lista.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda para ver su inventario.</p>';
-    return;
-  }
-
-  lista.innerHTML = '<p style="color: #f5c400;">Cargando productos...</p>';
-
-  try {
-    const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    lista.innerHTML = "";
-    
-    if(snap.empty) {
-      lista.innerHTML = `<p style="color: #aaa; text-align: center;">Esta tienda no tiene productos registrados.</p>`;
-      return;
-    }
-
-    snap.forEach(doc => {
-      const p = doc.data();
-      const idProd = doc.id;
-      
-      // Sanitización correcta para evitar errores de comillas en los strings
-      const nombreEscapado = (p.name || "Sin nombre").replace(/'/g, "\\'");
-      const catEscapado = (p.categoria || "").replace(/'/g, "\\'");
-      const descEscapado = (p.descripcion || "").replace(/'/g, "\\'");
-      const imgEscapado = (p.img || "").replace(/'/g, "\\'");
-
-      lista.innerHTML += `
-        <div class="producto-item">
-          <div class="producto-info">
-            <b>${p.name || "Sin nombre"}</b><br>
-            <small>$${(p.precio || 0).toLocaleString('es-CO')} | ${p.categoria || 'Sin categoría'}</small>
-          </div>
-          <div class="flex-buttons">
-            <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', '${nombreEscapado}', ${p.precio || 0}, '${catEscapado}', '${descEscapado}', '${imgEscapado}')">✏️ Editar</button>
-            <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
-          </div>
-        </div>
-      `;
-    });
-  } catch (error) {
-    lista.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
-  }
+  } catch(e) { alert("Error: " + e.message); }
 }
 
 window.eliminarProductoOriginal = async function(idProd) {
   const tiendaId = document.getElementById("tiendaProducto").value;
-  if(!tiendaId) return alert("Error: Selecciona la tienda primero.");
-  if(!confirm("¿Seguro que deseas remover este producto?")) return;
-  
-  try {
-    // CORRECCIÓN: Apuntando a la subcolección de productos dentro de la tienda
-    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
-    alert("Producto eliminado.");
-    cargarProductosOriginal();
+  if(!confirm("¿Borrar producto?")) return;
+  await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
+  cargarProductosOriginal();
+}
   } catch(e) { 
     alert("Error al eliminar: " + e.message); 
   }
