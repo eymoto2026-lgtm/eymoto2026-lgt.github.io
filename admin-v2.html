@@ -327,10 +327,12 @@ window.cargarTiendas = async function() {
   const tiendaProducto = document.getElementById("tiendaProducto");
   const tiendaEstado = document.getElementById("tiendaEstado");
 
-  if (listaTiendas) listaTiendas.innerHTML = "";
-  if (filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
-  if (tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda para ver/añadir productos...</option>';
-  if (tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  // --- LIMPIEZA TOTAL ANTES DE VOLVER A LLENAR ---
+  listaTiendas.innerHTML = "";
+  filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
+  tiendaProducto.innerHTML = '<option value="">Seleccionar tienda para ver/añadir productos...</option>';
+  tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
+  // ------------------------------------------------
 
   const snap = await db.collection("tiendas").get();
   const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
@@ -375,18 +377,22 @@ window.guardarTiendaOriginal = async function() {
   const whatsapp = document.getElementById("whatsapp").value.trim();
   const logo = document.getElementById("logoTienda").value.trim();
   const banner = document.getElementById("bannerTienda").value.trim();
+  // NUEVO: Capturamos las categorías del input
+  const inputCategorias = document.getElementById("nuevoCategoria").value.trim();
+  // Convertimos el texto a Array eliminando espacios
+  const categoriasArray = inputCategorias ? inputCategorias.split(',').map(c => c.trim()) : [];
 
   if(!nombre || !whatsapp) return alert("Por favor define por lo menos Nombre y número de WhatsApp.");
 
-  const datosTienda = { nombre, whatsapp, logo, banner };
+  const datosTienda = { nombre, whatsapp, logo, banner, categorias: categoriasArray };
 
   try {
     if(idTienda) {
       await db.collection("tiendas").doc(idTienda).update(datosTienda);
-      alert("🏪 ¡Tienda actualizada con éxito!");
+      alert("🏪 ¡Tienda actualizada!");
     } else {
       await db.collection("tiendas").add({ ...datosTienda, abierta: true });
-      alert("🏪 ¡Tienda registrada de forma exitosa!");
+      alert("🏪 ¡Tienda registrada!");
     }
     cancelarEdicionTienda();
     cargarTiendas();
