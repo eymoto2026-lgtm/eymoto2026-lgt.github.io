@@ -369,63 +369,101 @@ window.cargarTiendas = async function() {
   });
 }
 
-window.guardarTiendaOriginal = async function() {
-  const idTienda = document.getElementById("editTiendaId").value;
-  const nombre = document.getElementById("nombreTienda").value.trim();
-  const whatsapp = document.getElementById("whatsapp").value.trim();
-  const logo = document.getElementById("logoTienda").value.trim();
-  const banner = document.getElementById("bannerTienda").value.trim();
+window.guardarProductoOriginal = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const prodId = document.getElementById("editProductoId").value;
+  
+  if(!tiendaId) return alert("Por favor selecciona una tienda primero.");
 
-  if(!nombre || !whatsapp) return alert("Por favor define por lo menos Nombre y número de WhatsApp.");
+  const datos = {
+    name: document.getElementById("nuevoNombre").value.trim(),
+    precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
+    categoria: document.getElementById("nuevoCategoria").value.trim(),
+    descripcion: document.getElementById("nuevoDescripcion").value.trim(),
+    img: document.getElementById("nuevoImagen").value.trim()
+  };
 
-  const datosTienda = { nombre, whatsapp, logo, banner };
+  if(!datos.name || !datos.precio) return alert("Nombre y precio son obligatorios.");
 
   try {
-    if(idTienda) {
-      await db.collection("tiendas").doc(idTienda).update(datosTienda);
-      alert("🏪 ¡Tienda actualizada con éxito!");
+    const ref = db.collection("tiendas").doc(tiendaId).collection("productos");
+    if (prodId) {
+      await ref.doc(prodId).set(datos, { merge: true });
+      alert("✅ Producto actualizado exitosamente.");
     } else {
-      await db.collection("tiendas").add({ ...datosTienda, abierta: true });
-      alert("🏪 ¡Tienda registrada de forma exitosa!");
+      await ref.add(datos);
+      alert("✅ Producto añadido exitosamente.");
     }
-    cancelarEdicionTienda();
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
+    cancelarEdicionProducto();
+    cargarProductosOriginal();
+  } catch(e) {
+    alert("Error al guardar: " + e.message);
+  }
 }
 
-window.activarEdicionTienda = function(id, nombre, whatsapp, logo, banner) {
-  document.getElementById("editTiendaId").value = id;
-  document.getElementById("nombreTienda").value = nombre;
-  document.getElementById("whatsapp").value = whatsapp;
-  document.getElementById("logoTienda").value = logo;
-  document.getElementById("bannerTienda").value = banner;
+window.cargarProductosOriginal = async function() {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  const lista = document.getElementById("listaProductos");
+  
+  if(!lista) return;
+  
+  if(!tiendaId) {
+    lista.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda para ver su inventario.</p>';
+    return;
+  }
 
-  document.getElementById("tituloFormTienda").innerText = "✏️ Editando Datos de Tienda";
-  document.getElementById("btnGuardarTienda").innerText = "Guardar Cambios de Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.remove("hidden");
+  lista.innerHTML = '<p style="color: #f5c400;">Cargando productos...</p>';
 
-  document.getElementById("tituloFormTienda").scrollIntoView({ behavior: 'smooth' });
-}
-
-window.cancelarEdicionTienda = function() {
-  document.getElementById("editTiendaId").value = "";
-  document.getElementById("nombreTienda").value = "";
-  document.getElementById("whatsapp").value = "";
-  document.getElementById("logoTienda").value = "";
-  document.getElementById("bannerTienda").value = "";
-
-  document.getElementById("tituloFormTienda").innerText = "🏪 Formulario de Tienda (Crear / Modificar)";
-  document.getElementById("btnGuardarTienda").innerText = "Registrar Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.add("hidden");
-}
-
-window.eliminarTiendaOriginal = async function(idTienda) {
-  if(!confirm("¿Deseas eliminar permanentemente esta tienda?")) return;
   try {
-    await db.collection("tiendas").doc(idTienda).delete();
-    alert("Tienda eliminada.");
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
+    const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
+    lista.innerHTML = "";
+    
+    if(snap.empty) {
+      lista.innerHTML = `<p style="color: #aaa; text-align: center;">Esta tienda no tiene productos registrados.</p>`;
+      return;
+    }
+
+    snap.forEach(doc => {
+      const p = doc.data();
+      const idProd = doc.id;
+      
+      // Sanitización correcta para evitar errores de comillas en los strings
+      const nombreEscapado = (p.name || "Sin nombre").replace(/'/g, "\\'");
+      const catEscapado = (p.categoria || "").replace(/'/g, "\\'");
+      const descEscapado = (p.descripcion || "").replace(/'/g, "\\'");
+      const imgEscapado = (p.img || "").replace(/'/g, "\\'");
+
+      lista.innerHTML += `
+        <div class="producto-item">
+          <div class="producto-info">
+            <b>${p.name || "Sin nombre"}</b><br>
+            <small>$${(p.precio || 0).toLocaleString('es-CO')} | ${p.categoria || 'Sin categoría'}</small>
+          </div>
+          <div class="flex-buttons">
+            <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', '${nombreEscapado}', ${p.precio || 0}, '${catEscapado}', '${descEscapado}', '${imgEscapado}')">✏️ Editar</button>
+            <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
+          </div>
+        </div>
+      `;
+    });
+  } catch (error) {
+    lista.innerHTML = `<p style="color: #ff4444;">Error: ${error.message}</p>`;
+  }
+}
+
+window.eliminarProductoOriginal = async function(idProd) {
+  const tiendaId = document.getElementById("tiendaProducto").value;
+  if(!tiendaId) return alert("Error: Selecciona la tienda primero.");
+  if(!confirm("¿Seguro que deseas remover este producto?")) return;
+  
+  try {
+    // CORRECCIÓN: Apuntando a la subcolección de productos dentro de la tienda
+    await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
+    alert("Producto eliminado.");
+    cargarProductosOriginal();
+  } catch(e) { 
+    alert("Error al eliminar: " + e.message); 
+  }
 }
 
 // --- EDICIÓN COMPLETA DE PRODUCTOS ---
