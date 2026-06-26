@@ -443,16 +443,16 @@ window.guardarProductoOriginal = async function() {
   
   if(!tiendaId) return alert("Por favor selecciona una tienda primero.");
 
+  // Asegúrate de que estos IDs coincidan con los de tu HTML
   const datos = {
     name: document.getElementById("nuevoNombre").value,
     precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
-    categoria: document.getElementById("nuevoCategoria").value,
-    descripcion: document.getElementById("nuevoDescripcion").value,
+    categoria: document.getElementById("nuevoCategoria").value, // Captura la categoría
+    descripcion: document.getElementById("nuevoDescripcion").value, // Captura la descripción
     img: document.getElementById("nuevoImagen").value
   };
 
   try {
-    // Guardado dentro de la subcolección de la tienda seleccionada
     const ref = db.collection("tiendas").doc(tiendaId).collection("productos");
     if (prodId) {
       await ref.doc(prodId).set(datos, { merge: true });
@@ -462,7 +462,7 @@ window.guardarProductoOriginal = async function() {
       alert("Producto añadido exitosamente.");
     }
     cancelarEdicionProducto();
-    cargarProductosOriginal();
+    cargarProductosOriginal(); // Ahora sí existe esta función
   } catch(e) {
     alert("Error al guardar: " + e.message);
   }
