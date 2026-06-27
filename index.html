@@ -47,11 +47,31 @@
 
 <div id="modalPedido" class="modal">
   <div class="modal-content">
+
     <h2>📋 Datos de Entrega</h2>
-    <input type="text" id="formNombre" placeholder="Tu Nombre" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-    <input type="text" id="formDireccion" placeholder="Tu Dirección" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
-    <button onclick="document.getElementById('modalPedido').style.display='none'" style="width:48%; padding:10px;">Volver</button>
-    <button id="btnConfirmarPedido" style="width:48%; padding:10px; background:#28a745; color:#fff; border:none;">ENVIAR</button>
+
+    <input type="text" id="formNombre" placeholder="👤 Nombre" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
+
+    <input type="tel" id="formTelefono" placeholder="📱 Teléfono" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
+
+    <input type="text" id="formDireccion" placeholder="📍 Dirección" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
+
+    <input type="text" id="formBarrio" placeholder="🏘️ Barrio" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
+
+    <textarea id="formObservaciones"
+    placeholder="📝 Observaciones"
+    style="width:100%;padding:10px;height:80px;margin-bottom:10px;box-sizing:border-box;"></textarea>
+
+    <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('modalPedido').style.display='none'" style="flex:1;padding:12px;">
+            Volver
+        </button>
+
+        <button id="btnConfirmarPedido" style="flex:1;padding:12px;background:#28a745;color:white;border:none;">
+            ENVIAR
+        </button>
+    </div>
+
   </div>
 </div>
 
@@ -151,10 +171,75 @@ function renderCart() {
 }
 
 document.getElementById("btnConfirmarPedido").onclick = () => {
-    const nombre = document.getElementById("formNombre").value;
-    const dir = document.getElementById("formDireccion").value;
-    const msg = `Pedido para: ${nombre}\nDirección: ${dir}\n\n` + cart.map(p => `${p.name} x${p.qty}`).join('\n') + `\n\nTotal: $${document.getElementById("total").innerText}`;
-    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+
+    const nombre = document.getElementById("formNombre").value.trim();
+    const telefono = document.getElementById("formTelefono").value.trim();
+    const direccion = document.getElementById("formDireccion").value.trim();
+    const barrio = document.getElementById("formBarrio").value.trim();
+    const observaciones = document.getElementById("formObservaciones").value.trim();
+
+    if(!nombre || !telefono || !direccion){
+        alert("Debes completar Nombre, Teléfono y Dirección.");
+        return;
+    }
+
+    const ahora = new Date();
+
+    const fecha = ahora.toLocaleDateString("es-CO");
+
+    const hora = ahora.toLocaleTimeString("es-CO",{
+        hour:"2-digit",
+        minute:"2-digit"
+    });
+
+    let total = 0;
+
+    const productos = cart.map(p=>{
+
+        const subtotal = Number(p.precio)*p.qty;
+
+        total += subtotal;
+
+        return `🍜 ${p.name} x${p.qty} = $${subtotal.toLocaleString("es-CO")}`;
+
+    }).join("\n");
+
+    const numeroPedido = Math.floor(Math.random()*9000)+1000;
+
+    const mensaje =
+`🏪 *${document.getElementById("tituloTienda").innerText.toUpperCase()}*
+
+🛵 *NUEVO PEDIDO #${numeroPedido}*
+
+📅 *Fecha:* ${fecha}
+⏰ *Hora:* ${hora}
+
+👤 *Cliente:*
+${nombre}
+
+📱 *Teléfono:*
+${telefono}
+
+📍 *Dirección:*
+${direccion}
+
+🏘️ *Barrio:*
+${barrio || "No especificado"}
+
+📝 *Observaciones:*
+${observaciones || "Ninguna"}
+
+🧾 *PRODUCTOS*
+
+${productos}
+
+💰 *TOTAL:* $${total.toLocaleString("es-CO")}`;
+
+    window.open(
+        `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`,
+        "_blank"
+    );
+
 };
 
 document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
