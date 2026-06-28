@@ -92,181 +92,283 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = { apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", authDomain: "eymotocomidas.firebaseapp.com", projectId: "eymotocomidas", storageBucket: "eymotocomidas.firebasestorage.app", messagingSenderId: "670474251560", appId: "1:670474251560:web:eab1fbbb744af4e0b8341d" };
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
+
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(); const db = firebase.firestore();
-let pedidosUnsubscribe = null; let despertadorInterval = null;
 
-// --- FUNCIONES DE ALARMA Y PEDIDOS ---
-function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(`Atención, nuevo pedido para ${nombreTienda}`);
-        msg.lang = 'es-CO'; window.speechSynthesis.speak(msg);
-    }
-}
-window.probarVozAlarma = () => { if ('speechSynthesis' in window) { const msg = new SpeechSynthesisUtterance("Alarma configurada"); window.speechSynthesis.speak(msg); alert("Altavoz listo"); } };
-function detenerAlarma() { clearInterval(despertadorInterval); despertadorInterval = null; window.speechSynthesis.cancel(); }
-function activarAlarma(nombre) { if (!despertadorInterval) { reproducirSonidoDespertador(nombre); despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombre), 5000); } }
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-window.escucharPedidosEnTiempoReal = function() {
-    const tiendaId = document.getElementById("filtroTiendaPedidos").value;
-    if (pedidosUnsubscribe) pedidosUnsubscribe();
-    if (!tiendaId) return;
-    pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos").orderBy("fecha", "desc").onSnapshot(snap => {
-        const contenedor = document.getElementById("contenedorPedidos");
-        contenedor.innerHTML = "";
-        let nuevoPendiente = false;
-        snap.forEach(doc => {
-            const p = doc.data();
-            if (p.estado === "Pendiente") nuevoPendiente = true;
-            contenedor.innerHTML += `
-            <div class="pedido-card">
-                <b>${p.numeroPedido}</b> - ${p.estado}
-                <div class="grid-acciones">
-                    <button class="btn-status" onclick="cambiarEstadoPedido('${tiendaId}', '${doc.id}', 'Pendiente')">🟡</button>
-                    <button class="btn-status" onclick="cambiarEstadoPedido('${tiendaId}', '${doc.id}', 'Entregado')">🟢</button>
-                    <button class="btn-danger" onclick="eliminarPedidoHistorial('${tiendaId}', '${doc.id}')">🗑️</button>
-                </div>
-            </div>`;
-        });
-        if (nuevoPendiente) activarAlarma(document.getElementById("filtroTiendaPedidos").options[document.getElementById("filtroTiendaPedidos").selectedIndex].text);
-        else detenerAlarma();
-    });
-}
+let pedidosUnsubscribe = null;
+let alarmaInterval = null;
 
-window.cambiarEstadoPedido = (tId, pId, est) => db.collection("tiendas").doc(tId).collection("pedidos").doc(pId).update({ estado: est });
-window.eliminarPedidoHistorial = (tId, pId) => db.collection("tiendas").doc(tId).collection("pedidos").doc(pId).delete();
+/* =========================
+   🔐 AUTH
+========================= */
 
-// --- GESTIÓN TIENDAS Y PRODUCTOS (Ruta Unificada) ---
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    cargarTiendas();
+    cargarSelectTiendas();
+  } else {
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("panel").classList.add("hidden");
+  }
+});
+
+document.getElementById("btnIniciarSesion").onclick = () => {
+  auth.signInWithEmailAndPassword(
+    document.getElementById("email").value,
+    document.getElementById("password").value
+  );
+};
+
+window.logout = () => auth.signOut();
+
+
+/* =========================
+   🏪 TIENDAS
+========================= */
+
 window.cargarTiendas = async () => {
-    const snap = await db.collection("tiendas").get();
-    const lista = document.getElementById("listaTiendas");
+  const snap = await db.collection("tiendas").get();
+  const lista = document.getElementById("listaTiendas");
 
-    lista.innerHTML = "";
+  lista.innerHTML = "";
 
-    snap.forEach(doc => {
-        const t = doc.data();
+  snap.forEach(doc => {
+    const t = doc.data();
 
-        lista.innerHTML += `
-            <div class="tienda-card-item">
-                <b>${t.nombre || "Sin nombre"}</b><br>
+    lista.innerHTML += `
+      <div class="tienda-card-item">
+        <b>${t.nombre || "Sin nombre"}</b><br>
+        <small>${t.whatsapp || ""}</small><br>
 
-                <small>${t.whatsapp || ""}</small><br>
+        <div class="flex-buttons">
+          <button class="btn-edit"
+            onclick="activarEdicionTienda('${doc.id}','${t.nombre || ""}','${t.whatsapp || ""}','${t.logo || ""}','${t.banner || ""}')">
+            ✏️ Editar
+          </button>
 
-                <button class="btn-edit"
-                    onclick="activarEdicionTienda('${doc.id}', '${t.nombre || ""}', '${t.whatsapp || ""}', '${t.logo || ""}', '${t.banner || ""}')">
-                    ✏️ Editar
-                </button>
+          <button class="btn-danger"
+            onclick="eliminarTiendaOriginal('${doc.id}')">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
+    `;
+  });
+};
 
-                <button class="btn-danger"
-                    onclick="eliminarTiendaOriginal('${doc.id}')">
-                    🗑️ Eliminar
-                </button>
-            </div>
-        `;
+window.guardarTiendaOriginal = async () => {
+  const id = document.getElementById("editTiendaId").value;
+
+  const datos = {
+    nombre: document.getElementById("nombreTienda").value,
+    whatsapp: document.getElementById("whatsapp").value,
+    logo: document.getElementById("logoTienda").value,
+    banner: document.getElementById("bannerTienda").value,
+    abierta: true,
+    updatedAt: Date.now()
+  };
+
+  const ref = db.collection("tiendas");
+
+  if (id) {
+    await ref.doc(id).set(datos, { merge: true });
+  } else {
+    await ref.add({
+      ...datos,
+      createdAt: Date.now()
     });
+  }
+
+  cancelarEdicionTienda();
+  cargarTiendas();
+  cargarSelectTiendas();
 };
-window.guardarProductoOriginal = async () => {
-    const tId = document.getElementById("tiendaProducto").value;
-    const pId = document.getElementById("editProductoId").value;
-    const datos = {
-        name: document.getElementById("nuevoNombre").value,
-        precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
-        categoria: document.getElementById("nuevoCategoria").value,
-        descripcion: document.getElementById("nuevoDescripcion").value,
-        img: document.getElementById("nuevoImagen").value
-    };
-    const ref = db.collection("tiendas").doc(tId).collection("productos");
-    pId ? await ref.doc(pId).set(datos, { merge: true }) : await ref.add(datos);
-    cancelarEdicionProducto(); cargarProductosOriginal();
+
+window.activarEdicionTienda = (id, nombre, whatsapp, logo, banner) => {
+  document.getElementById("editTiendaId").value = id;
+  document.getElementById("nombreTienda").value = nombre;
+  document.getElementById("whatsapp").value = whatsapp;
+  document.getElementById("logoTienda").value = logo;
+  document.getElementById("bannerTienda").value = banner;
+
+  document.getElementById("btnCancelarTiendaEdicion").classList.remove("hidden");
 };
+
+window.cancelarEdicionTienda = () => {
+  document.getElementById("editTiendaId").value = "";
+  document.getElementById("nombreTienda").value = "";
+  document.getElementById("whatsapp").value = "";
+  document.getElementById("logoTienda").value = "";
+  document.getElementById("bannerTienda").value = "";
+
+  document.getElementById("btnCancelarTiendaEdicion").classList.add("hidden");
+};
+
+window.eliminarTiendaOriginal = async (id) => {
+  if (!confirm("¿Eliminar tienda?")) return;
+  await db.collection("tiendas").doc(id).delete();
+  cargarTiendas();
+  cargarSelectTiendas();
+};
+
+
+/* =========================
+   📦 PRODUCTOS
+========================= */
 
 window.cargarProductosOriginal = async () => {
-    const tId = document.getElementById("tiendaProducto").value;
-    const lista = document.getElementById("listaProductos");
-    const snap = await db.collection("tiendas").doc(tId).collection("productos").get();
-    lista.innerHTML = "";
-    snap.forEach(doc => {
-        const p = doc.data();
-        lista.innerHTML += `<div class="producto-item">${p.name} - $${p.precio}
-        <button class="btn-edit" onclick="activarEdicionProducto('${doc.id}', '${p.name}', ${p.precio}, '${p.categoria}', '${p.descripcion}', '${p.img}')">✏️</button>
-        <button class="btn-danger" onclick="eliminarProductoOriginal('${doc.id}')">🗑️</button></div>`;
-    });
+  const tId = document.getElementById("tiendaProducto").value;
+  const lista = document.getElementById("listaProductos");
+
+  if (!tId) return;
+
+  const snap = await db.collection("tiendas").doc(tId).collection("productos").get();
+
+  lista.innerHTML = "";
+
+  snap.forEach(doc => {
+    const p = doc.data();
+
+    lista.innerHTML += `
+      <div class="producto-item">
+        ${p.name} - $${p.precio}
+
+        <div class="flex-buttons">
+          <button class="btn-edit"
+            onclick="activarEdicionProducto('${doc.id}','${p.name}',${p.precio},'${p.categoria}','${p.descripcion}','${p.img}')">
+            ✏️
+          </button>
+
+          <button class="btn-danger"
+            onclick="eliminarProductoOriginal('${doc.id}')">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  });
 };
 
-window.eliminarProductoOriginal = async (idProd) => {
-    const tId = document.getElementById("tiendaProducto").value;
-    await db.collection("tiendas").doc(tId).collection("productos").doc(idProd).delete();
-    cargarProductosOriginal();
+window.guardarProductoOriginal = async () => {
+  const tId = document.getElementById("tiendaProducto").value;
+  const pId = document.getElementById("editProductoId").value;
+
+  if (!tId) return alert("Selecciona una tienda");
+
+  const datos = {
+    name: document.getElementById("nuevoNombre").value,
+    precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
+    categoria: document.getElementById("nuevoCategoria").value,
+    descripcion: document.getElementById("nuevoDescripcion").value,
+    img: document.getElementById("nuevoImagen").value
+  };
+
+  const ref = db.collection("tiendas").doc(tId).collection("productos");
+
+  if (pId) {
+    await ref.doc(pId).set(datos, { merge: true });
+  } else {
+    await ref.add(datos);
+  }
+
+  cancelarEdicionProducto();
+  cargarProductosOriginal();
+};
+
+window.eliminarProductoOriginal = async (id) => {
+  const tId = document.getElementById("tiendaProducto").value;
+  await db.collection("tiendas").doc(tId).collection("productos").doc(id).delete();
+  cargarProductosOriginal();
 };
 
 window.activarEdicionProducto = (id, name, precio, cat, desc, img) => {
-    document.getElementById("editProductoId").value = id;
-    document.getElementById("nuevoNombre").value = name;
-    document.getElementById("nuevoPrecio").value = precio;
-    document.getElementById("nuevoCategoria").value = cat;
-    document.getElementById("nuevoDescripcion").value = desc;
-    document.getElementById("nuevoImagen").value = img;
-    document.getElementById("btnCancelarEdicion").classList.remove("hidden");
+  document.getElementById("editProductoId").value = id;
+  document.getElementById("nuevoNombre").value = name;
+  document.getElementById("nuevoPrecio").value = precio;
+  document.getElementById("nuevoCategoria").value = cat;
+  document.getElementById("nuevoDescripcion").value = desc;
+  document.getElementById("nuevoImagen").value = img;
+
+  document.getElementById("btnCancelarEdicion").classList.remove("hidden");
 };
 
 window.cancelarEdicionProducto = () => {
-    document.getElementById("editProductoId").value = "";
-    document.getElementById("nuevoNombre").value = "";
-    document.getElementById("btnCancelarEdicion").classList.add("hidden");
+  document.getElementById("editProductoId").value = "";
+  document.getElementById("nuevoNombre").value = "";
+  document.getElementById("nuevoPrecio").value = "";
+  document.getElementById("nuevoCategoria").value = "";
+  document.getElementById("nuevoDescripcion").value = "";
+  document.getElementById("nuevoImagen").value = "";
+
+  document.getElementById("btnCancelarEdicion").classList.add("hidden");
 };
-window.activarEdicionTienda = (id, nombre, whatsapp, logo, banner) => {
-    document.getElementById("editTiendaId").value = id;
-    document.getElementById("nuevoNombreTienda").value = nombre;
-    document.getElementById("nuevoWhatsappTienda").value = whatsapp;
-    document.getElementById("nuevoLogoTienda").value = logo;
-    document.getElementById("nuevoBannerTienda").value = banner;
 
-    document.getElementById("btnCancelarTienda").classList.remove("hidden");
-};
-  window.cancelarEdicionTienda = () => {
-    const id = document.getElementById("editTiendaId");
-    if (id) id.value = "";
 
-    document.getElementById("nuevoNombreTienda").value = "";
-    document.getElementById("nuevoWhatsappTienda").value = "";
-    document.getElementById("nuevoLogoTienda").value = "";
-    document.getElementById("nuevoBannerTienda").value = "";
+/* =========================
+   📍 SELECT TIENDAS
+========================= */
 
-    document.getElementById("btnCancelarTienda").classList.add("hidden");
-};
-  window.eliminarTiendaOriginal = async (id) => {
-    const confirmar = confirm("¿Eliminar esta tienda?");
+async function cargarSelectTiendas() {
+  const snap = await db.collection("tiendas").get();
 
-    if (!confirmar) return;
+  const selects = [
+    document.getElementById("tiendaProducto"),
+    document.getElementById("tiendaEstado"),
+    document.getElementById("filtroTiendaPedidos")
+  ];
 
-    await db.collection("tiendas").doc(id).delete();
-    cargarTiendas();
-};
-// --- RESTO DE FUNCIONES ---
-window.toggleTienda = async () => {
-    const id = document.getElementById("tiendaEstado").value;
-    const ref = db.collection("tiendas").doc(id);
+  selects.forEach(sel => {
+    if (!sel) return;
 
-    const doc = await ref.get();
-    const abierta = doc.data()?.abierta === true;
+    sel.innerHTML = `<option value="">Seleccionar tienda...</option>`;
 
-    await ref.update({
-        abierta: !abierta
+    snap.forEach(doc => {
+      const t = doc.data();
+      sel.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
     });
+  });
+}
 
-    cargarEstadoTienda();
+
+/* =========================
+   🟢 ESTADO TIENDA
+========================= */
+
+window.toggleTienda = async () => {
+  const id = document.getElementById("tiendaEstado").value;
+  if (!id) return;
+
+  const ref = db.collection("tiendas").doc(id);
+  const doc = await ref.get();
+
+  const abierta = doc.data()?.abierta === true;
+
+  await ref.update({ abierta: !abierta });
+  cargarEstadoTienda();
 };
 
 window.cargarEstadoTienda = async () => {
-    const id = document.getElementById("tiendaEstado").value;
-    const doc = await db.collection("tiendas").doc(id).get();
+  const id = document.getElementById("tiendaEstado").value;
+  if (!id) return;
 
-    const abierta = doc.data()?.abierta === true;
+  const doc = await db.collection("tiendas").doc(id).get();
+  const abierta = doc.data()?.abierta === true;
 
-    document.getElementById("estadoActual").innerHTML =
-        `Estado: <b>${abierta ? "🟢 ABIERTO" : "🔴 CERRADO"}</b>`;
+  document.getElementById("estadoActual").innerHTML =
+    `Estado: <b>${abierta ? "🟢 ABIERTO" : "🔴 CERRADO"}</b>`;
 };
 window.guardarTiendaOriginal = async () => {
     const id = document.getElementById("editTiendaId")?.value || "";
