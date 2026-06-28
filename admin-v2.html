@@ -142,15 +142,31 @@ window.eliminarPedidoHistorial = (tId, pId) => db.collection("tiendas").doc(tId)
 window.cargarTiendas = async () => {
     const snap = await db.collection("tiendas").get();
     const lista = document.getElementById("listaTiendas");
+
     lista.innerHTML = "";
+
     snap.forEach(doc => {
         const t = doc.data();
-        lista.innerHTML += `<div class="tienda-card-item"><b>${t.nombre}</b><br>
-        <button class="btn-edit" onclick="activarEdicionTienda('${doc.id}', '${t.nombre}', '${t.whatsapp}', '${t.logo}', '${t.banner}')">✏️ Editar</button>
-        <button class="btn-danger" onclick="eliminarTiendaOriginal('${doc.id}')">🗑️ Eliminar</button></div>`;
+
+        lista.innerHTML += `
+            <div class="tienda-card-item">
+                <b>${t.nombre || "Sin nombre"}</b><br>
+
+                <small>${t.whatsapp || ""}</small><br>
+
+                <button class="btn-edit"
+                    onclick="activarEdicionTienda('${doc.id}', '${t.nombre || ""}', '${t.whatsapp || ""}', '${t.logo || ""}', '${t.banner || ""}')">
+                    ✏️ Editar
+                </button>
+
+                <button class="btn-danger"
+                    onclick="eliminarTiendaOriginal('${doc.id}')">
+                    🗑️ Eliminar
+                </button>
+            </div>
+        `;
     });
 };
-
 window.guardarProductoOriginal = async () => {
     const tId = document.getElementById("tiendaProducto").value;
     const pId = document.getElementById("editProductoId").value;
@@ -200,22 +216,84 @@ window.cancelarEdicionProducto = () => {
     document.getElementById("nuevoNombre").value = "";
     document.getElementById("btnCancelarEdicion").classList.add("hidden");
 };
+window.activarEdicionTienda = (id, nombre, whatsapp, logo, banner) => {
+    document.getElementById("editTiendaId").value = id;
+    document.getElementById("nuevoNombreTienda").value = nombre;
+    document.getElementById("nuevoWhatsappTienda").value = whatsapp;
+    document.getElementById("nuevoLogoTienda").value = logo;
+    document.getElementById("nuevoBannerTienda").value = banner;
 
+    document.getElementById("btnCancelarTienda").classList.remove("hidden");
+};
+  window.cancelarEdicionTienda = () => {
+    const id = document.getElementById("editTiendaId");
+    if (id) id.value = "";
+
+    document.getElementById("nuevoNombreTienda").value = "";
+    document.getElementById("nuevoWhatsappTienda").value = "";
+    document.getElementById("nuevoLogoTienda").value = "";
+    document.getElementById("nuevoBannerTienda").value = "";
+
+    document.getElementById("btnCancelarTienda").classList.add("hidden");
+};
+  window.eliminarTiendaOriginal = async (id) => {
+    const confirmar = confirm("¿Eliminar esta tienda?");
+
+    if (!confirmar) return;
+
+    await db.collection("tiendas").doc(id).delete();
+    cargarTiendas();
+};
 // --- RESTO DE FUNCIONES ---
 window.toggleTienda = async () => {
-    const tId = document.getElementById("tiendaEstado").value;
-    const ref = db.collection("tiendas").doc(tId);
+    const id = document.getElementById("tiendaEstado").value;
+    const ref = db.collection("tiendas").doc(id);
+
     const doc = await ref.get();
-    await ref.update({ abierta: !(doc.data().abierta !== false) });
+    const abierta = doc.data()?.abierta === true;
+
+    await ref.update({
+        abierta: !abierta
+    });
+
     cargarEstadoTienda();
 };
 
 window.cargarEstadoTienda = async () => {
-    const tId = document.getElementById("tiendaEstado").value;
-    const doc = await db.collection("tiendas").doc(tId).get();
-    document.getElementById("estadoActual").innerHTML = `Estado: <b>${(doc.data().abierta !== false) ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
-};
+    const id = document.getElementById("tiendaEstado").value;
+    const doc = await db.collection("tiendas").doc(id).get();
 
+    const abierta = doc.data()?.abierta === true;
+
+    document.getElementById("estadoActual").innerHTML =
+        `Estado: <b>${abierta ? "🟢 ABIERTO" : "🔴 CERRADO"}</b>`;
+};
+window.guardarTiendaOriginal = async () => {
+    const id = document.getElementById("editTiendaId")?.value || "";
+
+    const datos = {
+        nombre: document.getElementById("nuevoNombreTienda").value,
+        whatsapp: document.getElementById("nuevoWhatsappTienda").value,
+        logo: document.getElementById("nuevoLogoTienda").value,
+        banner: document.getElementById("nuevoBannerTienda").value,
+        abierta: true,
+        updatedAt: Date.now()
+    };
+
+    const ref = db.collection("tiendas");
+
+    if (id) {
+        await ref.doc(id).set(datos, { merge: true });
+    } else {
+        await ref.add({
+            ...datos,
+            createdAt: Date.now()
+        });
+    }
+
+    cancelarEdicionTienda();
+    cargarTiendas();
+};
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById("loginBox").classList.add("hidden");
