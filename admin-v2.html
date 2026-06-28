@@ -2,89 +2,86 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin V2 - Gestión Total EyMoto</title>
+  <title>Admin V2 PRO 4 - EyMoto</title>
+
   <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0; }
-    header { background:#000; padding:15px; text-align:center; font-size:22px; font-weight:bold; color: #f5c400; border-bottom: 2px solid #222; }
-    .container { padding:20px; max-width: 1200px; margin: 0 auto; }
-    .card { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:12px; border: 1px solid #333; }
-    input, button, select, textarea { padding:12px; margin:8px 0; width:100%; border-radius:6px; border:1px solid #444; background: #252525; color: #fff; box-sizing: border-box; font-size: 14px; }
-    button { background:#f5c400; color:#000; font-weight:bold; cursor:pointer; border: none; transition: background 0.2s; }
-    button:hover { background: #e0b300; }
+    body { font-family: Arial; background:#111; color:#fff; margin:0; }
+    header { background:#000; padding:15px; text-align:center; font-size:22px; color:#f5c400; }
+    .container { padding:20px; max-width:1200px; margin:auto; }
+    .card { background:#1c1c1c; padding:20px; margin-bottom:15px; border-radius:10px; }
+    input, button, select, textarea {
+      width:100%; padding:10px; margin:5px 0;
+      background:#222; color:#fff; border:1px solid #444;
+      border-radius:6px;
+    }
+    button { background:#f5c400; color:#000; cursor:pointer; font-weight:bold; }
     .hidden { display:none; }
-    .tienda-card-item { border:1px solid #444; padding:15px; margin-top:12px; border-radius:8px; background: #222; }
-    .producto-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 12px 0; }
-    .pedido-card { border: 2px solid #333; padding: 15px; margin-top: 12px; border-radius: 8px; background: #1e1e1e; }
-    .status-pendiente { border-color: #ffc107; }
-    .status-preparacion { border-color: #17a2b8; }
-    .status-entregado { border-color: #28a745; }
-    .status-cancelado { border-color: #dc3545; }
-    .badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-    .badge-pendiente { background: #ffc107; color: #000; }
-    .badge-preparacion { background: #17a2b8; color: #fff; }
-    .badge-entregado { background: #28a745; color: #fff; }
-    .badge-cancelado { background: #dc3545; color: #fff; }
-    .grid-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; }
-    .btn-status { font-size: 12px; padding: 8px; margin: 0; }
-    .btn-danger { background: #dc3545; color: #fff; width: auto; padding: 6px 12px; font-size: 13px; }
-    .btn-edit { background: #00bcd4; color: #000; width: auto; padding: 6px 12px; font-size: 13px; margin-right: 5px; }
-    .flex-buttons { display: flex; gap: 5px; }
+    .tienda-card-item, .producto-item, .pedido-card {
+      background:#222; padding:10px; margin-top:10px; border-radius:8px;
+    }
+    .flex-buttons { display:flex; gap:5px; }
+    .grid-acciones { display:flex; gap:5px; margin-top:5px; }
   </style>
 </head>
+
 <body>
 
-<header>🚀 PANEL DE ADMINISTRACIÓN GENERAL - EYMOTO</header>
+<header>🚀 ADMIN V2 PRO 4 - EYMOTO</header>
+
 <div class="container">
+
+  <!-- LOGIN -->
   <div id="loginBox" class="card">
-    <h3>🔐 Acceso al Panel Administrativo</h3>
-    <input type="email" id="email" placeholder="ejemplo@eymoto.com">
-    <input type="password" id="password" placeholder="••••••••">
-    <button id="btnIniciarSesion">Ingresar al Panel</button>
-    <p id="loginMsg" style="color: #ff4444; font-weight: bold; margin-top: 10px;"></p>
+    <h3>Login</h3>
+    <input id="email" placeholder="email">
+    <input id="password" type="password" placeholder="password">
+    <button id="btnIniciarSesion">Entrar</button>
   </div>
 
+  <!-- PANEL -->
   <div id="panel" class="hidden">
-    <div class="card" style="border: 2px solid #f5c400; background: #151515;">
-      <h3>📋 Monitor de Pedidos</h3>
-      <button onclick="probarVozAlarma()" style="background: #008b9b; color: #fff;">🔔 Test Altavoz</button>
-      <select id="filtroTiendaPedidos" onchange="escucharPedidosEnTiempoReal()"><option value="">Seleccionar tienda...</option></select>
+
+    <div class="card">
+      <h3>📋 Pedidos en tiempo real</h3>
+      <select id="filtroTiendaPedidos"></select>
       <div id="contenedorPedidos"></div>
+      <div id="estadoActual"></div>
     </div>
 
-    <div class="card" style="border-left: 5px solid #00bcd4;">
-      <h3 id="tituloFormTienda">🏪 Formulario de Tienda</h3>
+    <div class="card">
+      <h3>🏪 Tiendas</h3>
+
       <input type="hidden" id="editTiendaId">
-      <input id="nombreTienda" placeholder="Nombre Comercial">
+      <input id="nombreTienda" placeholder="Nombre">
       <input id="whatsapp" placeholder="WhatsApp">
-      <input id="logoTienda" placeholder="URL Logo">
-      <input id="bannerTienda" placeholder="URL Banner">
-      <button id="btnGuardarTienda" onclick="guardarTiendaOriginal()">Registrar Tienda</button>
-      <button id="btnCancelarTiendaEdicion" class="hidden" onclick="cancelarEdicionTienda()">Cancelar</button>
+      <input id="logoTienda" placeholder="Logo">
+      <input id="bannerTienda" placeholder="Banner">
+
+      <button onclick="guardarTienda()">Guardar tienda</button>
+
+      <div id="listaTiendas"></div>
     </div>
 
-    <div class="card" style="border-left: 5px solid #ffc107;">
-      <h3 id="tituloFormProducto">🍔 Formulario de Producto</h3>
-      <select id="tiendaProducto" onchange="cargarProductosOriginal()"><option value="">Seleccionar tienda...</option></select>
+    <div class="card">
+      <h3>📦 Productos</h3>
+
+      <select id="tiendaProducto"></select>
+
       <input type="hidden" id="editProductoId">
-      <input id="nuevoNombre" placeholder="Nombre producto">
+      <input id="nuevoNombre" placeholder="Nombre">
       <input id="nuevoPrecio" type="number" placeholder="Precio">
       <input id="nuevoCategoria" placeholder="Categoría">
-      <textarea id="nuevoDescripcion" placeholder="Descripción"></textarea>
-      <input id="nuevoImagen" placeholder="URL Imagen">
-      <button id="btnGuardarProducto" onclick="guardarProductoOriginal()">Añadir/Guardar Producto</button>
-      <button id="btnCancelarEdicion" class="hidden" onclick="cancelarEdicionProducto()">Cancelar</button>
+      <textarea id="nuevoDescripcion"></textarea>
+      <input id="nuevoImagen">
+
+      <button onclick="guardarProducto()">Guardar producto</button>
+
+      <div id="listaProductos"></div>
     </div>
 
-    <div class="card"><h3>🏪 Lista de Tiendas</h3><div id="listaTiendas"></div></div>
-    <div class="card"><h3>📦 Productos</h3><div id="listaProductos"></div></div>
-    <div class="card">
-        <h3>🏪 Estado de Tienda</h3>
-        <select id="tiendaEstado" onchange="cargarEstadoTienda()"><option value="">Seleccionar tienda...</option></select>
-        <p id="estadoActual">Estado: <b>-</b></p>
-        <button onclick="toggleTienda()" style="background: #28a745; color: #fff;">Cambiar Estado</button>
-    </div>
-    <button onclick="logout()">🚪 Cerrar Sesión</button>
+    <button onclick="logout()">Salir</button>
   </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -92,324 +89,240 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = {
+
+/* ================= FIREBASE ================= */
+firebase.initializeApp({
   apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
   authDomain: "eymotocomidas.firebaseapp.com",
   projectId: "eymotocomidas",
   storageBucket: "eymotocomidas.firebasestorage.app",
   messagingSenderId: "670474251560",
   appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
-};
-
-firebase.initializeApp(firebaseConfig);
+});
 
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let pedidosUnsubscribe = null;
-let alarmaInterval = null;
+/* ================= STATE PRO 4 ================= */
+const App = {
+  state: {
+    tiendas: [],
+    pedidos: [],
+    stats: { pendientes:0, entregados:0, cancelados:0 }
+  },
+  listeners: { pedidos:null }
+};
 
-/* =========================
-   🔐 AUTH
-========================= */
+/* ================= EVENT BUS ================= */
+const EventBus = {
+  events:{},
+  on(e,f){ (this.events[e] ||= []).push(f); },
+  emit(e,d){ (this.events[e]||[]).forEach(f=>f(d)); }
+};
 
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("panel").classList.remove("hidden");
-    cargarTiendas();
-    cargarSelectTiendas();
-  } else {
-    document.getElementById("loginBox").classList.remove("hidden");
-    document.getElementById("panel").classList.add("hidden");
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(u=>{
+  if(u){
+    loginBox.classList.add("hidden");
+    panel.classList.remove("hidden");
+    init();
+  }else{
+    loginBox.classList.remove("hidden");
+    panel.classList.add("hidden");
   }
 });
 
-document.getElementById("btnIniciarSesion").onclick = () => {
-  auth.signInWithEmailAndPassword(
-    document.getElementById("email").value,
-    document.getElementById("password").value
-  );
+btnIniciarSesion.onclick=()=>{
+  auth.signInWithEmailAndPassword(email.value,password.value);
 };
 
-window.logout = () => auth.signOut();
+logout.onclick=()=>auth.signOut();
 
+/* ================= INIT ================= */
+function init(){
+  cargarTiendas();
+  initPedidos();
+}
 
-/* =========================
-   🏪 TIENDAS
-========================= */
-
-window.cargarTiendas = async () => {
+/* ================= TIENDAS ================= */
+async function cargarTiendas(){
   const snap = await db.collection("tiendas").get();
-  const lista = document.getElementById("listaTiendas");
 
-  lista.innerHTML = "";
+  App.state.tiendas = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-  snap.forEach(doc => {
-    const t = doc.data();
+  renderTiendas();
+  llenarSelects();
+}
 
-    lista.innerHTML += `
-      <div class="tienda-card-item">
-        <b>${t.nombre || "Sin nombre"}</b><br>
-        <small>${t.whatsapp || ""}</small><br>
+function renderTiendas(){
+  listaTiendas.innerHTML = App.state.tiendas.map(t=>`
+    <div class="tienda-card-item">
+      <b>${t.nombre}</b>
 
-        <div class="flex-buttons">
-          <button class="btn-edit"
-            onclick="activarEdicionTienda('${doc.id}','${t.nombre || ""}','${t.whatsapp || ""}','${t.logo || ""}','${t.banner || ""}')">
-            ✏️ Editar
-          </button>
-
-          <button class="btn-danger"
-            onclick="eliminarTiendaOriginal('${doc.id}')">
-            🗑️ Eliminar
-          </button>
-        </div>
+      <div class="flex-buttons">
+        <button onclick="editarTienda('${t.id}')">✏️</button>
+        <button onclick="eliminarTienda('${t.id}')">🗑️</button>
       </div>
-    `;
-  });
-};
+    </div>
+  `).join("");
+}
 
-window.guardarTiendaOriginal = async () => {
-  const id = document.getElementById("editTiendaId").value;
+window.guardarTienda = async ()=>{
+  const id = editTiendaId.value;
 
-  const datos = {
-    nombre: document.getElementById("nombreTienda").value,
-    whatsapp: document.getElementById("whatsapp").value,
-    logo: document.getElementById("logoTienda").value,
-    banner: document.getElementById("bannerTienda").value,
-    abierta: true,
-    updatedAt: Date.now()
+  const data = {
+    nombre:nombreTienda.value,
+    whatsapp:whatsapp.value,
+    logo:logoTienda.value,
+    banner:bannerTienda.value,
+    updatedAt:Date.now()
   };
 
-  const ref = db.collection("tiendas");
+  const ref=db.collection("tiendas");
 
-  if (id) {
-    await ref.doc(id).set(datos, { merge: true });
-  } else {
-    await ref.add({
-      ...datos,
-      createdAt: Date.now()
-    });
-  }
+  if(id) await ref.doc(id).set(data,{merge:true});
+  else await ref.add({...data,createdAt:Date.now()});
 
-  cancelarEdicionTienda();
   cargarTiendas();
-  cargarSelectTiendas();
 };
 
-window.activarEdicionTienda = (id, nombre, whatsapp, logo, banner) => {
-  document.getElementById("editTiendaId").value = id;
-  document.getElementById("nombreTienda").value = nombre;
-  document.getElementById("whatsapp").value = whatsapp;
-  document.getElementById("logoTienda").value = logo;
-  document.getElementById("bannerTienda").value = banner;
+window.editarTienda=(id)=>{
+  const t=App.state.tiendas.find(x=>x.id===id);
 
-  document.getElementById("btnCancelarTiendaEdicion").classList.remove("hidden");
+  editTiendaId.value=t.id;
+  nombreTienda.value=t.nombre;
+  whatsapp.value=t.whatsapp;
+  logoTienda.value=t.logo;
+  bannerTienda.value=t.banner;
 };
 
-window.cancelarEdicionTienda = () => {
-  document.getElementById("editTiendaId").value = "";
-  document.getElementById("nombreTienda").value = "";
-  document.getElementById("whatsapp").value = "";
-  document.getElementById("logoTienda").value = "";
-  document.getElementById("bannerTienda").value = "";
-
-  document.getElementById("btnCancelarTiendaEdicion").classList.add("hidden");
-};
-
-window.eliminarTiendaOriginal = async (id) => {
-  if (!confirm("¿Eliminar tienda?")) return;
+window.eliminarTienda=async(id)=>{
   await db.collection("tiendas").doc(id).delete();
   cargarTiendas();
-  cargarSelectTiendas();
 };
 
-
-/* =========================
-   📦 PRODUCTOS
-========================= */
-
-window.cargarProductosOriginal = async () => {
-  const tId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-
-  if (!tId) return;
-
-  const snap = await db.collection("tiendas").doc(tId).collection("productos").get();
-
-  lista.innerHTML = "";
-
-  snap.forEach(doc => {
-    const p = doc.data();
-
-    lista.innerHTML += `
-      <div class="producto-item">
-        ${p.name} - $${p.precio}
-
-        <div class="flex-buttons">
-          <button class="btn-edit"
-            onclick="activarEdicionProducto('${doc.id}','${p.name}',${p.precio},'${p.categoria}','${p.descripcion}','${p.img}')">
-            ✏️
-          </button>
-
-          <button class="btn-danger"
-            onclick="eliminarProductoOriginal('${doc.id}')">
-            🗑️
-          </button>
-        </div>
-      </div>
-    `;
-  });
-};
-
-window.guardarProductoOriginal = async () => {
-  const tId = document.getElementById("tiendaProducto").value;
-  const pId = document.getElementById("editProductoId").value;
-
-  if (!tId) return alert("Selecciona una tienda");
-
-  const datos = {
-    name: document.getElementById("nuevoNombre").value,
-    precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
-    categoria: document.getElementById("nuevoCategoria").value,
-    descripcion: document.getElementById("nuevoDescripcion").value,
-    img: document.getElementById("nuevoImagen").value
-  };
-
-  const ref = db.collection("tiendas").doc(tId).collection("productos");
-
-  if (pId) {
-    await ref.doc(pId).set(datos, { merge: true });
-  } else {
-    await ref.add(datos);
-  }
-
-  cancelarEdicionProducto();
-  cargarProductosOriginal();
-};
-
-window.eliminarProductoOriginal = async (id) => {
-  const tId = document.getElementById("tiendaProducto").value;
-  await db.collection("tiendas").doc(tId).collection("productos").doc(id).delete();
-  cargarProductosOriginal();
-};
-
-window.activarEdicionProducto = (id, name, precio, cat, desc, img) => {
-  document.getElementById("editProductoId").value = id;
-  document.getElementById("nuevoNombre").value = name;
-  document.getElementById("nuevoPrecio").value = precio;
-  document.getElementById("nuevoCategoria").value = cat;
-  document.getElementById("nuevoDescripcion").value = desc;
-  document.getElementById("nuevoImagen").value = img;
-
-  document.getElementById("btnCancelarEdicion").classList.remove("hidden");
-};
-
-window.cancelarEdicionProducto = () => {
-  document.getElementById("editProductoId").value = "";
-  document.getElementById("nuevoNombre").value = "";
-  document.getElementById("nuevoPrecio").value = "";
-  document.getElementById("nuevoCategoria").value = "";
-  document.getElementById("nuevoDescripcion").value = "";
-  document.getElementById("nuevoImagen").value = "";
-
-  document.getElementById("btnCancelarEdicion").classList.add("hidden");
-};
-
-
-/* =========================
-   📍 SELECT TIENDAS
-========================= */
-
-async function cargarSelectTiendas() {
-  const snap = await db.collection("tiendas").get();
-
-  const selects = [
-    document.getElementById("tiendaProducto"),
-    document.getElementById("tiendaEstado"),
-    document.getElementById("filtroTiendaPedidos")
-  ];
-
-  selects.forEach(sel => {
-    if (!sel) return;
-
-    sel.innerHTML = `<option value="">Seleccionar tienda...</option>`;
-
-    snap.forEach(doc => {
-      const t = doc.data();
-      sel.innerHTML += `<option value="${doc.id}">${t.nombre}</option>`;
+function llenarSelects(){
+  [filtroTiendaPedidos, tiendaProducto].forEach(sel=>{
+    sel.innerHTML=`<option value="">Seleccionar</option>`;
+    App.state.tiendas.forEach(t=>{
+      sel.innerHTML+=`<option value="${t.id}">${t.nombre}</option>`;
     });
   });
 }
 
+/* ================= PRODUCTOS ================= */
+window.guardarProducto = async ()=>{
+  const tId=tiendaProducto.value;
+  const pId=editProductoId.value;
 
-/* =========================
-   🟢 ESTADO TIENDA
-========================= */
+  const data={
+    name:nuevoNombre.value,
+    precio:Number(nuevoPrecio.value),
+    categoria:nuevoCategoria.value,
+    descripcion:nuevoDescripcion.value,
+    img:nuevoImagen.value
+  };
 
-window.toggleTienda = async () => {
-  const id = document.getElementById("tiendaEstado").value;
-  if (!id) return;
+  const ref=db.collection("tiendas").doc(tId).collection("productos");
 
-  const ref = db.collection("tiendas").doc(id);
-  const doc = await ref.get();
+  if(pId) await ref.doc(pId).set(data,{merge:true});
+  else await ref.add(data);
 
-  const abierta = doc.data()?.abierta === true;
-
-  await ref.update({ abierta: !abierta });
-  cargarEstadoTienda();
+  cargarProductos();
 };
 
-window.cargarEstadoTienda = async () => {
-  const id = document.getElementById("tiendaEstado").value;
-  if (!id) return;
+window.cargarProductos = async ()=>{
+  const tId=tiendaProducto.value;
+  if(!tId) return;
 
-  const doc = await db.collection("tiendas").doc(id).get();
-  const abierta = doc.data()?.abierta === true;
+  const snap=await db.collection("tiendas").doc(tId).collection("productos").get();
 
-  document.getElementById("estadoActual").innerHTML =
-    `Estado: <b>${abierta ? "🟢 ABIERTO" : "🔴 CERRADO"}</b>`;
+  listaProductos.innerHTML=snap.docs.map(d=>{
+    const p=d.data();
+    return `<div class="producto-item">
+      ${p.name} - $${p.precio}
+    </div>`;
+  }).join("");
 };
-window.guardarTiendaOriginal = async () => {
-    const id = document.getElementById("editTiendaId")?.value || "";
 
-    const datos = {
-        nombre: document.getElementById("nuevoNombreTienda").value,
-        whatsapp: document.getElementById("nuevoWhatsappTienda").value,
-        logo: document.getElementById("nuevoLogoTienda").value,
-        banner: document.getElementById("nuevoBannerTienda").value,
-        abierta: true,
-        updatedAt: Date.now()
-    };
+/* ================= PEDIDOS PRO ================= */
+function initPedidos(){
+  filtroTiendaPedidos.onchange=()=>{
+    if(App.listeners.pedidos) App.listeners.pedidos();
 
-    const ref = db.collection("tiendas");
+    const id=filtroTiendaPedidos.value;
+    if(!id) return;
 
-    if (id) {
-        await ref.doc(id).set(datos, { merge: true });
-    } else {
-        await ref.add({
-            ...datos,
-            createdAt: Date.now()
-        });
-    }
+    App.listeners.pedidos=db
+      .collection("tiendas").doc(id)
+      .collection("pedidos")
+      .orderBy("fecha","desc")
+      .onSnapshot(snap=>{
 
-    cancelarEdicionTienda();
-    cargarTiendas();
-};
-auth.onAuthStateChanged(user => {
-    if (user) {
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("panel").classList.remove("hidden");
-        cargarTiendas();
-    } else {
-        document.getElementById("loginBox").classList.remove("hidden");
-        document.getElementById("panel").classList.add("hidden");
-    }
+        const pedidos=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+        App.state.pedidos=pedidos;
+
+        calcularStats(pedidos);
+        renderPedidos(pedidos);
+        detectarPicos(pedidos);
+      });
+  };
+}
+
+/* ================= RENDER PEDIDOS ================= */
+function renderPedidos(pedidos){
+  contenedorPedidos.innerHTML=pedidos.map(p=>`
+    <div class="pedido-card">
+      <b>${p.numeroPedido}</b> - ${p.estado}
+      <div class="grid-acciones">
+        <button onclick="cambiar('${p.id}','Entregado')">✔</button>
+        <button onclick="cambiar('${p.id}','Cancelado')">✖</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+/* ================= STATS ================= */
+function calcularStats(pedidos){
+  let p=0,e=0,c=0;
+
+  pedidos.forEach(x=>{
+    if(x.estado==="Pendiente") p++;
+    if(x.estado==="Entregado") e++;
+    if(x.estado==="Cancelado") c++;
+  });
+
+  estadoActual.innerHTML=`🟡${p} 🟢${e} 🔴${c}`;
+}
+
+/* ================= DETECCIÓN ================= */
+function detectarPicos(pedidos){
+  const now=Date.now();
+  const recientes=pedidos.filter(p=>now-(p.fecha||now)<60000);
+
+  if(recientes.length>=3){
+    EventBus.emit("pico",recientes);
+  }
+}
+
+EventBus.on("pico",()=>{
+  const msg=new SpeechSynthesisUtterance("Alerta de pedidos altos");
+  speechSynthesis.speak(msg);
 });
 
-document.getElementById("btnIniciarSesion").onclick = () => auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value);
-window.logout = () => { detenerAlarma(); auth.signOut(); };
+/* ================= UPDATE ================= */
+window.cambiar=(id,estado)=>{
+  const tId=filtroTiendaPedidos.value;
+
+  db.collection("tiendas")
+    .doc(tId)
+    .collection("pedidos")
+    .doc(id)
+    .update({estado});
+};
 
 </script>
+
 </body>
 </html>
