@@ -289,7 +289,7 @@ header .spacer{flex:1}
 .nuevo-pedido{animation:pulse 1.5s ease-in-out 3}
 @keyframes pulse{0%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}50%{border-color:#fff;box-shadow:0 0 20px 5px rgba(255,214,0,0.3)}100%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}}
 
-/* NOTIFICACIÓN DE NUEVO PEDIDO FLOTANTE */
+/* NOTIFICACIÓN FLOTANTE */
 .notificacion-pedido {
     position: fixed;
     top: 80px;
@@ -373,7 +373,7 @@ header .spacer{flex:1}
         <span class="spacer"></span>
         <div class="peds-controls">
           <select id="filtroTienda" onchange="cambiarTiendaSeleccionada()">
-            <option value="">Seleccionar tienda...</option>
+            <option value="">🌐 Todas las tiendas</option>
           </select>
           <button class="btn-speaker" onclick="probarAltavoz()">🔔 Altavoz</button>
           <button class="btn-speaker" onclick="stopAlarm()" style="background:var(--red-bg);color:var(--red);">🔕 Silenciar</button>
@@ -491,6 +491,8 @@ let pedidosPendientes = new Set();
 let tiendaSeleccionada = '';
 let tiendasCache = {};
 let notificacionesMostradas = new Set();
+let todosLosPedidos = {}; // Cache de pedidos por tienda
+let escuchaGlobalActiva = false;
 
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
@@ -516,13 +518,15 @@ function toast(msg, type = 'info', dur = 4000, onClick = null) {
 }
 
 // ============================================================
-// NOTIFICACIÓN FLOTANTE DE NUEVO PEDIDO
+// NOTIFICACIÓN FLOTANTE
 // ============================================================
-function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId) {
-  // Eliminar notificaciones antiguas
-  document.querySelectorAll('.notificacion-pedido').forEach(el => el.remove());
+function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId, pedidoId) {
+  // Evitar duplicados
+  const notifId = `notif-${pedidoId}`;
+  if (document.getElementById(notifId)) return;
   
   const div = document.createElement('div');
+  div.id = notifId;
   div.className = 'notificacion-pedido';
   div.innerHTML = `
     <div class="notif-tienda">🏪 ${tiendaNombre}</div>
@@ -532,23 +536,19 @@ function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId
     <div style="font-size:10px;color:#666;margin-top:6px;">💡 Haz clic para ver este pedido</div>
   `;
   
-  // Al hacer clic, seleccionar la tienda automáticamente
   div.onclick = function() {
     const selector = document.getElementById('filtroTienda');
     if (selector) {
       selector.value = tiendaId;
       cambiarTiendaSeleccionada();
     }
-    // Cerrar la notificación
     div.remove();
-    // Cambiar a la pestaña de pedidos
     const btnPedidos = document.querySelectorAll('.tab-btn')[0];
     if (btnPedidos) switchTab('pedidos', btnPedidos);
   };
   
   document.body.appendChild(div);
   
-  // Auto-cerrar después de 15 segundos
   setTimeout(() => {
     if (div.parentNode) {
       div.style.opacity = '0';
@@ -559,7 +559,7 @@ function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId
 }
 
 // ============================================================
-// SONIDO / ALARMA CON NOMBRE DE TIENDA
+// SONIDO / ALARMA
 // ============================================================
 function beep() {
   try {
@@ -651,7 +651,7 @@ auth.onAuthStateChanged(user => {
 async function inicializar() {
   await cargarTiendas();
   // Iniciar escucha de TODAS las tiendas automáticamente
-  escucharTodasLasTiendas();
+  iniciarEscuchaGlobal();
 }
 
 // ============================================================
@@ -660,7 +660,7 @@ async function inicializar() {
 async function cargarTiendas() {
   ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
     const sel = document.getElementById(id);
-    if (sel) sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
+    if (sel) sel.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
   });
   const lista = document.getElementById('listaTiendas');
   lista.innerHTML = '';
@@ -900,92 +900,220 @@ function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
   tiendaSeleccionada = selector.value;
   
-  // Detener escucha anterior
-  if (pedidosUnsub) {
+  // Detener escucha anterior de tienda específica
+  if (pedidosUnsub && tiendaSeleccionada) {
     pedidosUnsub();
     pedidosUnsub = null;
   }
   
   if (tiendaSeleccionada) {
-    // Escuchar solo la tienda seleccionada
+    // Cambiar a modo "ver pedidos de esta tienda"
     escucharPedidosDeTienda(tiendaSeleccionada);
+    // La escucha global sigue activa en segundo plano
   } else {
-    // Si no hay selección, escuchar todas (ya está activo)
-    // No hacer nada, la escucha global sigue activa
+    // Si está en "Todas las tiendas", mostrar todos los pedidos pendientes
+    mostrarTodosLosPedidos();
   }
 }
 
 // ============================================================
-// ESCUCHAR TODAS LAS TIENDAS (NUEVO - GLOBAL)
+// MOSTRAR TODOS LOS PEDIDOS (MODO GLOBAL)
 // ============================================================
-function escucharTodasLasTiendas() {
-  if (pedidosUnsub) {
-    pedidosUnsub();
-    pedidosUnsub = null;
+function mostrarTodosLosPedidos() {
+  resetKanban();
+  const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
+  
+  // Recorrer todas las tiendas con pedidos
+  Object.keys(todosLosPedidos).forEach(tiendaId => {
+    const pedidos = todosLosPedidos[tiendaId] || [];
+    pedidos.forEach(pedido => {
+      // Renderizar cada pedido con su tienda
+      renderPedidoGlobal(pedido.doc, tiendaId, counts);
+    });
+  });
+  
+  // Actualizar contadores
+  Object.entries(ESTADO_MAP).forEach(([estado, cfg]) => {
+    const el = document.getElementById(cfg.cnt);
+    if (el) el.textContent = counts[estado] || 0;
+  });
+  
+  ['col-P','col-C','col-M','col-E'].forEach(colId => {
+    const el = document.getElementById(colId);
+    if (el && el.children.length === 0) {
+      const { ico, txt } = EMPTY_MSGS[colId];
+      el.innerHTML = `<div class="empty-col"><span class="ico">${ico}</span>${txt}</div>`;
+    }
+  });
+  
+  document.getElementById('statP').textContent = counts['Pendiente'] || 0;
+  document.getElementById('statC').textContent = counts['En Cocina'] || 0;
+  document.getElementById('statM').textContent = counts['En Camino'] || 0;
+  document.getElementById('statE').textContent = counts['Entregado'] || 0;
+}
+
+// ============================================================
+// RENDER PEDIDO GLOBAL
+// ============================================================
+function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
+  const p = pedidoDoc.data();
+  const pid = pedidoDoc.id;
+  const estado = p.estado || 'Pendiente';
+  if (counts[estado] !== undefined) counts[estado]++;
+
+  const cfg = ESTADO_MAP[estado];
+  if (!cfg) return;
+  const colEl = document.getElementById(cfg.col);
+  if (!colEl) return;
+
+  const num = p.numeroPedido || '#--';
+  const cliente = p.cliente || {};
+
+  let fechaStr = '--';
+  let horaStr = '--';
+  if (p.fecha) {
+    const d = new Date(p.fecha);
+    fechaStr = d.toLocaleDateString('es-CO');
+    horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
   }
+
+  let itemsHtml = '';
+  if (p.items && p.items.length) {
+    p.items.forEach(it => {
+      itemsHtml += `<div class="item"><span>${escHtml(it.nombre)} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
+    });
+  }
+
+  let acciones = '';
+  if (estado === 'Pendiente') {
+    acciones += `<button class="btn-cook" onclick="cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
+    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+  }
+  if (estado === 'En Cocina') {
+    acciones += `<button class="btn-go" onclick="cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
+    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+  }
+  if (estado === 'En Camino') {
+    acciones += `<button class="btn-done" onclick="cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>`;
+  }
+  if (estado === 'Entregado' || estado === 'Cancelado') {
+    acciones += `<button class="btn-remove" onclick="eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
+  }
+
+  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
   
-  // Limpiar notificaciones
-  notificacionesMostradas = new Set();
+  const card = document.createElement('div');
+  card.className = `pedido-card ${cfg.ring}`;
+  card.innerHTML = `
+    <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
+    <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+      📅 ${fechaStr} ⏰ ${horaStr}
+    </div>
+    <div class="pedido-cliente">
+      <div><span class="label">👤 Cliente:</span> ${escHtml(cliente.nombre || 'Desconocido')}</div>
+      ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${escHtml(cliente.telefono)}</div>` : ''}
+      ${cliente.direccion ? `<div><span class="label">📍 Dirección:</span> ${escHtml(cliente.direccion)}</div>` : ''}
+      ${cliente.barrio ? `<div><span class="label">🏘️ Barrio:</span> ${escHtml(cliente.barrio)}</div>` : ''}
+      ${cliente.observaciones ? `<div><span class="label">📝 Observaciones:</span> ${escHtml(cliente.observaciones)}</div>` : ''}
+    </div>
+    <div class="pedido-items">
+      <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
+      ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
+      <div class="pedido-total">
+        <span>TOTAL</span>
+        <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
+      </div>
+    </div>
+    <div class="accion-btns">${acciones}</div>
+  `;
+  colEl.appendChild(card);
+}
+
+// ============================================================
+// INICIAR ESCUCHA GLOBAL - VERSIÓN CORREGIDA
+// ============================================================
+function iniciarEscuchaGlobal() {
+  if (escuchaGlobalActiva) return;
+  escuchaGlobalActiva = true;
   
-  // Escuchar cambios en TODOS los pedidos de TODAS las tiendas
-  const todasLasTiendasRef = db.collectionGroup('pedidos');
+  console.log('🔔 Iniciando escucha global de todas las tiendas...');
   
-  pedidosUnsub = todasLasTiendasRef
-    .orderBy('fecha', 'desc')
-    .onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
-        if (change.type === 'added') {
-          const data = change.doc.data();
-          const pedidoId = change.doc.id;
-          const tiendaId = change.doc.ref.parent.parent.id; // Obtener ID de la tienda
+  // Obtener todas las tiendas y escuchar cada una individualmente
+  db.collection('tiendas').get().then(snap => {
+    snap.forEach(doc => {
+      const tiendaId = doc.id;
+      const nombreTienda = tiendasCache[tiendaId] || tiendaId;
+      
+      // Escuchar pedidos de cada tienda
+      db.collection('tiendas').doc(tiendaId)
+        .collection('pedidos')
+        .orderBy('fecha', 'desc')
+        .onSnapshot(snapPedidos => {
+          // Guardar pedidos en caché
+          const pedidos = [];
+          snapPedidos.forEach(pedidoDoc => {
+            pedidos.push({ doc: pedidoDoc, data: pedidoDoc.data() });
+          });
+          todosLosPedidos[tiendaId] = pedidos;
           
-          // Solo notificar si es nuevo y está pendiente
-          if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
-            notificacionesMostradas.add(pedidoId);
-            
-            const nombreTienda = tiendasCache[tiendaId] || 'Tienda desconocida';
-            const cliente = data.cliente?.nombre || 'Cliente';
-            const total = data.total || 0;
-            const items = data.items?.length || 0;
-            
-            // ✅ SONIDO Y VOZ CON NOMBRE DE LA TIENDA
-            startAlarm(nombreTienda, cliente);
-            
-            // ✅ MOSTRAR NOTIFICACIÓN FLOTANTE
-            mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId);
-            
-            // ✅ TOAST CON NOMBRE DE TIENDA
-            toast(
-              `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
-              'new', 7000,
-              function() {
-                // Al hacer clic en el toast, seleccionar la tienda
-                const selector = document.getElementById('filtroTienda');
-                if (selector) {
-                  selector.value = tiendaId;
-                  cambiarTiendaSeleccionada();
+          // Verificar nuevos pedidos pendientes
+          snapPedidos.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              const data = change.doc.data();
+              const pedidoId = change.doc.id;
+              
+              if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
+                notificacionesMostradas.add(pedidoId);
+                
+                const cliente = data.cliente?.nombre || 'Cliente';
+                const total = data.total || 0;
+                const items = data.items?.length || 0;
+                
+                // Sonido y voz con nombre de la tienda
+                startAlarm(nombreTienda, cliente);
+                
+                // Notificación flotante
+                mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
+                
+                // Toast
+                toast(
+                  `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
+                  'new', 7000,
+                  function() {
+                    const selector = document.getElementById('filtroTienda');
+                    if (selector) {
+                      selector.value = tiendaId;
+                      cambiarTiendaSeleccionada();
+                    }
+                  }
+                );
+                
+                // Marcar tienda en lista
+                const tiendaElement = document.getElementById('tienda-' + tiendaId);
+                if (tiendaElement) {
+                  tiendaElement.classList.add('tiene-pedidos');
+                  setTimeout(() => {
+                    if (tiendaElement && tiendaSeleccionada !== tiendaId) {
+                      tiendaElement.classList.remove('tiene-pedidos');
+                    }
+                  }, 10000);
                 }
               }
-            );
-            
-            // Marcar la tienda en la lista con un indicador visual
-            const tiendaElement = document.getElementById('tienda-' + tiendaId);
-            if (tiendaElement) {
-              tiendaElement.classList.add('tiene-pedidos');
-              // Quitar el resaltado después de 10 segundos o al seleccionar
-              setTimeout(() => {
-                if (tiendaElement && tiendaSeleccionada !== tiendaId) {
-                  tiendaElement.classList.remove('tiene-pedidos');
-                }
-              }, 10000);
             }
+          });
+          
+          // Si no hay tienda seleccionada, mostrar todos los pedidos
+          if (!tiendaSeleccionada) {
+            mostrarTodosLosPedidos();
           }
-        }
-      });
-    }, err => {
-      console.error('Firestore error:', err);
-      toast('Error al escuchar pedidos globales.', 'error');
+        }, err => {
+          console.error(`Error escuchando tienda ${tiendaId}:`, err);
+        });
     });
+  }).catch(err => {
+    console.error('Error obteniendo tiendas:', err);
+  });
 }
 
 // ============================================================
@@ -1009,7 +1137,6 @@ function escucharPedidosDeTienda(tiendaId) {
     .collection('pedidos')
     .orderBy('fecha', 'desc')
     .onSnapshot(snap => {
-      // Detectar nuevos pedidos pendientes (solo después de la carga inicial)
       if (!esInicial) {
         snap.docChanges().forEach(ch => {
           if (ch.type === 'added' && ch.doc.data().estado === 'Pendiente') {
@@ -1144,12 +1271,11 @@ function renderPedido(doc, tiendaId, counts) {
   }
 
   const esNuevo = estado === 'Pendiente' && !esInicial;
+  
+  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
 
   const card = document.createElement('div');
   card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
-  
-  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
-  
   card.innerHTML = `
     <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
     <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
