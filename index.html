@@ -16,18 +16,37 @@
             min-height: 100vh;
         }
         
-        /* HEADER CON LOGO */
+        /* HEADER CON BANNER */
         .header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 20px 16px;
+            position: relative;
             text-align: center;
-            border-bottom: 4px solid #FFD600;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            min-height: 180px;
         }
-        .header .logo-container {
+        .header .banner {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+        .header .banner-placeholder {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFD600;
+            font-size: 48px;
+        }
+        .header .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -35,38 +54,54 @@
             flex-wrap: wrap;
         }
         .header .logo {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #FFD600;
             background: #fff;
-            padding: 4px;
+            padding: 3px;
         }
-        .header .brand {
+        .header .logo-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #FFD600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 28px;
             font-weight: 900;
+            color: #1a1a2e;
+            border: 3px solid #fff;
+        }
+        .header .info {
+            text-align: left;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .header .info .brand {
+            font-size: 24px;
+            font-weight: 900;
             color: #FFD600;
-            text-shadow: 0 2px 10px rgba(255,214,0,0.3);
         }
-        .header .subtitle {
-            color: #aaa;
+        .header .info .subtitle {
             font-size: 13px;
-            margin-top: 4px;
+            color: #ddd;
         }
-        .header .estado {
+        .header .info .estado {
             display: inline-block;
-            padding: 4px 14px;
+            padding: 3px 14px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
-            margin-top: 6px;
+            margin-top: 4px;
         }
-        .header .estado.abierto {
+        .header .info .estado.abierto {
             background: #00C853;
             color: #fff;
         }
-        .header .estado.cerrado {
+        .header .info .estado.cerrado {
             background: #FF3D00;
             color: #fff;
         }
@@ -346,12 +381,45 @@
 
         /* RESPONSIVE */
         @media (max-width: 480px) {
-            .header .brand { font-size: 22px; }
-            .header .logo { width: 56px; height: 56px; }
+            .header .banner { height: 150px; }
+            .header .banner-placeholder { height: 150px; }
+            .header .info .brand { font-size: 18px; }
+            .header .logo { width: 50px; height: 50px; }
             .producto-img { width: 64px; height: 64px; }
             .producto-info h4 { font-size: 13px; }
             .container { padding: 10px; padding-bottom: 200px; }
             .carrito-flotante { padding: 12px 16px; }
+        }
+
+        /* ESTADO CERRADO - OVERLAY */
+        .tienda-cerrada-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            flex-direction: column;
+            padding: 30px;
+        }
+        .tienda-cerrada-overlay .icono {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .tienda-cerrada-overlay h2 {
+            color: #FFD600;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .tienda-cerrada-overlay p {
+            color: #ddd;
+            font-size: 16px;
+            text-align: center;
+            max-width: 400px;
         }
     </style>
 </head>
@@ -360,13 +428,25 @@
     <!-- TOAST -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- HEADER CON LOGO -->
+    <!-- OVERLAY DE TIENDA CERRADA -->
+    <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay" style="display:none;">
+        <div class="icono">🔒</div>
+        <h2>Tienda Cerrada</h2>
+        <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
+    </div>
+
+    <!-- HEADER CON BANNER -->
     <div class="header">
-        <div class="logo-container">
+        <img class="banner" id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
+        <div class="banner-placeholder" id="bannerPlaceholder" style="display:none;">
+            🍔
+        </div>
+        <div class="overlay">
             <img class="logo" id="logoHeader" src="" alt="Logo" onerror="this.style.display='none'">
-            <div>
+            <div class="logo-placeholder" id="logoPlaceholder" style="display:none;">EM</div>
+            <div class="info">
                 <div class="brand" id="nombreTiendaHeader">EyMotoComidas</div>
-                <div class="subtitle" id="direccionTiendaHeader">Menú digital</div>
+                <div class="subtitle" id="whatsappHeader">📱 Cargando...</div>
                 <span class="estado abierto" id="estadoHeader">🟢 Abierto</span>
             </div>
         </div>
@@ -451,6 +531,7 @@
         let carrito = [];
         let productos = [];
         let tiendaData = {};
+        let tiendaAbierta = true;
 
         // ============================================================
         // CARGAR DATOS DE LA TIENDA
@@ -461,27 +542,68 @@
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
                 if (doc.exists) {
                     tiendaData = doc.data();
+                    
+                    // Nombre de la tienda
                     document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
-                    document.getElementById('direccionTiendaHeader').textContent = '📱 ' + (tiendaData.whatsapp || '');
                     
-                    // Logo
-                    if (tiendaData.logo) {
-                        document.getElementById('logoHeader').src = tiendaData.logo;
-                        document.getElementById('logoHeader').style.display = 'block';
+                    // WhatsApp
+                    document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
+                    
+                    // Banner
+                    const bannerEl = document.getElementById('bannerHeader');
+                    const bannerPlaceholder = document.getElementById('bannerPlaceholder');
+                    if (tiendaData.banner && tiendaData.banner.trim() !== '') {
+                        bannerEl.src = tiendaData.banner;
+                        bannerEl.style.display = 'block';
+                        bannerPlaceholder.style.display = 'none';
+                        bannerEl.onerror = function() {
+                            this.style.display = 'none';
+                            bannerPlaceholder.style.display = 'flex';
+                        };
+                    } else {
+                        bannerEl.style.display = 'none';
+                        bannerPlaceholder.style.display = 'flex';
                     }
-                    
+
+                    // Logo
+                    const logoEl = document.getElementById('logoHeader');
+                    const logoPlaceholder = document.getElementById('logoPlaceholder');
+                    if (tiendaData.logo && tiendaData.logo.trim() !== '') {
+                        logoEl.src = tiendaData.logo;
+                        logoEl.style.display = 'block';
+                        logoPlaceholder.style.display = 'none';
+                        logoEl.onerror = function() {
+                            this.style.display = 'none';
+                            logoPlaceholder.style.display = 'flex';
+                        };
+                    } else {
+                        logoEl.style.display = 'none';
+                        logoPlaceholder.style.display = 'flex';
+                        // Iniciales del nombre
+                        const nombre = tiendaData.nombre || 'EyMoto';
+                        const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                        logoPlaceholder.textContent = iniciales || 'EM';
+                    }
+
                     // Estado
+                    tiendaAbierta = tiendaData.abierta !== false;
                     const estadoEl = document.getElementById('estadoHeader');
-                    if (tiendaData.abierta !== false) {
+                    if (tiendaAbierta) {
                         estadoEl.textContent = '🟢 Abierto';
                         estadoEl.className = 'estado abierto';
+                        document.getElementById('tiendaCerradaOverlay').style.display = 'none';
                     } else {
                         estadoEl.textContent = '🔴 Cerrado';
                         estadoEl.className = 'estado cerrado';
+                        document.getElementById('tiendaCerradaOverlay').style.display = 'flex';
                     }
+                } else {
+                    console.warn('⚠️ La tienda no existe en Firestore');
+                    document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
             } catch (e) {
                 console.error('Error al cargar tienda:', e);
+                mostrarToast('Error al cargar la tienda', 'error');
             }
         }
 
@@ -525,10 +647,10 @@
                     const categoria = p.categoria || 'General';
                     if (categoria !== categoriaActual) {
                         categoriaActual = categoria;
-                        html += `<div class="categoria-titulo">📂 ${categoria}</div>`;
+                        html += `<div class="categoria-titulo">📂 ${escHtml(categoria)}</div>`;
                     }
 
-                    const imagenHtml = p.img 
+                    const imagenHtml = p.img && p.img.trim() !== ''
                         ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                         : `<div class="producto-img sin-imagen">🍔</div>`;
 
@@ -557,6 +679,8 @@
                     if (el) el.textContent = item.cantidad;
                 });
 
+                console.log(`✅ ${productos.length} productos cargados`);
+
             } catch (error) {
                 console.error('Error al cargar productos:', error);
                 lista.innerHTML = `
@@ -571,14 +695,13 @@
         // FUNCIONES DEL CARRITO
         // ============================================================
         function agregarAlCarrito(productoId) {
-            const producto = productos.find(p => p.id === productoId);
-            if (!producto) return;
-
-            // Verificar si la tienda está abierta
-            if (tiendaData.abierta === false) {
+            if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
                 return;
             }
+
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
 
             const existente = carrito.find(p => p.id === productoId);
             if (existente) {
@@ -593,7 +716,6 @@
                 });
             }
             actualizarCarrito();
-            // Actualizar cantidad en la UI
             const el = document.getElementById(`cant-${productoId}`);
             if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
         }
@@ -654,7 +776,6 @@
             carrito = [];
             actualizarCarrito();
             document.getElementById('formDatos').style.display = 'none';
-            // Resetear cantidades en UI
             productos.forEach(p => {
                 const el = document.getElementById(`cant-${p.id}`);
                 if (el) el.textContent = '0';
@@ -674,14 +795,13 @@
         // ENVIAR PEDIDO
         // ============================================================
         async function enviarPedido() {
-            if (carrito.length === 0) {
-                mostrarToast('El carrito está vacío', 'error');
+            if (!tiendaAbierta) {
+                mostrarToast('⚠️ La tienda está cerrada', 'error');
                 return;
             }
 
-            // Verificar si la tienda está abierta
-            if (tiendaData.abierta === false) {
-                mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
+            if (carrito.length === 0) {
+                mostrarToast('El carrito está vacío', 'error');
                 return;
             }
 
@@ -844,6 +964,7 @@
         });
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
+        console.log('🏪 Tienda ID:', TIENDA_ID);
     </script>
 </body>
 </html>
