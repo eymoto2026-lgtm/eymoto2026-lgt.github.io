@@ -521,7 +521,6 @@ function toast(msg, type = 'info', dur = 4000, onClick = null) {
 // NOTIFICACIÓN FLOTANTE
 // ============================================================
 function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId, pedidoId) {
-  // Evitar duplicados
   const notifId = `notif-${pedidoId}`;
   if (document.getElementById(notifId)) return;
   
@@ -650,7 +649,6 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 async function inicializar() {
   await cargarTiendas();
-  // Iniciar escucha de TODAS las tiendas automáticamente
   iniciarEscuchaGlobal();
 }
 
@@ -900,18 +898,14 @@ function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
   tiendaSeleccionada = selector.value;
   
-  // Detener escucha anterior de tienda específica
   if (pedidosUnsub && tiendaSeleccionada) {
     pedidosUnsub();
     pedidosUnsub = null;
   }
   
   if (tiendaSeleccionada) {
-    // Cambiar a modo "ver pedidos de esta tienda"
     escucharPedidosDeTienda(tiendaSeleccionada);
-    // La escucha global sigue activa en segundo plano
   } else {
-    // Si está en "Todas las tiendas", mostrar todos los pedidos pendientes
     mostrarTodosLosPedidos();
   }
 }
@@ -923,16 +917,13 @@ function mostrarTodosLosPedidos() {
   resetKanban();
   const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
   
-  // Recorrer todas las tiendas con pedidos
   Object.keys(todosLosPedidos).forEach(tiendaId => {
     const pedidos = todosLosPedidos[tiendaId] || [];
     pedidos.forEach(pedido => {
-      // Renderizar cada pedido con su tienda
       renderPedidoGlobal(pedido.doc, tiendaId, counts);
     });
   });
   
-  // Actualizar contadores
   Object.entries(ESTADO_MAP).forEach(([estado, cfg]) => {
     const el = document.getElementById(cfg.cnt);
     if (el) el.textContent = counts[estado] || 0;
@@ -1031,7 +1022,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
 }
 
 // ============================================================
-// INICIAR ESCUCHA GLOBAL - VERSIÓN CORREGIDA
+// INICIAR ESCUCHA GLOBAL
 // ============================================================
 function iniciarEscuchaGlobal() {
   if (escuchaGlobalActiva) return;
@@ -1039,25 +1030,21 @@ function iniciarEscuchaGlobal() {
   
   console.log('🔔 Iniciando escucha global de todas las tiendas...');
   
-  // Obtener todas las tiendas y escuchar cada una individualmente
   db.collection('tiendas').get().then(snap => {
     snap.forEach(doc => {
       const tiendaId = doc.id;
       const nombreTienda = tiendasCache[tiendaId] || tiendaId;
       
-      // Escuchar pedidos de cada tienda
       db.collection('tiendas').doc(tiendaId)
         .collection('pedidos')
         .orderBy('fecha', 'desc')
         .onSnapshot(snapPedidos => {
-          // Guardar pedidos en caché
           const pedidos = [];
           snapPedidos.forEach(pedidoDoc => {
             pedidos.push({ doc: pedidoDoc, data: pedidoDoc.data() });
           });
           todosLosPedidos[tiendaId] = pedidos;
           
-          // Verificar nuevos pedidos pendientes
           snapPedidos.docChanges().forEach(change => {
             if (change.type === 'added') {
               const data = change.doc.data();
@@ -1070,13 +1057,9 @@ function iniciarEscuchaGlobal() {
                 const total = data.total || 0;
                 const items = data.items?.length || 0;
                 
-                // Sonido y voz con nombre de la tienda
                 startAlarm(nombreTienda, cliente);
-                
-                // Notificación flotante
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
-                // Toast
                 toast(
                   `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
                   'new', 7000,
@@ -1089,7 +1072,6 @@ function iniciarEscuchaGlobal() {
                   }
                 );
                 
-                // Marcar tienda en lista
                 const tiendaElement = document.getElementById('tienda-' + tiendaId);
                 if (tiendaElement) {
                   tiendaElement.classList.add('tiene-pedidos');
@@ -1103,7 +1085,6 @@ function iniciarEscuchaGlobal() {
             }
           });
           
-          // Si no hay tienda seleccionada, mostrar todos los pedidos
           if (!tiendaSeleccionada) {
             mostrarTodosLosPedidos();
           }
@@ -1122,7 +1103,6 @@ function iniciarEscuchaGlobal() {
 function escucharPedidosDeTienda(tiendaId) {
   if (!tiendaId) return;
   
-  // Detener escucha anterior
   if (pedidosUnsub) {
     pedidosUnsub();
     pedidosUnsub = null;
@@ -1302,14 +1282,33 @@ function renderPedido(doc, tiendaId, counts) {
   colEl.appendChild(card);
 }
 
+// ============================================================
+// ✅ CAMBIAR ESTADO - CON SELECCIÓN AUTOMÁTICA DE TIENDA
+// ============================================================
 async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
   try {
     stopAlarm();
     await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
     toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
+    
+    // ✅ NUEVO: Si el pedido pasa a "En Cocina", seleccionar la tienda automáticamente
+    if (nuevoEstado === 'En Cocina') {
+      const selector = document.getElementById('filtroTienda');
+      if (selector) {
+        selector.value = tiendaId;
+        cambiarTiendaSeleccionada();
+        const nombreTienda = tiendasCache[tiendaId] || 'la tienda';
+        toast(`📋 Ahora viendo pedidos de ${nombreTienda}`, 'info', 2500);
+      }
+    }
+  } catch(e) { 
+    toast('Error: ' + e.message, 'error'); 
+  }
 }
 
+// ============================================================
+// ELIMINAR PEDIDO
+// ============================================================
 async function eliminarPedido(tiendaId, pedidoId) {
   if (!confirm('¿Remover este pedido?')) return;
   try {
@@ -1319,6 +1318,9 @@ async function eliminarPedido(tiendaId, pedidoId) {
   } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
 
+// ============================================================
+// ESCAPE HTML
+// ============================================================
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -1334,6 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 console.log('✅ Panel de administración cargado correctamente');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
+console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
 </script>
 </body>
 </html>
