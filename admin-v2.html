@@ -578,11 +578,7 @@ window.cancelarEdicionProducto = function() {
 window.eliminarProductoOriginal = async function(idProd) {
   if(!confirm("¿Seguro que deseas remover este producto?")) return;
   try {
-    await db.collection("productos").doc(idProd).delete();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
+ 
 // --- INTERRUPTOR DISPONIBILIDAD ---
 window.cargarEstadoTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
