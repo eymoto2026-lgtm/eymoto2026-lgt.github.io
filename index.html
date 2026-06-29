@@ -612,7 +612,7 @@
             </div>
         </div>
         
-        <!-- FORMULARIO - OCULTO HASTA QUE SE HAGA CLIC EN COMPRAR -->
+        <!-- FORMULARIO - OCULTO HASTA CLIC EN COMPRAR -->
         <div class="form-datos" id="formDatos">
             <span class="label-form">👤 Datos de entrega</span>
             <input type="text" id="clienteNombre" placeholder="Tu nombre completo">
@@ -999,7 +999,6 @@
                 sortedCategorias.forEach((cat, index) => {
                     let items = [];
                     if (cat === 'Todos') {
-                        // "Todos" muestra TODOS los productos
                         items = productos;
                     } else {
                         items = categoriasMap.get(cat) || [];
@@ -1072,7 +1071,6 @@
         function seleccionarCategoria(categoria) {
             categoriaActiva = categoria;
             
-            // Actualizar pestañas
             document.querySelectorAll('.categoria-tab').forEach(tab => {
                 tab.classList.remove('activa');
                 if (tab.dataset.categoria === categoria) {
@@ -1088,7 +1086,6 @@
                 }
             });
 
-            // Mostrar/ocultar secciones
             document.querySelectorAll('.categoria-seccion').forEach(seccion => {
                 const id = seccion.id.replace('seccion-', '');
                 const categoriaSinEspacios = categoria.replace(/\s/g, '');
@@ -1101,7 +1098,7 @@
         }
 
         // ============================================================
-        // FUNCIONES DEL CARRITO
+        // FUNCIONES DEL CARRITO - EL FORMULARIO NO SE MUESTRA AQUÍ
         // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
@@ -1127,8 +1124,8 @@
             const el = document.getElementById(`cant-${productoId}`);
             if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
             
-            // Ocultar formulario si está visible (se oculta al agregar productos)
-            ocultarFormulario();
+            // ✅ EL FORMULARIO NO SE MUESTRA AL AGREGAR PRODUCTOS
+            // Solo se muestra cuando se hace clic en "Comprar Ahora"
         }
 
         function quitarDelCarrito(productoId) {
@@ -1142,11 +1139,6 @@
             actualizarCarrito();
             const el = document.getElementById(`cant-${productoId}`);
             if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
-            
-            // Si el carrito queda vacío, ocultar formulario
-            if (carrito.length === 0) {
-                ocultarFormulario();
-            }
         }
 
         function actualizarCarrito() {
@@ -1162,6 +1154,7 @@
                 `;
                 totalContainer.textContent = '$0';
                 btnComprar.disabled = true;
+                // ✅ Ocultar formulario si el carrito está vacío
                 ocultarFormulario();
                 return;
             }
@@ -1217,7 +1210,7 @@
         }
 
         // ============================================================
-        // MOSTRAR FORMULARIO Y ENVIAR PEDIDO
+        // MOSTRAR FORMULARIO Y ENVIAR PEDIDO - ¡SOLO AQUÍ SE MUESTRA!
         // ============================================================
         function mostrarFormularioYEnviar() {
             if (carrito.length === 0) {
@@ -1235,7 +1228,7 @@
                 return;
             }
             
-            // Mostrar formulario
+            // ✅ SOLO AQUÍ SE MUESTRA EL FORMULARIO
             mostrarFormulario();
             mostrarToast('📝 Completa tus datos y presiona "Comprar" nuevamente', 'info', 3000);
         }
