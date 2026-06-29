@@ -415,7 +415,7 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid #eee;
-            display: none; /* Oculto por defecto */
+            display: none;
         }
         .form-datos.visible {
             display: block;
@@ -914,7 +914,7 @@
         }
 
         // ============================================================
-        // CARGAR PRODUCTOS - "TODOS" muestra todos los productos
+        // CARGAR PRODUCTOS
         // ============================================================
         async function cargarProductos() {
             const lista = document.getElementById('listaProductos');
@@ -953,12 +953,10 @@
                     categoriasMap.get(categoria).push({ id, ...p });
                 });
 
-                // Ordenar categorías: "Todos" primero, luego alfabéticamente
                 const categorias = Array.from(categoriasMap.keys());
                 const sortedCategorias = ['Todos', ...categorias.filter(c => c !== 'Todos').sort()];
                 categoriasData = sortedCategorias;
 
-                // Generar pestañas
                 let tabsHtml = '';
                 sortedCategorias.forEach((cat, index) => {
                     const count = cat === 'Todos' ? productos.length : (categoriasMap.get(cat)?.length || 0);
@@ -985,7 +983,6 @@
                 });
                 categoriasContainer.innerHTML = tabsHtml;
 
-                // Mostrar/ocultar indicador de scroll
                 const wrapper = document.getElementById('categoriasWrapper');
                 if (wrapper.scrollWidth > wrapper.clientWidth) {
                     scrollIndicator.classList.add('visible');
@@ -994,7 +991,6 @@
                     scrollIndicator.classList.remove('visible');
                 }
 
-                // Generar productos por categoría
                 let productosHtml = '';
                 sortedCategorias.forEach((cat, index) => {
                     let items = [];
@@ -1041,18 +1037,15 @@
 
                 lista.innerHTML = productosHtml;
 
-                // Aplicar colores
                 if (colorPrincipal) {
                     aplicarColoresDinamicos(colorPrincipal);
                 }
 
-                // Actualizar cantidades
                 carrito.forEach(item => {
                     const el = document.getElementById(`cant-${item.id}`);
                     if (el) el.textContent = item.cantidad;
                 });
 
-                // Seleccionar primera categoría (Todos)
                 if (sortedCategorias.length > 0) {
                     categoriaActiva = sortedCategorias[0];
                 }
@@ -1098,7 +1091,7 @@
         }
 
         // ============================================================
-        // FUNCIONES DEL CARRITO - EL FORMULARIO NO SE MUESTRA AQUÍ
+        // FUNCIONES DEL CARRITO
         // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
@@ -1123,9 +1116,6 @@
             actualizarCarrito();
             const el = document.getElementById(`cant-${productoId}`);
             if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
-            
-            // ✅ EL FORMULARIO NO SE MUESTRA AL AGREGAR PRODUCTOS
-            // Solo se muestra cuando se hace clic en "Comprar Ahora"
         }
 
         function quitarDelCarrito(productoId) {
@@ -1154,7 +1144,6 @@
                 `;
                 totalContainer.textContent = '$0';
                 btnComprar.disabled = true;
-                // ✅ Ocultar formulario si el carrito está vacío
                 ocultarFormulario();
                 return;
             }
@@ -1197,7 +1186,6 @@
             const form = document.getElementById('formDatos');
             form.classList.add('visible');
             formularioVisible = true;
-            // Hacer scroll al formulario
             setTimeout(() => {
                 form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
@@ -1210,7 +1198,7 @@
         }
 
         // ============================================================
-        // MOSTRAR FORMULARIO Y ENVIAR PEDIDO - ¡SOLO AQUÍ SE MUESTRA!
+        // MOSTRAR FORMULARIO Y ENVIAR PEDIDO
         // ============================================================
         function mostrarFormularioYEnviar() {
             if (carrito.length === 0) {
@@ -1222,13 +1210,11 @@
                 return;
             }
             
-            // Si el formulario ya está visible, enviar el pedido
             if (formularioVisible) {
                 enviarPedido();
                 return;
             }
             
-            // ✅ SOLO AQUÍ SE MUESTRA EL FORMULARIO
             mostrarFormulario();
             mostrarToast('📝 Completa tus datos y presiona "Comprar" nuevamente', 'info', 3000);
         }
@@ -1242,7 +1228,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO
+        // ENVIAR PEDIDO - CON EMOJIS
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -1288,6 +1274,9 @@
                 };
             });
 
+            // ============================================================
+            // MENSAJE WHATSAPP CON EMOJIS
+            // ============================================================
             let mensajeWhatsApp = `🏪 *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
             mensajeWhatsApp += `🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n`;
             mensajeWhatsApp += `📅 *Fecha:* ${fechaStr}\n`;
@@ -1298,11 +1287,16 @@
             if (barrio) mensajeWhatsApp += `🏘️ *Barrio:*\n${barrio}\n\n`;
             if (observaciones) mensajeWhatsApp += `📝 *Observaciones:*\n${observaciones}\n\n`;
             mensajeWhatsApp += `🧾 *PRODUCTOS*\n\n`;
+            
             items.forEach(item => {
                 mensajeWhatsApp += `🍜 ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
             });
+            
             mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
+            // ============================================================
+            // GUARDAR EN FIRESTORE
+            // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -1329,12 +1323,16 @@
                 console.error('❌ Error al guardar en Firestore:', error);
             }
 
+            // ============================================================
+            // ENVIAR POR WHATSAPP
+            // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
+            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -1384,7 +1382,6 @@
             await cargarTienda();
             await cargarProductos();
 
-            // Tecla Enter para enviar pedido (solo si el formulario está visible)
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && document.activeElement.tagName !== 'TEXTAREA') {
                     const btn = document.getElementById('btnComprar');
