@@ -2,10 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Admin V2 Stable</title>
+<title>Admin V2 PRO REAL</title>
 
 <style>
-body {font-family: Arial;background:#111;color:#fff;margin:0}
+body{font-family:Arial;background:#111;color:#fff;margin:0}
 header{background:#000;color:#f5c400;padding:15px;text-align:center}
 .container{padding:20px;max-width:1200px;margin:auto}
 .card{background:#1c1c1c;padding:15px;margin-bottom:15px;border-radius:10px}
@@ -22,7 +22,7 @@ button{background:#f5c400;color:#000;font-weight:bold;cursor:pointer}
 
 <body>
 
-<header>ADMIN V2 ESTABLE</header>
+<header>🚀 ADMIN V2 PRO REAL</header>
 
 <div class="container">
 
@@ -34,7 +34,6 @@ button{background:#f5c400;color:#000;font-weight:bold;cursor:pointer}
 <button id="loginBtn">Entrar</button>
 </div>
 
-<!-- PANEL -->
 <div id="panel" class="hidden">
 
 <!-- TIENDAS -->
@@ -52,17 +51,29 @@ button{background:#f5c400;color:#000;font-weight:bold;cursor:pointer}
 <div id="listaTiendas"></div>
 </div>
 
+<!-- CATEGORÍAS -->
+<div class="card">
+<h3>📂 Categorías</h3>
+
+<select id="catTienda"></select>
+<input type="hidden" id="editCatId">
+<input id="catNombre" placeholder="Nombre categoría">
+
+<button onclick="guardarCategoria()">Guardar Categoría</button>
+
+<div id="listaCategorias"></div>
+</div>
+
 <!-- PRODUCTOS -->
 <div class="card">
 <h3>📦 Productos</h3>
 
-<select id="selectTienda" onchange="cargarProductos()"></select>
+<select id="prodTienda"></select>
+<select id="prodCategoria"></select>
 
 <input type="hidden" id="editProdId">
 <input id="pNombre" placeholder="Nombre">
 <input id="pPrecio" placeholder="Precio">
-<input id="pCat" placeholder="Categoría">
-<textarea id="pDesc"></textarea>
 
 <button onclick="guardarProducto()">Guardar Producto</button>
 
@@ -71,10 +82,9 @@ button{background:#f5c400;color:#000;font-weight:bold;cursor:pointer}
 
 <!-- PEDIDOS -->
 <div class="card">
-<h3>📋 Pedidos</h3>
+<h3>📋 Pedidos en tiempo real</h3>
 
 <select id="pedidoTienda"></select>
-
 <div id="pedidos"></div>
 <div id="estado"></div>
 
@@ -102,8 +112,7 @@ projectId:"eymotocomidas"
 const auth=firebase.auth();
 const db=firebase.firestore();
 
-/* STATE */
-let tiendaListener=null;
+let pedidoListener=null;
 
 /* ================= AUTH ================= */
 auth.onAuthStateChanged(u=>{
@@ -117,10 +126,7 @@ panel.classList.add("hidden");
 }
 });
 
-loginBtn.onclick=()=>{
-auth.signInWithEmailAndPassword(email.value,password.value);
-};
-
+loginBtn.onclick=()=>auth.signInWithEmailAndPassword(email.value,password.value);
 logout.onclick=()=>auth.signOut();
 
 /* ================= INIT ================= */
@@ -133,7 +139,8 @@ async function cargarTiendas(){
 const snap=await db.collection("tiendas").get();
 
 listaTiendas.innerHTML="";
-selectTienda.innerHTML="";
+catTienda.innerHTML="";
+prodTienda.innerHTML="";
 pedidoTienda.innerHTML="";
 
 snap.forEach(d=>{
@@ -142,23 +149,20 @@ const t=d.data();
 listaTiendas.innerHTML+=`
 <div class="item">
 <b>${t.nombre}</b>
-
 <div class="flex">
-<button onclick="editarTienda('${d.id}','${t.nombre}','${t.whatsapp}','${t.logo}','${t.banner}')">Edit</button>
+<button onclick="editarTienda('${d.id}')">Edit</button>
 <button onclick="eliminarTienda('${d.id}')">Del</button>
-<button onclick="toggle('${d.id}',${t.abierta!==false})">
-${t.abierta!==false?'Cerrar':'Abrir'}
-</button>
 </div>
 </div>
 `;
 
-selectTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
+catTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
+prodTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
 pedidoTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
 });
 }
 
-/* GUARDAR TIENDA */
+/* ================= TIENDAS CRUD ================= */
 async function guardarTienda(){
 const id=editTiendaId.value;
 
@@ -166,49 +170,90 @@ const data={
 nombre:tNombre.value,
 whatsapp:tWhatsapp.value,
 logo:tLogo.value,
-banner:tBanner.value,
-abierta:true
+banner:tBanner.value
 };
 
-if(id){
-await db.collection("tiendas").doc(id).set(data,{merge:true});
-}else{
-await db.collection("tiendas").add(data);
-}
+if(id) await db.collection("tiendas").doc(id).set(data,{merge:true});
+else await db.collection("tiendas").add(data);
 
-limpiarTienda();
 cargarTiendas();
 }
 
-/* EDITAR */
-function editarTienda(id,n,w,l,b){
+function editarTienda(id){
+db.collection("tiendas").doc(id).get().then(d=>{
+const t=d.data();
 editTiendaId.value=id;
-tNombre.value=n;
-tWhatsapp.value=w;
-tLogo.value=l;
-tBanner.value=b;
+tNombre.value=t.nombre;
+tWhatsapp.value=t.whatsapp;
+tLogo.value=t.logo;
+tBanner.value=t.banner;
+});
 }
 
-/* ELIMINAR */
 async function eliminarTienda(id){
 await db.collection("tiendas").doc(id).delete();
 cargarTiendas();
 }
 
-/* TOGGLE */
-async function toggle(id,state){
-await db.collection("tiendas").doc(id).update({
-abierta:!state
+/* ================= CATEGORÍAS ================= */
+async function guardarCategoria(){
+const t=catTienda.value;
+
+await db.collection("tiendas").doc(t)
+.collection("categorias").add({
+nombre:catNombre.value
 });
-cargarTiendas();
+
+cargarCategorias();
 }
 
-/* ================= PRODUCTOS ================= */
-async function cargarProductos(){
-const id=selectTienda.value;
-if(!id) return;
+async function cargarCategorias(){
+const t=catTienda.value;
+if(!t) return;
 
-const snap=await db.collection("tiendas").doc(id).collection("productos").get();
+const snap=await db.collection("tiendas").doc(t)
+.collection("categorias").get();
+
+listaCategorias.innerHTML="";
+prodCategoria.innerHTML="";
+
+snap.forEach(d=>{
+const c=d.data();
+
+listaCategorias.innerHTML+=`
+<div class="item">${c.nombre}</div>
+`;
+
+prodCategoria.innerHTML+=`
+<option value="${c.nombre}">${c.nombre}</option>
+`;
+});
+}
+
+catTienda.onchange=cargarCategorias;
+
+/* ================= PRODUCTOS ================= */
+async function guardarProducto(){
+const t=prodTienda.value;
+
+const data={
+nombre:pNombre.value,
+precio:pPrecio.value,
+categoria:prodCategoria.value
+};
+
+await db.collection("tiendas").doc(t)
+.collection("productos").add(data);
+
+cargarProductos();
+}
+
+async function cargarProductos(){
+const t=prodTienda.value;
+if(!t) return;
+
+const snap=await db.collection("tiendas").doc(t)
+.collection("productos").get();
 
 listaProductos.innerHTML="";
 
@@ -218,42 +263,12 @@ const p=d.data();
 listaProductos.innerHTML+=`
 <div class="item">
 ${p.nombre} - $${p.precio}
-<button onclick="delProd('${d.id}')">X</button>
 </div>
 `;
 });
 }
 
-async function guardarProducto(){
-const id=selectTienda.value;
-if(!id) return alert("elige tienda");
-
-const pid=editProdId.value;
-
-const data={
-nombre:pNombre.value,
-precio:pPrecio.value,
-categoria:pCat.value,
-descripcion:pDesc.value
-};
-
-const ref=db.collection("tiendas").doc(id).collection("productos");
-
-if(pid){
-await ref.doc(pid).set(data,{merge:true});
-}else{
-await ref.add(data);
-}
-
-cargarProductos();
-}
-
-/* DELETE PRODUCT */
-async function delProd(id){
-const t=selectTienda.value;
-await db.collection("tiendas").doc(t).collection("productos").doc(id).delete();
-cargarProductos();
-}
+prodTienda.onchange=cargarProductos;
 
 /* ================= PEDIDOS ================= */
 pedidoTienda.onchange=()=>{
@@ -261,22 +276,21 @@ listenPedidos();
 };
 
 function listenPedidos(){
-const id=pedidoTienda.value;
-if(!id) return;
+const t=pedidoTienda.value;
+if(!t) return;
 
-if(tiendaListener) tiendaListener();
+if(pedidoListener) pedidoListener();
 
-tiendaListener=db.collection("tiendas").doc(id)
+pedidoListener=db.collection("tiendas").doc(t)
 .collection("pedidos")
 .orderBy("fecha","desc")
 .onSnapshot(snap=>{
 
-pedidos.innerHTML="";
 let pendientes=0;
+pedidos.innerHTML="";
 
 snap.forEach(d=>{
 const p=d.data();
-
 if(p.estado==="Pendiente") pendientes++;
 
 pedidos.innerHTML+=`
@@ -288,7 +302,7 @@ pedidos.innerHTML+=`
 
 estado.innerHTML="Pendientes: "+pendientes;
 
-/* ALARMA */
+/* 🔊 ALARMA REAL */
 if(pendientes>0){
 const msg=new SpeechSynthesisUtterance("Nuevo pedido pendiente");
 speechSynthesis.speak(msg);
