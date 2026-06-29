@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         
-        /* HEADER CON BANNER - VERSIÓN CORREGIDA */
+        /* HEADER CON BANNER */
         .header {
             position: relative;
             width: 100%;
@@ -24,7 +24,7 @@
             background: #1a1a2e;
         }
         
-        /* Contenedor del banner - ajuste completo */
+        /* Contenedor del banner */
         .banner-container {
             width: 100%;
             height: 220px;
@@ -49,7 +49,7 @@
             background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
         
-        /* Overlay con logo y datos - siempre visible sobre el banner */
+        /* Overlay con logo y datos */
         .header-overlay {
             position: absolute;
             bottom: 0;
@@ -64,7 +64,6 @@
             z-index: 2;
         }
         
-        /* Fondo adicional para legibilidad si el banner es claro */
         .header-overlay .info-bg {
             position: absolute;
             inset: 0;
@@ -72,30 +71,31 @@
             z-index: -1;
         }
         
-        /* ===== LOGO MÁS GRANDE ===== */
+        /* ===== LOGO SIN BORDES Y MÁS GRANDE ===== */
         .header .logo {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #FFD600;
-            background: #fff;
-            padding: 4px;
+            width: 100px;
+            height: 100px;
+            border-radius: 0;
+            object-fit: contain;
+            display: block;
             flex-shrink: 0;
+            background: transparent;
+            border: none;
+            padding: 0;
         }
         .header .logo-placeholder {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            border-radius: 0;
             background: #FFD600;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 40px;
             font-weight: 900;
             color: #1a1a2e;
-            border: 3px solid #fff;
             flex-shrink: 0;
+            border: none;
         }
         
         .header .info {
@@ -170,7 +170,7 @@
             gap: 10px;
         }
 
-        /* PRODUCTOS - TARJETAS CON IMAGEN */
+        /* PRODUCTOS */
         .producto-card {
             background: #fff;
             border-radius: 16px;
@@ -460,8 +460,8 @@
         /* RESPONSIVE */
         @media (max-width: 480px) {
             .banner-container { height: 160px; }
-            .header .logo { width: 60px; height: 60px; }
-            .header .logo-placeholder { width: 60px; height: 60px; font-size: 24px; }
+            .header .logo { width: 70px; height: 70px; }
+            .header .logo-placeholder { width: 70px; height: 70px; font-size: 28px; }
             .header .info .brand { font-size: 20px; }
             .header-overlay { padding: 14px; gap: 12px; }
             .producto-img { width: 64px; height: 64px; }
@@ -494,6 +494,7 @@
         <div class="header-overlay" id="headerOverlay">
             <div class="info-bg"></div>
             
+            <!-- LOGO SIN BORDES Y MÁS GRANDE -->
             <img class="logo" id="logoHeader" src="" alt="Logo" onerror="this.style.display='none'">
             <div class="logo-placeholder" id="logoPlaceholder" style="display:none;">EM</div>
             
@@ -693,7 +694,7 @@
                     // WhatsApp
                     document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
                     
-                    // BANNER - CORREGIDO
+                    // BANNER
                     const bannerEl = document.getElementById('bannerHeader');
                     const bannerPlaceholder = document.getElementById('bannerPlaceholder');
                     
@@ -716,7 +717,7 @@
                         aplicarContrasteAutomatico(null);
                     }
 
-                    // LOGO - MÁS GRANDE
+                    // LOGO - SIN BORDES Y MÁS GRANDE
                     const logoEl = document.getElementById('logoHeader');
                     const logoPlaceholder = document.getElementById('logoPlaceholder');
                     if (tiendaData.logo && tiendaData.logo.trim() !== '') {
