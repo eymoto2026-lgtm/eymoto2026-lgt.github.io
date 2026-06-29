@@ -1,1213 +1,1359 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin EyMoto — Panel General</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
-:root{
-  --yellow:#FFD600;
-  --yellow-dim:#e6c200;
-  --yellow-bg:rgba(255,214,0,0.12);
-  --green:#00C853;--green-bg:rgba(0,200,83,0.12);
-  --blue:#00B0FF;--blue-bg:rgba(0,176,255,0.12);
-  --red:#FF3D00;--red-bg:rgba(255,61,0,0.12);
-  --orange:#FF6900;--orange-bg:rgba(255,105,0,0.12);
-  --surface:#141414;--surface2:#1e1e1e;--surface3:#252525;
-  --border:#2e2e2e;--border2:#3a3a3a;
-  --text-muted:#888;--text-sub:#bbb;
-  --radius:10px;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyMotoComidas - Menú Digital</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        
+        .banner-container {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            background: #1a1a2e;
+        }
+        .banner-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .banner-container .banner-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #FFD600;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+        
+        .header-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 20px;
+            background: linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            z-index: 2;
+        }
+        .header-overlay .info-bg {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: -1;
+        }
+        
+        .header .logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 0;
+            object-fit: contain;
+            display: block;
+            flex-shrink: 0;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+        .header .logo-placeholder {
+            width: 70px;
+            height: 70px;
+            border-radius: 0;
+            background: #FFD600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 900;
+            color: #1a1a2e;
+            flex-shrink: 0;
+            border: none;
+        }
+        
+        .header .info {
+            flex: 1;
+            min-width: 0;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .header .info .brand {
+            font-size: 22px;
+            font-weight: 900;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .header .info .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+        }
+        .header .info .estado {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 3px;
+            text-shadow: none;
+        }
+        .header .info .estado.abierto {
+            background: #00C853;
+            color: #fff;
+        }
+        .header .info .estado.cerrado {
+            background: #FF3D00;
+            color: #fff;
+        }
 
-input,select,textarea,button{
-  font-family:inherit;font-size:14px;border-radius:var(--radius);
-  border:1px solid var(--border2);background:var(--surface3);
-  color:#fff;padding:11px 14px;width:100%;box-sizing:border-box;
-  outline:none;transition:border-color .2s,background .2s;
-}
-input:focus,select:focus,textarea:focus{border-color:var(--yellow)}
-select option{background:#1e1e1e}
-button{
-  background:var(--yellow);color:#1a1a2e;font-weight:700;
-  border:none;cursor:pointer;letter-spacing:.3px;
-  transition:background .15s,transform .1s;
-}
-button:hover{background:var(--yellow-dim)}
-button:active{transform:scale(.98)}
-.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text-sub)}
-.btn-ghost:hover{background:var(--surface3)}
-.btn-sm{padding:7px 12px;font-size:12px;width:auto}
-.btn-danger{background:#c0392b;color:#fff}
-.btn-danger:hover{background:#a93226}
-.btn-info{background:#0288d1;color:#fff}
-.btn-info:hover{background:#0277bd}
-.hidden{display:none!important}
-label{
-  display:block;font-size:11px;font-weight:700;
-  color:var(--text-muted);margin-bottom:5px;
-  text-transform:uppercase;letter-spacing:.6px;
-}
-.form-group{margin-bottom:14px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.section-title{
-  font-size:11px;font-weight:700;color:var(--yellow);
-  text-transform:uppercase;letter-spacing:1px;
-  margin-bottom:16px;display:flex;align-items:center;gap:10px;
-}
-.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:20px;margin-bottom:18px;
-}
+        .text-color-light {
+            color: #ffffff !important;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8) !important;
+        }
+        .text-color-dark {
+            color: #1a1a2e !important;
+            text-shadow: 0 2px 8px rgba(255,255,255,0.3) !important;
+        }
+        .brand-light {
+            color: #ffffff !important;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8) !important;
+        }
+        .brand-dark {
+            color: #1a1a2e !important;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.3) !important;
+        }
 
-/* TOAST */
-#toastWrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{
-  background:#1e1e1e;border:1px solid var(--border2);border-radius:12px;
-  padding:12px 16px;display:flex;align-items:center;gap:10px;
-  font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.5);
-  animation:toastIn .3s ease;pointer-events:auto;max-width:380px;
-  cursor:pointer;
-}
-.toast:hover{opacity:0.9}
-.toast.t-success{border-left:3px solid var(--green)}
-.toast.t-error{border-left:3px solid var(--red)}
-.toast.t-info{border-left:3px solid var(--blue)}
-.toast.t-warn{border-left:3px solid var(--yellow)}
-.toast.t-new{border-left:3px solid var(--yellow);border-top-color:var(--yellow)}
-.toast-fade{animation:toastOut .3s ease forwards}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-@keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
-.toast .toast-tienda{font-weight:700;color:var(--yellow)}
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 12px;
+            padding-bottom: 200px;
+        }
 
-/* LOGIN */
-#loginBox{max-width:420px;margin:60px auto;padding:32px}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .brand{
-  display:inline-block;background:var(--yellow);color:#1a1a2e;
-  font-size:26px;font-weight:900;padding:10px 24px;border-radius:30px;
-}
-#loginBox h2{font-size:22px;font-weight:700;margin-bottom:4px}
-#loginBox .sub{color:var(--text-muted);font-size:14px;margin-bottom:26px}
-#loginMsg{color:var(--red);font-size:13px;margin-top:10px;min-height:20px}
+        .categorias-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 4px 0 12px 0;
+            margin-bottom: 4px;
+            border-bottom: 2px solid #eee;
+        }
+        .categorias-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        .categorias-container {
+            display: inline-flex;
+            gap: 6px;
+            padding: 0 2px;
+        }
+        .categoria-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e0e0e0;
+            background: #f0f0f0;
+            color: #555;
+            white-space: nowrap;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .categoria-tab:hover {
+            transform: scale(1.02);
+        }
+        .categoria-tab.activa {
+            border-color: transparent;
+            color: #ffffff;
+        }
+        .categoria-tab .tab-icono {
+            font-size: 14px;
+        }
+        .categoria-tab .tab-badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.25);
+            padding: 0 8px;
+            border-radius: 10px;
+            line-height: 18px;
+        }
+        .categoria-tab.activa .tab-badge {
+            background: rgba(255,255,255,0.3);
+        }
 
-/* HEADER */
-header{
-  background:#0d0d0d;border-bottom:1px solid var(--border);
-  padding:13px 24px;display:flex;align-items:center;gap:12px;
-  position:sticky;top:0;z-index:100;
-}
-header .brand{
-  background:var(--yellow);color:#1a1a2e;font-weight:900;
-  font-size:14px;padding:5px 14px;border-radius:20px;
-}
-header h1{font-size:15px;font-weight:600;color:#fff}
-header .spacer{flex:1}
-.header-badge{
-  background:var(--red);color:#fff;font-size:10px;font-weight:800;
-  padding:3px 7px;border-radius:10px;display:none;
-}
+        .productos-grid {
+            margin-top: 4px;
+        }
+        .categoria-seccion {
+            display: block;
+        }
+        .categoria-seccion.oculta {
+            display: none;
+        }
 
-.wrap{max-width:1400px;margin:0 auto;padding:22px 20px}
+        .producto-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #eee;
+        }
+        .producto-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .producto-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #f0f0f0;
+            border: 1px solid #e0e0e0;
+        }
+        .producto-img.sin-imagen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ccc;
+        }
+        .producto-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .producto-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 2px;
+        }
+        .producto-info .descripcion {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+        .producto-info .precio {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
 
-/* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;padding:16px 18px;
-}
-.stat-card .val{font-size:28px;font-weight:900;margin-bottom:2px;line-height:1}
-.stat-card .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
-.stat-card.c-yellow .val{color:var(--yellow)}
-.stat-card.c-blue .val{color:var(--blue)}
-.stat-card.c-orange .val{color:#FF6900}
-.stat-card.c-green .val{color:var(--green)}
+        .producto-acciones {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        .producto-acciones button {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-restar {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-restar:hover {
+            background: #e0e0e0;
+        }
+        .btn-sumar {
+            color: #ffffff;
+            transition: all 0.2s;
+        }
+        .btn-sumar:hover {
+            transform: scale(1.05);
+            filter: brightness(0.85);
+        }
+        .producto-acciones .cantidad {
+            font-size: 16px;
+            font-weight: 700;
+            min-width: 28px;
+            text-align: center;
+            color: #1a1a2e;
+        }
 
-/* TABS */
-.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:5px;margin-bottom:22px}
-.tab-btn{
-  flex:1;background:transparent;color:var(--text-muted);border:none;
-  padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;
-  justify-content:center;gap:7px;
-}
-.tab-btn.active{background:var(--surface);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.tab-badge{
-  background:var(--yellow);color:#1a1a2e;font-size:10px;font-weight:800;
-  padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;
-}
-.tab-content{display:none}
-.tab-content.active{display:block}
+        .carrito-flotante {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-top: 3px solid #FFD600;
+            padding: 14px 18px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            z-index: 200;
+            max-height: 80vh;
+            overflow-y: auto;
+            transition: border-color 0.3s ease;
+        }
+        .carrito-flotante .carrito-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .carrito-flotante .carrito-header h3 {
+            font-size: 15px;
+            color: #1a1a2e;
+        }
+        .carrito-flotante .vaciar-btn {
+            background: none;
+            border: none;
+            color: #FF3D00;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .carrito-flotante .vaciar-btn:hover {
+            text-decoration: underline;
+        }
+        .carrito-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .carrito-item .nombre {
+            flex: 1;
+        }
+        .carrito-item .subtotal {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .carrito-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0 4px 0;
+            border-top: 2px solid #FFD600;
+            margin-top: 4px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #1a1a2e;
+            transition: border-color 0.3s ease;
+        }
+        .carrito-total .total-valor {
+            color: #1a1a2e;
+        }
+        
+        .btn-comprar {
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 6px;
+            color: #ffffff;
+        }
+        .btn-comprar:hover {
+            transform: scale(1.01);
+            filter: brightness(0.9);
+        }
+        .btn-comprar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-/* KANBAN */
-.kanban-wrap{overflow-x:auto;padding-bottom:6px}
-.kanban{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;min-height:340px}
-.kanban-col{background:var(--surface2);border-radius:12px;padding:14px;min-height:200px}
-.kanban-col-header{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);
-}
-.col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.kanban-col-header h4{font-size:13px;font-weight:700;flex:1}
-.col-count{
-  font-size:11px;font-weight:700;background:var(--surface3);
-  color:var(--text-muted);padding:2px 7px;border-radius:8px;
-}
-.dot-yellow{background:var(--yellow)}
-.dot-blue{background:var(--blue)}
-.dot-orange{background:#FF6900}
-.dot-green{background:var(--green)}
-.empty-col{text-align:center;padding:30px 10px;color:var(--text-muted);font-size:12px}
-.empty-col .ico{font-size:28px;display:block;margin-bottom:8px;opacity:.4}
+        .form-datos {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            display: none;
+        }
+        .form-datos.visible {
+            display: block;
+        }
+        .form-datos .label-form {
+            font-size: 10px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .form-datos input,
+        .form-datos textarea {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 8px 12px;
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #1a1a2e;
+            transition: border-color 0.3s ease;
+        }
+        .form-datos input:focus,
+        .form-datos textarea:focus {
+            outline: none;
+            border-color: #FFD600;
+            transition: border-color 0.3s ease;
+        }
 
-/* PEDIDO CARD */
-.pedido-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:14px;margin-bottom:10px;
-  animation:slideIn .22s ease;
-}
-@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
-.pedido-card.r-pending{border-color:var(--yellow)}
-.pedido-card.r-cooking{border-color:var(--blue)}
-.pedido-card.r-delivery{border-color:#FF6900}
-.pedido-card.r-done{border-color:var(--green)}
-.pedido-card.r-cancel{border-color:var(--red)}
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            max-width: 90%;
+        }
+        .toast {
+            background: #1a1a2e;
+            color: #fff;
+            border-radius: 12px;
+            padding: 10px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+            text-align: center;
+            border-left: 4px solid #FFD600;
+            transition: border-color 0.3s ease;
+            font-size: 14px;
+        }
+        .toast.success {
+            border-left-color: #00C853;
+        }
+        .toast.error {
+            border-left-color: #FF3D00;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
 
-.pedido-tienda{
-  font-size:14px;font-weight:900;color:var(--yellow);
-  margin-bottom:6px;
-}
-.pedido-titulo{
-  font-size:13px;font-weight:700;color:#fff;
-  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);
-}
-.pedido-cliente{
-  background:var(--surface2);border-radius:8px;
-  padding:8px 10px;margin:6px 0;font-size:12px;line-height:1.8;
-}
-.pedido-cliente .label{color:var(--text-muted);font-weight:600}
-.pedido-items{
-  background:var(--surface2);border-radius:8px;
-  padding:8px 10px;margin:6px 0;font-size:12px;line-height:1.8;
-}
-.pedido-items .item{display:flex;justify-content:space-between}
-.pedido-total{
-  display:flex;justify-content:space-between;align-items:center;
-  padding-top:7px;border-top:1px dashed var(--border2);margin-top:4px;
-  font-weight:700;
-}
-.pedido-total .val{color:var(--green)}
-.accion-btns{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.accion-btns button{
-  font-size:11px;padding:8px;border-radius:7px;
-  width:100%;letter-spacing:.2px;font-weight:700;
-}
-.btn-cook{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue)}
-.btn-cook:hover{background:var(--blue);color:#fff}
-.btn-go{background:var(--orange-bg);color:#FF6900;border:1px solid #FF6900}
-.btn-go:hover{background:#FF6900;color:#fff}
-.btn-done{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
-.btn-done:hover{background:var(--green);color:#000}
-.btn-cancel{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
-.btn-cancel:hover{background:var(--red);color:#fff}
-.btn-remove{background:transparent;color:var(--text-muted);border:1px solid var(--border);font-size:11px;padding:5px}
-.btn-remove:hover{color:var(--red);border-color:var(--red)}
+        .tienda-cerrada-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            flex-direction: column;
+            padding: 30px;
+        }
+        .tienda-cerrada-overlay.visible {
+            display: flex;
+        }
+        .tienda-cerrada-overlay .icono {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .tienda-cerrada-overlay h2 {
+            color: #FFD600;
+            font-size: 28px;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+        .tienda-cerrada-overlay p {
+            color: #ddd;
+            font-size: 16px;
+            text-align: center;
+            max-width: 400px;
+        }
 
-.pedido-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.pedido-header h3{font-size:17px;font-weight:700}
-.pedido-header .spacer{flex:1}
-.peds-controls{display:flex;align-items:center;gap:8px}
-.peds-controls select{width:220px}
-.btn-speaker{
-  background:var(--surface3);border:1px solid var(--border2);
-  color:#fff;padding:10px 14px;border-radius:var(--radius);
-  font-size:13px;cursor:pointer;width:auto;white-space:nowrap;
-}
-.btn-speaker:hover{background:var(--surface2)}
+        .categoria-vacia {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-size: 14px;
+        }
+        .categoria-vacia .icono-grande {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 10px;
+        }
 
-/* TIENDAS */
-.tienda-item{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;padding:16px;margin-bottom:12px;
-  display:flex;align-items:flex-start;gap:14px;
-}
-.tienda-logo{
-  width:54px;height:54px;border-radius:10px;object-fit:cover;
-  background:var(--surface3);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;border:1px solid var(--border);overflow:hidden;
-}
-.tienda-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
-.tienda-info{flex:1;min-width:0}
-.tienda-info h4{font-size:15px;font-weight:700;margin-bottom:3px}
-.tienda-info .meta{font-size:12px;color:var(--text-muted)}
-.tienda-info .link{color:var(--blue);font-size:12px;text-decoration:none;display:inline-block;margin-top:4px}
-.tienda-info .link:hover{text-decoration:underline}
-.badge-open{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--green-bg);color:var(--green);margin-top:6px}
-.badge-closed{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--red-bg);color:var(--red);margin-top:6px}
-.tienda-actions{display:flex;gap:6px;flex-shrink:0}
-.tienda-item.tiene-pedidos{border-color:var(--yellow);box-shadow:0 0 15px rgba(255,214,0,0.15)}
+        .scroll-indicator {
+            text-align: center;
+            font-size: 10px;
+            color: #bbb;
+            padding: 2px 0 6px 0;
+            display: none;
+        }
+        .scroll-indicator.visible {
+            display: block;
+        }
 
-/* PRODUCTOS */
-.prod-item{
-  display:flex;align-items:center;gap:12px;
-  padding:13px 0;border-bottom:1px solid var(--border);
-}
-.prod-item:last-child{border-bottom:none}
-.prod-img{
-  width:48px;height:48px;border-radius:9px;
-  background:var(--surface3);flex-shrink:0;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;font-size:22px;
-}
-.prod-img img{width:100%;height:100%;object-fit:cover;border-radius:9px}
-.prod-info{flex:1;min-width:0}
-.prod-info h5{font-size:14px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prod-info .pdesc{font-size:12px;color:var(--text-muted)}
-.prod-cat{display:inline-block;background:var(--surface3);color:var(--text-muted);font-size:10px;padding:2px 7px;border-radius:6px;margin-top:4px}
-.prod-price{font-size:15px;font-weight:900;color:var(--yellow);margin-right:8px;white-space:nowrap}
-.prod-actions{display:flex;gap:5px;flex-shrink:0}
-
-/* ESTADO */
-.estado-wrap{max-width:460px}
-.estado-card{
-  display:flex;align-items:center;gap:16px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;padding:18px;margin-top:14px;
-}
-.estado-card .info{flex:1}
-.estado-card .tienda-name{font-size:15px;font-weight:700;margin-bottom:4px}
-.estado-txt{font-size:13px;font-weight:600}
-.toggle{position:relative;width:54px;height:28px;flex-shrink:0}
-.toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:28px;cursor:pointer;transition:.3s}
-.toggle-slider::before{content:'';position:absolute;width:22px;height:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
-.toggle input:checked+.toggle-slider{background:var(--yellow)}
-.toggle input:checked+.toggle-slider::before{transform:translateX(26px)}
-
-.nuevo-pedido{animation:pulse 1.5s ease-in-out 3}
-@keyframes pulse{0%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}50%{border-color:#fff;box-shadow:0 0 20px 5px rgba(255,214,0,0.3)}100%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}}
-
-/* NOTIFICACIÓN DE NUEVO PEDIDO FLOTANTE */
-.notificacion-pedido {
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: #1e1e1e;
-    border: 2px solid var(--yellow);
-    border-radius: 14px;
-    padding: 16px 20px;
-    z-index: 1000;
-    max-width: 360px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    animation: notificacionEntrar 0.5s ease;
-    cursor: pointer;
-}
-.notificacion-pedido:hover {
-    transform: scale(1.02);
-    border-color: #fff;
-}
-@keyframes notificacionEntrar {
-    from { opacity: 0; transform: translateX(40px); }
-    to { opacity: 1; transform: translateX(0); }
-}
-.notificacion-pedido .notif-tienda {
-    color: var(--yellow);
-    font-weight: 900;
-    font-size: 14px;
-}
-.notif-titulo{font-size:13px;font-weight:700;color:#fff}
-.notif-cliente{font-size:12px;color:#aaa;margin-top:3px}
-.notif-total{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
-.notif-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:6px}
-
-@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
-@media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
-</style>
+        @media (max-width: 480px) {
+            .banner-container { height: 130px; }
+            .header .logo { width: 55px; height: 55px; }
+            .header .logo-placeholder { width: 55px; height: 55px; font-size: 22px; }
+            .header .info .brand { font-size: 18px; }
+            .header-overlay { padding: 12px 14px; gap: 10px; }
+            .producto-img { width: 56px; height: 56px; }
+            .producto-info h4 { font-size: 13px; }
+            .container { padding: 8px; padding-bottom: 200px; }
+            .carrito-flotante { padding: 10px 14px; }
+            .categoria-tab { padding: 6px 12px; font-size: 12px; }
+            .categoria-tab .tab-icono { font-size: 12px; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="toastWrap"></div>
+    <div class="toast-container" id="toastContainer"></div>
 
-<!-- LOGIN -->
-<div id="loginBox" class="card">
-  <div class="login-logo"><span class="brand">EyMoto</span></div>
-  <h2>Bienvenido de vuelta</h2>
-  <p class="sub">Panel de administración general</p>
-  <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="admin@eymoto.com"></div>
-  <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
-  <button onclick="iniciarSesion()">Ingresar</button>
-  <p id="loginMsg"></p>
-</div>
-
-<!-- PANEL -->
-<div id="panel" class="hidden">
-  <header>
-    <span class="brand">EyMoto</span>
-    <h1>Panel de Administración</h1>
-    <span class="spacer"></span>
-    <span class="header-badge" id="headerBadge">0</span>
-    <button class="btn-ghost btn-sm" onclick="logout()" style="width:auto;padding:8px 16px;">Salir</button>
-  </header>
-
-  <div class="wrap">
-    <div class="stats-grid">
-      <div class="stat-card c-yellow"><div class="val" id="statP">0</div><div class="lbl">Pendientes</div></div>
-      <div class="stat-card c-blue"><div class="val" id="statC">0</div><div class="lbl">En cocina</div></div>
-      <div class="stat-card c-orange"><div class="val" id="statM">0</div><div class="lbl">En camino</div></div>
-      <div class="stat-card c-green"><div class="val" id="statE">0</div><div class="lbl">Entregados hoy</div></div>
+    <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
+        <div class="icono">🔒</div>
+        <h2 id="cerradoTitulo">Tienda Cerrada</h2>
+        <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('pedidos',this)">Comandas <span class="tab-badge" id="tabBadge">0</span></button>
-      <button class="tab-btn" onclick="switchTab('tiendas',this)">Tiendas</button>
-      <button class="tab-btn" onclick="switchTab('productos',this)">Productos</button>
-      <button class="tab-btn" onclick="switchTab('estado',this)">Estado</button>
+    <div class="header" id="headerPrincipal">
+        <div class="banner-container">
+            <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
+            <div class="banner-placeholder" id="bannerPlaceholder" style="display:none;">🍔</div>
+        </div>
+        <div class="header-overlay" id="headerOverlay">
+            <div class="info-bg"></div>
+            <img class="logo" id="logoHeader" src="" alt="Logo" onerror="this.style.display='none'">
+            <div class="logo-placeholder" id="logoPlaceholder" style="display:none;">EM</div>
+            <div class="info" id="infoContainer">
+                <div class="brand" id="nombreTiendaHeader">EyMotoComidas</div>
+                <div class="subtitle" id="whatsappHeader">📱 Cargando...</div>
+                <span class="estado abierto" id="estadoHeader">🟢 Abierto</span>
+            </div>
+        </div>
     </div>
 
-    <!-- TAB PEDIDOS -->
-    <div class="tab-content active" id="tab-pedidos">
-      <div class="pedido-header">
-        <h3>Monitor de pedidos en tiempo real</h3>
-        <span class="spacer"></span>
-        <div class="peds-controls">
-          <select id="filtroTienda" onchange="cambiarTiendaSeleccionada()">
-            <option value="">Seleccionar tienda...</option>
-          </select>
-          <button class="btn-speaker" onclick="probarAltavoz()">🔔 Altavoz</button>
-          <button class="btn-speaker" onclick="stopAlarm()" style="background:var(--red-bg);color:var(--red);">🔕 Silenciar</button>
+    <div class="container" id="contenedorMenu">
+        <div class="categorias-wrapper" id="categoriasWrapper">
+            <div class="categorias-container" id="categoriasContainer"></div>
         </div>
-      </div>
-      <div class="kanban-wrap">
-        <div class="kanban" id="kanbanBoard">
-          <div class="kanban-col">
-            <div class="kanban-col-header"><div class="col-dot dot-yellow"></div><h4>Pendientes</h4><span class="col-count" id="cnt-P">0</span></div>
-            <div id="col-P"><div class="empty-col"><span class="ico">⏳</span>Sin pedidos pendientes</div></div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header"><div class="col-dot dot-blue"></div><h4>En cocina</h4><span class="col-count" id="cnt-C">0</span></div>
-            <div id="col-C"><div class="empty-col"><span class="ico">👨‍🍳</span>Nada en preparación</div></div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header"><div class="col-dot dot-orange"></div><h4>En camino</h4><span class="col-count" id="cnt-M">0</span></div>
-            <div id="col-M"><div class="empty-col"><span class="ico">🛵</span>Nada en camino</div></div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header"><div class="col-dot dot-green"></div><h4>Entregados</h4><span class="col-count" id="cnt-E">0</span></div>
-            <div id="col-E"><div class="empty-col"><span class="ico">✅</span>Sin entregas aún</div></div>
-          </div>
+        <div class="scroll-indicator" id="scrollIndicator">← Desliza para ver más →</div>
+
+        <div class="productos-grid" id="productosGrid">
+            <div id="listaProductos" style="text-align:center;padding:30px;color:#888;">
+                <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+                Cargando menú...
+            </div>
         </div>
-      </div>
     </div>
 
-    <!-- TAB TIENDAS -->
-    <div class="tab-content" id="tab-tiendas">
-      <div class="row2">
-        <div>
-          <div class="section-title">Registrar / editar tienda</div>
-          <input type="hidden" id="editTiendaId">
-          <div class="form-group"><label>Nombre comercial</label><input id="nombreTienda" placeholder="Ej: Burger House"></div>
-          <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
-          <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
-          <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
-          <div style="display:flex;gap:8px">
-            <button onclick="guardarTienda()">Guardar</button>
-            <button class="btn-ghost hidden" id="btnCancelTienda" onclick="cancelarEdTienda()" style="width:auto;padding:10px 16px;">Cancelar</button>
-          </div>
+    <div class="carrito-flotante" id="carritoFlotante">
+        <div class="carrito-header">
+            <h3>🛒 Carrito</h3>
+            <button class="vaciar-btn" onclick="vaciarCarrito()">Vaciar</button>
         </div>
-        <div>
-          <div class="section-title">Tiendas registradas</div>
-          <div id="listaTiendas"><p style="color:var(--text-muted);font-size:13px">Cargando...</p></div>
+        <div id="itemsCarrito">
+            <div style="color:#888;font-size:13px;text-align:center;padding:6px 0;">
+                No hay productos en el carrito
+            </div>
         </div>
-      </div>
+        
+        <div class="form-datos" id="formDatos">
+            <span class="label-form">👤 Datos de entrega</span>
+            <input type="text" id="clienteNombre" placeholder="Tu nombre completo">
+            <input type="tel" id="clienteTelefono" placeholder="Teléfono (ej: 3169934516)">
+            <input type="text" id="clienteDireccion" placeholder="Dirección de entrega">
+            <input type="text" id="clienteBarrio" placeholder="Barrio">
+            <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
+        </div>
+
+        <div class="carrito-total" id="carritoTotal">
+            <span>💰 Total</span>
+            <span class="total-valor" id="totalCarrito">$0</span>
+        </div>
+        <button class="btn-comprar" id="btnComprar" onclick="mostrarFormularioYEnviar()" disabled>
+            📱 Comprar Ahora
+        </button>
+        <div style="font-size:10px;color:#aaa;text-align:center;margin-top:4px;">
+            El pedido se enviará al administrador
+        </div>
     </div>
 
-    <!-- TAB PRODUCTOS -->
-    <div class="tab-content" id="tab-productos">
-      <div class="row2">
-        <div>
-          <div class="section-title">Añadir / editar producto</div>
-          <input type="hidden" id="editProductoId">
-          <div class="form-group"><label>Tienda</label><select id="tiendaProducto" onchange="cargarProductos()"><option value="">Seleccionar...</option></select></div>
-          <div class="form-group"><label>Nombre</label><input id="nuevoNombre" placeholder="Ej: Hamburguesa"></div>
-          <div class="row2">
-            <div class="form-group"><label>Precio</label><input id="nuevoPrecio" type="number" placeholder="18000"></div>
-            <div class="form-group"><label>Categoría</label><input id="nuevoCategoria" placeholder="Hamburguesas"></div>
-          </div>
-          <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2"></textarea></div>
-          <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://..."></div>
-          <div style="display:flex;gap:8px">
-            <button onclick="guardarProducto()">Guardar</button>
-            <button class="btn-ghost hidden" id="btnCancelProd" onclick="cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-title">Inventario</div>
-          <div id="listaProductos"><p style="color:var(--text-muted);font-size:13px">Selecciona una tienda.</p></div>
-        </div>
-      </div>
-    </div>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    <!-- TAB ESTADO -->
-    <div class="tab-content" id="tab-estado">
-      <div class="section-title">Estado de operación</div>
-      <div class="estado-wrap">
-        <div class="form-group"><label>Selecciona la tienda</label><select id="tiendaEstado" onchange="cargarEstado()"><option value="">Seleccionar...</option></select></div>
-        <div id="estadoWrap"></div>
-      </div>
-    </div>
-  </div>
-</div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+            authDomain: "eymotocomidas.firebaseapp.com",
+            projectId: "eymotocomidas",
+            storageBucket: "eymotocomidas.firebasestorage.app",
+            messagingSenderId: "670474251560",
+            appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const TIENDA_ID = urlParams.get('tienda');
 
-<script>
-// ============================================================
-// CONFIGURACIÓN FIREBASE
-// ============================================================
-const firebaseConfig = {
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
-  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+        if (!TIENDA_ID) {
+            mostrarToast('⚠️ No se especificó una tienda', 'error');
+        }
 
-// ============================================================
-// GLOBALS
-// ============================================================
-let pedidosUnsub = null;
-let alarmInterval = null;
-let audioCtx = null;
-let esInicial = true;
-let pedidosPendientes = new Set();
-let tiendaSeleccionada = '';
-let tiendasCache = {};
-let notificacionesMostradas = new Set();
+        console.log('🏪 Tienda ID:', TIENDA_ID);
 
-const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
+        let carrito = [];
+        let productos = [];
+        let tiendaData = {};
+        let tiendaAbierta = true;
+        let colorPrincipal = '#FFD600';
+        let formularioVisible = false;
 
-// ============================================================
-// TOAST
-// ============================================================
-function toast(msg, type = 'info', dur = 4000, onClick = null) {
-  const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️', new:'🛵' };
-  const wrap = document.getElementById('toastWrap');
-  const el = document.createElement('div');
-  el.className = `toast t-${type}`;
-  el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
-  if (onClick) {
-    el.style.cursor = 'pointer';
-    el.onclick = onClick;
-  }
-  wrap.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('toast-fade');
-    setTimeout(() => el.remove(), 350);
-  }, dur);
-  return el;
-}
-
-// ============================================================
-// NOTIFICACIÓN FLOTANTE DE NUEVO PEDIDO
-// ============================================================
-function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId) {
-  // Eliminar notificaciones antiguas
-  document.querySelectorAll('.notificacion-pedido').forEach(el => el.remove());
-  
-  const div = document.createElement('div');
-  div.className = 'notificacion-pedido';
-  div.innerHTML = `
-    <div class="notif-tienda">🏪 ${tiendaNombre}</div>
-    <div class="notif-titulo">🛵 Nuevo pedido</div>
-    <div class="notif-cliente">👤 ${cliente}</div>
-    <div class="notif-total">💰 $${total.toLocaleString('es-CO')} · ${items} producto${items > 1 ? 's' : ''}</div>
-    <div style="font-size:10px;color:#666;margin-top:6px;">💡 Haz clic para ver este pedido</div>
-  `;
-  
-  // Al hacer clic, seleccionar la tienda automáticamente
-  div.onclick = function() {
-    const selector = document.getElementById('filtroTienda');
-    if (selector) {
-      selector.value = tiendaId;
-      cambiarTiendaSeleccionada();
-    }
-    // Cerrar la notificación
-    div.remove();
-    // Cambiar a la pestaña de pedidos
-    const btnPedidos = document.querySelectorAll('.tab-btn')[0];
-    if (btnPedidos) switchTab('pedidos', btnPedidos);
-  };
-  
-  document.body.appendChild(div);
-  
-  // Auto-cerrar después de 15 segundos
-  setTimeout(() => {
-    if (div.parentNode) {
-      div.style.opacity = '0';
-      div.style.transition = 'opacity 0.5s';
-      setTimeout(() => div.remove(), 500);
-    }
-  }, 15000);
-}
-
-// ============================================================
-// SONIDO / ALARMA CON NOMBRE DE TIENDA
-// ============================================================
-function beep() {
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    [440,523,659,880].forEach((freq,i) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      const t = i * 0.13;
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + t);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.28);
-      osc.start(audioCtx.currentTime + t);
-      osc.stop(audioCtx.currentTime + t + 0.3);
-    });
-  } catch(e) {}
-}
-
-function hablar(msg) {
-  try {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(msg);
-    u.lang = 'es-CO';
-    u.rate = 1.0;
-    setTimeout(() => window.speechSynthesis.speak(u), 600);
-  } catch(e) {}
-}
-
-function startAlarm(nombreTienda, cliente = '') {
-  if (alarmInterval) return;
-  beep();
-  const mensaje = `Nuevo pedido en ${nombreTienda}${cliente ? ` de ${cliente}` : ''}`;
-  hablar(mensaje);
-  alarmInterval = setInterval(beep, 8000);
-}
-
-function stopAlarm() {
-  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
-  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e) {}
-}
-
-function probarAltavoz() {
-  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-  beep();
-  hablar('Alarma configurada en Ey Moto');
-  toast('Altavoz inicializado correctamente ✓', 'success');
-}
-
-// ============================================================
-// TABS
-// ============================================================
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// ============================================================
-// AUTH
-// ============================================================
-function iniciarSesion() {
-  const email = document.getElementById('email').value.trim();
-  const pass = document.getElementById('password').value;
-  const msg = document.getElementById('loginMsg');
-  msg.textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch(e => msg.textContent = 'Credenciales incorrectas.');
-}
-
-function logout() {
-  stopAlarm();
-  if (pedidosUnsub) pedidosUnsub();
-  auth.signOut();
-}
-
-auth.onAuthStateChanged(user => {
-  document.getElementById('loginBox').classList.toggle('hidden', !!user);
-  document.getElementById('panel').classList.toggle('hidden', !user);
-  if (user) inicializar();
-  else stopAlarm();
-});
-
-// ============================================================
-// INICIALIZAR
-// ============================================================
-async function inicializar() {
-  await cargarTiendas();
-  // Iniciar escucha de TODAS las tiendas automáticamente
-  escucharTodasLasTiendas();
-}
-
-// ============================================================
-// TIENDAS
-// ============================================================
-async function cargarTiendas() {
-  ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (sel) sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
-  });
-  const lista = document.getElementById('listaTiendas');
-  lista.innerHTML = '';
-  tiendasCache = {};
-
-  try {
-    const snap = await db.collection('tiendas').get();
-    if (snap.empty) {
-      lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No hay tiendas registradas.</p>';
-      return;
-    }
-    snap.forEach(doc => {
-      const t = doc.data();
-      const id = doc.id;
-      tiendasCache[id] = t.nombre || id;
-      const url = `${URL_BASE_MENU}?tienda=${id}`;
-      const abierta = t.abierta !== false;
-
-      const div = document.createElement('div');
-      div.className = 'tienda-item';
-      div.id = 'tienda-' + id;
-      div.innerHTML = `
-        <div class="tienda-logo">
-          ${t.logo ? `<img src="${escHtml(t.logo)}" alt="${escHtml(t.nombre||'')}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
-        </div>
-        <div class="tienda-info">
-          <h4>${escHtml(t.nombre || 'Sin nombre')}</h4>
-          <p class="meta">📱 ${escHtml(t.whatsapp || '-')}</p>
-          <a class="link" href="${url}" target="_blank">🔗 Ver menú digital</a>
-          <br><span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? 'Abierta' : 'Cerrada'}</span>
-        </div>
-        <div class="tienda-actions">
-          <button class="btn-info btn-sm" onclick="editarTienda('${id}')">Editar</button>
-          <button class="btn-danger btn-sm" onclick="eliminarTienda('${id}')">Eliminar</button>
-        </div>
-      `;
-      lista.appendChild(div);
-
-      const opt = `<option value="${id}">${escHtml(t.nombre || id)}</option>`;
-      ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(sid => {
-        const sel = document.getElementById(sid);
-        if (sel) sel.innerHTML += opt;
-      });
-    });
-  } catch(e) { lista.innerHTML = `<p style="color:var(--red);font-size:13px">Error al cargar tiendas.</p>`; console.error(e); }
-}
-
-// ============================================================
-// TIENDAS - CRUD
-// ============================================================
-async function guardarTienda() {
-  const id = document.getElementById('editTiendaId').value;
-  const nombre = document.getElementById('nombreTienda').value.trim();
-  const wa = document.getElementById('whatsapp').value.trim();
-  const logo = document.getElementById('logoTienda').value.trim();
-  const banner = document.getElementById('bannerTienda').value.trim();
-
-  if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
-
-  const datos = { nombre, whatsapp: wa, logo, banner };
-  try {
-    if (id) {
-      await db.collection('tiendas').doc(id).update(datos);
-      toast('Tienda actualizada.', 'success');
-    } else {
-      await db.collection('tiendas').add({ ...datos, abierta: true });
-      toast('Tienda registrada.', 'success');
-    }
-    cancelarEdTienda();
-    cargarTiendas();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-async function editarTienda(id) {
-  try {
-    const doc = await db.collection('tiendas').doc(id).get();
-    if (!doc.exists) { toast('Tienda no encontrada.', 'error'); return; }
-    const t = doc.data();
-    document.getElementById('editTiendaId').value = id;
-    document.getElementById('nombreTienda').value = t.nombre || '';
-    document.getElementById('whatsapp').value = t.whatsapp || '';
-    document.getElementById('logoTienda').value = t.logo || '';
-    document.getElementById('bannerTienda').value = t.banner || '';
-    document.getElementById('btnCancelTienda').classList.remove('hidden');
-    const btn = document.querySelectorAll('.tab-btn')[1];
-    switchTab('tiendas', btn);
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-function cancelarEdTienda() {
-  ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('btnCancelTienda').classList.add('hidden');
-}
-
-async function eliminarTienda(id) {
-  if (!confirm('¿Eliminar esta tienda permanentemente?')) return;
-  try {
-    await db.collection('tiendas').doc(id).delete();
-    toast('Tienda eliminada.', 'info');
-    cargarTiendas();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-// ============================================================
-// PRODUCTOS
-// ============================================================
-async function cargarProductos() {
-  const tid = document.getElementById('tiendaProducto').value;
-  const lista = document.getElementById('listaProductos');
-  if (!tid) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Selecciona una tienda.</p>'; return; }
-  lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Cargando...</p>';
-  try {
-    const snap = await db.collection('tiendas').doc(tid).collection('productos').get();
-    if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Sin productos.</p>'; return; }
-    lista.innerHTML = '';
-    snap.forEach(doc => {
-      const p = doc.data();
-      const pid = doc.id;
-      const div = document.createElement('div');
-      div.className = 'prod-item';
-      div.innerHTML = `
-        <div class="prod-img">${p.img ? `<img src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.parentElement.innerHTML='🍔'">` : '🍔'}</div>
-        <div class="prod-info"><h5>${escHtml(p.name || 'Sin nombre')}</h5><p class="pdesc">${escHtml(p.descripcion || '')}</p><span class="prod-cat">${escHtml(p.categoria || 'General')}</span></div>
-        <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
-        <div class="prod-actions">
-          <button class="btn-info btn-sm" onclick="editarProducto('${pid}','${tid}')">Editar</button>
-          <button class="btn-danger btn-sm" onclick="eliminarProducto('${tid}','${pid}')">Borrar</button>
-        </div>
-      `;
-      lista.appendChild(div);
-    });
-  } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px">Error al cargar.</p>'; console.error(e); }
-}
-
-async function guardarProducto() {
-  const tid = document.getElementById('tiendaProducto').value;
-  const pid = document.getElementById('editProductoId').value;
-  if (!tid) { toast('Selecciona una tienda.', 'error'); return; }
-
-  const name = document.getElementById('nuevoNombre').value.trim();
-  const precio = parseFloat(document.getElementById('nuevoPrecio').value) || 0;
-  const categoria = document.getElementById('nuevoCategoria').value.trim();
-  const descripcion = document.getElementById('nuevoDescripcion').value.trim();
-  const img = document.getElementById('nuevoImagen').value.trim();
-
-  if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
-
-  const datos = { name, precio, categoria, descripcion, img };
-  try {
-    const ref = db.collection('tiendas').doc(tid).collection('productos');
-    if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
-    else { await ref.add(datos); toast('Producto añadido.', 'success'); }
-    cancelarEdProducto();
-    cargarProductos();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-async function editarProducto(pid, tid) {
-  const selTienda = document.getElementById('tiendaProducto');
-  if (selTienda.value !== tid) selTienda.value = tid;
-  try {
-    const doc = await db.collection('tiendas').doc(tid).collection('productos').doc(pid).get();
-    if (!doc.exists) { toast('Producto no encontrado.', 'error'); return; }
-    const p = doc.data();
-    document.getElementById('editProductoId').value = pid;
-    document.getElementById('nuevoNombre').value = p.name || '';
-    document.getElementById('nuevoPrecio').value = p.precio || '';
-    document.getElementById('nuevoCategoria').value = p.categoria || '';
-    document.getElementById('nuevoDescripcion').value = p.descripcion || '';
-    document.getElementById('nuevoImagen').value = p.img || '';
-    document.getElementById('btnCancelProd').classList.remove('hidden');
-    const btn = document.querySelectorAll('.tab-btn')[2];
-    switchTab('productos', btn);
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-function cancelarEdProducto() {
-  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('btnCancelProd').classList.add('hidden');
-}
-
-async function eliminarProducto(tid, pid) {
-  if (!confirm('¿Eliminar este producto?')) return;
-  try {
-    await db.collection('tiendas').doc(tid).collection('productos').doc(pid).delete();
-    toast('Producto eliminado.', 'info');
-    cargarProductos();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-// ============================================================
-// ESTADO
-// ============================================================
-async function cargarEstado() {
-  const tid = document.getElementById('tiendaEstado').value;
-  const wrap = document.getElementById('estadoWrap');
-  wrap.innerHTML = '';
-  if (!tid) return;
-  try {
-    const doc = await db.collection('tiendas').doc(tid).get();
-    if (!doc.exists) return;
-    const t = doc.data();
-    const abierta = t.abierta !== false;
-    wrap.innerHTML = `
-      <div class="estado-card">
-        <div class="info">
-          <div class="tienda-name">${escHtml(t.nombre || 'Tienda')}</div>
-          <div class="estado-txt" id="estadoTexto" style="color:${abierta ? 'var(--green)' : 'var(--red)'}">
-            ${abierta ? '🟢 Abierta — recibiendo pedidos' : '🔴 Cerrada temporalmente'}
-          </div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="toggleAbierta" ${abierta ? 'checked' : ''} onchange="toggleEstado('${tid}')">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    `;
-  } catch(e) { toast('Error al cargar estado.', 'error'); }
-}
-
-async function toggleEstado(tid) {
-  const cb = document.getElementById('toggleAbierta');
-  const txt = document.getElementById('estadoTexto');
-  try {
-    await db.collection('tiendas').doc(tid).update({ abierta: cb.checked });
-    txt.style.color = cb.checked ? 'var(--green)' : 'var(--red)';
-    txt.textContent = cb.checked ? '🟢 Abierta — recibiendo pedidos' : '🔴 Cerrada temporalmente';
-    toast(cb.checked ? 'Tienda ABIERTA.' : 'Tienda CERRADA.', cb.checked ? 'success' : 'warn');
-    cargarTiendas();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-// ============================================================
-// CAMBIAR TIENDA SELECCIONADA
-// ============================================================
-function cambiarTiendaSeleccionada() {
-  const selector = document.getElementById('filtroTienda');
-  tiendaSeleccionada = selector.value;
-  
-  // Detener escucha anterior
-  if (pedidosUnsub) {
-    pedidosUnsub();
-    pedidosUnsub = null;
-  }
-  
-  if (tiendaSeleccionada) {
-    // Escuchar solo la tienda seleccionada
-    escucharPedidosDeTienda(tiendaSeleccionada);
-  } else {
-    // Si no hay selección, escuchar todas (ya está activo)
-    // No hacer nada, la escucha global sigue activa
-  }
-}
-
-// ============================================================
-// ESCUCHAR TODAS LAS TIENDAS (NUEVO - GLOBAL)
-// ============================================================
-function escucharTodasLasTiendas() {
-  if (pedidosUnsub) {
-    pedidosUnsub();
-    pedidosUnsub = null;
-  }
-  
-  // Limpiar notificaciones
-  notificacionesMostradas = new Set();
-  
-  // Escuchar cambios en TODOS los pedidos de TODAS las tiendas
-  const todasLasTiendasRef = db.collectionGroup('pedidos');
-  
-  pedidosUnsub = todasLasTiendasRef
-    .orderBy('fecha', 'desc')
-    .onSnapshot(snap => {
-      snap.docChanges().forEach(change => {
-        if (change.type === 'added') {
-          const data = change.doc.data();
-          const pedidoId = change.doc.id;
-          const tiendaId = change.doc.ref.parent.parent.id; // Obtener ID de la tienda
-          
-          // Solo notificar si es nuevo y está pendiente
-          if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
-            notificacionesMostradas.add(pedidoId);
-            
-            const nombreTienda = tiendasCache[tiendaId] || 'Tienda desconocida';
-            const cliente = data.cliente?.nombre || 'Cliente';
-            const total = data.total || 0;
-            const items = data.items?.length || 0;
-            
-            // ✅ SONIDO Y VOZ CON NOMBRE DE LA TIENDA
-            startAlarm(nombreTienda, cliente);
-            
-            // ✅ MOSTRAR NOTIFICACIÓN FLOTANTE
-            mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId);
-            
-            // ✅ TOAST CON NOMBRE DE TIENDA
-            toast(
-              `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
-              'new', 7000,
-              function() {
-                // Al hacer clic en el toast, seleccionar la tienda
-                const selector = document.getElementById('filtroTienda');
-                if (selector) {
-                  selector.value = tiendaId;
-                  cambiarTiendaSeleccionada();
+        function getColorBrightness(hexColor) {
+            if (!hexColor) return 0.5;
+            let r, g, b;
+            if (hexColor.startsWith('#')) {
+                const cleanHex = hexColor.replace('#', '');
+                if (cleanHex.length === 3) {
+                    r = parseInt(cleanHex[0] + cleanHex[0], 16);
+                    g = parseInt(cleanHex[1] + cleanHex[1], 16);
+                    b = parseInt(cleanHex[2] + cleanHex[2], 16);
+                } else if (cleanHex.length === 6) {
+                    r = parseInt(cleanHex.substring(0, 2), 16);
+                    g = parseInt(cleanHex.substring(2, 4), 16);
+                    b = parseInt(cleanHex.substring(4, 6), 16);
+                } else {
+                    return 0.5;
                 }
-              }
-            );
-            
-            // Marcar la tienda en la lista con un indicador visual
-            const tiendaElement = document.getElementById('tienda-' + tiendaId);
-            if (tiendaElement) {
-              tiendaElement.classList.add('tiene-pedidos');
-              // Quitar el resaltado después de 10 segundos o al seleccionar
-              setTimeout(() => {
-                if (tiendaElement && tiendaSeleccionada !== tiendaId) {
-                  tiendaElement.classList.remove('tiene-pedidos');
-                }
-              }, 10000);
+            } else {
+                return 0.5;
             }
-          }
+            return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
         }
-      });
-    }, err => {
-      console.error('Firestore error:', err);
-      toast('Error al escuchar pedidos globales.', 'error');
-    });
-}
 
-// ============================================================
-// ESCUCHAR PEDIDOS DE UNA TIENDA ESPECÍFICA
-// ============================================================
-function escucharPedidosDeTienda(tiendaId) {
-  if (!tiendaId) return;
-  
-  // Detener escucha anterior
-  if (pedidosUnsub) {
-    pedidosUnsub();
-    pedidosUnsub = null;
-  }
-  
-  stopAlarm();
-  resetKanban();
-  pedidosPendientes.clear();
-  esInicial = true;
+        function getDominantColor(imageUrl, callback) {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 50;
+                    canvas.height = 50;
+                    ctx.drawImage(img, 0, 0, 50, 50);
+                    const imageData = ctx.getImageData(0, 0, 50, 50);
+                    const data = imageData.data;
+                    const colorCount = {};
+                    let maxCount = 0;
+                    let dominantColor = '#FFD600';
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const brightness = (r + g + b) / 3;
+                        if (brightness < 30 || brightness > 225) continue;
+                        const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+                        colorCount[hex] = (colorCount[hex] || 0) + 1;
+                        if (colorCount[hex] > maxCount) {
+                            maxCount = colorCount[hex];
+                            dominantColor = hex;
+                        }
+                    }
+                    callback(dominantColor);
+                } catch (e) {
+                    callback('#FFD600');
+                }
+            };
+            img.onerror = function() { callback('#FFD600'); };
+            img.src = imageUrl;
+        }
 
-  pedidosUnsub = db.collection('tiendas').doc(tiendaId)
-    .collection('pedidos')
-    .orderBy('fecha', 'desc')
-    .onSnapshot(snap => {
-      // Detectar nuevos pedidos pendientes (solo después de la carga inicial)
-      if (!esInicial) {
-        snap.docChanges().forEach(ch => {
-          if (ch.type === 'added' && ch.doc.data().estado === 'Pendiente') {
-            const data = ch.doc.data();
-            const pedidoId = ch.doc.id;
-            if (pedidosPendientes.has(pedidoId)) return;
-            pedidosPendientes.add(pedidoId);
+        function aplicarColoresDinamicos(colorHex) {
+            if (!colorHex || colorHex === '#FFD600') colorHex = '#FFD600';
+            colorPrincipal = colorHex;
+            const brightness = getColorBrightness(colorHex);
+            const isLight = brightness > 0.5;
+            const textColor = isLight ? '#1a1a2e' : '#ffffff';
+            const hoverBrightness = isLight ? 0.85 : 1.15;
 
-            const sel = document.getElementById('filtroTienda');
-            const nom = sel.options[sel.selectedIndex]?.text || 'la tienda';
-            const cliente = data.cliente?.nombre || 'Cliente';
-            const total = data.total || 0;
-            const items = data.items?.length || 0;
+            document.querySelectorAll('.btn-sumar').forEach(el => {
+                el.style.background = colorHex;
+                el.style.color = textColor;
+            });
+
+            const btnComprar = document.getElementById('btnComprar');
+            if (btnComprar) {
+                btnComprar.style.background = colorHex;
+                btnComprar.style.color = textColor;
+            }
+
+            document.querySelectorAll('.categoria-tab.activa').forEach(el => {
+                el.style.background = colorHex;
+                el.style.color = textColor;
+            });
+
+            const carrito = document.getElementById('carritoFlotante');
+            if (carrito) carrito.style.borderTopColor = colorHex;
+
+            const totalLine = document.getElementById('carritoTotal');
+            if (totalLine) totalLine.style.borderTopColor = colorHex;
+
+            const style = document.getElementById('dynamic-colors') || document.createElement('style');
+            style.id = 'dynamic-colors';
+            style.textContent = `
+                .form-datos input:focus, .form-datos textarea:focus {
+                    border-color: ${colorHex} !important;
+                }
+                .tienda-cerrada-overlay h2 {
+                    color: ${colorHex} !important;
+                }
+                .btn-sumar:hover {
+                    filter: brightness(${hoverBrightness});
+                }
+                .btn-comprar:hover {
+                    filter: brightness(${hoverBrightness});
+                }
+                .categoria-tab:hover:not(.activa) {
+                    border-color: ${colorHex};
+                    color: ${colorHex};
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function aplicarContrasteBanner(imagenUrl) {
+            const infoContainer = document.getElementById('infoContainer');
+            const brandElement = document.getElementById('nombreTiendaHeader');
+            if (!imagenUrl) {
+                infoContainer.className = 'info';
+                brandElement.className = 'brand';
+                return;
+            }
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 50;
+                    canvas.height = 50;
+                    ctx.drawImage(img, 0, 0, 50, 50);
+                    const pixel = ctx.getImageData(25, 25, 1, 1).data;
+                    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+                    const brightness = getColorBrightness(hex);
+                    const isLight = brightness > 0.5;
+                    infoContainer.className = 'info';
+                    brandElement.className = 'brand';
+                    if (isLight) {
+                        infoContainer.classList.add('text-color-dark');
+                        brandElement.classList.add('brand-dark');
+                    } else {
+                        infoContainer.classList.add('text-color-light');
+                        brandElement.classList.add('brand-light');
+                    }
+                } catch (e) {}
+            };
+            img.onerror = function() {};
+            img.src = imagenUrl;
+        }
+
+        async function cargarTienda() {
+            if (!TIENDA_ID) return;
+            try {
+                const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
+                if (doc.exists) {
+                    tiendaData = doc.data();
+                    document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
+                    document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
+
+                    const bannerEl = document.getElementById('bannerHeader');
+                    const bannerPlaceholder = document.getElementById('bannerPlaceholder');
+                    if (tiendaData.banner && tiendaData.banner.trim() !== '') {
+                        bannerEl.src = tiendaData.banner;
+                        bannerEl.style.display = 'block';
+                        bannerPlaceholder.style.display = 'none';
+                        bannerEl.onload = function() {
+                            getDominantColor(tiendaData.banner, function(color) {
+                                aplicarColoresDinamicos(color);
+                            });
+                            aplicarContrasteBanner(tiendaData.banner);
+                        };
+                        bannerEl.onerror = function() {
+                            this.style.display = 'none';
+                            bannerPlaceholder.style.display = 'flex';
+                            if (tiendaData.logo) {
+                                getDominantColor(tiendaData.logo, function(color) {
+                                    aplicarColoresDinamicos(color);
+                                });
+                            }
+                        };
+                    } else {
+                        bannerEl.style.display = 'none';
+                        bannerPlaceholder.style.display = 'flex';
+                        if (tiendaData.logo) {
+                            getDominantColor(tiendaData.logo, function(color) {
+                                aplicarColoresDinamicos(color);
+                            });
+                        }
+                    }
+
+                    const logoEl = document.getElementById('logoHeader');
+                    const logoPlaceholder = document.getElementById('logoPlaceholder');
+                    if (tiendaData.logo && tiendaData.logo.trim() !== '') {
+                        logoEl.src = tiendaData.logo;
+                        logoEl.style.display = 'block';
+                        logoPlaceholder.style.display = 'none';
+                        logoEl.onerror = function() {
+                            this.style.display = 'none';
+                            logoPlaceholder.style.display = 'flex';
+                            const nombre = tiendaData.nombre || 'EyMoto';
+                            const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                            logoPlaceholder.textContent = iniciales || 'EM';
+                        };
+                    } else {
+                        logoEl.style.display = 'none';
+                        logoPlaceholder.style.display = 'flex';
+                        const nombre = tiendaData.nombre || 'EyMoto';
+                        const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                        logoPlaceholder.textContent = iniciales || 'EM';
+                    }
+
+                    tiendaAbierta = tiendaData.abierta !== false;
+                    const estadoEl = document.getElementById('estadoHeader');
+                    const overlayEl = document.getElementById('tiendaCerradaOverlay');
+                    if (tiendaAbierta) {
+                        estadoEl.textContent = '🟢 Abierto';
+                        estadoEl.className = 'estado abierto';
+                        overlayEl.classList.remove('visible');
+                    } else {
+                        estadoEl.textContent = '🔴 Cerrado';
+                        estadoEl.className = 'estado cerrado';
+                        overlayEl.classList.add('visible');
+                    }
+                } else {
+                    document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
+                }
+            } catch (e) {
+                console.error('Error al cargar tienda:', e);
+                mostrarToast('Error al cargar la tienda', 'error');
+            }
+        }
+
+        async function cargarProductos() {
+            const lista = document.getElementById('listaProductos');
+            const categoriasContainer = document.getElementById('categoriasContainer');
+            const scrollIndicator = document.getElementById('scrollIndicator');
+
+            if (!TIENDA_ID) {
+                lista.innerHTML = `<div style="color:#FF3D00;text-align:center;padding:30px;">⚠️ No se especificó una tienda</div>`;
+                return;
+            }
+
+            try {
+                const snap = await db.collection('tiendas').doc(TIENDA_ID).collection('productos').get();
+
+                if (snap.empty) {
+                    lista.innerHTML = `
+                        <div style="color:#888;text-align:center;padding:30px;">
+                            <div style="font-size:32px;margin-bottom:12px;">🍽️</div>
+                            No hay productos disponibles en esta tienda
+                        </div>
+                    `;
+                    return;
+                }
+
+                productos = [];
+                const categoriasMap = new Map();
+
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    const id = doc.id;
+                    productos.push({ id, ...p });
+                    const categoria = p.categoria || 'General';
+                    if (!categoriasMap.has(categoria)) {
+                        categoriasMap.set(categoria, []);
+                    }
+                    categoriasMap.get(categoria).push({ id, ...p });
+                });
+
+                const categorias = Array.from(categoriasMap.keys());
+                const sortedCategorias = ['Todos', ...categorias.filter(c => c !== 'Todos').sort()];
+
+                let tabsHtml = '';
+                sortedCategorias.forEach((cat, index) => {
+                    const count = cat === 'Todos' ? productos.length : (categoriasMap.get(cat)?.length || 0);
+                    let icono = '📂';
+                    const catLower = cat.toLowerCase();
+                    if (catLower.includes('salchi')) icono = '🌭';
+                    else if (catLower.includes('hamburguesa') || catLower.includes('burger')) icono = '🍔';
+                    else if (catLower.includes('pizza')) icono = '🍕';
+                    else if (catLower.includes('pollo')) icono = '🍗';
+                    else if (catLower.includes('bebida') || catLower.includes('gaseosa') || catLower.includes('jugo')) icono = '🥤';
+                    else if (catLower.includes('postre') || catLower.includes('dulce')) icono = '🍰';
+                    else if (catLower.includes('burrito')) icono = '🌯';
+                    else if (catLower.includes('perro')) icono = '🌭';
+                    else if (cat === 'Todos') icono = '📋';
+                    
+                    const activa = index === 0 ? 'activa' : '';
+                    tabsHtml += `
+                        <div class="categoria-tab ${activa}" data-categoria="${cat}" onclick="seleccionarCategoria('${cat}')">
+                            <span class="tab-icono">${icono}</span>
+                            ${cat}
+                            <span class="tab-badge">${count}</span>
+                        </div>
+                    `;
+                });
+                categoriasContainer.innerHTML = tabsHtml;
+
+                const wrapper = document.getElementById('categoriasWrapper');
+                if (wrapper.scrollWidth > wrapper.clientWidth) {
+                    scrollIndicator.classList.add('visible');
+                    setTimeout(() => scrollIndicator.classList.remove('visible'), 3000);
+                } else {
+                    scrollIndicator.classList.remove('visible');
+                }
+
+                let productosHtml = '';
+                sortedCategorias.forEach((cat, index) => {
+                    let items = [];
+                    if (cat === 'Todos') {
+                        items = productos;
+                    } else {
+                        items = categoriasMap.get(cat) || [];
+                    }
+                    
+                    const mostrar = index === 0 ? '' : 'oculta';
+                    productosHtml += `<div class="categoria-seccion ${mostrar}" id="seccion-${cat.replace(/\s/g, '')}">`;
+                    
+                    if (items.length === 0) {
+                        productosHtml += `
+                            <div class="categoria-vacia">
+                                <span class="icono-grande">🍽️</span>
+                                No hay productos en esta categoría
+                            </div>
+                        `;
+                    } else {
+                        items.forEach(p => {
+                            const imagenHtml = p.img && p.img.trim() !== ''
+                                ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
+                                : `<div class="producto-img sin-imagen">🍔</div>`;
+                            productosHtml += `
+                                <div class="producto-card">
+                                    ${imagenHtml}
+                                    <div class="producto-info">
+                                        <h4>${escHtml(p.name || 'Producto')}</h4>
+                                        ${p.descripcion ? `<div class="descripcion">${escHtml(p.descripcion)}</div>` : ''}
+                                        <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
+                                    </div>
+                                    <div class="producto-acciones">
+                                        <button class="btn-restar" onclick="quitarDelCarrito('${p.id}')">−</button>
+                                        <span class="cantidad" id="cant-${p.id}">${carrito.find(c => c.id === p.id)?.cantidad || 0}</span>
+                                        <button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    productosHtml += `</div>`;
+                });
+
+                lista.innerHTML = productosHtml;
+
+                if (colorPrincipal) {
+                    aplicarColoresDinamicos(colorPrincipal);
+                }
+
+                carrito.forEach(item => {
+                    const el = document.getElementById(`cant-${item.id}`);
+                    if (el) el.textContent = item.cantidad;
+                });
+
+                console.log(`✅ ${productos.length} productos cargados`);
+
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                lista.innerHTML = `<div style="color:#FF3D00;text-align:center;padding:30px;">❌ Error al cargar el menú</div>`;
+            }
+        }
+
+        function seleccionarCategoria(categoria) {
+            document.querySelectorAll('.categoria-tab').forEach(tab => {
+                tab.classList.remove('activa');
+                if (tab.dataset.categoria === categoria) {
+                    tab.classList.add('activa');
+                    const brightness = getColorBrightness(colorPrincipal);
+                    const isLight = brightness > 0.5;
+                    const textColor = isLight ? '#1a1a2e' : '#ffffff';
+                    tab.style.background = colorPrincipal;
+                    tab.style.color = textColor;
+                } else {
+                    tab.style.background = '';
+                    tab.style.color = '';
+                }
+            });
+
+            document.querySelectorAll('.categoria-seccion').forEach(seccion => {
+                const id = seccion.id.replace('seccion-', '');
+                const categoriaSinEspacios = categoria.replace(/\s/g, '');
+                if (id === categoriaSinEspacios) {
+                    seccion.classList.remove('oculta');
+                } else {
+                    seccion.classList.add('oculta');
+                }
+            });
+        }
+
+        function agregarAlCarrito(productoId) {
+            if (!tiendaAbierta) {
+                mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
+                return;
+            }
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
+
+            const existente = carrito.find(p => p.id === productoId);
+            if (existente) {
+                existente.cantidad++;
+            } else {
+                carrito.push({
+                    id: producto.id,
+                    nombre: producto.name,
+                    precio: producto.precio,
+                    cantidad: 1,
+                    imagen: producto.img || ''
+                });
+            }
+            actualizarCarrito();
+            const el = document.getElementById(`cant-${productoId}`);
+            if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
+        }
+
+        function quitarDelCarrito(productoId) {
+            const index = carrito.findIndex(p => p.id === productoId);
+            if (index === -1) return;
+            if (carrito[index].cantidad > 1) {
+                carrito[index].cantidad--;
+            } else {
+                carrito.splice(index, 1);
+            }
+            actualizarCarrito();
+            const el = document.getElementById(`cant-${productoId}`);
+            if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
+        }
+
+        function actualizarCarrito() {
+            const itemsContainer = document.getElementById('itemsCarrito');
+            const totalContainer = document.getElementById('totalCarrito');
+            const btnComprar = document.getElementById('btnComprar');
+
+            if (carrito.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div style="color:#888;font-size:13px;text-align:center;padding:6px 0;">
+                        No hay productos en el carrito
+                    </div>
+                `;
+                totalContainer.textContent = '$0';
+                btnComprar.disabled = true;
+                ocultarFormulario();
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                html += `
+                    <div class="carrito-item">
+                        <span class="nombre">${escHtml(item.nombre)} x${item.cantidad}</span>
+                        <span class="subtotal">$${subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                `;
+            });
+
+            itemsContainer.innerHTML = html;
+            totalContainer.textContent = `$${total.toLocaleString('es-CO')}`;
+            btnComprar.disabled = false;
+        }
+
+        function vaciarCarrito() {
+            if (carrito.length === 0) return;
+            if (!confirm('¿Vaciar el carrito?')) return;
+            carrito = [];
+            actualizarCarrito();
+            ocultarFormulario();
+            productos.forEach(p => {
+                const el = document.getElementById(`cant-${p.id}`);
+                if (el) el.textContent = '0';
+            });
+            mostrarToast('Carrito vaciado', 'success');
+        }
+
+        function mostrarFormulario() {
+            const form = document.getElementById('formDatos');
+            form.classList.add('visible');
+            formularioVisible = true;
+            setTimeout(() => {
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+
+        function ocultarFormulario() {
+            const form = document.getElementById('formDatos');
+            form.classList.remove('visible');
+            formularioVisible = false;
+        }
+
+        function mostrarFormularioYEnviar() {
+            if (carrito.length === 0) {
+                mostrarToast('El carrito está vacío', 'error');
+                return;
+            }
+            if (!tiendaAbierta) {
+                mostrarToast('⚠️ La tienda está cerrada', 'error');
+                return;
+            }
             
-            startAlarm(nom, cliente);
-            toast(`🛵 ¡Nuevo pedido de ${cliente} en ${nom}! ${items} productos - $${total.toLocaleString('es-CO')}`, 'new', 7000);
-          }
-        });
-      }
-
-      resetKanban();
-      const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
-
-      snap.forEach(doc => {
-        renderPedido(doc, tiendaId, counts);
-      });
-
-      Object.entries(ESTADO_MAP).forEach(([estado, cfg]) => {
-        const el = document.getElementById(cfg.cnt);
-        if (el) el.textContent = counts[estado] || 0;
-      });
-
-      ['col-P','col-C','col-M','col-E'].forEach(colId => {
-        const el = document.getElementById(colId);
-        if (el && el.children.length === 0) {
-          const { ico, txt } = EMPTY_MSGS[colId];
-          el.innerHTML = `<div class="empty-col"><span class="ico">${ico}</span>${txt}</div>`;
+            if (formularioVisible) {
+                enviarPedido();
+                return;
+            }
+            
+            mostrarFormulario();
+            mostrarToast('📝 Completa tus datos y presiona "Comprar" nuevamente', 'info', 3000);
         }
-      });
 
-      document.getElementById('statP').textContent = counts['Pendiente'] || 0;
-      document.getElementById('statC').textContent = counts['En Cocina'] || 0;
-      document.getElementById('statM').textContent = counts['En Camino'] || 0;
-      document.getElementById('statE').textContent = counts['Entregado'] || 0;
+        function generarNumeroPedido() {
+            const num = String(Math.floor(Math.random() * 9000) + 1000);
+            return `#${num}`;
+        }
 
-      const pend = counts['Pendiente'] || 0;
-      document.getElementById('tabBadge').textContent = pend;
-      const hb = document.getElementById('headerBadge');
-      hb.textContent = pend;
-      hb.style.display = pend > 0 ? 'inline-block' : 'none';
+        // ============================================================
+        // ENVIAR PEDIDO - CON EMOJIS CORREGIDOS
+        // ============================================================
+        async function enviarPedido() {
+            if (!tiendaAbierta) {
+                mostrarToast('⚠️ La tienda está cerrada', 'error');
+                return;
+            }
+            if (carrito.length === 0) {
+                mostrarToast('El carrito está vacío', 'error');
+                return;
+            }
 
-      if (counts['Pendiente'] === 0) {
-        stopAlarm();
-        pedidosPendientes.clear();
-      }
+            const nombre = document.getElementById('clienteNombre').value.trim();
+            const telefono = document.getElementById('clienteTelefono').value.trim();
+            const direccion = document.getElementById('clienteDireccion').value.trim();
+            const barrio = document.getElementById('clienteBarrio').value.trim();
+            const observaciones = document.getElementById('clienteObservaciones').value.trim();
 
-      esInicial = false;
-    }, err => {
-      console.error('Firestore error:', err);
-      toast('Error al escuchar pedidos.', 'error');
-    });
-}
+            if (!nombre) {
+                mostrarToast('Por favor ingresa tu nombre', 'error');
+                document.getElementById('clienteNombre').focus();
+                return;
+            }
+            if (!telefono) {
+                mostrarToast('Por favor ingresa tu teléfono', 'error');
+                document.getElementById('clienteTelefono').focus();
+                return;
+            }
 
-// ============================================================
-// PEDIDOS - CONSTANTES
-// ============================================================
-const ESTADO_MAP = {
-  'Pendiente': { col:'col-P', cnt:'cnt-P', ring:'r-pending' },
-  'En Cocina': { col:'col-C', cnt:'cnt-C', ring:'r-cooking' },
-  'En Camino': { col:'col-M', cnt:'cnt-M', ring:'r-delivery' },
-  'Entregado': { col:'col-E', cnt:'cnt-E', ring:'r-done' },
-  'Cancelado': { col:'col-E', cnt:'cnt-E', ring:'r-cancel' }
-};
+            const numeroPedido = generarNumeroPedido();
+            const fecha = new Date();
+            const fechaStr = fecha.toLocaleDateString('es-CO');
+            const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-const EMPTY_MSGS = {
-  'col-P': { ico:'⏳', txt:'Sin pedidos pendientes' },
-  'col-C': { ico:'👨‍🍳', txt:'Nada en preparación' },
-  'col-M': { ico:'🛵', txt:'Nada en camino' },
-  'col-E': { ico:'✅', txt:'Sin entregas aún' }
-};
+            let total = 0;
+            const items = carrito.map(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                return {
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precio: item.precio,
+                    total: subtotal
+                };
+            });
 
-function resetKanban() {
-  ['col-P','col-C','col-M','col-E'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = '';
-  });
-}
+            // ============================================================
+            // MENSAJE WHATSAPP CON EMOJIS - VERSIÓN CORREGIDA
+            // ============================================================
+            // Usamos caracteres Unicode directamente, no emojis que puedan fallar
+            const emojiTienda = '🏪';
+            const emojiPedido = '🛵';
+            const emojiFecha = '📅';
+            const emojiHora = '⏰';
+            const emojiCliente = '👤';
+            const emojiTelefono = '📱';
+            const emojiDireccion = '📍';
+            const emojiBarrio = '🏘️';
+            const emojiObservaciones = '📝';
+            const emojiProductos = '🧾';
+            const emojiProducto = '🍜';
+            const emojiTotal = '💰';
 
-function renderPedido(doc, tiendaId, counts) {
-  const p = doc.data();
-  const pid = doc.id;
-  const estado = p.estado || 'Pendiente';
-  if (counts[estado] !== undefined) counts[estado]++;
+            let mensajeWhatsApp = `${emojiTienda} *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
+            mensajeWhatsApp += `${emojiPedido} *NUEVO PEDIDO ${numeroPedido}*\n\n`;
+            mensajeWhatsApp += `${emojiFecha} *Fecha:* ${fechaStr}\n`;
+            mensajeWhatsApp += `${emojiHora} *Hora:* ${horaStr}\n\n`;
+            mensajeWhatsApp += `${emojiCliente} *Cliente:*\n${nombre}\n\n`;
+            mensajeWhatsApp += `${emojiTelefono} *Teléfono:*\n${telefono}\n\n`;
+            mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion || 'Recoge en tienda'}\n\n`;
+            if (barrio) mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
+            if (observaciones) mensajeWhatsApp += `${emojiObservaciones} *Observaciones:*\n${observaciones}\n\n`;
+            mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
+            
+            items.forEach(item => {
+                mensajeWhatsApp += `${emojiProducto} ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
+            });
+            
+            mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
-  const cfg = ESTADO_MAP[estado];
-  if (!cfg) return;
-  const colEl = document.getElementById(cfg.col);
-  if (!colEl) return;
+            // ============================================================
+            // GUARDAR EN FIRESTORE
+            // ============================================================
+            const pedidoData = {
+                numeroPedido: numeroPedido,
+                cliente: {
+                    nombre: nombre,
+                    telefono: telefono,
+                    direccion: direccion || 'Recoge en tienda',
+                    barrio: barrio || '',
+                    observaciones: observaciones || ''
+                },
+                items: items,
+                total: total,
+                estado: 'Pendiente',
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                fuente: 'whatsapp',
+                timestamp: Date.now()
+            };
 
-  const num = p.numeroPedido || '#--';
-  const cliente = p.cliente || {};
+            try {
+                if (TIENDA_ID) {
+                    await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
+                    console.log('✅ Pedido guardado en Firestore');
+                }
+            } catch (error) {
+                console.error('❌ Error al guardar en Firestore:', error);
+            }
 
-  let fechaStr = '--';
-  let horaStr = '--';
-  if (p.fecha) {
-    const d = new Date(p.fecha);
-    fechaStr = d.toLocaleDateString('es-CO');
-    horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
-  }
+            // ============================================================
+            // ENVIAR POR WHATSAPP - USANDO encodeURIComponent
+            // ============================================================
+            const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
+            const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
-  let itemsHtml = '';
-  if (p.items && p.items.length) {
-    p.items.forEach(it => {
-      itemsHtml += `<div class="item"><span>${escHtml(it.nombre)} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
-    });
-  }
+            console.log('📱 Mensaje enviado a WhatsApp:');
+            console.log(mensajeWhatsApp);
 
-  let acciones = '';
-  if (estado === 'Pendiente') {
-    acciones += `<button class="btn-cook" onclick="cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
-    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-  }
-  if (estado === 'En Cocina') {
-    acciones += `<button class="btn-go" onclick="cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
-    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-  }
-  if (estado === 'En Camino') {
-    acciones += `<button class="btn-done" onclick="cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>`;
-  }
-  if (estado === 'Entregado' || estado === 'Cancelado') {
-    acciones += `<button class="btn-remove" onclick="eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
-  }
+            mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
+            window.open(urlWhatsApp, '_blank');
 
-  const esNuevo = estado === 'Pendiente' && !esInicial;
+            // Limpiar carrito
+            carrito = [];
+            actualizarCarrito();
+            ocultarFormulario();
+            document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteTelefono').value = '';
+            document.getElementById('clienteDireccion').value = '';
+            document.getElementById('clienteBarrio').value = '';
+            document.getElementById('clienteObservaciones').value = '';
+            productos.forEach(p => {
+                const el = document.getElementById(`cant-${p.id}`);
+                if (el) el.textContent = '0';
+            });
+        }
 
-  const card = document.createElement('div');
-  card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
-  
-  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
-  
-  card.innerHTML = `
-    <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
-    <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
-      📅 ${fechaStr} ⏰ ${horaStr}
-    </div>
-    <div class="pedido-cliente">
-      <div><span class="label">👤 Cliente:</span> ${escHtml(cliente.nombre || 'Desconocido')}</div>
-      ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${escHtml(cliente.telefono)}</div>` : ''}
-      ${cliente.direccion ? `<div><span class="label">📍 Dirección:</span> ${escHtml(cliente.direccion)}</div>` : ''}
-      ${cliente.barrio ? `<div><span class="label">🏘️ Barrio:</span> ${escHtml(cliente.barrio)}</div>` : ''}
-      ${cliente.observaciones ? `<div><span class="label">📝 Observaciones:</span> ${escHtml(cliente.observaciones)}</div>` : ''}
-    </div>
-    <div class="pedido-items">
-      <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
-      ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-      <div class="pedido-total">
-        <span>TOTAL</span>
-        <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
-      </div>
-    </div>
-    <div class="accion-btns">${acciones}</div>
-  `;
-  colEl.appendChild(card);
-}
+        function mostrarToast(mensaje, tipo = 'success', duracion = 4000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            if (tipo === 'info' && colorPrincipal) {
+                toast.style.borderLeftColor = colorPrincipal;
+            }
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracion);
+        }
 
-async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
-  try {
-    stopAlarm();
-    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
-    toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
 
-async function eliminarPedido(tiendaId, pedidoId) {
-  if (!confirm('¿Remover este pedido?')) return;
-  try {
-    stopAlarm();
-    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
-    toast('Pedido removido.', 'info');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
+        document.addEventListener('DOMContentLoaded', async () => {
+            await cargarTienda();
+            await cargarProductos();
 
-function escHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && document.activeElement.tagName !== 'TEXTAREA') {
+                    const btn = document.getElementById('btnComprar');
+                    if (!btn.disabled && formularioVisible) {
+                        enviarPedido();
+                    } else if (!btn.disabled && carrito.length > 0) {
+                        mostrarFormularioYEnviar();
+                    }
+                }
+            });
 
-// ============================================================
-// INICIALIZAR
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('filtroTienda');
-  if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
-});
+            setTimeout(() => {
+                const wrapper = document.getElementById('categoriasWrapper');
+                const indicator = document.getElementById('scrollIndicator');
+                if (wrapper && wrapper.scrollWidth > wrapper.clientWidth) {
+                    indicator.classList.add('visible');
+                    setTimeout(() => indicator.classList.remove('visible'), 3000);
+                }
+            }, 500);
+        });
 
-console.log('✅ Panel de administración cargado correctamente');
-console.log('🔔 Escuchando pedidos de todas las tiendas...');
-</script>
+        console.log('✅ Menú EyMotoComidas cargado correctamente');
+        console.log('🏪 Tienda ID:', TIENDA_ID);
+    </script>
 </body>
 </html>
