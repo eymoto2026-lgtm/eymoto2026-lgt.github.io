@@ -1,86 +1,88 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin V2 PRO 4 - EyMoto</title>
+<meta charset="UTF-8">
+<title>Admin V2 Stable</title>
 
-  <style>
-    body { font-family: Arial; background:#111; color:#fff; margin:0; }
-    header { background:#000; padding:15px; text-align:center; font-size:22px; color:#f5c400; }
-    .container { padding:20px; max-width:1200px; margin:auto; }
-    .card { background:#1c1c1c; padding:20px; margin-bottom:15px; border-radius:10px; }
-    input, button, select, textarea {
-      width:100%; padding:10px; margin:5px 0;
-      background:#222; color:#fff; border:1px solid #444;
-      border-radius:6px;
-    }
-    button { background:#f5c400; color:#000; cursor:pointer; font-weight:bold; }
-    .hidden { display:none; }
-    .tienda-card-item, .producto-item, .pedido-card {
-      background:#222; padding:10px; margin-top:10px; border-radius:8px;
-    }
-    .flex-buttons { display:flex; gap:5px; }
-    .grid-acciones { display:flex; gap:5px; margin-top:5px; }
-  </style>
+<style>
+body {font-family: Arial;background:#111;color:#fff;margin:0}
+header{background:#000;color:#f5c400;padding:15px;text-align:center}
+.container{padding:20px;max-width:1200px;margin:auto}
+.card{background:#1c1c1c;padding:15px;margin-bottom:15px;border-radius:10px}
+input,select,button,textarea{
+width:100%;padding:10px;margin:5px 0;background:#222;color:#fff;border:1px solid #444
+}
+button{background:#f5c400;color:#000;font-weight:bold;cursor:pointer}
+.hidden{display:none}
+.item{background:#222;padding:10px;margin-top:8px;border-radius:6px}
+.flex{display:flex;gap:5px}
+</style>
+
 </head>
 
 <body>
 
-<header>🚀 ADMIN V2 PRO 4 - EYMOTO</header>
+<header>ADMIN V2 ESTABLE</header>
 
 <div class="container">
 
-  <!-- LOGIN -->
-  <div id="loginBox" class="card">
-    <h3>Login</h3>
-    <input id="email" placeholder="email">
-    <input id="password" type="password" placeholder="password">
-    <button id="btnIniciarSesion">Entrar</button>
-  </div>
+<!-- LOGIN -->
+<div id="loginBox" class="card">
+<h3>Login</h3>
+<input id="email">
+<input id="password" type="password">
+<button id="loginBtn">Entrar</button>
+</div>
 
-  <!-- PANEL -->
-  <div id="panel" class="hidden">
+<!-- PANEL -->
+<div id="panel" class="hidden">
 
-    <div class="card">
-      <h3>📋 Pedidos en tiempo real</h3>
-      <select id="filtroTiendaPedidos"></select>
-      <div id="contenedorPedidos"></div>
-      <div id="estadoActual"></div>
-    </div>
+<!-- TIENDAS -->
+<div class="card">
+<h3>🏪 Tiendas</h3>
 
-    <div class="card">
-      <h3>🏪 Tiendas</h3>
+<input type="hidden" id="editTiendaId">
+<input id="tNombre" placeholder="Nombre">
+<input id="tWhatsapp" placeholder="WhatsApp">
+<input id="tLogo" placeholder="Logo">
+<input id="tBanner" placeholder="Banner">
 
-      <input type="hidden" id="editTiendaId">
-      <input id="nombreTienda" placeholder="Nombre">
-      <input id="whatsapp" placeholder="WhatsApp">
-      <input id="logoTienda" placeholder="Logo">
-      <input id="bannerTienda" placeholder="Banner">
+<button onclick="guardarTienda()">Guardar Tienda</button>
 
-      <button onclick="guardarTienda()">Guardar tienda</button>
+<div id="listaTiendas"></div>
+</div>
 
-      <div id="listaTiendas"></div>
-    </div>
+<!-- PRODUCTOS -->
+<div class="card">
+<h3>📦 Productos</h3>
 
-    <div class="card">
-      <h3>📦 Productos</h3>
+<select id="selectTienda" onchange="cargarProductos()"></select>
 
-      <select id="tiendaProducto"></select>
+<input type="hidden" id="editProdId">
+<input id="pNombre" placeholder="Nombre">
+<input id="pPrecio" placeholder="Precio">
+<input id="pCat" placeholder="Categoría">
+<textarea id="pDesc"></textarea>
 
-      <input type="hidden" id="editProductoId">
-      <input id="nuevoNombre" placeholder="Nombre">
-      <input id="nuevoPrecio" type="number" placeholder="Precio">
-      <input id="nuevoCategoria" placeholder="Categoría">
-      <textarea id="nuevoDescripcion"></textarea>
-      <input id="nuevoImagen">
+<button onclick="guardarProducto()">Guardar Producto</button>
 
-      <button onclick="guardarProducto()">Guardar producto</button>
+<div id="listaProductos"></div>
+</div>
 
-      <div id="listaProductos"></div>
-    </div>
+<!-- PEDIDOS -->
+<div class="card">
+<h3>📋 Pedidos</h3>
 
-    <button onclick="logout()">Salir</button>
-  </div>
+<select id="pedidoTienda"></select>
+
+<div id="pedidos"></div>
+<div id="estado"></div>
+
+</div>
+
+<button onclick="logout()">Salir</button>
+
+</div>
 
 </div>
 
@@ -90,237 +92,210 @@
 
 <script>
 
-/* ================= FIREBASE ================= */
+/* FIREBASE */
 firebase.initializeApp({
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
-  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+apiKey:"AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+authDomain:"eymotocomidas.firebaseapp.com",
+projectId:"eymotocomidas"
 });
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth=firebase.auth();
+const db=firebase.firestore();
 
-/* ================= STATE PRO 4 ================= */
-const App = {
-  state: {
-    tiendas: [],
-    pedidos: [],
-    stats: { pendientes:0, entregados:0, cancelados:0 }
-  },
-  listeners: { pedidos:null }
-};
-
-/* ================= EVENT BUS ================= */
-const EventBus = {
-  events:{},
-  on(e,f){ (this.events[e] ||= []).push(f); },
-  emit(e,d){ (this.events[e]||[]).forEach(f=>f(d)); }
-};
+/* STATE */
+let tiendaListener=null;
 
 /* ================= AUTH ================= */
 auth.onAuthStateChanged(u=>{
-  if(u){
-    loginBox.classList.add("hidden");
-    panel.classList.remove("hidden");
-    init();
-  }else{
-    loginBox.classList.remove("hidden");
-    panel.classList.add("hidden");
-  }
+if(u){
+loginBox.classList.add("hidden");
+panel.classList.remove("hidden");
+init();
+}else{
+loginBox.classList.remove("hidden");
+panel.classList.add("hidden");
+}
 });
 
-btnIniciarSesion.onclick=()=>{
-  auth.signInWithEmailAndPassword(email.value,password.value);
+loginBtn.onclick=()=>{
+auth.signInWithEmailAndPassword(email.value,password.value);
 };
 
 logout.onclick=()=>auth.signOut();
 
 /* ================= INIT ================= */
 function init(){
-  cargarTiendas();
-  initPedidos();
+cargarTiendas();
 }
 
 /* ================= TIENDAS ================= */
 async function cargarTiendas(){
-  const snap = await db.collection("tiendas").get();
+const snap=await db.collection("tiendas").get();
 
-  App.state.tiendas = snap.docs.map(d=>({id:d.id,...d.data()}));
+listaTiendas.innerHTML="";
+selectTienda.innerHTML="";
+pedidoTienda.innerHTML="";
 
-  renderTiendas();
-  llenarSelects();
+snap.forEach(d=>{
+const t=d.data();
+
+listaTiendas.innerHTML+=`
+<div class="item">
+<b>${t.nombre}</b>
+
+<div class="flex">
+<button onclick="editarTienda('${d.id}','${t.nombre}','${t.whatsapp}','${t.logo}','${t.banner}')">Edit</button>
+<button onclick="eliminarTienda('${d.id}')">Del</button>
+<button onclick="toggle('${d.id}',${t.abierta!==false})">
+${t.abierta!==false?'Cerrar':'Abrir'}
+</button>
+</div>
+</div>
+`;
+
+selectTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
+pedidoTienda.innerHTML+=`<option value="${d.id}">${t.nombre}</option>`;
+});
 }
 
-function renderTiendas(){
-  listaTiendas.innerHTML = App.state.tiendas.map(t=>`
-    <div class="tienda-card-item">
-      <b>${t.nombre}</b>
+/* GUARDAR TIENDA */
+async function guardarTienda(){
+const id=editTiendaId.value;
 
-      <div class="flex-buttons">
-        <button onclick="editarTienda('${t.id}')">✏️</button>
-        <button onclick="eliminarTienda('${t.id}')">🗑️</button>
-      </div>
-    </div>
-  `).join("");
+const data={
+nombre:tNombre.value,
+whatsapp:tWhatsapp.value,
+logo:tLogo.value,
+banner:tBanner.value,
+abierta:true
+};
+
+if(id){
+await db.collection("tiendas").doc(id).set(data,{merge:true});
+}else{
+await db.collection("tiendas").add(data);
 }
 
-window.guardarTienda = async ()=>{
-  const id = editTiendaId.value;
+limpiarTienda();
+cargarTiendas();
+}
 
-  const data = {
-    nombre:nombreTienda.value,
-    whatsapp:whatsapp.value,
-    logo:logoTienda.value,
-    banner:bannerTienda.value,
-    updatedAt:Date.now()
-  };
+/* EDITAR */
+function editarTienda(id,n,w,l,b){
+editTiendaId.value=id;
+tNombre.value=n;
+tWhatsapp.value=w;
+tLogo.value=l;
+tBanner.value=b;
+}
 
-  const ref=db.collection("tiendas");
+/* ELIMINAR */
+async function eliminarTienda(id){
+await db.collection("tiendas").doc(id).delete();
+cargarTiendas();
+}
 
-  if(id) await ref.doc(id).set(data,{merge:true});
-  else await ref.add({...data,createdAt:Date.now()});
-
-  cargarTiendas();
-};
-
-window.editarTienda=(id)=>{
-  const t=App.state.tiendas.find(x=>x.id===id);
-
-  editTiendaId.value=t.id;
-  nombreTienda.value=t.nombre;
-  whatsapp.value=t.whatsapp;
-  logoTienda.value=t.logo;
-  bannerTienda.value=t.banner;
-};
-
-window.eliminarTienda=async(id)=>{
-  await db.collection("tiendas").doc(id).delete();
-  cargarTiendas();
-};
-
-function llenarSelects(){
-  [filtroTiendaPedidos, tiendaProducto].forEach(sel=>{
-    sel.innerHTML=`<option value="">Seleccionar</option>`;
-    App.state.tiendas.forEach(t=>{
-      sel.innerHTML+=`<option value="${t.id}">${t.nombre}</option>`;
-    });
-  });
+/* TOGGLE */
+async function toggle(id,state){
+await db.collection("tiendas").doc(id).update({
+abierta:!state
+});
+cargarTiendas();
 }
 
 /* ================= PRODUCTOS ================= */
-window.guardarProducto = async ()=>{
-  const tId=tiendaProducto.value;
-  const pId=editProductoId.value;
+async function cargarProductos(){
+const id=selectTienda.value;
+if(!id) return;
 
-  const data={
-    name:nuevoNombre.value,
-    precio:Number(nuevoPrecio.value),
-    categoria:nuevoCategoria.value,
-    descripcion:nuevoDescripcion.value,
-    img:nuevoImagen.value
-  };
+const snap=await db.collection("tiendas").doc(id).collection("productos").get();
 
-  const ref=db.collection("tiendas").doc(tId).collection("productos");
+listaProductos.innerHTML="";
 
-  if(pId) await ref.doc(pId).set(data,{merge:true});
-  else await ref.add(data);
+snap.forEach(d=>{
+const p=d.data();
 
-  cargarProductos();
+listaProductos.innerHTML+=`
+<div class="item">
+${p.nombre} - $${p.precio}
+<button onclick="delProd('${d.id}')">X</button>
+</div>
+`;
+});
+}
+
+async function guardarProducto(){
+const id=selectTienda.value;
+if(!id) return alert("elige tienda");
+
+const pid=editProdId.value;
+
+const data={
+nombre:pNombre.value,
+precio:pPrecio.value,
+categoria:pCat.value,
+descripcion:pDesc.value
 };
 
-window.cargarProductos = async ()=>{
-  const tId=tiendaProducto.value;
-  if(!tId) return;
+const ref=db.collection("tiendas").doc(id).collection("productos");
 
-  const snap=await db.collection("tiendas").doc(tId).collection("productos").get();
+if(pid){
+await ref.doc(pid).set(data,{merge:true});
+}else{
+await ref.add(data);
+}
 
-  listaProductos.innerHTML=snap.docs.map(d=>{
-    const p=d.data();
-    return `<div class="producto-item">
-      ${p.name} - $${p.precio}
-    </div>`;
-  }).join("");
+cargarProductos();
+}
+
+/* DELETE PRODUCT */
+async function delProd(id){
+const t=selectTienda.value;
+await db.collection("tiendas").doc(t).collection("productos").doc(id).delete();
+cargarProductos();
+}
+
+/* ================= PEDIDOS ================= */
+pedidoTienda.onchange=()=>{
+listenPedidos();
 };
 
-/* ================= PEDIDOS PRO ================= */
-function initPedidos(){
-  filtroTiendaPedidos.onchange=()=>{
-    if(App.listeners.pedidos) App.listeners.pedidos();
+function listenPedidos(){
+const id=pedidoTienda.value;
+if(!id) return;
 
-    const id=filtroTiendaPedidos.value;
-    if(!id) return;
+if(tiendaListener) tiendaListener();
 
-    App.listeners.pedidos=db
-      .collection("tiendas").doc(id)
-      .collection("pedidos")
-      .orderBy("fecha","desc")
-      .onSnapshot(snap=>{
+tiendaListener=db.collection("tiendas").doc(id)
+.collection("pedidos")
+.orderBy("fecha","desc")
+.onSnapshot(snap=>{
 
-        const pedidos=snap.docs.map(d=>({id:d.id,...d.data()}));
+pedidos.innerHTML="";
+let pendientes=0;
 
-        App.state.pedidos=pedidos;
+snap.forEach(d=>{
+const p=d.data();
 
-        calcularStats(pedidos);
-        renderPedidos(pedidos);
-        detectarPicos(pedidos);
-      });
-  };
-}
+if(p.estado==="Pendiente") pendientes++;
 
-/* ================= RENDER PEDIDOS ================= */
-function renderPedidos(pedidos){
-  contenedorPedidos.innerHTML=pedidos.map(p=>`
-    <div class="pedido-card">
-      <b>${p.numeroPedido}</b> - ${p.estado}
-      <div class="grid-acciones">
-        <button onclick="cambiar('${p.id}','Entregado')">✔</button>
-        <button onclick="cambiar('${p.id}','Cancelado')">✖</button>
-      </div>
-    </div>
-  `).join("");
-}
-
-/* ================= STATS ================= */
-function calcularStats(pedidos){
-  let p=0,e=0,c=0;
-
-  pedidos.forEach(x=>{
-    if(x.estado==="Pendiente") p++;
-    if(x.estado==="Entregado") e++;
-    if(x.estado==="Cancelado") c++;
-  });
-
-  estadoActual.innerHTML=`🟡${p} 🟢${e} 🔴${c}`;
-}
-
-/* ================= DETECCIÓN ================= */
-function detectarPicos(pedidos){
-  const now=Date.now();
-  const recientes=pedidos.filter(p=>now-(p.fecha||now)<60000);
-
-  if(recientes.length>=3){
-    EventBus.emit("pico",recientes);
-  }
-}
-
-EventBus.on("pico",()=>{
-  const msg=new SpeechSynthesisUtterance("Alerta de pedidos altos");
-  speechSynthesis.speak(msg);
+pedidos.innerHTML+=`
+<div class="item">
+<b>${p.numeroPedido}</b> - ${p.estado}
+</div>
+`;
 });
 
-/* ================= UPDATE ================= */
-window.cambiar=(id,estado)=>{
-  const tId=filtroTiendaPedidos.value;
+estado.innerHTML="Pendientes: "+pendientes;
 
-  db.collection("tiendas")
-    .doc(tId)
-    .collection("pedidos")
-    .doc(id)
-    .update({estado});
-};
+/* ALARMA */
+if(pendientes>0){
+const msg=new SpeechSynthesisUtterance("Nuevo pedido pendiente");
+speechSynthesis.speak(msg);
+}
+
+});
+}
 
 </script>
 
