@@ -491,8 +491,9 @@ let pedidosPendientes = new Set();
 let tiendaSeleccionada = '';
 let tiendasCache = {};
 let notificacionesMostradas = new Set();
-let todosLosPedidos = {}; // Cache de pedidos por tienda
+let todosLosPedidos = {};
 let escuchaGlobalActiva = false;
+let listenersTiendas = {};
 
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
@@ -634,6 +635,10 @@ function iniciarSesion() {
 function logout() {
   stopAlarm();
   if (pedidosUnsub) pedidosUnsub();
+  Object.keys(listenersTiendas).forEach(key => {
+    if (listenersTiendas[key]) listenersTiendas[key]();
+  });
+  listenersTiendas = {};
   auth.signOut();
 }
 
@@ -898,7 +903,7 @@ function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
   tiendaSeleccionada = selector.value;
   
-  if (pedidosUnsub && tiendaSeleccionada) {
+  if (pedidosUnsub) {
     pedidosUnsub();
     pedidosUnsub = null;
   }
@@ -906,21 +911,26 @@ function cambiarTiendaSeleccionada() {
   if (tiendaSeleccionada) {
     escucharPedidosDeTienda(tiendaSeleccionada);
   } else {
-    mostrarTodosLosPedidos();
+    // Mostrar solo pedidos PENDIENTES en la vista global
+    mostrarPedidosPendientesGlobal();
   }
 }
 
 // ============================================================
-// MOSTRAR TODOS LOS PEDIDOS (MODO GLOBAL)
+// MOSTRAR SOLO PEDIDOS PENDIENTES (MODO GLOBAL)
 // ============================================================
-function mostrarTodosLosPedidos() {
+function mostrarPedidosPendientesGlobal() {
   resetKanban();
   const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
   
   Object.keys(todosLosPedidos).forEach(tiendaId => {
     const pedidos = todosLosPedidos[tiendaId] || [];
     pedidos.forEach(pedido => {
-      renderPedidoGlobal(pedido.doc, tiendaId, counts);
+      const data = pedido.data;
+      // ✅ SOLO mostrar pedidos PENDIENTES en la vista global
+      if (data.estado === 'Pendiente') {
+        renderPedidoGlobal(pedido.doc, tiendaId, counts);
+      }
     });
   });
   
@@ -1035,7 +1045,8 @@ function iniciarEscuchaGlobal() {
       const tiendaId = doc.id;
       const nombreTienda = tiendasCache[tiendaId] || tiendaId;
       
-      db.collection('tiendas').doc(tiendaId)
+      // Guardar referencia del listener
+      const unsubscribe = db.collection('tiendas').doc(tiendaId)
         .collection('pedidos')
         .orderBy('fecha', 'desc')
         .onSnapshot(snapPedidos => {
@@ -1050,6 +1061,7 @@ function iniciarEscuchaGlobal() {
               const data = change.doc.data();
               const pedidoId = change.doc.id;
               
+              // ✅ Solo notificar si está PENDIENTE y no se ha notificado antes
               if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
                 notificacionesMostradas.add(pedidoId);
                 
@@ -1057,9 +1069,13 @@ function iniciarEscuchaGlobal() {
                 const total = data.total || 0;
                 const items = data.items?.length || 0;
                 
+                // ✅ SONIDO Y VOZ
                 startAlarm(nombreTienda, cliente);
+                
+                // ✅ NOTIFICACIÓN FLOTANTE
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
+                // ✅ TOAST
                 toast(
                   `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
                   'new', 7000,
@@ -1072,6 +1088,7 @@ function iniciarEscuchaGlobal() {
                   }
                 );
                 
+                // ✅ Marcar tienda en lista
                 const tiendaElement = document.getElementById('tienda-' + tiendaId);
                 if (tiendaElement) {
                   tiendaElement.classList.add('tiene-pedidos');
@@ -1085,12 +1102,16 @@ function iniciarEscuchaGlobal() {
             }
           });
           
+          // ✅ Actualizar vista global si no hay tienda seleccionada
           if (!tiendaSeleccionada) {
-            mostrarTodosLosPedidos();
+            mostrarPedidosPendientesGlobal();
           }
         }, err => {
           console.error(`Error escuchando tienda ${tiendaId}:`, err);
         });
+      
+      // Guardar el unsubscribe para limpiar después
+      listenersTiendas[tiendaId] = unsubscribe;
     });
   }).catch(err => {
     console.error('Error obteniendo tiendas:', err);
@@ -1291,7 +1312,7 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
     await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
     toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
     
-    // ✅ NUEVO: Si el pedido pasa a "En Cocina", seleccionar la tienda automáticamente
+    // ✅ Si el pedido pasa a "En Cocina", seleccionar la tienda automáticamente
     if (nuevoEstado === 'En Cocina') {
       const selector = document.getElementById('filtroTienda');
       if (selector) {
@@ -1337,6 +1358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 console.log('✅ Panel de administración cargado correctamente');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
 console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
+console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
 </script>
 </body>
 </html>
