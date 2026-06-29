@@ -270,11 +270,12 @@ window.escucharPedidosEnTiempoReal = function() {
         if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
 
         let itemsHTML = "";
-        if (p.items && p.items.length > 0) {
-          p.items.forEach(item => {
-            itemsHTML += `• ${item.nombre || 'Producto'} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
-          });
-        }
+       if (p.items && p.items.length > 0) {
+    p.items.forEach(item => {
+            let nombreLimpio = (item.nombre || 'Producto').replace(/[^\w\sñáéíóúÁÉÍÓÚ]/gi, '');
+        itemsHTML += `• ${nombreLimpio} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
+    });
+}
 
         contenedor.innerHTML += `
           <div class="pedido-card ${claseBorde}">
