@@ -16,7 +16,6 @@
             min-height: 100vh;
         }
         
-        /* HEADER CON BANNER */
         .header {
             position: relative;
             width: 100%;
@@ -127,7 +126,6 @@
             color: #fff;
         }
 
-        /* CONTRASTE */
         .text-color-light {
             color: #ffffff !important;
             text-shadow: 0 2px 8px rgba(0,0,0,0.8) !important;
@@ -152,7 +150,6 @@
             padding-bottom: 200px;
         }
 
-        /* ===== CATEGORÍAS EN PESTAÑAS HORIZONTALES ===== */
         .categorias-wrapper {
             overflow-x: auto;
             overflow-y: hidden;
@@ -210,7 +207,6 @@
             background: rgba(255,255,255,0.3);
         }
 
-        /* ===== PRODUCTOS ===== */
         .productos-grid {
             margin-top: 4px;
         }
@@ -321,7 +317,6 @@
             color: #1a1a2e;
         }
 
-        /* ===== CARRITO FLOTANTE ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -410,7 +405,6 @@
             transform: none;
         }
 
-        /* ===== FORMULARIO - OCULTO POR DEFECTO ===== */
         .form-datos {
             margin-top: 10px;
             padding-top: 10px;
@@ -448,7 +442,6 @@
             transition: border-color 0.3s ease;
         }
 
-        /* TOAST */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -554,17 +547,14 @@
 </head>
 <body>
 
-    <!-- TOAST -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- OVERLAY TIENDA CERRADA -->
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
         <h2 id="cerradoTitulo">Tienda Cerrada</h2>
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
-    <!-- HEADER -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
@@ -583,15 +573,11 @@
     </div>
 
     <div class="container" id="contenedorMenu">
-        <!-- CATEGORÍAS EN PESTAÑAS HORIZONTALES -->
         <div class="categorias-wrapper" id="categoriasWrapper">
-            <div class="categorias-container" id="categoriasContainer">
-                <!-- Se generan dinámicamente -->
-            </div>
+            <div class="categorias-container" id="categoriasContainer"></div>
         </div>
         <div class="scroll-indicator" id="scrollIndicator">← Desliza para ver más →</div>
 
-        <!-- PRODUCTOS -->
         <div class="productos-grid" id="productosGrid">
             <div id="listaProductos" style="text-align:center;padding:30px;color:#888;">
                 <div style="font-size:32px;margin-bottom:12px;">⏳</div>
@@ -600,7 +586,6 @@
         </div>
     </div>
 
-    <!-- CARRITO -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -612,7 +597,6 @@
             </div>
         </div>
         
-        <!-- FORMULARIO - OCULTO HASTA CLIC EN COMPRAR -->
         <div class="form-datos" id="formDatos">
             <span class="label-form">👤 Datos de entrega</span>
             <input type="text" id="clienteNombre" placeholder="Tu nombre completo">
@@ -634,14 +618,10 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // ============================================================
-        // CONFIGURACIÓN FIREBASE
-        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
             authDomain: "eymotocomidas.firebaseapp.com",
@@ -653,9 +633,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ============================================================
-        // OBTENER ID DE TIENDA
-        // ============================================================
         const urlParams = new URLSearchParams(window.location.search);
         const TIENDA_ID = urlParams.get('tienda');
 
@@ -665,21 +642,13 @@
 
         console.log('🏪 Tienda ID:', TIENDA_ID);
 
-        // ============================================================
-        // ESTADO
-        // ============================================================
         let carrito = [];
         let productos = [];
         let tiendaData = {};
         let tiendaAbierta = true;
         let colorPrincipal = '#FFD600';
-        let categoriasData = [];
-        let categoriaActiva = '';
         let formularioVisible = false;
 
-        // ============================================================
-        // FUNCIONES DE COLOR
-        // ============================================================
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
             let r, g, b;
@@ -828,9 +797,6 @@
             img.src = imagenUrl;
         }
 
-        // ============================================================
-        // CARGAR TIENDA
-        // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) return;
             try {
@@ -913,9 +879,6 @@
             }
         }
 
-        // ============================================================
-        // CARGAR PRODUCTOS
-        // ============================================================
         async function cargarProductos() {
             const lista = document.getElementById('listaProductos');
             const categoriasContainer = document.getElementById('categoriasContainer');
@@ -955,7 +918,6 @@
 
                 const categorias = Array.from(categoriasMap.keys());
                 const sortedCategorias = ['Todos', ...categorias.filter(c => c !== 'Todos').sort()];
-                categoriasData = sortedCategorias;
 
                 let tabsHtml = '';
                 sortedCategorias.forEach((cat, index) => {
@@ -1046,11 +1008,7 @@
                     if (el) el.textContent = item.cantidad;
                 });
 
-                if (sortedCategorias.length > 0) {
-                    categoriaActiva = sortedCategorias[0];
-                }
-
-                console.log(`✅ ${productos.length} productos cargados en ${categoriasData.length} categorías`);
+                console.log(`✅ ${productos.length} productos cargados`);
 
             } catch (error) {
                 console.error('Error al cargar productos:', error);
@@ -1058,12 +1016,7 @@
             }
         }
 
-        // ============================================================
-        // SELECCIONAR CATEGORÍA
-        // ============================================================
         function seleccionarCategoria(categoria) {
-            categoriaActiva = categoria;
-            
             document.querySelectorAll('.categoria-tab').forEach(tab => {
                 tab.classList.remove('activa');
                 if (tab.dataset.categoria === categoria) {
@@ -1090,9 +1043,6 @@
             });
         }
 
-        // ============================================================
-        // FUNCIONES DEL CARRITO
-        // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
@@ -1179,9 +1129,6 @@
             mostrarToast('Carrito vaciado', 'success');
         }
 
-        // ============================================================
-        // MOSTRAR/OCULTAR FORMULARIO
-        // ============================================================
         function mostrarFormulario() {
             const form = document.getElementById('formDatos');
             form.classList.add('visible');
@@ -1197,9 +1144,6 @@
             formularioVisible = false;
         }
 
-        // ============================================================
-        // MOSTRAR FORMULARIO Y ENVIAR PEDIDO
-        // ============================================================
         function mostrarFormularioYEnviar() {
             if (carrito.length === 0) {
                 mostrarToast('El carrito está vacío', 'error');
@@ -1219,16 +1163,13 @@
             mostrarToast('📝 Completa tus datos y presiona "Comprar" nuevamente', 'info', 3000);
         }
 
-        // ============================================================
-        // GENERAR NÚMERO DE PEDIDO
-        // ============================================================
         function generarNumeroPedido() {
             const num = String(Math.floor(Math.random() * 9000) + 1000);
             return `#${num}`;
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON EMOJIS
+        // ENVIAR PEDIDO - CON EMOJIS CORREGIDOS
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -1275,24 +1216,38 @@
             });
 
             // ============================================================
-            // MENSAJE WHATSAPP CON EMOJIS
+            // MENSAJE WHATSAPP CON EMOJIS - VERSIÓN CORREGIDA
             // ============================================================
-            let mensajeWhatsApp = `🏪 *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
-            mensajeWhatsApp += `🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n`;
-            mensajeWhatsApp += `📅 *Fecha:* ${fechaStr}\n`;
-            mensajeWhatsApp += `⏰ *Hora:* ${horaStr}\n\n`;
-            mensajeWhatsApp += `👤 *Cliente:*\n${nombre}\n\n`;
-            mensajeWhatsApp += `📱 *Teléfono:*\n${telefono}\n\n`;
-            mensajeWhatsApp += `📍 *Dirección:*\n${direccion || 'Recoge en tienda'}\n\n`;
-            if (barrio) mensajeWhatsApp += `🏘️ *Barrio:*\n${barrio}\n\n`;
-            if (observaciones) mensajeWhatsApp += `📝 *Observaciones:*\n${observaciones}\n\n`;
-            mensajeWhatsApp += `🧾 *PRODUCTOS*\n\n`;
+            // Usamos caracteres Unicode directamente, no emojis que puedan fallar
+            const emojiTienda = '🏪';
+            const emojiPedido = '🛵';
+            const emojiFecha = '📅';
+            const emojiHora = '⏰';
+            const emojiCliente = '👤';
+            const emojiTelefono = '📱';
+            const emojiDireccion = '📍';
+            const emojiBarrio = '🏘️';
+            const emojiObservaciones = '📝';
+            const emojiProductos = '🧾';
+            const emojiProducto = '🍜';
+            const emojiTotal = '💰';
+
+            let mensajeWhatsApp = `${emojiTienda} *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
+            mensajeWhatsApp += `${emojiPedido} *NUEVO PEDIDO ${numeroPedido}*\n\n`;
+            mensajeWhatsApp += `${emojiFecha} *Fecha:* ${fechaStr}\n`;
+            mensajeWhatsApp += `${emojiHora} *Hora:* ${horaStr}\n\n`;
+            mensajeWhatsApp += `${emojiCliente} *Cliente:*\n${nombre}\n\n`;
+            mensajeWhatsApp += `${emojiTelefono} *Teléfono:*\n${telefono}\n\n`;
+            mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion || 'Recoge en tienda'}\n\n`;
+            if (barrio) mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
+            if (observaciones) mensajeWhatsApp += `${emojiObservaciones} *Observaciones:*\n${observaciones}\n\n`;
+            mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
             
             items.forEach(item => {
-                mensajeWhatsApp += `🍜 ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
+                mensajeWhatsApp += `${emojiProducto} ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
             });
             
-            mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
+            mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
             // ============================================================
             // GUARDAR EN FIRESTORE
@@ -1324,10 +1279,13 @@
             }
 
             // ============================================================
-            // ENVIAR POR WHATSAPP
+            // ENVIAR POR WHATSAPP - USANDO encodeURIComponent
             // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+
+            console.log('📱 Mensaje enviado a WhatsApp:');
+            console.log(mensajeWhatsApp);
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
@@ -1347,9 +1305,6 @@
             });
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function mostrarToast(mensaje, tipo = 'success', duracion = 4000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -1367,17 +1322,11 @@
             }, duracion);
         }
 
-        // ============================================================
-        // ESCAPE HTML
-        // ============================================================
         function escHtml(str) {
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // ============================================================
-        // INICIALIZAR
-        // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
             await cargarTienda();
             await cargarProductos();
