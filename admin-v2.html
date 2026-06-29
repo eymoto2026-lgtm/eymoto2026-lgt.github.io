@@ -7,8 +7,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
-
-/* ===== CAMBIOS: COLOR AMARILLO ===== */
 :root{
   --yellow:#FFD600;
   --yellow-dim:#e6c200;
@@ -31,8 +29,6 @@ input,select,textarea,button{
 }
 input:focus,select:focus,textarea:focus{border-color:var(--yellow)}
 select option{background:#1e1e1e}
-
-/* ===== BOTONES AMARILLOS ===== */
 button{
   background:var(--yellow);color:#1a1a2e;font-weight:700;
   border:none;cursor:pointer;letter-spacing:.3px;
@@ -48,48 +44,137 @@ button:active{transform:scale(.98)}
 .btn-info{background:#0288d1;color:#fff}
 .btn-info:hover{background:#0277bd}
 .hidden{display:none!important}
-
-/* ===== LOGIN ===== */
-#loginBox{max-width:420px;margin:60px auto;padding:32px}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .brand{
-  display:inline-block;background:var(--yellow);color:#1a1a2e;
-  font-size:26px;font-weight:900;padding:10px 24px;border-radius:30px;
+label{
+  display:block;font-size:11px;font-weight:700;
+  color:var(--text-muted);margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.6px;
 }
-
-/* ===== HEADER ===== */
-header .brand{
-  background:var(--yellow);color:#1a1a2e;font-weight:900;
-  font-size:14px;padding:5px 14px;border-radius:20px;
-}
-.header-badge{
-  background:var(--red);color:#fff;font-size:10px;font-weight:800;
-  padding:3px 7px;border-radius:10px;display:none;
-}
-
-/* ===== SECTION TITLES ===== */
+.form-group{margin-bottom:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .section-title{
   font-size:11px;font-weight:700;color:var(--yellow);
   text-transform:uppercase;letter-spacing:1px;
   margin-bottom:16px;display:flex;align-items:center;gap:10px;
 }
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:20px;margin-bottom:18px;
+}
 
-/* ===== STATS ===== */
+/* TOAST */
+#toastWrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:#1e1e1e;border:1px solid var(--border2);border-radius:12px;
+  padding:12px 16px;display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  animation:toastIn .3s ease;pointer-events:auto;max-width:380px;
+  cursor:pointer;
+}
+.toast:hover{opacity:0.9}
+.toast.t-success{border-left:3px solid var(--green)}
+.toast.t-error{border-left:3px solid var(--red)}
+.toast.t-info{border-left:3px solid var(--blue)}
+.toast.t-warn{border-left:3px solid var(--yellow)}
+.toast.t-new{border-left:3px solid var(--yellow);border-top-color:var(--yellow)}
+.toast-fade{animation:toastOut .3s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
+.toast .toast-tienda{font-weight:700;color:var(--yellow)}
+
+/* LOGIN */
+#loginBox{max-width:420px;margin:60px auto;padding:32px}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .brand{
+  display:inline-block;background:var(--yellow);color:#1a1a2e;
+  font-size:26px;font-weight:900;padding:10px 24px;border-radius:30px;
+}
+#loginBox h2{font-size:22px;font-weight:700;margin-bottom:4px}
+#loginBox .sub{color:var(--text-muted);font-size:14px;margin-bottom:26px}
+#loginMsg{color:var(--red);font-size:13px;margin-top:10px;min-height:20px}
+
+/* HEADER */
+header{
+  background:#0d0d0d;border-bottom:1px solid var(--border);
+  padding:13px 24px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;
+}
+header .brand{
+  background:var(--yellow);color:#1a1a2e;font-weight:900;
+  font-size:14px;padding:5px 14px;border-radius:20px;
+}
+header h1{font-size:15px;font-weight:600;color:#fff}
+header .spacer{flex:1}
+.header-badge{
+  background:var(--red);color:#fff;font-size:10px;font-weight:800;
+  padding:3px 7px;border-radius:10px;display:none;
+}
+
+.wrap{max-width:1400px;margin:0 auto;padding:22px 20px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;
+}
+.stat-card .val{font-size:28px;font-weight:900;margin-bottom:2px;line-height:1}
+.stat-card .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
 .stat-card.c-yellow .val{color:var(--yellow)}
+.stat-card.c-blue .val{color:var(--blue)}
 .stat-card.c-orange .val{color:#FF6900}
+.stat-card.c-green .val{color:var(--green)}
 
-/* ===== TABS ===== */
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:5px;margin-bottom:22px}
+.tab-btn{
+  flex:1;background:transparent;color:var(--text-muted);border:none;
+  padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;
+  justify-content:center;gap:7px;
+}
+.tab-btn.active{background:var(--surface);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .tab-badge{
   background:var(--yellow);color:#1a1a2e;font-size:10px;font-weight:800;
   padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;
 }
+.tab-content{display:none}
+.tab-content.active{display:block}
 
-/* ===== KANBAN - COLUMNA PENDIENTE AMARILLA ===== */
+/* KANBAN */
+.kanban-wrap{overflow-x:auto;padding-bottom:6px}
+.kanban{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;min-height:340px}
+.kanban-col{background:var(--surface2);border-radius:12px;padding:14px;min-height:200px}
+.kanban-col-header{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);
+}
+.col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.kanban-col-header h4{font-size:13px;font-weight:700;flex:1}
+.col-count{
+  font-size:11px;font-weight:700;background:var(--surface3);
+  color:var(--text-muted);padding:2px 7px;border-radius:8px;
+}
 .dot-yellow{background:var(--yellow)}
-.pedido-card.r-pending{border-color:var(--yellow)}
+.dot-blue{background:var(--blue)}
+.dot-orange{background:#FF6900}
+.dot-green{background:var(--green)}
+.empty-col{text-align:center;padding:30px 10px;color:var(--text-muted);font-size:12px}
+.empty-col .ico{font-size:28px;display:block;margin-bottom:8px;opacity:.4}
 
-/* ===== PEDIDO CARD ===== */
+/* PEDIDO CARD */
+.pedido-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:14px;margin-bottom:10px;
+  animation:slideIn .22s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.pedido-card.r-pending{border-color:var(--yellow)}
+.pedido-card.r-cooking{border-color:var(--blue)}
+.pedido-card.r-delivery{border-color:#FF6900}
+.pedido-card.r-done{border-color:var(--green)}
+.pedido-card.r-cancel{border-color:var(--red)}
+
 .pedido-tienda{
   font-size:14px;font-weight:900;color:var(--yellow);
   margin-bottom:6px;
@@ -142,24 +227,7 @@ header .brand{
 }
 .btn-speaker:hover{background:var(--surface2)}
 
-/* ===== TOAST ===== */
-#toastWrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{
-  background:#1e1e1e;border:1px solid var(--border2);border-radius:12px;
-  padding:12px 16px;display:flex;align-items:center;gap:10px;
-  font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.5);
-  animation:toastIn .3s ease;pointer-events:auto;max-width:320px;
-}
-.toast.t-success{border-left:3px solid var(--green)}
-.toast.t-error{border-left:3px solid var(--red)}
-.toast.t-info{border-left:3px solid var(--blue)}
-.toast.t-warn{border-left:3px solid var(--yellow)}
-.toast.t-new{border-left:3px solid var(--yellow);border-top-color:var(--yellow)}
-.toast-fade{animation:toastOut .3s ease forwards}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-@keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
-
-/* ===== TIENDAS ===== */
+/* TIENDAS */
 .tienda-item{
   background:var(--surface2);border:1px solid var(--border);
   border-radius:12px;padding:16px;margin-bottom:12px;
@@ -180,8 +248,9 @@ header .brand{
 .badge-open{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--green-bg);color:var(--green);margin-top:6px}
 .badge-closed{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--red-bg);color:var(--red);margin-top:6px}
 .tienda-actions{display:flex;gap:6px;flex-shrink:0}
+.tienda-item.tiene-pedidos{border-color:var(--yellow);box-shadow:0 0 15px rgba(255,214,0,0.15)}
 
-/* ===== PRODUCTOS ===== */
+/* PRODUCTOS */
 .prod-item{
   display:flex;align-items:center;gap:12px;
   padding:13px 0;border-bottom:1px solid var(--border);
@@ -200,7 +269,7 @@ header .brand{
 .prod-price{font-size:15px;font-weight:900;color:var(--yellow);margin-right:8px;white-space:nowrap}
 .prod-actions{display:flex;gap:5px;flex-shrink:0}
 
-/* ===== ESTADO ===== */
+/* ESTADO */
 .estado-wrap{max-width:460px}
 .estado-card{
   display:flex;align-items:center;gap:16px;
@@ -220,45 +289,41 @@ header .brand{
 .nuevo-pedido{animation:pulse 1.5s ease-in-out 3}
 @keyframes pulse{0%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}50%{border-color:#fff;box-shadow:0 0 20px 5px rgba(255,214,0,0.3)}100%{border-color:var(--yellow);box-shadow:0 0 0 0 rgba(255,214,0,0.7)}}
 
-/* ===== RESPONSIVE ===== */
+/* NOTIFICACIÓN DE NUEVO PEDIDO FLOTANTE */
+.notificacion-pedido {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: #1e1e1e;
+    border: 2px solid var(--yellow);
+    border-radius: 14px;
+    padding: 16px 20px;
+    z-index: 1000;
+    max-width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    animation: notificacionEntrar 0.5s ease;
+    cursor: pointer;
+}
+.notificacion-pedido:hover {
+    transform: scale(1.02);
+    border-color: #fff;
+}
+@keyframes notificacionEntrar {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.notificacion-pedido .notif-tienda {
+    color: var(--yellow);
+    font-weight: 900;
+    font-size: 14px;
+}
+.notif-titulo{font-size:13px;font-weight:700;color:#fff}
+.notif-cliente{font-size:12px;color:#aaa;margin-top:3px}
+.notif-total{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
+.notif-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:6px}
+
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
-
-/* ===== RESTANTE DEL CSS (igual que antes) ===== */
-input,select,textarea,button{font-family:inherit;font-size:14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface3);color:#fff;padding:11px 14px;width:100%;box-sizing:border-box;outline:none;transition:border-color .2s,background .2s}
-input:focus,select:focus,textarea:focus{border-color:var(--yellow)}
-select option{background:#1e1e1e}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px}
-label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px}
-.form-group{margin-bottom:14px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-header{background:#0d0d0d;border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
-header h1{font-size:15px;font-weight:600;color:#fff}
-header .spacer{flex:1}
-.wrap{max-width:1400px;margin:0 auto;padding:22px 20px}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
-.stat-card .val{font-size:28px;font-weight:900;margin-bottom:2px;line-height:1}
-.stat-card .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
-.stat-card.c-blue .val{color:var(--blue)}
-.stat-card.c-green .val{color:var(--green)}
-.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:5px;margin-bottom:22px}
-.tab-btn{flex:1;background:transparent;color:var(--text-muted);border:none;padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
-.tab-btn.active{background:var(--surface);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.tab-content{display:none}
-.tab-content.active{display:block}
-.kanban-wrap{overflow-x:auto;padding-bottom:6px}
-.kanban{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:14px;min-height:340px}
-.kanban-col{background:var(--surface2);border-radius:12px;padding:14px;min-height:200px}
-.kanban-col-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.col-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.kanban-col-header h4{font-size:13px;font-weight:700;flex:1}
-.col-count{font-size:11px;font-weight:700;background:var(--surface3);color:var(--text-muted);padding:2px 7px;border-radius:8px}
-.dot-blue{background:var(--blue)}
-.dot-orange{background:#FF6900}
-.dot-green{background:var(--green)}
-.empty-col{text-align:center;padding:30px 10px;color:var(--text-muted);font-size:12px}
-.empty-col .ico{font-size:28px;display:block;margin-bottom:8px;opacity:.4}
 </style>
 </head>
 <body>
@@ -307,7 +372,7 @@ header .spacer{flex:1}
         <h3>Monitor de pedidos en tiempo real</h3>
         <span class="spacer"></span>
         <div class="peds-controls">
-          <select id="filtroTienda" onchange="escucharPedidos()">
+          <select id="filtroTienda" onchange="cambiarTiendaSeleccionada()">
             <option value="">Seleccionar tienda...</option>
           </select>
           <button class="btn-speaker" onclick="probarAltavoz()">🔔 Altavoz</button>
@@ -423,23 +488,78 @@ let alarmInterval = null;
 let audioCtx = null;
 let esInicial = true;
 let pedidosPendientes = new Set();
+let tiendaSeleccionada = '';
+let tiendasCache = {};
+let notificacionesMostradas = new Set();
+
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
 // ============================================================
 // TOAST
 // ============================================================
-function toast(msg, type = 'info', dur = 4000) {
+function toast(msg, type = 'info', dur = 4000, onClick = null) {
   const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️', new:'🛵' };
   const wrap = document.getElementById('toastWrap');
   const el = document.createElement('div');
   el.className = `toast t-${type}`;
   el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
+  if (onClick) {
+    el.style.cursor = 'pointer';
+    el.onclick = onClick;
+  }
   wrap.appendChild(el);
-  setTimeout(() => { el.classList.add('toast-fade'); setTimeout(() => el.remove(), 350); }, dur);
+  setTimeout(() => {
+    el.classList.add('toast-fade');
+    setTimeout(() => el.remove(), 350);
+  }, dur);
+  return el;
 }
 
 // ============================================================
-// SONIDO / ALARMA
+// NOTIFICACIÓN FLOTANTE DE NUEVO PEDIDO
+// ============================================================
+function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId) {
+  // Eliminar notificaciones antiguas
+  document.querySelectorAll('.notificacion-pedido').forEach(el => el.remove());
+  
+  const div = document.createElement('div');
+  div.className = 'notificacion-pedido';
+  div.innerHTML = `
+    <div class="notif-tienda">🏪 ${tiendaNombre}</div>
+    <div class="notif-titulo">🛵 Nuevo pedido</div>
+    <div class="notif-cliente">👤 ${cliente}</div>
+    <div class="notif-total">💰 $${total.toLocaleString('es-CO')} · ${items} producto${items > 1 ? 's' : ''}</div>
+    <div style="font-size:10px;color:#666;margin-top:6px;">💡 Haz clic para ver este pedido</div>
+  `;
+  
+  // Al hacer clic, seleccionar la tienda automáticamente
+  div.onclick = function() {
+    const selector = document.getElementById('filtroTienda');
+    if (selector) {
+      selector.value = tiendaId;
+      cambiarTiendaSeleccionada();
+    }
+    // Cerrar la notificación
+    div.remove();
+    // Cambiar a la pestaña de pedidos
+    const btnPedidos = document.querySelectorAll('.tab-btn')[0];
+    if (btnPedidos) switchTab('pedidos', btnPedidos);
+  };
+  
+  document.body.appendChild(div);
+  
+  // Auto-cerrar después de 15 segundos
+  setTimeout(() => {
+    if (div.parentNode) {
+      div.style.opacity = '0';
+      div.style.transition = 'opacity 0.5s';
+      setTimeout(() => div.remove(), 500);
+    }
+  }, 15000);
+}
+
+// ============================================================
+// SONIDO / ALARMA CON NOMBRE DE TIENDA
 // ============================================================
 function beep() {
   try {
@@ -466,15 +586,16 @@ function hablar(msg) {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(msg);
     u.lang = 'es-CO';
-    u.rate = 1.1;
+    u.rate = 1.0;
     setTimeout(() => window.speechSynthesis.speak(u), 600);
   } catch(e) {}
 }
 
-function startAlarm(nombreTienda, pedidoInfo = '') {
+function startAlarm(nombreTienda, cliente = '') {
   if (alarmInterval) return;
   beep();
-  hablar(`Nuevo pedido en ${nombreTienda}${pedidoInfo}`);
+  const mensaje = `Nuevo pedido en ${nombreTienda}${cliente ? ` de ${cliente}` : ''}`;
+  hablar(mensaje);
   alarmInterval = setInterval(beep, 8000);
 }
 
@@ -529,6 +650,8 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 async function inicializar() {
   await cargarTiendas();
+  // Iniciar escucha de TODAS las tiendas automáticamente
+  escucharTodasLasTiendas();
 }
 
 // ============================================================
@@ -541,6 +664,7 @@ async function cargarTiendas() {
   });
   const lista = document.getElementById('listaTiendas');
   lista.innerHTML = '';
+  tiendasCache = {};
 
   try {
     const snap = await db.collection('tiendas').get();
@@ -551,11 +675,13 @@ async function cargarTiendas() {
     snap.forEach(doc => {
       const t = doc.data();
       const id = doc.id;
+      tiendasCache[id] = t.nombre || id;
       const url = `${URL_BASE_MENU}?tienda=${id}`;
       const abierta = t.abierta !== false;
 
       const div = document.createElement('div');
       div.className = 'tienda-item';
+      div.id = 'tienda-' + id;
       div.innerHTML = `
         <div class="tienda-logo">
           ${t.logo ? `<img src="${escHtml(t.logo)}" alt="${escHtml(t.nombre||'')}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
@@ -768,36 +894,122 @@ async function toggleEstado(tid) {
 }
 
 // ============================================================
-// PEDIDOS EN TIEMPO REAL
+// CAMBIAR TIENDA SELECCIONADA
 // ============================================================
-const ESTADO_MAP = {
-  'Pendiente': { col:'col-P', cnt:'cnt-P', ring:'r-pending' },
-  'En Cocina': { col:'col-C', cnt:'cnt-C', ring:'r-cooking' },
-  'En Camino': { col:'col-M', cnt:'cnt-M', ring:'r-delivery' },
-  'Entregado': { col:'col-E', cnt:'cnt-E', ring:'r-done' },
-  'Cancelado': { col:'col-E', cnt:'cnt-E', ring:'r-cancel' }
-};
+function cambiarTiendaSeleccionada() {
+  const selector = document.getElementById('filtroTienda');
+  tiendaSeleccionada = selector.value;
+  
+  // Detener escucha anterior
+  if (pedidosUnsub) {
+    pedidosUnsub();
+    pedidosUnsub = null;
+  }
+  
+  if (tiendaSeleccionada) {
+    // Escuchar solo la tienda seleccionada
+    escucharPedidosDeTienda(tiendaSeleccionada);
+  } else {
+    // Si no hay selección, escuchar todas (ya está activo)
+    // No hacer nada, la escucha global sigue activa
+  }
+}
 
-const EMPTY_MSGS = {
-  'col-P': { ico:'⏳', txt:'Sin pedidos pendientes' },
-  'col-C': { ico:'👨‍🍳', txt:'Nada en preparación' },
-  'col-M': { ico:'🛵', txt:'Nada en camino' },
-  'col-E': { ico:'✅', txt:'Sin entregas aún' }
-};
+// ============================================================
+// ESCUCHAR TODAS LAS TIENDAS (NUEVO - GLOBAL)
+// ============================================================
+function escucharTodasLasTiendas() {
+  if (pedidosUnsub) {
+    pedidosUnsub();
+    pedidosUnsub = null;
+  }
+  
+  // Limpiar notificaciones
+  notificacionesMostradas = new Set();
+  
+  // Escuchar cambios en TODOS los pedidos de TODAS las tiendas
+  const todasLasTiendasRef = db.collectionGroup('pedidos');
+  
+  pedidosUnsub = todasLasTiendasRef
+    .orderBy('fecha', 'desc')
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          const pedidoId = change.doc.id;
+          const tiendaId = change.doc.ref.parent.parent.id; // Obtener ID de la tienda
+          
+          // Solo notificar si es nuevo y está pendiente
+          if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
+            notificacionesMostradas.add(pedidoId);
+            
+            const nombreTienda = tiendasCache[tiendaId] || 'Tienda desconocida';
+            const cliente = data.cliente?.nombre || 'Cliente';
+            const total = data.total || 0;
+            const items = data.items?.length || 0;
+            
+            // ✅ SONIDO Y VOZ CON NOMBRE DE LA TIENDA
+            startAlarm(nombreTienda, cliente);
+            
+            // ✅ MOSTRAR NOTIFICACIÓN FLOTANTE
+            mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId);
+            
+            // ✅ TOAST CON NOMBRE DE TIENDA
+            toast(
+              `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
+              'new', 7000,
+              function() {
+                // Al hacer clic en el toast, seleccionar la tienda
+                const selector = document.getElementById('filtroTienda');
+                if (selector) {
+                  selector.value = tiendaId;
+                  cambiarTiendaSeleccionada();
+                }
+              }
+            );
+            
+            // Marcar la tienda en la lista con un indicador visual
+            const tiendaElement = document.getElementById('tienda-' + tiendaId);
+            if (tiendaElement) {
+              tiendaElement.classList.add('tiene-pedidos');
+              // Quitar el resaltado después de 10 segundos o al seleccionar
+              setTimeout(() => {
+                if (tiendaElement && tiendaSeleccionada !== tiendaId) {
+                  tiendaElement.classList.remove('tiene-pedidos');
+                }
+              }, 10000);
+            }
+          }
+        }
+      });
+    }, err => {
+      console.error('Firestore error:', err);
+      toast('Error al escuchar pedidos globales.', 'error');
+    });
+}
 
-function escucharPedidos() {
-  const tid = document.getElementById('filtroTienda').value;
-  if (pedidosUnsub) { pedidosUnsub(); pedidosUnsub = null; }
+// ============================================================
+// ESCUCHAR PEDIDOS DE UNA TIENDA ESPECÍFICA
+// ============================================================
+function escucharPedidosDeTienda(tiendaId) {
+  if (!tiendaId) return;
+  
+  // Detener escucha anterior
+  if (pedidosUnsub) {
+    pedidosUnsub();
+    pedidosUnsub = null;
+  }
+  
   stopAlarm();
   resetKanban();
   pedidosPendientes.clear();
-  if (!tid) return;
   esInicial = true;
 
-  pedidosUnsub = db.collection('tiendas').doc(tid)
+  pedidosUnsub = db.collection('tiendas').doc(tiendaId)
     .collection('pedidos')
     .orderBy('fecha', 'desc')
     .onSnapshot(snap => {
+      // Detectar nuevos pedidos pendientes (solo después de la carga inicial)
       if (!esInicial) {
         snap.docChanges().forEach(ch => {
           if (ch.type === 'added' && ch.doc.data().estado === 'Pendiente') {
@@ -812,7 +1024,7 @@ function escucharPedidos() {
             const total = data.total || 0;
             const items = data.items?.length || 0;
             
-            startAlarm(nom, ` de ${cliente}`);
+            startAlarm(nom, cliente);
             toast(`🛵 ¡Nuevo pedido de ${cliente} en ${nom}! ${items} productos - $${total.toLocaleString('es-CO')}`, 'new', 7000);
           }
         });
@@ -822,7 +1034,7 @@ function escucharPedidos() {
       const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
 
       snap.forEach(doc => {
-        renderPedido(doc, tid, counts);
+        renderPedido(doc, tiendaId, counts);
       });
 
       Object.entries(ESTADO_MAP).forEach(([estado, cfg]) => {
@@ -860,6 +1072,24 @@ function escucharPedidos() {
       toast('Error al escuchar pedidos.', 'error');
     });
 }
+
+// ============================================================
+// PEDIDOS - CONSTANTES
+// ============================================================
+const ESTADO_MAP = {
+  'Pendiente': { col:'col-P', cnt:'cnt-P', ring:'r-pending' },
+  'En Cocina': { col:'col-C', cnt:'cnt-C', ring:'r-cooking' },
+  'En Camino': { col:'col-M', cnt:'cnt-M', ring:'r-delivery' },
+  'Entregado': { col:'col-E', cnt:'cnt-E', ring:'r-done' },
+  'Cancelado': { col:'col-E', cnt:'cnt-E', ring:'r-cancel' }
+};
+
+const EMPTY_MSGS = {
+  'col-P': { ico:'⏳', txt:'Sin pedidos pendientes' },
+  'col-C': { ico:'👨‍🍳', txt:'Nada en preparación' },
+  'col-M': { ico:'🛵', txt:'Nada en camino' },
+  'col-E': { ico:'✅', txt:'Sin entregas aún' }
+};
 
 function resetKanban() {
   ['col-P','col-C','col-M','col-E'].forEach(id => {
@@ -917,8 +1147,11 @@ function renderPedido(doc, tiendaId, counts) {
 
   const card = document.createElement('div');
   card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
+  
+  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
+  
   card.innerHTML = `
-    <div class="pedido-tienda">🏪 ${escHtml(document.getElementById('filtroTienda').options[document.getElementById('filtroTienda').selectedIndex]?.text || 'Tienda')}</div>
+    <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
     <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
       📅 ${fechaStr} ⏰ ${horaStr}
@@ -960,9 +1193,6 @@ async function eliminarPedido(tiendaId, pedidoId) {
   } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
 
-// ============================================================
-// ESCAPE HTML
-// ============================================================
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -973,8 +1203,11 @@ function escHtml(str) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('filtroTienda');
-  if (sel) sel.addEventListener('change', escucharPedidos);
+  if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
 });
+
+console.log('✅ Panel de administración cargado correctamente');
+console.log('🔔 Escuchando pedidos de todas las tiendas...');
 </script>
 </body>
 </html>
