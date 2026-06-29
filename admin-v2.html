@@ -148,463 +148,73 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let pedidosUnsubscribe = null;
-let despertadorInterval = null; 
+let despertadorInterval = null;
 
-function reproducirSonidoDespertador(nombreTienda = "Ey Moto") {
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const mensaje = new SpeechSynthesisUtterance(`Atención, nuevo pedido para la tienda ${nombreTienda}`);
-      mensaje.lang = 'es-CO';
-      mensaje.rate = 1.0; 
-      window.speechSynthesis.speak(mensaje);
-    }
-  } catch (e) {
-    console.log("Error con la alarma de voz: ", e);
-  }
-}
-
-window.probarVozAlarma = function() {
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const mensaje = new SpeechSynthesisUtterance("Alarma configurada correctamente en Ey Moto");
-      mensaje.lang = 'es-CO';
-      mensaje.speak(mensaje);
-      alert("¡Altavoz inicializado con éxito!");
-    } else {
-      alert("Tu navegador no soporta alertas de voz.");
-    }
-  } catch(e) {
-    alert("Haz clic en la pantalla antes de probar de nuevo.");
-  }
-}
-
+// --- FUNCIONES DE ALARMA ---
 function detenerAlarma() {
   if (despertadorInterval) {
     clearInterval(despertadorInterval);
     despertadorInterval = null;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    console.log("⏰ Alarma apagada.");
   }
 }
 
 function activarAlarma(nombreTienda) {
   if (!despertadorInterval) {
-    reproducirSonidoDespertador(nombreTienda); 
-    despertadorInterval = setInterval(() => reproducirSonidoDespertador(nombreTienda), 5000);
-    console.log("⏰ Alarma activada para: " + nombreTienda);
+    const msg = new SpeechSynthesisUtterance(`Atención, pedido para ${nombreTienda}`);
+    window.speechSynthesis.speak(msg);
+    despertadorInterval = setInterval(() => window.speechSynthesis.speak(msg), 5000);
   }
 }
 
-// --- ESCUCHA EN TIEMPO REAL ---
-window.escucharPedidosEnTiempoReal = function() {
-  const tiendaId = document.getElementById("filtroTiendaPedidos").value;
-  const contenedor = document.getElementById("contenedorPedidos");
-  if (!contenedor) return;
-
-  if (pedidosUnsubscribe) pedidosUnsubscribe();
-  detenerAlarma(); 
-
-  if (!tiendaId) {
-    contenedor.innerHTML = '<p style="color: #aaa; text-align: center;">Filtra una tienda arriba para ver el flujo de pedidos.</p>';
-    return;
+// --- LOGIN Y SESIÓN ---
+document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    document.getElementById("loginMsg").innerText = "Error: " + e.message;
   }
+});
 
-  contenedor.innerHTML = '<p style="color: #f5c400; text-align: center;">Sincronizando comandas... ⏳</p>';
-
-  let esCargaInicial = true;
-
-  pedidosUnsubscribe = db.collection("tiendas").doc(tiendaId).collection("pedidos")
-    .orderBy("fecha", "desc")
-    .onSnapshot(snap => {
-      contenedor.innerHTML = "";
-      
-      if (snap.empty) {
-        contenedor.innerHTML = '<p style="color: #aaa; text-align: center; padding: 20px;">No hay pedidos registrados hoy.</p>';
-        detenerAlarma();
-        esCargaInicial = false;
-        return;
-      }
-
-      let tienePedidoNuevoPendiente = false;
-
-      snap.docChanges().forEach(change => {
-        if (change.type === "added" && change.doc.data().estado === "Pendiente") {
-          tienePedidoNuevoPendiente = true;
-        }
-      });
-
-      if (!esCargaInicial && tienePedidoNuevoPendiente) {
-        const selectTienda = document.getElementById("filtroTiendaPedidos");
-        const nombreTiendaSeleccionada = selectTienda.options[selectTienda.selectedIndex].text;
-        activarAlarma(nombreTiendaSeleccionada);
-      }
-
-      let conteoPendientes = 0;
-      snap.forEach(doc => {
-        if (doc.data().estado === "Pendiente") conteoPendientes++;
-      });
-      if (conteoPendientes === 0) {
-        detenerAlarma();
-      }
-
-      esCargaInicial = false;
-
-      snap.forEach(doc => {
-        const p = doc.data();
-        const idPedido = doc.id;
-        const numPedido = p.numeroPedido || "#----";
-        const estado = p.estado || "Pendiente";
-        
-        let fechaFormateada = "Hora no definida";
-        if (p.fecha) {
-          const d = new Date(p.fecha);
-          fechaFormateada = `${d.toLocaleDateString('es-CO')} - ${d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'})}`;
-        }
-
-        let claseBorde = "status-pendiente";
-        let claseBadge = "badge-pendiente";
-        if (estado === "En Preparación") { claseBorde = "status-preparacion"; claseBadge = "badge-preparacion"; }
-        if (estado === "Entregado") { claseBorde = "status-entregado"; claseBadge = "badge-entregado"; }
-        if (estado === "Cancelado") { claseBorde = "status-cancelado"; claseBadge = "badge-cancelado"; }
-
-        let itemsHTML = "";
-       if (p.items && p.items.length > 0) {
-    p.items.forEach(item => {
-            let nombreLimpio = (item.nombre || 'Producto').replace(/[^\w\sñáéíóúÁÉÍÓÚ]/gi, '');
-        itemsHTML += `• ${nombreLimpio} <b>x${item.cantidad}</b> ($${(item.total || 0).toLocaleString('es-CO')})<br>`;
-    });
-}
-
-        contenedor.innerHTML += `
-          <div class="pedido-card ${claseBorde}">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #333; padding-bottom:8px; margin-bottom:8px;">
-              <span style="font-size:16px; font-weight:bold; color:#f5c400;">📦 Comanda ${numPedido}</span>
-              <span class="badge ${claseBadge}">${estado}</span>
-            </div>
-            <p style="font-size:13px; margin:4px 0;">🕒 <b>Recibido:</b> ${fechaFormateada}</p>
-            <p style="margin:4px 0; font-size:14px;">👤 <b>Cliente:</b> ${p.cliente?.nombre || 'Desconocido'} (${p.cliente?.telefono || '-'})</p>
-            <p style="margin:4px 0; font-size:14px;">📍 <b>Dirección:</b> ${p.cliente?.direccion || 'Recoge en Tienda'}</p>
-            
-            <div style="background:#111; padding:12px; border-radius:6px; margin:10px 0; font-size:13px; line-height: 1.5;">
-              ${itemsHTML}
-              <hr style="border:0; border-top:1px dashed #333; margin:8px 0;">
-              <span style="font-size:15px; color:#28a745; font-weight:bold;">Valor Total: $${(p.total || 0).toLocaleString('es-CO')}</span>
-            </div>
-
-            <div class="grid-acciones">
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Pendiente')" class="btn-status" style="background:#ffc107; color:#000;">🟡 Pendiente</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'En Preparación')" class="btn-status" style="background:#17a2b8; color:#fff;">🔵 Cocinar</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Entregado')" class="btn-status" style="background:#28a745; color:#fff;">🟢 Entregado</button>
-              <button onclick="cambiarEstadoPedido('${tiendaId}', '${idPedido}', 'Cancelado')" class="btn-status" style="background:#dc3545; color:#fff;">❌ Cancelar</button>
-            </div>
-            <button onclick="eliminarPedidoHistorial('${tiendaId}', '${idPedido}')" style="background:#2b2b2b; color:#ff4444; margin-top:12px; padding:6px; font-size:12px; border:1px solid #444; border-radius:4px; width: auto;">🗑️ Remover Vista</button>
-          </div>
-        `;
-      });
-    });
-}
-
-window.cambiarEstadoPedido = async function(tiendaId, idPedido, nuevoEstado) {
-  try {
-    detenerAlarma();
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).update({ estado: nuevoEstado });
-  } catch (e) { alert("Error: " + e.message); }
-}
-
-window.eliminarPedidoHistorial = async function(tiendaId, idPedido) {
-  if (!confirm("¿Deseas dar de baja este pedido?")) return;
-  try { 
-    detenerAlarma();
-    await db.collection("tiendas").doc(tiendaId).collection("pedidos").doc(idPedido).delete(); 
-  } catch (e) { alert("Error: " + e.message); }
-}
-
-// --- MANEJO COMPLETO DE TIENDAS ---
-window.cargarTiendas = async function() {
-  const listaTiendas = document.getElementById("listaTiendas");
-  const filtroTienda = document.getElementById("filtroTiendaPedidos");
-  const tiendaProducto = document.getElementById("tiendaProducto");
-  const tiendaEstado = document.getElementById("tiendaEstado");
-
-  if (listaTiendas) listaTiendas.innerHTML = "";
-  if (filtroTienda) filtroTienda.innerHTML = '<option value="">Seleccionar tienda para monitorear...</option>';
-  if (tiendaProducto) tiendaProducto.innerHTML = '<option value="">Seleccionar tienda para ver/añadir productos...</option>';
-  if (tiendaEstado) tiendaEstado.innerHTML = '<option value="">Seleccionar tienda...</option>';
-
-  const snap = await db.collection("tiendas").get();
-  const urlBaseGitHub = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/"; 
-
-  snap.forEach(doc => {
-    const t = doc.data();
-    const idTienda = doc.id; 
-    const urlCompleta = `${urlBaseGitHub}?tienda=${idTienda}`;
-    
-    const nombreEscapado = (t.nombre || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const logoEscapado = (t.logo || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-    const bannerEscapado = (t.banner || "").replace(/`/g, "\\`").replace(/"/g, "&quot;");
-
-    if (listaTiendas) {
-      listaTiendas.innerHTML += `
-        <div class="tienda-card-item">
-          <div style="margin-bottom: 10px;">
-            <b style="font-size:18px; color:#f5c400;">🏪 ${t.nombre || 'Sin Nombre'}</b><br>
-            <span style="font-size:13px; color:#ccc;"><b>WhatsApp:</b> ${t.whatsapp || '-'}</span><br>
-            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Logo:</b> ${t.logo || 'No asignado'}</span>
-            <span style="font-size:12px; color:#aaa; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis;"><b>Banner:</b> ${t.banner || 'No asignado'}</span>
-            <a href="${urlCompleta}" target="_blank" style="color:#00bcd4; font-size:13px; display:inline-block; margin-top:5px;">🔗 Ver Menú Digital</a>
-          </div>
-          <div class="flex-buttons">
-            <button class="btn-edit" onclick="activarEdicionTienda('${idTienda}', \`${nombreEscapado}\`, \`${t.whatsapp || ''}\`, \`${logoEscapado}\`, \`${bannerEscapado}\`)">✏️ Editar Configuración</button>
-            <button class="btn-danger" onclick="eliminarTiendaOriginal('${idTienda}')">🗑️ Eliminar Tienda</button>
-          </div>
-        </div>
-      `;
-    }
-
-    const opt = `<option value="${idTienda}">${t.nombre || idTienda}</option>`;
-    if(filtroTienda) filtroTienda.innerHTML += opt;
-    if(tiendaProducto) tiendaProducto.innerHTML += opt;
-    if(tiendaEstado) tiendaEstado.innerHTML += opt;
-  });
-}
-
-window.guardarTiendaOriginal = async function() {
-  const idTienda = document.getElementById("editTiendaId").value;
-  const nombre = document.getElementById("nombreTienda").value.trim();
-  const whatsapp = document.getElementById("whatsapp").value.trim();
-  const logo = document.getElementById("logoTienda").value.trim();
-  const banner = document.getElementById("bannerTienda").value.trim();
-
-  if(!nombre || !whatsapp) return alert("Por favor define por lo menos Nombre y número de WhatsApp.");
-
-  const datosTienda = { nombre, whatsapp, logo, banner };
-
-  try {
-    if(idTienda) {
-      await db.collection("tiendas").doc(idTienda).update(datosTienda);
-      alert("🏪 ¡Tienda actualizada con éxito!");
-    } else {
-      await db.collection("tiendas").add({ ...datosTienda, abierta: true });
-      alert("🏪 ¡Tienda registrada de forma exitosa!");
-    }
-    cancelarEdicionTienda();
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-window.activarEdicionTienda = function(id, nombre, whatsapp, logo, banner) {
-  document.getElementById("editTiendaId").value = id;
-  document.getElementById("nombreTienda").value = nombre;
-  document.getElementById("whatsapp").value = whatsapp;
-  document.getElementById("logoTienda").value = logo;
-  document.getElementById("bannerTienda").value = banner;
-
-  document.getElementById("tituloFormTienda").innerText = "✏️ Editando Datos de Tienda";
-  document.getElementById("btnGuardarTienda").innerText = "Guardar Cambios de Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.remove("hidden");
-
-  document.getElementById("tituloFormTienda").scrollIntoView({ behavior: 'smooth' });
-}
-
-window.cancelarEdicionTienda = function() {
-  document.getElementById("editTiendaId").value = "";
-  document.getElementById("nombreTienda").value = "";
-  document.getElementById("whatsapp").value = "";
-  document.getElementById("logoTienda").value = "";
-  document.getElementById("bannerTienda").value = "";
-
-  document.getElementById("tituloFormTienda").innerText = "🏪 Formulario de Tienda (Crear / Modificar)";
-  document.getElementById("btnGuardarTienda").innerText = "Registrar Tienda";
-  document.getElementById("btnCancelarTiendaEdicion").classList.add("hidden");
-}
-
-window.eliminarTiendaOriginal = async function(idTienda) {
-  if(!confirm("¿Deseas eliminar permanentemente esta tienda?")) return;
-  try {
-    await db.collection("tiendas").doc(idTienda).delete();
-    alert("Tienda eliminada.");
-    cargarTiendas();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-// --- EDICIÓN COMPLETA DE PRODUCTOS ---
-window.guardarProductoOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const prodId = document.getElementById("editProductoId").value;
-  
-  const name = document.getElementById("nuevoNombre").value.trim();
-  const precio = parseFloat(document.getElementById("nuevoPrecio").value) || 0;
-  const categoria = document.getElementById("nuevoCategoria").value.trim();
-  const descripcion = document.getElementById("nuevoDescripcion").value.trim();
-  const img = document.getElementById("nuevoImagen").value.trim();
-
-  if(!tiendaId || !name || !precio) return alert("Selecciona la tienda destino, escribe el nombre y el precio del producto.");
-
-  const datosProducto = { name, precio, categoria, descripcion, img, tiendaId };
-
-  try {
-    if (prodId) {
-      await db.collection("productos").doc(prodId).set(datosProducto, { merge: true });
-      alert("🍔 ¡Producto modificado exitosamente!");
-    } else {
-      await db.collection("productos").add(datosProducto);
-      alert("🍔 ¡Producto añadido al catálogo!");
-    }
-    cancelarEdicionProducto();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error: " + e.message); }
-}
-
-window.cargarProductosOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-  
-  if(!lista) return;
-  
-  if(!tiendaId) {
-    lista.innerHTML = '<p style="color: #aaa; text-align: center;">Selecciona una tienda para ver su inventario.</p>';
-    return;
-  }
-
-  lista.innerHTML = '<p style="color: #f5c400;">Cargando productos...</p>';
-
-  try {
-    // Lectura desde la subcolección tal como se ve en image_226542.jpg
-    const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    
-    lista.innerHTML = "";
-    
-    if(snap.empty) {
-      lista.innerHTML = `<p style="color: #aaa; text-align: center;">Esta tienda no posee productos en su menú.</p>`;
-      return;
-    }
-
-    snap.forEach(doc => {
-      const p = doc.data();
-      const idProd = doc.id;
-      const nombre = p.name || "Sin nombre";
-      
-      lista.innerHTML += `
-        <div class="producto-item" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding:10px 0;">
-          <div class="producto-info">
-            <b style="color: #fff;">${nombre}</b><br>
-            <small style="color: #ccc;">$${(p.precio || 0).toLocaleString('es-CO')} | ${p.categoria || 'Sin categoría'}</small>
-          </div>
-          <div class="flex-buttons" style="display:flex; gap:5px;">
-            <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', \`${nombre.replace(/'/g, "\\'")}\`, ${p.precio || 0}, \`${(p.categoria || '').replace(/'/g, "\\'")}\`, \`${(p.descripcion || '').replace(/'/g, "\\'")}\`, \`${(p.img || '').replace(/'/g, "\\'")}\`)">✏️ Editar</button>
-            <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
-          </div>
-        </div>
-      `;
-    });
-  } catch (error) {
-    console.error("Error al cargar productos:", error);
-    lista.innerHTML = `<p style="color: #ff4444;">Error al cargar. Revisa la consola.</p>`;
-  }
-}
-
-window.guardarProductoOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const prodId = document.getElementById("editProductoId").value;
-  
-  if(!tiendaId) return alert("Por favor selecciona una tienda primero.");
-
-  const datos = {
-    name: document.getElementById("nuevoNombre").value,
-    precio: parseFloat(document.getElementById("nuevoPrecio").value) || 0,
-    categoria: document.getElementById("nuevoCategoria").value,
-    descripcion: document.getElementById("nuevoDescripcion").value,
-    img: document.getElementById("nuevoImagen").value
-  };
-
-  try {
-    const ref = db.collection("tiendas").doc(tiendaId).collection("productos");
-    if (prodId) {
-      await ref.doc(prodId).set(datos, { merge: true });
-      alert("Producto actualizado exitosamente.");
-    } else {
-      await ref.add(datos);
-      alert("Producto añadido exitosamente.");
-    }
-    cancelarEdicionProducto();
-    cargarProductosOriginal();
-  } catch(e) {
-    alert("Error al guardar: " + e.message);
-  }
+window.logout = function() {
+  detenerAlarma();
+  auth.signOut();
 };
 
-window.cargarProductosOriginal = async function() {
-  const tiendaId = document.getElementById("tiendaProducto").value;
-  const lista = document.getElementById("listaProductos");
-  if(!lista || !tiendaId) return;
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    if(typeof cargarTiendas === 'function') cargarTiendas();
+  } else {
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("panel").classList.add("hidden");
+    detenerAlarma();
+  }
+});
 
-  lista.innerHTML = '<p style="color: #f5c400;">Cargando productos...</p>';
-  try {
-    const snap = await db.collection("tiendas").doc(tiendaId).collection("productos").get();
-    lista.innerHTML = "";
-    if(snap.empty) {
-      lista.innerHTML = `<p style="color: #aaa; text-align: center;">Esta tienda no posee productos.</p>`;
-      return;
-    }
-    snap.forEach(doc => {
-      const p = doc.data();
-      const idProd = doc.id;
-      lista.innerHTML += `
-        <div class="producto-item">
-          <div class="producto-info"><b>${p.name}</b><br><small>$${p.precio}</small></div>
-          <div class="flex-buttons">
-            <button class="btn-edit" onclick="activarEdicionProducto('${idProd}', '${p.name}', ${p.precio}, '${p.categoria}', '${p.descripcion}', '${p.img}')">✏️ Editar</button>
-            <button class="btn-danger" onclick="eliminarProductoOriginal('${idProd}')">🗑️ Borrar</button>
-          </div>
-        </div>`;
-    });
-  } catch (e) { alert("Error: " + e.message); }
-};
-
+// --- TIENDAS Y PRODUCTOS (CORRECCIONES ESTRUCTURALES) ---
 window.eliminarProductoOriginal = async function(idProd) {
+  const tiendaId = document.getElementById("tiendaProducto").value;
   if(!confirm("¿Seguro que deseas eliminar este producto?")) return;
   try {
     await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
-    cargarProductosOriginal();
-  } catch(e) { alert("Error al eliminar: " + e.message); }
-};
-window.activarEdicionProducto = function(id, nombre, precio, categoria, descripcion, imagen) {
-  document.getElementById("editProductoId").value = id;
-  document.getElementById("nuevoNombre").value = nombre;
-  document.getElementById("nuevoPrecio").value = precio;
-  document.getElementById("nuevoCategoria").value = categoria;
-  document.getElementById("nuevoDescripcion").value = descripcion;
-  document.getElementById("nuevoImagen").value = imagen;
-  document.getElementById("tituloFormProducto").innerText = "✏️ Editando Producto";
-  document.getElementById("btnGuardarProducto").innerText = "Actualizar Cambios";
-  document.getElementById("btnCancelarEdicion").classList.remove("hidden");
+    if(typeof cargarProductosOriginal === 'function') cargarProductosOriginal();
+  } catch(e) { alert("Error: " + e.message); }
 };
 
-window.cancelarEdicionProducto = function() {
-  document.getElementById("editProductoId").value = "";
-  document.getElementById("nuevoNombre").value = "";
-  document.getElementById("nuevoPrecio").value = "";
-  document.getElementById("nuevoCategoria").value = "";
-  document.getElementById("nuevoDescripcion").value = "";
-  document.getElementById("nuevoImagen").value = "";
-  document.getElementById("tituloFormProducto").innerText = "🍔 Formulario de Producto";
-  document.getElementById("btnGuardarProducto").innerText = "Añadir Producto";
-  document.getElementById("btnCancelarEdicion").classList.add("hidden");
-};
-// --- INTERRUPTOR DISPONIBILIDAD ---
 window.cargarEstadoTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
   const txt = document.getElementById("estadoActual");
   if(!tiendaId || !txt) return;
-
   const doc = await db.collection("tiendas").doc(tiendaId).get();
   if(doc.exists) {
     const abierta = doc.data().abierta !== false;
-    txt.innerHTML = `Estado actual: <b style="color: ${abierta ? '#28a745' : '#dc3545'};">${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
+    txt.innerHTML = `Estado actual: <b>${abierta ? '🟢 ABIERTO' : '🔴 CERRADO'}</b>`;
   }
-}
+};
 
 window.toggleTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
