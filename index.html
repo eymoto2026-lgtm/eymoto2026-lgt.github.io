@@ -24,7 +24,6 @@
             background: #1a1a2e;
         }
         
-        /* Contenedor del banner */
         .banner-container {
             width: 100%;
             height: 220px;
@@ -49,7 +48,6 @@
             background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
         
-        /* Overlay con logo y datos */
         .header-overlay {
             position: absolute;
             bottom: 0;
@@ -63,7 +61,6 @@
             flex-wrap: wrap;
             z-index: 2;
         }
-        
         .header-overlay .info-bg {
             position: absolute;
             inset: 0;
@@ -71,7 +68,7 @@
             z-index: -1;
         }
         
-        /* ===== LOGO SIN BORDES Y MÁS GRANDE ===== */
+        /* LOGO SIN BORDES Y GRANDE */
         .header .logo {
             width: 100px;
             height: 100px;
@@ -107,7 +104,7 @@
         .header .info .brand {
             font-size: 26px;
             font-weight: 900;
-            color: #FFD600;
+            /* El color se aplicará dinámicamente */
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
         .header .info .subtitle {
@@ -132,7 +129,7 @@
             color: #fff;
         }
 
-        /* ===== CONTRASTE AUTOMÁTICO ===== */
+        /* ===== CONTRASTE AUTOMÁTICO PARA TEXTO ===== */
         .text-color-light {
             color: #ffffff !important;
             text-shadow: 0 2px 8px rgba(0,0,0,0.8) !important;
@@ -140,14 +137,6 @@
         .text-color-dark {
             color: #1a1a2e !important;
             text-shadow: 0 2px 8px rgba(255,255,255,0.3) !important;
-        }
-        .brand-light {
-            color: #ffffff !important;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8) !important;
-        }
-        .brand-dark {
-            color: #1a1a2e !important;
-            text-shadow: 0 2px 10px rgba(255,255,255,0.3) !important;
         }
 
         .container {
@@ -157,7 +146,7 @@
             padding-bottom: 200px;
         }
 
-        /* CATEGORÍAS */
+        /* ===== CATEGORÍAS - COLOR DINÁMICO ===== */
         .categoria-titulo {
             font-size: 18px;
             font-weight: 700;
@@ -168,9 +157,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            transition: border-color 0.3s ease;
         }
 
-        /* PRODUCTOS */
+        /* ===== PRODUCTOS ===== */
         .producto-card {
             background: #fff;
             border-radius: 16px;
@@ -179,7 +169,7 @@
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             display: flex;
             gap: 14px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s ease;
             border: 1px solid #eee;
         }
         .producto-card:hover {
@@ -226,6 +216,8 @@
             font-weight: 800;
             color: #1a1a2e;
         }
+
+        /* ===== BOTONES DEL PRODUCTO - COLOR DINÁMICO ===== */
         .producto-acciones {
             display: flex;
             align-items: center;
@@ -254,12 +246,12 @@
             background: #e0e0e0;
         }
         .btn-sumar {
-            background: #FFD600;
+            /* El color se aplicará dinámicamente */
             color: #1a1a2e;
         }
         .btn-sumar:hover {
-            background: #f5c800;
             transform: scale(1.05);
+            filter: brightness(0.9);
         }
         .producto-acciones .cantidad {
             font-size: 16px;
@@ -269,7 +261,7 @@
             color: #1a1a2e;
         }
 
-        /* CARRITO FLOTANTE */
+        /* ===== CARRITO FLOTANTE - COLOR DINÁMICO ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -282,6 +274,7 @@
             z-index: 200;
             max-height: 80vh;
             overflow-y: auto;
+            transition: border-color 0.3s ease;
         }
         .carrito-flotante .carrito-header {
             display: flex;
@@ -329,13 +322,14 @@
             font-size: 18px;
             font-weight: 800;
             color: #1a1a2e;
+            transition: border-color 0.3s ease;
         }
         .carrito-total .total-valor {
             color: #1a1a2e;
         }
+        
+        /* ===== BOTÓN COMPRAR - COLOR DINÁMICO ===== */
         .btn-comprar {
-            background: #FFD600;
-            color: #1a1a2e;
             border: none;
             padding: 14px;
             border-radius: 12px;
@@ -345,10 +339,11 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-top: 8px;
+            color: #1a1a2e;
         }
         .btn-comprar:hover {
-            background: #f5c800;
             transform: scale(1.01);
+            filter: brightness(0.9);
         }
         .btn-comprar:disabled {
             opacity: 0.5;
@@ -381,16 +376,13 @@
             margin-bottom: 8px;
             font-size: 14px;
             color: #1a1a2e;
-            transition: border-color 0.2s;
+            transition: border-color 0.3s ease;
         }
         .form-datos input:focus,
         .form-datos textarea:focus {
             outline: none;
             border-color: #FFD600;
-        }
-        .form-datos textarea {
-            resize: vertical;
-            min-height: 50px;
+            transition: border-color 0.3s ease;
         }
 
         /* TOAST */
@@ -411,6 +403,7 @@
             animation: slideDown 0.3s ease;
             text-align: center;
             border-left: 4px solid #FFD600;
+            transition: border-color 0.3s ease;
         }
         .toast.success {
             border-left-color: #00C853;
@@ -449,6 +442,7 @@
             color: #FFD600;
             font-size: 28px;
             margin-bottom: 10px;
+            transition: color 0.3s ease;
         }
         .tienda-cerrada-overlay p {
             color: #ddd;
@@ -479,25 +473,20 @@
     <!-- OVERLAY DE TIENDA CERRADA -->
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
-        <h2>Tienda Cerrada</h2>
+        <h2 id="cerradoTitulo">Tienda Cerrada</h2>
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
-    <!-- HEADER CON BANNER CORREGIDO -->
+    <!-- HEADER CON BANNER -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
-            <div class="banner-placeholder" id="bannerPlaceholder" style="display:none;">
-                🍔
-            </div>
+            <div class="banner-placeholder" id="bannerPlaceholder" style="display:none;">🍔</div>
         </div>
         <div class="header-overlay" id="headerOverlay">
             <div class="info-bg"></div>
-            
-            <!-- LOGO SIN BORDES Y MÁS GRANDE -->
             <img class="logo" id="logoHeader" src="" alt="Logo" onerror="this.style.display='none'">
             <div class="logo-placeholder" id="logoPlaceholder" style="display:none;">EM</div>
-            
             <div class="info" id="infoContainer">
                 <div class="brand" id="nombreTiendaHeader">EyMotoComidas</div>
                 <div class="subtitle" id="whatsappHeader">📱 Cargando...</div>
@@ -534,7 +523,7 @@
             <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
         </div>
 
-        <div class="carrito-total">
+        <div class="carrito-total" id="carritoTotal">
             <span>💰 Total</span>
             <span class="total-valor" id="totalCarrito">$0</span>
         </div>
@@ -584,12 +573,125 @@
         let productos = [];
         let tiendaData = {};
         let tiendaAbierta = true;
+        let colorPrincipal = '#FFD600'; // Color por defecto
+
+        // ============================================================
+        // FUNCIÓN PARA DETECTAR COLOR PRINCIPAL DE UNA IMAGEN
+        // ============================================================
+        function getDominantColor(imageUrl, callback) {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    // Muestrear la imagen en tamaño pequeño para mejor rendimiento
+                    canvas.width = 50;
+                    canvas.height = 50;
+                    ctx.drawImage(img, 0, 0, 50, 50);
+                    
+                    const imageData = ctx.getImageData(0, 0, 50, 50);
+                    const data = imageData.data;
+                    
+                    // Encontrar el color más común
+                    const colorCount = {};
+                    let maxCount = 0;
+                    let dominantColor = '#FFD600';
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        // Ignorar colores muy oscuros o muy claros (posiblemente fondo)
+                        const brightness = (r + g + b) / 3;
+                        if (brightness < 30 || brightness > 225) continue;
+                        
+                        const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+                        colorCount[hex] = (colorCount[hex] || 0) + 1;
+                        if (colorCount[hex] > maxCount) {
+                            maxCount = colorCount[hex];
+                            dominantColor = hex;
+                        }
+                    }
+                    
+                    callback(dominantColor);
+                } catch (e) {
+                    console.warn('Error al extraer color:', e);
+                    callback('#FFD600');
+                }
+            };
+            img.onerror = function() {
+                console.warn('No se pudo cargar la imagen para extraer color');
+                callback('#FFD600');
+            };
+            img.src = imageUrl;
+        }
+
+        // ============================================================
+        // FUNCIÓN PARA APLICAR COLORES DINÁMICOS
+        // ============================================================
+        function aplicarColoresDinamicos(colorHex) {
+            if (!colorHex || colorHex === '#FFD600') return;
+            
+            colorPrincipal = colorHex;
+            
+            // 1. Título de categorías (borde inferior)
+            document.querySelectorAll('.categoria-titulo').forEach(el => {
+                el.style.borderColor = colorHex;
+            });
+            
+            // 2. Botones "sumar" (+)
+            document.querySelectorAll('.btn-sumar').forEach(el => {
+                el.style.background = colorHex;
+            });
+            
+            // 3. Borde superior del carrito
+            const carrito = document.getElementById('carritoFlotante');
+            if (carrito) carrito.style.borderTopColor = colorHex;
+            
+            // 4. Línea divisoria del total
+            const totalLine = document.getElementById('carritoTotal');
+            if (totalLine) totalLine.style.borderTopColor = colorHex;
+            
+            // 5. Botón "Comprar Ahora"
+            const btnComprar = document.getElementById('btnComprar');
+            if (btnComprar) btnComprar.style.background = colorHex;
+            
+            // 6. Nombre de la tienda (si es necesario, se ajusta el contraste)
+            const brandEl = document.getElementById('nombreTiendaHeader');
+            if (brandEl) {
+                // Ya tiene clases de contraste automático
+            }
+            
+            // 7. Toast (borde izquierdo)
+            document.querySelectorAll('.toast:not(.success):not(.error)').forEach(el => {
+                el.style.borderLeftColor = colorHex;
+            });
+            
+            // 8. Inputs en focus
+            const style = document.createElement('style');
+            style.id = 'dynamic-colors';
+            style.textContent = `
+                .form-datos input:focus, .form-datos textarea:focus {
+                    border-color: ${colorHex} !important;
+                }
+                .tienda-cerrada-overlay h2 {
+                    color: ${colorHex} !important;
+                }
+            `;
+            // Reemplazar estilos dinámicos anteriores
+            const oldStyle = document.getElementById('dynamic-colors');
+            if (oldStyle) oldStyle.remove();
+            document.head.appendChild(style);
+            
+            console.log('🎨 Colores dinámicos aplicados:', colorHex);
+        }
 
         // ============================================================
         // FUNCIÓN PARA DETECTAR CONTRASTE DE COLOR
         // ============================================================
         function getContrastColor(hexColor) {
-            if (!hexColor) return { text: 'light', brand: 'light' };
+            if (!hexColor) return 'light';
             
             let r, g, b;
             if (hexColor.startsWith('#')) {
@@ -603,25 +705,20 @@
                     g = parseInt(cleanHex.substring(2, 4), 16);
                     b = parseInt(cleanHex.substring(4, 6), 16);
                 } else {
-                    return { text: 'light', brand: 'light' };
+                    return 'light';
                 }
             } else {
-                return { text: 'light', brand: 'light' };
+                return 'light';
             }
 
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            const isLight = luminance > 0.5;
-            
-            return {
-                text: isLight ? 'dark' : 'light',
-                brand: isLight ? 'dark' : 'light'
-            };
+            return luminance > 0.5 ? 'dark' : 'light';
         }
 
         // ============================================================
-        // FUNCIÓN PARA APLICAR CONTRASTE AUTOMÁTICO
+        // FUNCIÓN PARA APLICAR CONTRASTE AL TEXTO DEL BANNER
         // ============================================================
-        function aplicarContrasteAutomatico(imagenUrl) {
+        function aplicarContrasteBanner(imagenUrl) {
             const infoContainer = document.getElementById('infoContainer');
             const brandElement = document.getElementById('nombreTiendaHeader');
             
@@ -637,14 +734,11 @@
                 try {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
+                    canvas.width = 50;
+                    canvas.height = 50;
+                    ctx.drawImage(img, 0, 0, 50, 50);
                     
-                    const centerX = Math.floor(img.width / 2);
-                    const centerY = Math.floor(img.height / 2);
-                    const pixel = ctx.getImageData(centerX, centerY, 1, 1).data;
-                    
+                    const pixel = ctx.getImageData(25, 25, 1, 1).data;
                     const hex = '#' + [pixel[0], pixel[1], pixel[2]]
                         .map(v => v.toString(16).padStart(2, '0'))
                         .join('');
@@ -654,25 +748,21 @@
                     infoContainer.className = 'info';
                     brandElement.className = 'brand';
                     
-                    if (contrast.text === 'dark') {
+                    if (contrast === 'dark') {
                         infoContainer.classList.add('text-color-dark');
-                    } else {
-                        infoContainer.classList.add('text-color-light');
-                    }
-                    
-                    if (contrast.brand === 'dark') {
                         brandElement.classList.add('brand-dark');
                     } else {
+                        infoContainer.classList.add('text-color-light');
                         brandElement.classList.add('brand-light');
                     }
                     
-                    console.log('🎨 Contraste aplicado:', contrast);
+                    console.log('🎨 Contraste aplicado al banner:', contrast);
                 } catch (e) {
-                    console.warn('⚠️ Error al analizar imagen:', e);
+                    console.warn('Error al analizar contraste:', e);
                 }
             };
             img.onerror = function() {
-                console.warn('⚠️ No se pudo cargar la imagen para análisis de contraste');
+                console.warn('No se pudo cargar la imagen para contraste');
             };
             img.src = imagenUrl;
         }
@@ -687,11 +777,8 @@
                 if (doc.exists) {
                     tiendaData = doc.data();
                     
-                    // Nombre de la tienda
-                    const nombreEl = document.getElementById('nombreTiendaHeader');
-                    nombreEl.textContent = tiendaData.nombre || 'EyMotoComidas';
-                    
-                    // WhatsApp
+                    // Nombre
+                    document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
                     document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
                     
                     // BANNER
@@ -704,20 +791,34 @@
                         bannerPlaceholder.style.display = 'none';
                         
                         bannerEl.onload = function() {
-                            aplicarContrasteAutomatico(tiendaData.banner);
+                            // Extraer color principal del banner
+                            getDominantColor(tiendaData.banner, function(color) {
+                                aplicarColoresDinamicos(color);
+                            });
+                            aplicarContrasteBanner(tiendaData.banner);
                         };
                         bannerEl.onerror = function() {
                             this.style.display = 'none';
                             bannerPlaceholder.style.display = 'flex';
-                            aplicarContrasteAutomatico(null);
+                            // Si falla el banner, intentar usar el logo
+                            if (tiendaData.logo) {
+                                getDominantColor(tiendaData.logo, function(color) {
+                                    aplicarColoresDinamicos(color);
+                                });
+                            }
                         };
                     } else {
                         bannerEl.style.display = 'none';
                         bannerPlaceholder.style.display = 'flex';
-                        aplicarContrasteAutomatico(null);
+                        // Si no hay banner, usar el logo para extraer color
+                        if (tiendaData.logo) {
+                            getDominantColor(tiendaData.logo, function(color) {
+                                aplicarColoresDinamicos(color);
+                            });
+                        }
                     }
 
-                    // LOGO - SIN BORDES Y MÁS GRANDE
+                    // LOGO
                     const logoEl = document.getElementById('logoHeader');
                     const logoPlaceholder = document.getElementById('logoPlaceholder');
                     if (tiendaData.logo && tiendaData.logo.trim() !== '') {
@@ -828,6 +929,11 @@
                 });
 
                 lista.innerHTML = html;
+
+                // Aplicar colores dinámicos a los nuevos elementos
+                if (colorPrincipal) {
+                    aplicarColoresDinamicos(colorPrincipal);
+                }
 
                 carrito.forEach(item => {
                     const el = document.getElementById(`cant-${item.id}`);
@@ -995,9 +1101,7 @@
                 };
             });
 
-            // ============================================================
-            // MENSAJE PARA WHATSAPP
-            // ============================================================
+            // MENSAJE WHATSAPP
             let mensajeWhatsApp = `🏪 *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
             mensajeWhatsApp += `🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n`;
             mensajeWhatsApp += `📅 *Fecha:* ${fechaStr}\n`;
@@ -1015,9 +1119,7 @@
 
             mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
-            // ============================================================
             // GUARDAR EN FIRESTORE
-            // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -1044,9 +1146,7 @@
                 console.error('❌ Error al guardar en Firestore:', error);
             }
 
-            // ============================================================
             // ENVIAR POR WHATSAPP
-            // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
@@ -1077,6 +1177,9 @@
             const toast = document.createElement('div');
             toast.className = `toast ${tipo}`;
             toast.textContent = mensaje;
+            if (tipo === 'info' && colorPrincipal) {
+                toast.style.borderLeftColor = colorPrincipal;
+            }
             container.appendChild(toast);
 
             setTimeout(() => {
