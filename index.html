@@ -1,250 +1,691 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EyMotoComidas Pro</title>
-  <style>
-    body { margin:0; font-family:Arial,sans-serif; background:#f4f4f4; padding-bottom:200px; }
-    header { background:#333; color:white; text-align:center; padding:20px; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .logo { width:70px; height:70px; object-fit:cover; border-radius:15px; }
-    .banner-img { width:100%; height:auto; display:block; min-height:100px; background:#eee; }
-    .categories { display:flex; gap:8px; padding:15px; background:#fff; overflow-x:auto; white-space:nowrap; border-bottom: 1px solid #ddd; }
-    .categories button { border:none; padding:8px 16px; border-radius:20px; cursor:pointer; background:#f0f0f0; font-weight:bold; }
-    .products { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:15px; padding:15px; }
-    .card { background:#fff; border-radius:12px; padding:12px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .card img { width:100%; height:140px; object-fit:cover; border-radius:8px; }
-    .descripcion-text { font-size: 13px; color: #666; margin: 5px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 40px; }
-    .precio { font-weight: bold; color: #28a745; font-size: 18px; margin: 10px 0; }
-    .buy { width:100%; background:#333; color:#fff; border:none; padding:12px; border-radius:10px; font-weight:bold; cursor:pointer; }
-    
-    .cart { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:2px solid #eee; padding:15px; max-height:40vh; overflow-y:auto; z-index:999; box-shadow:0 -2px 10px rgba(0,0,0,0.1); }
-    .cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0; }
-    .qty-controls { display:flex; align-items:center; gap:8px; }
-    .btn-qty { padding:2px 10px; cursor:pointer; border:1px solid #ccc; border-radius:4px; }
-    
-    .modal { display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); align-items:center; justify-content:center; }
-    .modal-content { background-color:#fff; padding:20px; border-radius:15px; width:90%; max-width:450px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyMotoComidas Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        .header {
+            background: #141414;
+            border-bottom: 1px solid #2e2e2e;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .header .brand {
+            font-size: 24px;
+            font-weight: 900;
+            color: #FF6900;
+        }
+        .producto {
+            background: #141414;
+            border: 1px solid #2e2e2e;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .producto-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .producto-info .precio {
+            color: #FF6900;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .producto-acciones {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .producto-acciones button {
+            background: #252525;
+            border: 1px solid #2e2e2e;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .producto-acciones button:hover {
+            background: #FF6900;
+        }
+        .producto-acciones .cantidad {
+            font-weight: 700;
+            font-size: 16px;
+            min-width: 24px;
+            text-align: center;
+        }
+        .carrito {
+            background: #141414;
+            border: 1px solid #2e2e2e;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            position: sticky;
+            bottom: 0;
+        }
+        .carrito-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .carrito-total .total {
+            color: #00C853;
+        }
+        .btn-comprar {
+            background: #25D366;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-comprar:hover {
+            background: #128C7E;
+        }
+        .btn-comprar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .form-datos {
+            margin-top: 16px;
+        }
+        .form-datos input {
+            background: #1e1e1e;
+            border: 1px solid #2e2e2e;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .form-datos input:focus {
+            outline: none;
+            border-color: #FF6900;
+        }
+        .form-datos textarea {
+            background: #1e1e1e;
+            border: 1px solid #2e2e2e;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .form-datos textarea:focus {
+            outline: none;
+            border-color: #FF6900;
+        }
+        .label-form {
+            font-size: 11px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .vaciar-carrito {
+            background: transparent;
+            border: 1px solid #2e2e2e;
+            color: #888;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .vaciar-carrito:hover {
+            border-color: #FF3D00;
+            color: #FF3D00;
+        }
+        .item-carrito {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e1e1e;
+            font-size: 13px;
+        }
+        .item-carrito .nombre {
+            flex: 1;
+        }
+        .item-carrito .subtotal {
+            color: #00C853;
+            font-weight: 600;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e1e1e;
+            border: 1px solid #2e2e2e;
+            border-radius: 12px;
+            padding: 12px 24px;
+            z-index: 999;
+            animation: slideDown 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.success {
+            border-left: 4px solid #00C853;
+        }
+        .toast.error {
+            border-left: 4px solid #FF3D00;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        .categoria-titulo {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FF6900;
+            margin: 16px 0 8px 0;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #2e2e2e;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #2e2e2e;
+            border-top-color: #FF6900;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .badge-pedido {
+            background: #FF6900;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            .producto {
+                padding: 10px 12px;
+            }
+            .header .brand {
+                font-size: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <img id="logoTienda" class="logo" src="" alt="Logo">
-  <h1 id="tituloTienda">Cargando...</h1>
-</header>
+    <!-- TOAST PARA NOTIFICACIONES -->
+    <div id="toastContainer"></div>
 
-<img id="bannerTiendaEnMenu" class="banner-img" src="" alt="Banner">
-<div class="categories" id="filtrosCategorias"></div>
-<div class="products" id="products"></div>
-
-<div class="cart">
-  <h3>🛒 Carrito</h3>
-  <div id="cartItems"></div>
-  <p><strong>Total: $<span id="total">0</span></strong></p>
-  <button id="btnComprar" class="buy" style="background:#28a745; font-size:18px;">Comprar Ahora</button>
-</div>
-
-<div id="modalPedido" class="modal">
-  <div class="modal-content">
-
-    <h2>📋 Datos de Entrega</h2>
-
-    <input type="text" id="formNombre" placeholder="👤 Nombre" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
-
-    <input type="tel" id="formTelefono" placeholder="📱 Teléfono" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
-
-    <input type="text" id="formDireccion" placeholder="📍 Dirección" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
-
-    <input type="text" id="formBarrio" placeholder="🏘️ Barrio" style="width:100%;padding:10px;margin-bottom:10px;box-sizing:border-box;">
-
-    <textarea id="formObservaciones"
-    placeholder="📝 Observaciones"
-    style="width:100%;padding:10px;height:80px;margin-bottom:10px;box-sizing:border-box;"></textarea>
-
-    <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('modalPedido').style.display='none'" style="flex:1;padding:12px;">
-            Volver
-        </button>
-
-        <button id="btnConfirmarPedido" style="flex:1;padding:12px;background:#28a745;color:white;border:none;">
-            ENVIAR
-        </button>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="brand">🏪 EyMotoComidas</div>
+        <div style="font-size:12px;color:#888;margin-top:4px;">Menú digital</div>
     </div>
 
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
-const app = initializeApp({ apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", authDomain: "eymotocomidas.firebaseapp.com", projectId: "eymotocomidas" });
-const db = getFirestore(app);
-
-let cart = [], products = [], whatsapp = "";
-let tiendaAbierta = false;
-const idTienda = new URLSearchParams(window.location.search).get('tienda');
-
-async function init() {
-  if(!idTienda) return;
-  const snap = await getDoc(doc(db, "tiendas", idTienda));
-  if(snap.exists()){
-      const data = snap.data();
-      tiendaAbierta = (data.abierta === true || data.abierta === "true");
-      document.getElementById("tituloTienda").innerText = data.nombre || "Tienda";
-      document.getElementById("logoTienda").src = data.logo || "";
-      document.getElementById("bannerTiendaEnMenu").src = data.banner || "";
-      whatsapp = data.whatsapp;
-      
-      const catContainer = document.getElementById("filtrosCategorias");
-      const categorias = ["Todos", ...(data.categorias || [])];
-      catContainer.innerHTML = categorias.map(cat => 
-          `<button onclick="window.filterProducts('${cat}')">${cat}</button>`
-      ).join('');
-      
-      const prodSnap = await getDocs(collection(db, "tiendas", idTienda, "productos"));
-      products = prodSnap.docs.map(d => ({id: d.id, ...d.data()}));
-      render(products);
-  }
-}
-
-function render(list) {
-    document.getElementById("products").innerHTML = list.map(p => `
-        <div class="card">
-            <img src="${p.img || ''}" alt="${p.name}">
-            <h3>${p.name}</h3>
-            <p class="descripcion-text">${p.descripcion || ''}</p>
-            <p class="precio">$${(Number(p.precio) || 0).toLocaleString()}</p>
-            <button class="buy" onclick="window.add('${p.name}')">Añadir</button>
+    <div class="container">
+        <!-- LISTA DE PRODUCTOS -->
+        <div id="listaProductos">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top:12px;">Cargando menú...</p>
+            </div>
         </div>
-    `).join('');
-}
 
-window.filterProducts = (cat) => {
-    // Si la categoría seleccionada es "Todos", mostramos todo
-    if (cat === "Todos") {
-        render(products);
-    } else {
-        // Comparamos convirtiendo ambos lados a minúsculas
-        const filtered = products.filter(p => 
-            (p.categoria || "").toLowerCase() === cat.toLowerCase()
-        );
-        render(filtered);
-    }
-};
+        <!-- FORMULARIO DATOS CLIENTE -->
+        <div class="form-datos" id="formDatos" style="display:none;">
+            <span class="label-form">👤 Datos de entrega</span>
+            <input type="text" id="clienteNombre" placeholder="Tu nombre completo">
+            <input type="tel" id="clienteTelefono" placeholder="Teléfono (ej: 3169934516)">
+            <input type="text" id="clienteDireccion" placeholder="Dirección de entrega">
+            <input type="text" id="clienteBarrio" placeholder="Barrio">
+            <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla, con todo...)"></textarea>
+        </div>
 
-window.add = (name) => {
-    if (!tiendaAbierta) { alert("⚠️ Tienda cerrada."); return; }
-    let prod = products.find(p => p.name === name);
-    let item = cart.find(x => x.name === name);
-    if(item) item.qty++;
-    else cart.push({...prod, qty: 1});
-    renderCart();
-};
-
-window.updateQty = (index, change) => {
-    cart[index].qty += change;
-    if (cart[index].qty <= 0) cart.splice(index, 1);
-    renderCart();
-};
-
-window.removeItem = (i) => { cart.splice(i, 1); renderCart(); };
-
-function renderCart() {
-    let total = 0;
-    const cartContainer = document.getElementById("cartItems");
-    cartContainer.innerHTML = cart.map((p, i) => {
-        total += Number(p.precio) * p.qty;
-        return `
-            <div class="cart-item">
-                <span style="font-size:14px;">${p.name}</span>
-                <div class="qty-controls">
-                    <button class="btn-qty" onclick="window.updateQty(${i}, -1)">-</button>
-                    <span>${p.qty}</span>
-                    <button class="btn-qty" onclick="window.updateQty(${i}, 1)">+</button>
-                    <button onclick="window.removeItem(${i})" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button>
+        <!-- CARRITO -->
+        <div class="carrito" id="carrito">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:700;">🛒 Carrito</span>
+                <button class="vaciar-carrito" onclick="vaciarCarrito()">Vaciar</button>
+            </div>
+            <div id="itemsCarrito">
+                <div style="color:#888;font-size:13px;text-align:center;padding:12px 0;">
+                    No hay productos en el carrito
                 </div>
-            </div>`;
-    }).join('');
-    document.getElementById("total").innerText = total.toLocaleString();
-}
+            </div>
+            <div class="carrito-total">
+                <span>Total</span>
+                <span class="total" id="totalCarrito">$0</span>
+            </div>
+            <button class="btn-comprar" id="btnComprar" onclick="enviarPedido()" disabled>
+                📱 Comprar Ahora
+            </button>
+            <div style="font-size:10px;color:#555;text-align:center;margin-top:6px;">
+                El pedido se enviará al administrador
+            </div>
+        </div>
+    </div>
 
-document.getElementById("btnConfirmarPedido").onclick = () => {
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-    const nombre = document.getElementById("formNombre").value.trim();
-    const telefono = document.getElementById("formTelefono").value.trim();
-    const direccion = document.getElementById("formDireccion").value.trim();
-    const barrio = document.getElementById("formBarrio").value.trim();
-    const observaciones = document.getElementById("formObservaciones").value.trim();
+    <script>
+        // ============================================================
+        // CONFIGURACIÓN FIREBASE
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+            authDomain: "eymotocomidas.firebaseapp.com",
+            projectId: "eymotocomidas",
+            storageBucket: "eymotocomidas.firebasestorage.app",
+            messagingSenderId: "670474251560",
+            appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    if(!nombre || !telefono || !direccion){
-        alert("Debes completar Nombre, Teléfono y Dirección.");
-        return;
-    }
+        // ============================================================
+        // OBTENER ID DE TIENDA DESDE LA URL
+        // ============================================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const TIENDA_ID = urlParams.get('tienda');
 
-    const ahora = new Date();
+        if (!TIENDA_ID) {
+            mostrarToast('⚠️ No se especificó una tienda', 'error');
+        }
 
-    const fecha = ahora.toLocaleDateString("es-CO");
+        console.log('🏪 Tienda ID:', TIENDA_ID);
 
-    const hora = ahora.toLocaleTimeString("es-CO",{
-        hour:"2-digit",
-        minute:"2-digit"
-    });
+        // ============================================================
+        // ESTADO DEL CARRITO
+        // ============================================================
+        let carrito = [];
+        let productos = [];
 
-    let total = 0;
+        // ============================================================
+        // FUNCIONES DEL CARRITO
+        // ============================================================
+        function agregarAlCarrito(productoId) {
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
 
-    const productos = cart.map(p=>{
+            const existente = carrito.find(p => p.id === productoId);
+            if (existente) {
+                existente.cantidad++;
+            } else {
+                carrito.push({
+                    id: producto.id,
+                    nombre: producto.name,
+                    precio: producto.precio,
+                    cantidad: 1,
+                    imagen: producto.img || ''
+                });
+            }
+            actualizarCarrito();
+        }
 
-        const subtotal = Number(p.precio)*p.qty;
+        function quitarDelCarrito(productoId) {
+            const index = carrito.findIndex(p => p.id === productoId);
+            if (index === -1) return;
 
-        total += subtotal;
+            if (carrito[index].cantidad > 1) {
+                carrito[index].cantidad--;
+            } else {
+                carrito.splice(index, 1);
+            }
+            actualizarCarrito();
+        }
 
-        return `🍜 ${p.name} x${p.qty} = $${subtotal.toLocaleString("es-CO")}`;
+        function actualizarCarrito() {
+            const itemsContainer = document.getElementById('itemsCarrito');
+            const totalContainer = document.getElementById('totalCarrito');
+            const btnComprar = document.getElementById('btnComprar');
 
-    }).join("\n");
+            if (carrito.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div style="color:#888;font-size:13px;text-align:center;padding:12px 0;">
+                        No hay productos en el carrito
+                    </div>
+                `;
+                totalContainer.textContent = '$0';
+                btnComprar.disabled = true;
+                return;
+            }
 
-    const numeroPedido = Math.floor(Math.random()*9000)+1000;
+            let html = '';
+            let total = 0;
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                html += `
+                    <div class="item-carrito">
+                        <span class="nombre">${escHtml(item.nombre)} x${item.cantidad}</span>
+                        <span class="subtotal">$${subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                `;
+            });
 
-    const mensaje =
-`🏪 *${document.getElementById("tituloTienda").innerText.toUpperCase()}*
+            itemsContainer.innerHTML = html;
+            totalContainer.textContent = `$${total.toLocaleString('es-CO')}`;
+            btnComprar.disabled = false;
 
-🛵 *NUEVO PEDIDO #${numeroPedido}*
+            // Mostrar formulario de datos
+            document.getElementById('formDatos').style.display = 'block';
+        }
 
-📅 *Fecha:* ${fecha}
-⏰ *Hora:* ${hora}
+        function vaciarCarrito() {
+            if (carrito.length === 0) return;
+            if (!confirm('¿Vaciar el carrito?')) return;
+            carrito = [];
+            actualizarCarrito();
+            document.getElementById('formDatos').style.display = 'none';
+            mostrarToast('Carrito vaciado', 'success');
+        }
 
-👤 *Cliente:*
-${nombre}
+        // ============================================================
+        // GENERAR NÚMERO DE PEDIDO
+        // ============================================================
+        function generarNumeroPedido() {
+            const num = String(Math.floor(Math.random() * 9000) + 1000);
+            return `#${num}`;
+        }
 
-📱 *Teléfono:*
-${telefono}
+        // ============================================================
+        // ENVIAR PEDIDO (WhatsApp + Firestore)
+        // ============================================================
+        async function enviarPedido() {
+            if (carrito.length === 0) {
+                mostrarToast('El carrito está vacío', 'error');
+                return;
+            }
 
-📍 *Dirección:*
-${direccion}
+            const nombre = document.getElementById('clienteNombre').value.trim();
+            const telefono = document.getElementById('clienteTelefono').value.trim();
+            const direccion = document.getElementById('clienteDireccion').value.trim();
+            const barrio = document.getElementById('clienteBarrio').value.trim();
+            const observaciones = document.getElementById('clienteObservaciones').value.trim();
 
-🏘️ *Barrio:*
-${barrio || "No especificado"}
+            if (!nombre) {
+                mostrarToast('Por favor ingresa tu nombre', 'error');
+                document.getElementById('clienteNombre').focus();
+                return;
+            }
 
-📝 *Observaciones:*
-${observaciones || "Ninguna"}
+            if (!telefono) {
+                mostrarToast('Por favor ingresa tu teléfono', 'error');
+                document.getElementById('clienteTelefono').focus();
+                return;
+            }
 
-🧾 *PRODUCTOS*
+            const numeroPedido = generarNumeroPedido();
+            const fecha = new Date();
+            const fechaStr = fecha.toLocaleDateString('es-CO');
+            const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
-${productos}
+            // Calcular total
+            let total = 0;
+            carrito.forEach(item => {
+                total += item.precio * item.cantidad;
+            });
 
-💰 *TOTAL:* $${total.toLocaleString("es-CO")}`;
+            // Preparar items
+            const items = carrito.map(item => ({
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                precio: item.precio,
+                total: item.precio * item.cantidad
+            }));
 
-    window.open(
-        `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`,
-        "_blank"
-    );
+            // ============================================================
+            // CONSTRUIR MENSAJE PARA WHATSAPP (formato exacto)
+            // ============================================================
+            let mensajeWhatsApp = `🏪 *EYMOTOCOMIDAS*\n\n`;
+            mensajeWhatsApp += `🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n`;
+            mensajeWhatsApp += `📅 *Fecha:* ${fechaStr}\n`;
+            mensajeWhatsApp += `⏰ *Hora:* ${horaStr}\n\n`;
+            mensajeWhatsApp += `👤 *Cliente:*\n${nombre}\n\n`;
+            mensajeWhatsApp += `📱 *Teléfono:*\n${telefono}\n\n`;
+            mensajeWhatsApp += `📍 *Dirección:*\n${direccion || 'Recoge en tienda'}\n\n`;
+            if (barrio) mensajeWhatsApp += `🏘️ *Barrio:*\n${barrio}\n\n`;
+            if (observaciones) mensajeWhatsApp += `📝 *Observaciones:*\n${observaciones}\n\n`;
+            mensajeWhatsApp += `🧾 *PRODUCTOS*\n\n`;
 
-};
+            items.forEach(item => {
+                mensajeWhatsApp += `🍜 ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
+            });
 
-document.getElementById("btnComprar").onclick = () => document.getElementById("modalPedido").style.display = "flex";
+            mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
-init();
-</script>
+            // ============================================================
+            // GUARDAR EN FIRESTORE
+            // ============================================================
+            const pedidoData = {
+                numeroPedido: numeroPedido,
+                cliente: {
+                    nombre: nombre,
+                    telefono: telefono,
+                    direccion: direccion || 'Recoge en tienda',
+                    barrio: barrio || '',
+                    observaciones: observaciones || ''
+                },
+                items: items,
+                total: total,
+                estado: 'Pendiente',
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                fuente: 'whatsapp',
+                timestamp: Date.now()
+            };
+
+            try {
+                if (TIENDA_ID) {
+                    await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
+                    console.log('✅ Pedido guardado en Firestore');
+                } else {
+                    console.warn('⚠️ No hay tienda ID, no se guardó en Firestore');
+                }
+            } catch (error) {
+                console.error('❌ Error al guardar en Firestore:', error);
+            }
+
+            // ============================================================
+            // ENVIAR POR WHATSAPP
+            // ============================================================
+            const telefonoWhatsApp = '573164043436';
+            const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+
+            // Mostrar toast de confirmación
+            mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
+
+            // Abrir WhatsApp
+            window.open(urlWhatsApp, '_blank');
+
+            // Limpiar carrito
+            carrito = [];
+            actualizarCarrito();
+            document.getElementById('formDatos').style.display = 'none';
+
+            // Limpiar campos
+            document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteTelefono').value = '';
+            document.getElementById('clienteDireccion').value = '';
+            document.getElementById('clienteBarrio').value = '';
+            document.getElementById('clienteObservaciones').value = '';
+        }
+
+        // ============================================================
+        // CARGAR PRODUCTOS DESDE FIRESTORE
+        // ============================================================
+        async function cargarProductos() {
+            const lista = document.getElementById('listaProductos');
+
+            if (!TIENDA_ID) {
+                lista.innerHTML = `
+                    <div style="color:#FF3D00;text-align:center;padding:40px;">
+                        ⚠️ No se especificó una tienda
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const snap = await db.collection('tiendas').doc(TIENDA_ID).collection('productos').get();
+
+                if (snap.empty) {
+                    lista.innerHTML = `
+                        <div style="color:#888;text-align:center;padding:40px;">
+                            No hay productos disponibles en esta tienda
+                        </div>
+                    `;
+                    return;
+                }
+
+                productos = [];
+                let html = '';
+
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    const id = doc.id;
+                    productos.push({ id, ...p });
+
+                    html += `
+                        <div class="producto">
+                            <div class="producto-info">
+                                <h4>${escHtml(p.name || 'Producto')}</h4>
+                                <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
+                                ${p.descripcion ? `<div style="font-size:11px;color:#888;margin-top:2px;">${escHtml(p.descripcion)}</div>` : ''}
+                            </div>
+                            <div class="producto-acciones">
+                                <button onclick="quitarDelCarrito('${id}')">−</button>
+                                <span class="cantidad" id="cant-${id}">${carrito.find(c => c.id === id)?.cantidad || 0}</span>
+                                <button onclick="agregarAlCarrito('${id}')">+</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                lista.innerHTML = html;
+
+                // Actualizar cantidades visibles
+                carrito.forEach(item => {
+                    const el = document.getElementById(`cant-${item.id}`);
+                    if (el) el.textContent = item.cantidad;
+                });
+
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                lista.innerHTML = `
+                    <div style="color:#FF3D00;text-align:center;padding:40px;">
+                        ❌ Error al cargar el menú
+                    </div>
+                `;
+            }
+        }
+
+        // ============================================================
+        // TOAST NOTIFICACIONES
+        // ============================================================
+        function mostrarToast(mensaje, tipo = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ============================================================
+        // ESCAPE HTML
+        // ============================================================
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ============================================================
+        // INICIALIZAR
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarProductos();
+
+            // Tecla Enter para enviar pedido
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && document.activeElement.tagName !== 'TEXTAREA') {
+                    const btn = document.getElementById('btnComprar');
+                    if (!btn.disabled) {
+                        enviarPedido();
+                    }
+                }
+            });
+        });
+
+        console.log('✅ Menú EyMotoComidas cargado correctamente');
+        console.log('🏪 Tienda:', TIENDA_ID);
+    </script>
+
 </body>
 </html>
