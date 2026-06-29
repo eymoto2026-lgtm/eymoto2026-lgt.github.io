@@ -147,7 +147,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let pedidosUnsubscribe = null;
 let despertadorInterval = null;
 
 // --- FUNCIONES DE ALARMA ---
@@ -159,22 +158,16 @@ function detenerAlarma() {
   }
 }
 
-function activarAlarma(nombreTienda) {
-  if (!despertadorInterval) {
-    const msg = new SpeechSynthesisUtterance(`Atención, pedido para ${nombreTienda}`);
-    window.speechSynthesis.speak(msg);
-    despertadorInterval = setInterval(() => window.speechSynthesis.speak(msg), 5000);
-  }
-}
-
-// --- LOGIN Y SESIÓN ---
+// --- LOGIN Y SESIÓN (UNIFICADO) ---
 document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
+  const msg = document.getElementById("loginMsg");
   try {
+    msg.innerText = "Conectando...";
     await auth.signInWithEmailAndPassword(email, password);
   } catch (e) {
-    document.getElementById("loginMsg").innerText = "Error: " + e.message;
+    msg.innerText = "Error: " + e.message;
   }
 });
 
@@ -184,18 +177,20 @@ window.logout = function() {
 };
 
 auth.onAuthStateChanged(user => {
+  const loginBox = document.getElementById("loginBox");
+  const panel = document.getElementById("panel");
   if (user) {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("panel").classList.remove("hidden");
+    loginBox.classList.add("hidden");
+    panel.classList.remove("hidden");
     if(typeof cargarTiendas === 'function') cargarTiendas();
   } else {
-    document.getElementById("loginBox").classList.remove("hidden");
-    document.getElementById("panel").classList.add("hidden");
+    loginBox.classList.remove("hidden");
+    panel.classList.add("hidden");
     detenerAlarma();
   }
 });
 
-// --- TIENDAS Y PRODUCTOS (CORRECCIONES ESTRUCTURALES) ---
+// --- PRODUCTOS Y TIENDAS ---
 window.eliminarProductoOriginal = async function(idProd) {
   const tiendaId = document.getElementById("tiendaProducto").value;
   if(!confirm("¿Seguro que deseas eliminar este producto?")) return;
@@ -218,51 +213,16 @@ window.cargarEstadoTienda = async function() {
 
 window.toggleTienda = async function() {
   const tiendaId = document.getElementById("tiendaEstado").value;
-  if(!tiendaId) return alert("Por favor selecciona una tienda operativa.");
-
+  if(!tiendaId) return alert("Selecciona una tienda.");
   try {
     const ref = db.collection("tiendas").doc(tiendaId);
     const doc = await ref.get();
     const estadoActual = doc.data().abierta !== false;
     await ref.update({ abierta: !estadoActual });
-    cargarEstadoTienda();
-    alert("¡Estado de la tienda actualizado!");
+    window.cargarEstadoTienda();
+    alert("¡Estado actualizado!");
   } catch(e) { alert("Error: " + e.message); }
-}
-
-// --- CONTROL ACCESOS ---
-document.getElementById("btnIniciarSesion").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  const msg = document.getElementById("loginMsg");
-
-  try {
-    msg.innerText = "";
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch (e) {
-    msg.innerText = "Error: " + e.message;
-  }
-});
-
-window.logout = function() {
-  detenerAlarma();
-  auth.signOut();
-}
-
-auth.onAuthStateChanged(user => {
-  const loginBox = document.getElementById("loginBox");
-  const panel = document.getElementById("panel");
-
-  if (user) {
-    loginBox.classList.add("hidden");
-    panel.classList.remove("hidden");
-    cargarTiendas();
-  } else {
-    loginBox.classList.remove("hidden");
-    panel.classList.add("hidden");
-    detenerAlarma();
-  }
-});
+};
 </script>
 </body>
 </html>
