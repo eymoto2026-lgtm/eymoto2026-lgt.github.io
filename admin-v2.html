@@ -505,7 +505,7 @@ window.cargarProductosOriginal = async function() {
   }
 }
 
-wwindow.guardarProductoOriginal = async function() {
+window.guardarProductoOriginal = async function() {
   const tiendaId = document.getElementById("tiendaProducto").value;
   const prodId = document.getElementById("editProductoId").value;
   
@@ -564,14 +564,12 @@ window.cargarProductosOriginal = async function() {
 };
 
 window.eliminarProductoOriginal = async function(idProd) {
-  const tiendaId = document.getElementById("tiendaProducto").value;
   if(!confirm("¿Seguro que deseas eliminar este producto?")) return;
   try {
     await db.collection("tiendas").doc(tiendaId).collection("productos").doc(idProd).delete();
     cargarProductosOriginal();
   } catch(e) { alert("Error al eliminar: " + e.message); }
 };
-
 window.activarEdicionProducto = function(id, nombre, precio, categoria, descripcion, imagen) {
   document.getElementById("editProductoId").value = id;
   document.getElementById("nuevoNombre").value = nombre;
