@@ -296,6 +296,17 @@ header .spacer{flex:1}
 .toggle input:checked+.toggle-slider{background:var(--green)}
 .toggle input:checked+.toggle-slider::before{transform:translateX(26px)}
 
+/* ===== NOTIFICACIÓN PULSANTE ===== */
+.pedido-card.nuevo-pedido {
+  animation: pulse-border 1.5s ease-in-out 3;
+  border-width: 2px;
+}
+@keyframes pulse-border {
+  0% { border-color: var(--orange); box-shadow: 0 0 0 0 rgba(255,105,0,0.7); }
+  50% { border-color: var(--yellow); box-shadow: 0 0 20px 5px rgba(255,105,0,0.3); }
+  100% { border-color: var(--orange); box-shadow: 0 0 0 0 rgba(255,105,0,0.7); }
+}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:900px){
   .stats-grid{grid-template-columns:1fr 1fr}
@@ -367,6 +378,7 @@ header .spacer{flex:1}
             <option value="">Seleccionar tienda...</option>
           </select>
           <button class="btn-speaker" onclick="probarAltavoz()">🔔 Altavoz</button>
+          <button class="btn-speaker" onclick="stopAlarm()" style="background:var(--red-bg);color:var(--red);">🔕 Silenciar</button>
         </div>
       </div>
       <div class="kanban-wrap">
@@ -509,6 +521,7 @@ let pedidosUnsub  = null;
 let alarmInterval = null;
 let audioCtx      = null;
 let esInicial     = true;
+let pedidosPendientes = new Set(); // Para evitar duplicados en notificaciones
 
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
@@ -534,17 +547,19 @@ function toast(msg, type = 'info', dur = 3500) {
 function beep() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    [[440,0],[523,.13],[659,.26],[880,.40]].forEach(([freq, t]) => {
+    const frequencies = [440, 523, 659, 880];
+    const times = [0, 0.13, 0.26, 0.40];
+    frequencies.forEach((freq, i) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.frequency.value = freq;
       osc.type = 'sine';
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + t);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.28);
-      osc.start(audioCtx.currentTime + t);
-      osc.stop(audioCtx.currentTime + t + 0.3);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime + times[i]);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + times[i] + 0.28);
+      osc.start(audioCtx.currentTime + times[i]);
+      osc.stop(audioCtx.currentTime + times[i] + 0.3);
     });
   } catch(e) {}
 }
@@ -560,10 +575,11 @@ function hablar(msg) {
   } catch(e) {}
 }
 
-function startAlarm(nombreTienda) {
+function startAlarm(nombreTienda, pedidoInfo = '') {
   if (alarmInterval) return;
   beep();
-  hablar(`Nuevo pedido en ${nombreTienda}`);
+  const mensaje = `Nuevo pedido en ${nombreTienda}${pedidoInfo}`;
+  hablar(mensaje);
   alarmInterval = setInterval(() => { beep(); }, 8000);
 }
 
@@ -917,6 +933,7 @@ function escucharPedidos() {
   if (pedidosUnsub) { pedidosUnsub(); pedidosUnsub = null; }
   stopAlarm();
   resetKanban();
+  pedidosPendientes.clear();
   if (!tid) return;
   esInicial = true;
 
@@ -928,10 +945,25 @@ function escucharPedidos() {
       if (!esInicial) {
         snap.docChanges().forEach(ch => {
           if (ch.type === 'added' && ch.doc.data().estado === 'Pendiente') {
+            const data = ch.doc.data();
+            const pedidoId = ch.doc.id;
+            
+            // Evitar duplicados
+            if (pedidosPendientes.has(pedidoId)) return;
+            pedidosPendientes.add(pedidoId);
+            
             const sel = document.getElementById('filtroTiendaPedidos');
             const nom = sel.options[sel.selectedIndex]?.text || 'la tienda';
-            startAlarm(nom);
-            toast(`¡Nuevo pedido recibido en ${nom}!`, 'new', 7000);
+            
+            // Obtener detalles del pedido para la notificación
+            const cliente = data.cliente?.nombre || 'Cliente';
+            const total = data.total || 0;
+            const items = data.items?.length || 0;
+            const infoPedido = ` de ${cliente} - ${items} productos - $${total.toLocaleString('es-CO')}`;
+            
+            // Disparar alarma y notificación
+            startAlarm(nom, infoPedido);
+            toast(`🛵 ¡Nuevo pedido de ${cliente} en ${nom}! ${items} productos - $${total.toLocaleString('es-CO')}`, 'new', 7000);
           }
         });
       }
@@ -973,7 +1005,10 @@ function escucharPedidos() {
       hb.style.display = pend > 0 ? 'inline-block' : 'none';
 
       // Parar alarma si no hay pendientes
-      if (counts['Pendiente'] === 0) stopAlarm();
+      if (counts['Pendiente'] === 0) {
+        stopAlarm();
+        pedidosPendientes.clear();
+      }
 
       esInicial = false;
     }, err => {
@@ -1008,19 +1043,33 @@ function renderPedido(doc, tiendaId, counts) {
     fecha   = `${d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})} · ${d.toLocaleDateString('es-CO')}`;
   }
 
-  // Items
+  // Items - Mostrar detalle completo de lo que pide el cliente
   let itemsHtml = '';
   if (p.items && p.items.length) {
     p.items.forEach(it => {
+      const nombre = escHtml(it.nombre || it.name || 'Producto');
+      const cantidad = it.cantidad || 1;
+      const precioUnitario = it.precio || 0;
+      const totalItem = it.total || (precioUnitario * cantidad);
       itemsHtml += `
         <div class="item-row">
-          <span>• ${escHtml(it.nombre || it.name || 'Producto')} <b>x${it.cantidad||1}</b></span>
-          <span>$${(it.total || (it.precio*(it.cantidad||1)) || 0).toLocaleString('es-CO')}</span>
+          <span>• ${nombre} <b>x${cantidad}</b></span>
+          <span>$${totalItem.toLocaleString('es-CO')}</span>
         </div>`;
     });
+    // Mostrar total de items
+    const totalItems = p.items.reduce((sum, it) => sum + (it.cantidad || 1), 0);
+    itemsHtml = `<div style="margin-bottom:4px;color:var(--text-muted);font-weight:600;">📦 ${totalItems} producto${totalItems > 1 ? 's' : ''}</div>` + itemsHtml;
   } else {
     itemsHtml = '<span style="color:var(--text-muted)">Sin detalle de productos</span>';
   }
+
+  // Información adicional del cliente
+  const clienteInfo = p.cliente || {};
+  const nombreCliente = escHtml(clienteInfo.nombre || 'Desconocido');
+  const telefonoCliente = escHtml(clienteInfo.telefono || '');
+  const direccionCliente = escHtml(clienteInfo.direccion || 'Recoge en tienda');
+  const notaCliente = escHtml(clienteInfo.nota || '');
 
   // Botones de acción según estado
   let acciones = '';
@@ -1039,19 +1088,23 @@ function renderPedido(doc, tiendaId, counts) {
     acciones += `<button class="btn-remove" onclick="eliminarPedido('${tiendaId}','${pid}')">🗑 Remover del panel</button>`;
   }
 
+  // Clase para animación en nuevos pedidos pendientes
+  const esNuevo = estado === 'Pendiente' && esInicial === false;
+
   const card = document.createElement('div');
-  card.className = `pedido-card ${cfg.ring}`;
+  card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
   card.innerHTML = `
-    <div class="pedido-num">Comanda ${escHtml(num)}</div>
+    <div class="pedido-num">📋 Comanda ${escHtml(num)}</div>
     <div class="pedido-time">🕒 ${fecha}</div>
-    <div class="pedido-client">👤 ${escHtml(p.cliente?.nombre || 'Desconocido')}
-      ${p.cliente?.telefono ? `<span style="font-weight:400;color:var(--text-muted)">· ${escHtml(p.cliente.telefono)}</span>` : ''}
+    <div class="pedido-client">👤 <strong>${nombreCliente}</strong>
+      ${telefonoCliente ? `<span style="font-weight:400;color:var(--text-muted)">· 📱 ${telefonoCliente}</span>` : ''}
     </div>
-    <div class="pedido-dir">📍 ${escHtml(p.cliente?.direccion || 'Recoge en tienda')}</div>
+    <div class="pedido-dir">📍 ${direccionCliente}</div>
+    ${notaCliente ? `<div style="font-size:12px;color:var(--orange);margin-bottom:8px;">📝 Nota: ${notaCliente}</div>` : ''}
     <div class="pedido-items">
       ${itemsHtml}
       <div class="pedido-total">
-        <span class="lbl">Total del pedido</span>
+        <span class="lbl">💰 Total del pedido</span>
         <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
       </div>
     </div>
