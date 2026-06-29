@@ -1,131 +1,226 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Admin V2 - EyMoto</title>
-    <style>
-        body{font-family:sans-serif; background:#121212; color:#fff; padding:20px;}
-        .card{background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #333;}
-        input, select, textarea{width:100%; padding:10px; margin:5px 0; background:#2a2a2a; border:1px solid #444; color:#fff; border-radius:5px; box-sizing:border-box;}
-        button{background:#f5c400; border:none; padding:10px; width:100%; font-weight:bold; cursor:pointer; margin-top:10px; border-radius:5px;}
-        .grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-        .pedido-alerta{background:#3a0000; border:2px solid #ff4444; padding:15px; margin:10px 0; animation: flash 1s infinite;}
-        @keyframes flash{0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1}}
-    </style>
+<meta charset="UTF-8">
+<title>Admin - EyMotoComidas</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    text-align:center;
+    background:#f4f4f4;
+    padding-top:40px;
+}
+
+.login-box,
+.panel{
+    max-width:400px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+input{
+    width:90%;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+button{
+    padding:12px 20px;
+    margin:8px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.login-btn{
+    background:#2196F3;
+    color:white;
+}
+
+.logout-btn{
+    background:#555;
+    color:white;
+}
+
+.open{
+    background:green;
+    color:white;
+}
+
+.close{
+    background:red;
+    color:white;
+}
+
+.estado{
+    font-size:24px;
+    font-weight:bold;
+    margin:20px 0;
+}
+
+.abierto{
+    color:green;
+}
+
+.cerrado{
+    color:red;
+}
+
+#panelAdmin{
+    display:none;
+}
+
+#error{
+    color:red;
+    margin-top:10px;
+}
+</style>
+
 </head>
+
 <body>
 
-<div id="loginBox" class="card">
-    <h3>🔐 Acceso Administrativo</h3>
-    <input id="email" type="email" placeholder="Email">
-    <input id="pass" type="password" placeholder="Contraseña">
-    <button onclick="iniciarSesion()">Entrar</button>
+<div id="loginBox" class="login-box">
+
+```
+<h2>🔐 Login Administrador</h2>
+
+<input type="email" id="email" placeholder="Correo">
+
+<input type="password" id="password" placeholder="Contraseña">
+
+<br>
+
+<button class="login-btn" onclick="login()">
+    Iniciar sesión
+</button>
+
+<div id="error"></div>
+```
+
 </div>
 
-<div id="panel" style="display:none;">
-    <div class="grid">
-        <!-- MONITOR Y ALARMAS -->
-        <div class="card">
-            <h3>🔔 Monitor de Pedidos</h3>
-            <select id="selMon" onchange="conectarMonitor()"><option>Seleccionar tienda...</option></select>
-            <div id="listaPedidos"></div>
-        </div>
+<div id="panelAdmin" class="panel">
 
-        <!-- TIENDAS -->
-        <div class="card">
-            <h3>🏪 Gestión Tiendas</h3>
-            <input id="tNom" placeholder="Nombre Tienda">
-            <button onclick="guardarTienda()">Guardar / Editar</button>
-            <div id="listaTiendas"></div>
-        </div>
-    </div>
+```
+<h2>Panel de Administración</h2>
 
-    <!-- PRODUCTOS Y CATEGORÍAS -->
-    <div class="card">
-        <h3>🍔 Productos y Categorías</h3>
-        <select id="selProd" onchange="cargarProductos()"><option>Seleccionar tienda...</option></select>
-        <input id="pNom" placeholder="Nombre">
-        <input id="pCat" placeholder="Categoría">
-        <input id="pPrec" type="number" placeholder="Precio">
-        <button onclick="guardarProducto()">Guardar Producto</button>
-        <div id="listaProductos"></div>
-    </div>
+<div id="estado" class="estado">
+    Cargando...
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<button class="open" onclick="abrirTienda()">
+    🟢 Abrir Tienda
+</button>
+
+<button class="close" onclick="cerrarTienda()">
+    🔴 Cerrar Tienda
+</button>
+
+<br><br>
+
+<button class="logout-btn" onclick="logout()">
+    🚪 Cerrar sesión
+</button>
+```
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY", authDomain: "eymotocomidas.firebaseapp.com", projectId: "eymotocomidas", storageBucket: "eymotocomidas.firebasestorage.app", messagingSenderId: "670474251560", appId: "1:670474251560:web:eab1fbbb744af4e0b8341d" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    // 1. AUTENTICACIÓN
-    function iniciarSesion(){
-        firebase.auth().signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value)
-        .then(() => location.reload()).catch(e => alert(e.message));
-    }
+const firebaseConfig = {
+  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+  authDomain: "eymotocomidas.firebaseapp.com",
+  databaseURL: "https://eymotocomidas-default-rtdb.firebaseio.com",
+  projectId: "eymotocomidas",
+  storageBucket: "eymotocomidas.firebasestorage.app",
+  messagingSenderId: "670474251560",
+  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+};
 
-    firebase.auth().onAuthStateChanged(u => {
-        if(u){ document.getElementById('loginBox').style.display='none'; document.getElementById('panel').style.display='block'; cargarDatos(); }
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.database();
+
+const loginBox = document.getElementById("loginBox");
+const panelAdmin = document.getElementById("panelAdmin");
+const estadoDiv = document.getElementById("estado");
+
+function login(){
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+    .catch(error=>{
+        document.getElementById("error").innerText =
+        "Correo o contraseña incorrectos";
     });
 
-    // 2. TIENDAS (Crear, Editar, Eliminar, Abrir/Cerrar)
-    async function guardarTienda(){
-        const nombre = document.getElementById('tNom').value;
-        await db.collection('tiendas').add({nombre, abierta: true});
-        cargarDatos();
-    }
+}
 
-    async function toggleTienda(id, estado){
-        await db.collection('tiendas').doc(id).update({abierta: !estado});
-        cargarDatos();
-    }
+function logout(){
+    auth.signOut();
+}
 
-    async function eliminarTienda(id){
-        await db.collection('tiendas').doc(id).delete();
-        cargarDatos();
-    }
+auth.onAuthStateChanged(user=>{
 
-    // 3. PRODUCTOS (Crear, Editar, Eliminar, Categoría)
-    async function guardarProducto(){
-        const tId = document.getElementById('selProd').value;
-        await db.collection('tiendas').doc(tId).collection('productos').add({
-            name: document.getElementById('pNom').value,
-            categoria: document.getElementById('pCat').value,
-            precio: parseFloat(document.getElementById('pPrec').value)
+    if(user){
+
+        loginBox.style.display="none";
+        panelAdmin.style.display="block";
+
+        db.ref("tiendaAbierta").on("value", snapshot=>{
+
+            const abierta = snapshot.val();
+
+            if(abierta){
+                estadoDiv.innerHTML="🟢 TIENDA ABIERTA";
+                estadoDiv.className="estado abierto";
+            }else{
+                estadoDiv.innerHTML="🔴 TIENDA CERRADA";
+                estadoDiv.className="estado cerrado";
+            }
+
         });
-        cargarProductos();
+
+    }else{
+
+        loginBox.style.display="block";
+        panelAdmin.style.display="none";
+
     }
 
-    // 4. MONITOR Y ALARMAS (100% Real)
-    function conectarMonitor(){
-        const tId = document.getElementById('selMon').value;
-        db.collection('tiendas').doc(tId).collection('pedidos').onSnapshot(snap => {
-            const list = document.getElementById('listaPedidos');
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const p = doc.data();
-                if(p.estado === 'Pendiente') {
-                    // ALARMA
-                    const msg = new SpeechSynthesisUtterance("Nuevo pedido en " + tId);
-                    window.speechSynthesis.speak(msg);
-                    list.innerHTML += `<div class="pedido-alerta">${p.numeroPedido} - ¡NUEVO!</div>`;
-                }
-            });
-        });
-    }
+});
 
-    async function cargarDatos(){
-        const snap = await db.collection('tiendas').get();
-        const selM = document.getElementById('selMon');
-        const selP = document.getElementById('selProd');
-        snap.forEach(doc => {
-            selM.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`;
-            selP.innerHTML += `<option value="${doc.id}">${doc.data().nombre}</option>`;
-        });
-    }
+function abrirTienda(){
+
+    db.ref("tiendaAbierta").set(true);
+
+}
+
+function cerrarTienda(){
+
+    db.ref("tiendaAbierta").set(false);
+
+}
+
 </script>
+
 </body>
 </html>
