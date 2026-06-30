@@ -217,7 +217,7 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - CORREGIDO ===== */
+        /* ===== PRODUCTO CARD - DESCRIPCIÓN COMPLETA ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
@@ -257,22 +257,26 @@
             font-size: 15px;
             font-weight: 700;
             color: #1a1a2e;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
-        /* ✅ DESCRIPCIÓN - CORREGIDA Y VISIBLE */
+        /* ✅ DESCRIPCIÓN - COMPLETA Y SIN CORTES */
         .producto-info .descripcion {
             font-size: 13px;
-            color: #666;
+            color: #555;
             margin-bottom: 6px;
-            display: block;
-            line-height: 1.5;
+            line-height: 1.6;
             font-weight: 400;
-            min-height: 20px;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow: visible;
+            max-height: none;
+            display: block;
         }
         .producto-info .precio {
             font-size: 16px;
             font-weight: 800;
             color: #1a1a2e;
+            margin-top: 2px;
         }
 
         .producto-acciones {
@@ -976,12 +980,11 @@
                         `;
                     } else {
                         items.forEach(p => {
-                            // ✅ IMAGEN
                             const imagenHtml = p.img && p.img.trim() !== ''
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN - CORREGIDA
+                            // ✅ DESCRIPCIÓN COMPLETA - SIN CORTES
                             const descripcion = p.descripcion && p.descripcion.trim() !== '' 
                                 ? `<div class="descripcion">${escHtml(p.descripcion)}</div>` 
                                 : '';
