@@ -649,52 +649,12 @@
             font-size: 20px;
             font-weight: 800;
             color: #1a1a2e;
-            margin-bottom: 8px;
-        }
-        .modal-producto .modal-cambiar-img {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .modal-producto .modal-cambiar-img input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #f5f5f5;
-            color: #1a1a2e;
-        }
-        .modal-producto .modal-cambiar-img input:focus {
-            outline: none;
-            border-color: #FFD600;
-        }
-        .modal-producto .modal-cambiar-img button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            background: #FFD600;
-            color: #1a1a2e;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            transition: background 0.2s;
-            width: auto;
-        }
-        .modal-producto .modal-cambiar-img button:hover {
-            background: #e6c200;
-        }
-        .modal-producto .modal-cambiar-img .btn-restaurar {
-            background: #eee;
-            color: #555;
-        }
-        .modal-producto .modal-cambiar-img .btn-restaurar:hover {
-            background: #ddd;
+            margin-bottom: 12px;
         }
         .modal-producto .modal-acciones {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 6px;
         }
         .modal-producto .modal-acciones button {
             flex: 1;
@@ -741,6 +701,13 @@
         .btn-nav-img:disabled {
             opacity: 0.3;
             cursor: not-allowed;
+        }
+
+        .modal-indicador {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
         }
 
         @media (max-width: 480px) {
@@ -790,7 +757,7 @@
                 <img class="modal-img" id="modalImg" src="" alt="Producto" style="display:none;">
                 <div class="modal-img-placeholder" id="modalImgPlaceholder">🍔</div>
             </div>
-            <div style="text-align:center;font-size:12px;color:#888;margin-bottom:6px;" id="modalImgIndicator">Imagen 1 de 1</div>
+            <div class="modal-indicador" id="modalImgIndicator">Imagen 1 de 1</div>
             
             <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">
                 <button class="btn-nav-img" id="btnImgAnterior" onclick="cambiarImagenModal(-1)">◀ Anterior</button>
@@ -800,12 +767,6 @@
             <div class="modal-nombre" id="modalNombre">Nombre del producto</div>
             <div class="modal-descripcion" id="modalDescripcion">Descripción del producto</div>
             <div class="modal-precio" id="modalPrecio">$0</div>
-            
-            <div class="modal-cambiar-img">
-                <input type="text" id="modalNuevaImg" placeholder="Pegar URL de otra imagen...">
-                <button onclick="cambiarImagenManual()">Cambiar</button>
-                <button class="btn-restaurar" onclick="restaurarImagenModal()">↺</button>
-            </div>
             
             <div class="modal-acciones">
                 <button class="btn-agregar" id="modalBtnAgregar" onclick="agregarAlCarritoDesdeModal()">+ Agregar al carrito</button>
@@ -1620,7 +1581,7 @@
         }
 
         // ============================================================
-        // MODAL DE PRODUCTO - MÚLTIPLES IMÁGENES
+        // MODAL DE PRODUCTO - NAVEGACIÓN ENTRE IMÁGENES EXISTENTES
         // ============================================================
         let productoModalActual = null;
         let imagenesModal = [];
@@ -1667,8 +1628,6 @@
             document.getElementById('modalDescripcion').textContent = descText || 'Sin descripción';
             document.getElementById('modalPrecio').textContent = '$' + (producto.precio || 0).toLocaleString('es-CO');
             
-            // Limpiar campo de nueva imagen
-            document.getElementById('modalNuevaImg').value = '';
             document.getElementById('modalBtnAgregar').dataset.productoId = productoId;
             
             // Mostrar modal
@@ -1721,53 +1680,6 @@
             if (nuevoIndice < 0 || nuevoIndice >= imagenesModal.length) return;
             indiceImagenActual = nuevoIndice;
             mostrarImagenModal(indiceImagenActual);
-        }
-
-        function cambiarImagenManual() {
-            const nuevaUrl = document.getElementById('modalNuevaImg').value.trim();
-            if (!nuevaUrl) {
-                mostrarToast('⚠️ Ingresa una URL válida', 'error');
-                return;
-            }
-            
-            // Agregar la nueva imagen temporalmente
-            imagenesModal.push(nuevaUrl);
-            indiceImagenActual = imagenesModal.length - 1;
-            mostrarImagenModal(indiceImagenActual);
-            
-            document.getElementById('modalNuevaImg').value = '';
-            mostrarToast('✅ Imagen agregada temporalmente', 'success', 2000);
-        }
-
-        function restaurarImagenModal() {
-            const producto = productoModalActual;
-            if (!producto) return;
-            
-            imagenesModal = [];
-            if (producto.img && producto.img.trim() !== '') {
-                imagenesModal.push(producto.img);
-            }
-            if (producto.img2 && producto.img2.trim() !== '') {
-                imagenesModal.push(producto.img2);
-            }
-            if (imagenesModal.length === 0) {
-                let emoji = '🍔';
-                const nombreLower = (producto.name || '').toLowerCase();
-                if (nombreLower.includes('salchi')) emoji = '🌭';
-                else if (nombreLower.includes('hamburguesa') || nombreLower.includes('burger')) emoji = '🍔';
-                else if (nombreLower.includes('perro')) emoji = '🌭';
-                else if (nombreLower.includes('pizza')) emoji = '🍕';
-                else if (nombreLower.includes('pollo')) emoji = '🍗';
-                else if (nombreLower.includes('gaseosa') || nombreLower.includes('bebida')) emoji = '🥤';
-                else if (nombreLower.includes('burrito')) emoji = '🌯';
-                else if (nombreLower.includes('postre') || nombreLower.includes('dulce')) emoji = '🍰';
-                imagenesModal.push(emoji);
-            }
-            
-            indiceImagenActual = 0;
-            mostrarImagenModal(indiceImagenActual);
-            document.getElementById('modalNuevaImg').value = '';
-            mostrarToast('↺ Imágenes restauradas', 'info', 1500);
         }
 
         function agregarAlCarritoDesdeModal() {
@@ -1826,7 +1738,7 @@
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
-        console.log('📸 Si el producto tiene img2, podrás ver ambas imágenes en el modal');
+        console.log('📸 Si el producto tiene imagen secundaria (img2), podrás ver ambas');
     </script>
 </body>
 </html>
