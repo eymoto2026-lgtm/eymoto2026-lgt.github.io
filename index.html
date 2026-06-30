@@ -217,11 +217,11 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - DESCRIPCIÓN COMPLETA ===== */
+        /* ===== PRODUCTO CARD - DESCRIPCIÓN CON FORMATO ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
-            padding: 12px 14px;
+            padding: 14px 16px;
             margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             display: flex;
@@ -234,8 +234,8 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
         .producto-img {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             border-radius: 12px;
             object-fit: cover;
             flex-shrink: 0;
@@ -246,37 +246,56 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 32px;
             color: #ccc;
         }
         .producto-info {
             flex: 1;
             min-width: 0;
         }
-        .producto-info h4 {
-            font-size: 15px;
+        .producto-info .producto-nombre {
+            font-size: 16px;
             font-weight: 700;
             color: #1a1a2e;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
-        /* ✅ DESCRIPCIÓN - COMPLETA Y SIN CORTES */
+        .producto-info .producto-subtitulo {
+            font-size: 13px;
+            color: #888;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        /* ✅ DESCRIPCIÓN CON FORMATO MEJORADO */
         .producto-info .descripcion {
             font-size: 13px;
             color: #555;
-            margin-bottom: 6px;
-            line-height: 1.6;
+            line-height: 1.7;
             font-weight: 400;
-            white-space: normal;
+            white-space: pre-wrap;
             word-wrap: break-word;
             overflow: visible;
             max-height: none;
             display: block;
+            margin-bottom: 6px;
+            background: #f8f8f8;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border-left: 3px solid #FFD600;
+        }
+        .producto-info .descripcion .ingrediente {
+            display: inline-block;
+            background: #eee;
+            padding: 1px 8px;
+            border-radius: 4px;
+            margin: 1px 2px;
+            font-size: 12px;
+            color: #333;
         }
         .producto-info .precio {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 800;
             color: #1a1a2e;
-            margin-top: 2px;
+            margin-top: 4px;
         }
 
         .producto-acciones {
@@ -541,9 +560,10 @@
             .header .logo-placeholder { width: 55px; height: 55px; font-size: 22px; }
             .header .info .brand { font-size: 18px; }
             .header-overlay { padding: 12px 14px; gap: 10px; }
-            .producto-img { width: 56px; height: 56px; }
-            .producto-info h4 { font-size: 13px; }
-            .producto-info .descripcion { font-size: 12px; }
+            .producto-img { width: 60px; height: 60px; }
+            .producto-info .producto-nombre { font-size: 14px; }
+            .producto-info .descripcion { font-size: 12px; padding: 6px 8px; }
+            .producto-info .precio { font-size: 16px; }
             .container { padding: 8px; padding-bottom: 200px; }
             .carrito-flotante { padding: 10px 14px; }
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
@@ -885,6 +905,36 @@
             }
         }
 
+        // ============================================================
+        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN
+        // ============================================================
+        function formatearDescripcion(texto) {
+            if (!texto) return '';
+            
+            // Reemplazar saltos de línea con <br>
+            let html = texto
+                .replace(/\n/g, '<br>')
+                .replace(/, /g, ', ');
+            
+            // Detectar si hay ingredientes separados por comas y darles formato
+            // Si la descripción tiene comas, convertir cada ingrediente en un span
+            if (texto.includes(',')) {
+                // Dividir por comas y crear spans individuales
+                const items = texto.split(',').map(item => item.trim());
+                if (items.length > 1) {
+                    html = items.map(item => {
+                        // Si el item contiene un salto de línea, mantenerlo
+                        if (item.includes('\n')) {
+                            return item.replace(/\n/g, '<br>');
+                        }
+                        return `<span class="ingrediente">${escHtml(item)}</span>`;
+                    }).join(' ');
+                }
+            }
+            
+            return html;
+        }
+
         async function cargarProductos() {
             const lista = document.getElementById('listaProductos');
             const categoriasContainer = document.getElementById('categoriasContainer');
@@ -984,17 +1034,43 @@
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN COMPLETA - SIN CORTES
-                            const descripcion = p.descripcion && p.descripcion.trim() !== '' 
-                                ? `<div class="descripcion">${escHtml(p.descripcion)}</div>` 
-                                : '';
+                            // ✅ DESCRIPCIÓN CON FORMATO MEJORADO
+                            let descripcionHtml = '';
+                            if (p.descripcion && p.descripcion.trim() !== '') {
+                                // Reemplazar saltos de línea con <br>
+                                let descFormateada = p.descripcion
+                                    .replace(/\n/g, '<br>')
+                                    .replace(/, /g, ', ');
+                                
+                                // Si la descripción tiene comas, envolver cada ingrediente
+                                if (p.descripcion.includes(',')) {
+                                    const itemsDesc = p.descripcion.split(',').map(item => item.trim());
+                                    if (itemsDesc.length > 1) {
+                                        descFormateada = itemsDesc.map(item => {
+                                            if (item.includes('\n')) {
+                                                return item.replace(/\n/g, '<br>');
+                                            }
+                                            return `<span class="ingrediente">${escHtml(item)}</span>`;
+                                        }).join(' ');
+                                    }
+                                }
+                                
+                                descripcionHtml = `<div class="descripcion">${descFormateada}</div>`;
+                            }
+
+                            // Extraer subtítulo (si existe)
+                            let subtitulo = '';
+                            if (p.subtitulo) {
+                                subtitulo = `<div class="producto-subtitulo">${escHtml(p.subtitulo)}</div>`;
+                            }
 
                             productosHtml += `
                                 <div class="producto-card">
                                     ${imagenHtml}
                                     <div class="producto-info">
-                                        <h4>${escHtml(p.name || 'Producto')}</h4>
-                                        ${descripcion}
+                                        <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
+                                        ${subtitulo}
+                                        ${descripcionHtml}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                     </div>
                                     <div class="producto-acciones">
