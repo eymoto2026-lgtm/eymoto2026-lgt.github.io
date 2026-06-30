@@ -217,15 +217,15 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - OPTIMIZADO MÓVIL ===== */
+        /* ===== PRODUCTO CARD - ESTILO LIMPIO ===== */
         .producto-card {
             background: #fff;
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             margin-bottom: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             display: flex;
-            gap: 10px;
+            gap: 12px;
             transition: transform 0.2s, box-shadow 0.2s;
             border: 1px solid #eee;
         }
@@ -253,23 +253,18 @@
             flex: 1;
             min-width: 0;
         }
+        /* ✅ NOMBRE DEL PRODUCTO - GRANDE Y NEGRITA */
         .producto-info .producto-nombre {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
             color: #1a1a2e;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
-        .producto-info .producto-subtitulo {
-            font-size: 12px;
-            color: #888;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        /* ✅ DESCRIPCIÓN COMPACTA PARA MÓVIL */
+        /* ✅ DESCRIPCIÓN - TEXTO NORMAL, SIN CUADROS */
         .producto-info .descripcion {
-            font-size: 12px;
+            font-size: 13px;
             color: #555;
-            line-height: 1.6;
+            line-height: 1.5;
             font-weight: 400;
             white-space: normal;
             word-wrap: break-word;
@@ -277,28 +272,26 @@
             max-height: none;
             display: block;
             margin-bottom: 4px;
-            background: #f8f8f8;
-            padding: 6px 8px;
-            border-radius: 6px;
-            border-left: 3px solid #FFD600;
+            background: transparent;
+            padding: 0;
+            border: none;
+            border-left: none;
         }
         .producto-info .descripcion .ingrediente {
-            display: inline-block;
-            background: #e8e8e8;
-            padding: 1px 6px;
-            border-radius: 4px;
-            margin: 1px 2px;
-            font-size: 11px;
-            color: #333;
+            display: inline;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+            color: #555;
         }
         .producto-info .descripcion .salto {
             display: block;
-            width: 100%;
-            height: 2px;
         }
+        /* ✅ PRECIO - NEGRITA */
         .producto-info .precio {
-            font-size: 15px;
-            font-weight: 800;
+            font-size: 16px;
+            font-weight: 700;
             color: #1a1a2e;
             margin-top: 2px;
         }
@@ -567,11 +560,10 @@
             .header .info .subtitle { font-size: 11px; }
             .header-overlay { padding: 10px 12px; gap: 8px; }
             .producto-img { width: 50px; height: 50px; border-radius: 8px; }
-            .producto-info .producto-nombre { font-size: 13px; }
-            .producto-info .descripcion { font-size: 11px; padding: 4px 6px; }
-            .producto-info .descripcion .ingrediente { font-size: 10px; padding: 1px 4px; }
+            .producto-info .producto-nombre { font-size: 14px; }
+            .producto-info .descripcion { font-size: 12px; }
             .producto-info .precio { font-size: 14px; }
-            .producto-card { padding: 8px 10px; gap: 8px; }
+            .producto-card { padding: 10px 12px; gap: 8px; }
             .producto-acciones button { width: 26px; height: 26px; font-size: 14px; }
             .producto-acciones .cantidad { font-size: 13px; min-width: 20px; }
             .container { padding: 6px; padding-bottom: 200px; }
@@ -775,11 +767,6 @@
             const totalLine = document.getElementById('carritoTotal');
             if (totalLine) totalLine.style.borderTopColor = colorHex;
 
-            // Actualizar también el borde de las descripciones
-            document.querySelectorAll('.producto-info .descripcion').forEach(el => {
-                el.style.borderLeftColor = colorHex;
-            });
-
             const style = document.getElementById('dynamic-colors') || document.createElement('style');
             style.id = 'dynamic-colors';
             style.textContent = `
@@ -922,7 +909,7 @@
         }
 
         // ============================================================
-        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN
+        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN - SIN CUADROS
         // ============================================================
         function formatearDescripcion(texto) {
             if (!texto) return '';
@@ -931,19 +918,6 @@
             let html = texto
                 .replace(/\n/g, '<br>')
                 .replace(/, /g, ', ');
-            
-            // Si la descripción tiene comas, convertir cada ingrediente en un span
-            if (texto.includes(',')) {
-                const items = texto.split(',').map(item => item.trim());
-                if (items.length > 1) {
-                    html = items.map(item => {
-                        if (item.includes('\n')) {
-                            return item.replace(/\n/g, '<br>');
-                        }
-                        return `<span class="ingrediente">${escHtml(item)}</span>`;
-                    }).join(' ');
-                }
-            }
             
             return html;
         }
@@ -1047,33 +1021,10 @@
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN FORMATEADA PARA MÓVIL
+                            // ✅ DESCRIPCIÓN LIMPIA - SIN CUADROS
                             let descripcionHtml = '';
                             if (p.descripcion && p.descripcion.trim() !== '') {
-                                let descFormateada = p.descripcion
-                                    .replace(/\n/g, '<br>')
-                                    .replace(/, /g, ', ');
-                                
-                                // Si la descripción tiene comas, envolver cada ingrediente
-                                if (p.descripcion.includes(',')) {
-                                    const itemsDesc = p.descripcion.split(',').map(item => item.trim());
-                                    if (itemsDesc.length > 1) {
-                                        descFormateada = itemsDesc.map(item => {
-                                            if (item.includes('\n')) {
-                                                return item.replace(/\n/g, '<br>');
-                                            }
-                                            return `<span class="ingrediente">${escHtml(item)}</span>`;
-                                        }).join(' ');
-                                    }
-                                }
-                                
-                                descripcionHtml = `<div class="descripcion" style="border-left-color: ${colorPrincipal};">${descFormateada}</div>`;
-                            }
-
-                            // Extraer subtítulo
-                            let subtitulo = '';
-                            if (p.subtitulo) {
-                                subtitulo = `<div class="producto-subtitulo">${escHtml(p.subtitulo)}</div>`;
+                                descripcionHtml = `<div class="descripcion">${formatearDescripcion(p.descripcion)}</div>`;
                             }
 
                             productosHtml += `
@@ -1081,7 +1032,6 @@
                                     ${imagenHtml}
                                     <div class="producto-info">
                                         <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
-                                        ${subtitulo}
                                         ${descripcionHtml}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                     </div>
