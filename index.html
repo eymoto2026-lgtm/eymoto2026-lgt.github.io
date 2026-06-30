@@ -217,7 +217,7 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - ESTILO LIMPIO ===== */
+        /* ===== PRODUCTO CARD - DESCRIPCIÓN HORIZONTAL ===== */
         .producto-card {
             background: #fff;
             border-radius: 12px;
@@ -253,14 +253,13 @@
             flex: 1;
             min-width: 0;
         }
-        /* ✅ NOMBRE DEL PRODUCTO - GRANDE Y NEGRITA */
         .producto-info .producto-nombre {
             font-size: 16px;
             font-weight: 700;
             color: #1a1a2e;
             margin-bottom: 3px;
         }
-        /* ✅ DESCRIPCIÓN - TEXTO NORMAL, SIN CUADROS */
+        /* ✅ DESCRIPCIÓN HORIZONTAL - UNA SOLA LÍNEA */
         .producto-info .descripcion {
             font-size: 13px;
             color: #555;
@@ -275,20 +274,7 @@
             background: transparent;
             padding: 0;
             border: none;
-            border-left: none;
         }
-        .producto-info .descripcion .ingrediente {
-            display: inline;
-            background: transparent;
-            padding: 0;
-            margin: 0;
-            font-size: 13px;
-            color: #555;
-        }
-        .producto-info .descripcion .salto {
-            display: block;
-        }
-        /* ✅ PRECIO - NEGRITA */
         .producto-info .precio {
             font-size: 16px;
             font-weight: 700;
@@ -909,15 +895,16 @@
         }
 
         // ============================================================
-        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN - SIN CUADROS
+        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN - HORIZONTAL
         // ============================================================
         function formatearDescripcion(texto) {
             if (!texto) return '';
             
-            // Reemplazar saltos de línea con <br>
+            // ✅ Convertir saltos de línea en ESPACIOS para que sea horizontal
             let html = texto
-                .replace(/\n/g, '<br>')
-                .replace(/, /g, ', ');
+                .replace(/\n/g, ' ')  // Saltos de línea → espacios
+                .replace(/\s+/g, ' ')  // Múltiples espacios → uno solo
+                .trim();
             
             return html;
         }
@@ -1021,7 +1008,7 @@
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN LIMPIA - SIN CUADROS
+                            // ✅ DESCRIPCIÓN HORIZONTAL - UNA SOLA LÍNEA
                             let descripcionHtml = '';
                             if (p.descripcion && p.descripcion.trim() !== '') {
                                 descripcionHtml = `<div class="descripcion">${formatearDescripcion(p.descripcion)}</div>`;
