@@ -217,6 +217,7 @@
             display: none;
         }
 
+        /* ===== PRODUCTO CARD - CORREGIDO ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
@@ -258,15 +259,15 @@
             color: #1a1a2e;
             margin-bottom: 2px;
         }
+        /* ✅ DESCRIPCIÓN - CORREGIDA Y VISIBLE */
         .producto-info .descripcion {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 6px;
+            display: block;
+            line-height: 1.5;
+            font-weight: 400;
+            min-height: 20px;
         }
         .producto-info .precio {
             font-size: 16px;
@@ -538,6 +539,7 @@
             .header-overlay { padding: 12px 14px; gap: 10px; }
             .producto-img { width: 56px; height: 56px; }
             .producto-info h4 { font-size: 13px; }
+            .producto-info .descripcion { font-size: 12px; }
             .container { padding: 8px; padding-bottom: 200px; }
             .carrito-flotante { padding: 10px 14px; }
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
@@ -924,7 +926,7 @@
                     const count = cat === 'Todos' ? productos.length : (categoriasMap.get(cat)?.length || 0);
                     let icono = '📂';
                     const catLower = cat.toLowerCase();
-                    if (catLower.includes('salchi')) icono = '🍟';
+                    if (catLower.includes('salchi')) icono = '🌭';
                     else if (catLower.includes('hamburguesa') || catLower.includes('burger')) icono = '🍔';
                     else if (catLower.includes('pizza')) icono = '🍕';
                     else if (catLower.includes('pollo')) icono = '🍗';
@@ -974,15 +976,22 @@
                         `;
                     } else {
                         items.forEach(p => {
+                            // ✅ IMAGEN
                             const imagenHtml = p.img && p.img.trim() !== ''
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
+
+                            // ✅ DESCRIPCIÓN - CORREGIDA
+                            const descripcion = p.descripcion && p.descripcion.trim() !== '' 
+                                ? `<div class="descripcion">${escHtml(p.descripcion)}</div>` 
+                                : '';
+
                             productosHtml += `
                                 <div class="producto-card">
                                     ${imagenHtml}
                                     <div class="producto-info">
                                         <h4>${escHtml(p.name || 'Producto')}</h4>
-                                        ${p.descripcion ? `<div class="descripcion">${escHtml(p.descripcion)}</div>` : ''}
+                                        ${descripcion}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                     </div>
                                     <div class="producto-acciones">
@@ -1168,9 +1177,6 @@
             return `#${num}`;
         }
 
-        // ============================================================
-        // ENVIAR PEDIDO - CON EMOJIS CORREGIDOS
-        // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada', 'error');
@@ -1215,10 +1221,6 @@
                 };
             });
 
-            // ============================================================
-            // MENSAJE WHATSAPP CON EMOJIS - VERSIÓN CORREGIDA
-            // ============================================================
-            // Usamos caracteres Unicode directamente, no emojis que puedan fallar
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
             const emojiFecha = '📅';
@@ -1249,9 +1251,6 @@
             
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
-            // ============================================================
-            // GUARDAR EN FIRESTORE
-            // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -1278,19 +1277,12 @@
                 console.error('❌ Error al guardar en Firestore:', error);
             }
 
-            // ============================================================
-            // ENVIAR POR WHATSAPP - USANDO encodeURIComponent
-            // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-
-            console.log('📱 Mensaje enviado a WhatsApp:');
-            console.log(mensajeWhatsApp);
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
-            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
