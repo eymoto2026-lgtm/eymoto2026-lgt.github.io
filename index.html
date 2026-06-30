@@ -211,7 +211,6 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - IMAGEN ARRIBA ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
@@ -228,11 +227,11 @@
             transform: scale(0.98);
         }
 
-        /* ✅ IMAGEN ARRIBA - CENTRADA */
         .producto-img-wrapper {
             display: flex;
             justify-content: center;
             width: 100%;
+            cursor: pointer;
         }
         .producto-img {
             width: 100px;
@@ -261,8 +260,8 @@
             line-height: 1.3;
             margin-bottom: 4px;
             text-align: center;
+            cursor: pointer;
         }
-        /* ✅ DESCRIPCIÓN COMPLETA */
         .producto-info .descripcion {
             font-size: 13px;
             color: #555;
@@ -281,7 +280,6 @@
             text-align: center;
         }
 
-        /* ===== SELECTOR - 0 + CENTRADO DEBAJO DEL PRECIO ===== */
         .producto-acciones {
             display: flex;
             align-items: center;
@@ -566,6 +564,185 @@
             display: block;
         }
 
+        /* ===== MODAL DE PRODUCTO ===== */
+        .modal-producto {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: modalFadeIn 0.3s ease;
+        }
+        .modal-producto.active {
+            display: flex;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-producto .modal-contenido {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-producto .modal-cerrar {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #888;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: color 0.2s;
+            width: auto;
+        }
+        .modal-producto .modal-cerrar:hover {
+            color: #1a1a2e;
+        }
+        .modal-producto .modal-img {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #f5f5f5;
+            margin-bottom: 4px;
+        }
+        .modal-producto .modal-img-placeholder {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-bottom: 4px;
+        }
+        .modal-producto .modal-nombre {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a2e;
+            margin-bottom: 6px;
+        }
+        .modal-producto .modal-descripcion {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .modal-producto .modal-precio {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .modal-producto .modal-cambiar-img {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .modal-producto .modal-cambiar-img input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #f5f5f5;
+            color: #1a1a2e;
+        }
+        .modal-producto .modal-cambiar-img input:focus {
+            outline: none;
+            border-color: #FFD600;
+        }
+        .modal-producto .modal-cambiar-img button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #FFD600;
+            color: #1a1a2e;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: auto;
+        }
+        .modal-producto .modal-cambiar-img button:hover {
+            background: #e6c200;
+        }
+        .modal-producto .modal-cambiar-img .btn-restaurar {
+            background: #eee;
+            color: #555;
+        }
+        .modal-producto .modal-cambiar-img .btn-restaurar:hover {
+            background: #ddd;
+        }
+        .modal-producto .modal-acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .modal-producto .modal-acciones button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-producto .modal-acciones .btn-agregar {
+            background: #FFD600;
+            color: #1a1a2e;
+        }
+        .modal-producto .modal-acciones .btn-agregar:hover {
+            background: #e6c200;
+        }
+        .modal-producto .modal-acciones .btn-cerrar-modal {
+            background: #eee;
+            color: #555;
+        }
+        .modal-producto .modal-acciones .btn-cerrar-modal:hover {
+            background: #ddd;
+        }
+        /* Botones de navegación de imágenes */
+        .btn-nav-img {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #eee;
+            color: #555;
+            font-weight: 700;
+            cursor: pointer;
+            width: auto;
+            transition: background 0.2s;
+        }
+        .btn-nav-img:hover {
+            background: #ddd;
+        }
+        .btn-nav-img:active {
+            transform: scale(0.95);
+        }
+        .btn-nav-img:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -586,12 +763,56 @@
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
             .categoria-tab .tab-icono { font-size: 11px; }
             .categoria-tab .tab-badge { font-size: 8px; padding: 0 6px; }
+            .modal-producto .modal-contenido {
+                padding: 16px;
+            }
+            .modal-producto .modal-img {
+                max-height: 200px;
+            }
+            .modal-producto .modal-nombre {
+                font-size: 18px;
+            }
+            .modal-producto .modal-precio {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== MODAL DE PRODUCTO ===== -->
+    <div class="modal-producto" id="modalProducto" onclick="cerrarModalProducto(event)">
+        <div class="modal-contenido" onclick="event.stopPropagation()">
+            <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
+            <div id="modalImgContainer">
+                <img class="modal-img" id="modalImg" src="" alt="Producto" style="display:none;">
+                <div class="modal-img-placeholder" id="modalImgPlaceholder">🍔</div>
+            </div>
+            <div style="text-align:center;font-size:12px;color:#888;margin-bottom:6px;" id="modalImgIndicator">Imagen 1 de 1</div>
+            
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">
+                <button class="btn-nav-img" id="btnImgAnterior" onclick="cambiarImagenModal(-1)">◀ Anterior</button>
+                <button class="btn-nav-img" id="btnImgSiguiente" onclick="cambiarImagenModal(1)">Siguiente ▶</button>
+            </div>
+            
+            <div class="modal-nombre" id="modalNombre">Nombre del producto</div>
+            <div class="modal-descripcion" id="modalDescripcion">Descripción del producto</div>
+            <div class="modal-precio" id="modalPrecio">$0</div>
+            
+            <div class="modal-cambiar-img">
+                <input type="text" id="modalNuevaImg" placeholder="Pegar URL de otra imagen...">
+                <button onclick="cambiarImagenManual()">Cambiar</button>
+                <button class="btn-restaurar" onclick="restaurarImagenModal()">↺</button>
+            </div>
+            
+            <div class="modal-acciones">
+                <button class="btn-agregar" id="modalBtnAgregar" onclick="agregarAlCarritoDesdeModal()">+ Agregar al carrito</button>
+                <button class="btn-cerrar-modal" onclick="cerrarModalProducto()">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
@@ -977,6 +1198,7 @@
                     else if (catLower.includes('hamburguesa') || catLower.includes('burger')) icono = '🍔';
                     else if (catLower.includes('pizza')) icono = '🍕';
                     else if (catLower.includes('pollo')) icono = '🍗';
+                    else if (catLower.includes('asado')) icono = '🥩';
                     else if (catLower.includes('bebida') || catLower.includes('gaseosa') || catLower.includes('jugo')) icono = '🥤';
                     else if (catLower.includes('postre') || catLower.includes('dulce')) icono = '🍰';
                     else if (catLower.includes('burrito')) icono = '🌯';
@@ -1025,7 +1247,6 @@
                         items.forEach(p => {
                             const cantidad = carrito.find(c => c.id === p.id)?.cantidad || 0;
                             
-                            // ✅ IMAGEN ARRIBA
                             let imagenHtml = '';
                             if (p.img && p.img.trim() !== '') {
                                 imagenHtml = `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`;
@@ -1051,14 +1272,13 @@
 
                             const restarVisible = cantidad > 0 ? 'visible' : '';
 
-                            // ✅ NUEVA ESTRUCTURA: IMAGEN ARRIBA, SELECTOR ABAJO
                             productosHtml += `
                                 <div class="producto-card">
-                                    <div class="producto-img-wrapper">
+                                    <div class="producto-img-wrapper" onclick="abrirModalProducto('${p.id}')">
                                         ${imagenHtml}
                                     </div>
                                     <div class="producto-info">
-                                        <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
+                                        <div class="producto-nombre" onclick="abrirModalProducto('${p.id}')">${escHtml(p.name || 'Producto')}</div>
                                         ${descripcionHtml}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                         <div class="producto-acciones">
@@ -1399,6 +1619,181 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
+        // ============================================================
+        // MODAL DE PRODUCTO - MÚLTIPLES IMÁGENES
+        // ============================================================
+        let productoModalActual = null;
+        let imagenesModal = [];
+        let indiceImagenActual = 0;
+
+        function abrirModalProducto(productoId) {
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
+            
+            productoModalActual = producto;
+            
+            // Recopilar todas las imágenes disponibles
+            imagenesModal = [];
+            if (producto.img && producto.img.trim() !== '') {
+                imagenesModal.push(producto.img);
+            }
+            // Si existe img2, agregarla como segunda imagen
+            if (producto.img2 && producto.img2.trim() !== '') {
+                imagenesModal.push(producto.img2);
+            }
+            // Si no hay imágenes, usar un emoji como fallback
+            if (imagenesModal.length === 0) {
+                let emoji = '🍔';
+                const nombreLower = (producto.name || '').toLowerCase();
+                if (nombreLower.includes('salchi')) emoji = '🌭';
+                else if (nombreLower.includes('hamburguesa') || nombreLower.includes('burger')) emoji = '🍔';
+                else if (nombreLower.includes('perro')) emoji = '🌭';
+                else if (nombreLower.includes('pizza')) emoji = '🍕';
+                else if (nombreLower.includes('pollo')) emoji = '🍗';
+                else if (nombreLower.includes('gaseosa') || nombreLower.includes('bebida')) emoji = '🥤';
+                else if (nombreLower.includes('burrito')) emoji = '🌯';
+                else if (nombreLower.includes('postre') || nombreLower.includes('dulce')) emoji = '🍰';
+                imagenesModal.push(emoji);
+            }
+            
+            indiceImagenActual = 0;
+            
+            // Mostrar la imagen actual
+            mostrarImagenModal(indiceImagenActual);
+            
+            // Nombre, descripción y precio
+            document.getElementById('modalNombre').textContent = producto.name || 'Producto';
+            const descText = formatearDescripcion(producto.descripcion);
+            document.getElementById('modalDescripcion').textContent = descText || 'Sin descripción';
+            document.getElementById('modalPrecio').textContent = '$' + (producto.precio || 0).toLocaleString('es-CO');
+            
+            // Limpiar campo de nueva imagen
+            document.getElementById('modalNuevaImg').value = '';
+            document.getElementById('modalBtnAgregar').dataset.productoId = productoId;
+            
+            // Mostrar modal
+            document.getElementById('modalProducto').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function mostrarImagenModal(indice) {
+            const imgEl = document.getElementById('modalImg');
+            const placeholderEl = document.getElementById('modalImgPlaceholder');
+            const indicatorEl = document.getElementById('modalImgIndicator');
+            const btnAnterior = document.getElementById('btnImgAnterior');
+            const btnSiguiente = document.getElementById('btnImgSiguiente');
+            
+            // Actualizar indicador
+            if (imagenesModal.length > 1) {
+                indicatorEl.textContent = `Imagen ${indice + 1} de ${imagenesModal.length}`;
+                indicatorEl.style.display = 'block';
+            } else {
+                indicatorEl.textContent = '';
+                indicatorEl.style.display = 'none';
+            }
+            
+            // Habilitar/deshabilitar botones de navegación
+            btnAnterior.disabled = (indice === 0);
+            btnSiguiente.disabled = (indice >= imagenesModal.length - 1);
+            
+            const src = imagenesModal[indice];
+            
+            // Verificar si es una URL de imagen o un emoji
+            if (src && (src.startsWith('http') || src.startsWith('data:'))) {
+                imgEl.src = src;
+                imgEl.style.display = 'block';
+                placeholderEl.style.display = 'none';
+                imgEl.onerror = function() {
+                    this.style.display = 'none';
+                    placeholderEl.style.display = 'flex';
+                    placeholderEl.textContent = '❌';
+                };
+            } else {
+                // Es un emoji o texto (fallback)
+                imgEl.style.display = 'none';
+                placeholderEl.style.display = 'flex';
+                placeholderEl.textContent = src || '🍔';
+            }
+        }
+
+        function cambiarImagenModal(direccion) {
+            const nuevoIndice = indiceImagenActual + direccion;
+            if (nuevoIndice < 0 || nuevoIndice >= imagenesModal.length) return;
+            indiceImagenActual = nuevoIndice;
+            mostrarImagenModal(indiceImagenActual);
+        }
+
+        function cambiarImagenManual() {
+            const nuevaUrl = document.getElementById('modalNuevaImg').value.trim();
+            if (!nuevaUrl) {
+                mostrarToast('⚠️ Ingresa una URL válida', 'error');
+                return;
+            }
+            
+            // Agregar la nueva imagen temporalmente
+            imagenesModal.push(nuevaUrl);
+            indiceImagenActual = imagenesModal.length - 1;
+            mostrarImagenModal(indiceImagenActual);
+            
+            document.getElementById('modalNuevaImg').value = '';
+            mostrarToast('✅ Imagen agregada temporalmente', 'success', 2000);
+        }
+
+        function restaurarImagenModal() {
+            const producto = productoModalActual;
+            if (!producto) return;
+            
+            imagenesModal = [];
+            if (producto.img && producto.img.trim() !== '') {
+                imagenesModal.push(producto.img);
+            }
+            if (producto.img2 && producto.img2.trim() !== '') {
+                imagenesModal.push(producto.img2);
+            }
+            if (imagenesModal.length === 0) {
+                let emoji = '🍔';
+                const nombreLower = (producto.name || '').toLowerCase();
+                if (nombreLower.includes('salchi')) emoji = '🌭';
+                else if (nombreLower.includes('hamburguesa') || nombreLower.includes('burger')) emoji = '🍔';
+                else if (nombreLower.includes('perro')) emoji = '🌭';
+                else if (nombreLower.includes('pizza')) emoji = '🍕';
+                else if (nombreLower.includes('pollo')) emoji = '🍗';
+                else if (nombreLower.includes('gaseosa') || nombreLower.includes('bebida')) emoji = '🥤';
+                else if (nombreLower.includes('burrito')) emoji = '🌯';
+                else if (nombreLower.includes('postre') || nombreLower.includes('dulce')) emoji = '🍰';
+                imagenesModal.push(emoji);
+            }
+            
+            indiceImagenActual = 0;
+            mostrarImagenModal(indiceImagenActual);
+            document.getElementById('modalNuevaImg').value = '';
+            mostrarToast('↺ Imágenes restauradas', 'info', 1500);
+        }
+
+        function agregarAlCarritoDesdeModal() {
+            const btn = document.getElementById('modalBtnAgregar');
+            const productoId = btn.dataset.productoId;
+            if (!productoId) return;
+            cerrarModalProducto();
+            agregarAlCarrito(productoId);
+            const producto = productos.find(p => p.id === productoId);
+            if (producto) {
+                mostrarToast(`✅ ${producto.name || 'Producto'} agregado al carrito`, 'success', 2000);
+            }
+        }
+
+        function cerrarModalProducto(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modalProducto').classList.remove('active');
+            document.body.style.overflow = '';
+            productoModalActual = null;
+            imagenesModal = [];
+            indiceImagenActual = 0;
+        }
+
+        // ============================================================
+        // INICIALIZAR
+        // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
             await cargarTienda();
             await cargarProductos();
@@ -1411,6 +1806,10 @@
                     } else if (!btn.disabled && carrito.length > 0) {
                         mostrarFormularioYEnviar();
                     }
+                }
+                // Cerrar modal con ESC
+                if (e.key === 'Escape') {
+                    cerrarModalProducto();
                 }
             });
 
@@ -1426,6 +1825,8 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
+        console.log('📸 Si el producto tiene img2, podrás ver ambas imágenes en el modal');
     </script>
 </body>
 </html>
