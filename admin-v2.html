@@ -268,6 +268,8 @@ header .spacer{flex:1}
 .prod-cat{display:inline-block;background:var(--surface3);color:var(--text-muted);font-size:10px;padding:2px 7px;border-radius:6px;margin-top:4px}
 .prod-price{font-size:15px;font-weight:900;color:var(--yellow);margin-right:8px;white-space:nowrap}
 .prod-actions{display:flex;gap:5px;flex-shrink:0}
+/* ✅ INDICADOR DE IMAGENES EXTRA */
+.prod-img-badge{font-size:10px;color:#888;margin-left:6px}
 
 /* ESTADO */
 .estado-wrap{max-width:460px}
@@ -435,8 +437,10 @@ header .spacer{flex:1}
             <div class="form-group"><label>Precio</label><input id="nuevoPrecio" type="number" placeholder="18000"></div>
             <div class="form-group"><label>Categoría</label><input id="nuevoCategoria" placeholder="Hamburguesas"></div>
           </div>
-          <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2"></textarea></div>
-          <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://..."></div>
+          <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Ingredientes o detalles..."></textarea></div>
+          <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
+          <!-- ✅ NUEVO CAMPO: URL imagen 2 (opcional) -->
+          <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
           <div style="display:flex;gap:8px">
             <button onclick="guardarProducto()">Guardar</button>
             <button class="btn-ghost hidden" id="btnCancelProd" onclick="cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button>
@@ -768,7 +772,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS
+// PRODUCTOS (con img2)
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -784,9 +788,15 @@ async function cargarProductos() {
       const pid = doc.id;
       const div = document.createElement('div');
       div.className = 'prod-item';
+      // ✅ Mostrar indicador si tiene imagen secundaria
+      const imgBadge = p.img2 ? '<span class="prod-img-badge">📸 +1</span>' : '';
       div.innerHTML = `
         <div class="prod-img">${p.img ? `<img src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.parentElement.innerHTML='🍔'">` : '🍔'}</div>
-        <div class="prod-info"><h5>${escHtml(p.name || 'Sin nombre')}</h5><p class="pdesc">${escHtml(p.descripcion || '')}</p><span class="prod-cat">${escHtml(p.categoria || 'General')}</span></div>
+        <div class="prod-info">
+          <h5>${escHtml(p.name || 'Sin nombre')} ${imgBadge}</h5>
+          <p class="pdesc">${escHtml(p.descripcion || '')}</p>
+          <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
+        </div>
         <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
         <div class="prod-actions">
           <button class="btn-info btn-sm" onclick="editarProducto('${pid}','${tid}')">Editar</button>
@@ -808,10 +818,12 @@ async function guardarProducto() {
   const categoria = document.getElementById('nuevoCategoria').value.trim();
   const descripcion = document.getElementById('nuevoDescripcion').value.trim();
   const img = document.getElementById('nuevoImagen').value.trim();
+  // ✅ Obtener imagen secundaria
+  const img2 = document.getElementById('nuevoImagen2').value.trim();
 
   if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
 
-  const datos = { name, precio, categoria, descripcion, img };
+  const datos = { name, precio, categoria, descripcion, img, img2 };
   try {
     const ref = db.collection('tiendas').doc(tid).collection('productos');
     if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
@@ -834,6 +846,8 @@ async function editarProducto(pid, tid) {
     document.getElementById('nuevoCategoria').value = p.categoria || '';
     document.getElementById('nuevoDescripcion').value = p.descripcion || '';
     document.getElementById('nuevoImagen').value = p.img || '';
+    // ✅ Cargar imagen secundaria
+    document.getElementById('nuevoImagen2').value = p.img2 || '';
     document.getElementById('btnCancelProd').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[2];
     switchTab('productos', btn);
@@ -841,7 +855,8 @@ async function editarProducto(pid, tid) {
 }
 
 function cancelarEdProducto() {
-  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen'].forEach(id => document.getElementById(id).value = '');
+  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2']
+    .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelProd').classList.add('hidden');
 }
 
@@ -911,7 +926,6 @@ function cambiarTiendaSeleccionada() {
   if (tiendaSeleccionada) {
     escucharPedidosDeTienda(tiendaSeleccionada);
   } else {
-    // Mostrar solo pedidos PENDIENTES en la vista global
     mostrarPedidosPendientesGlobal();
   }
 }
@@ -927,7 +941,6 @@ function mostrarPedidosPendientesGlobal() {
     const pedidos = todosLosPedidos[tiendaId] || [];
     pedidos.forEach(pedido => {
       const data = pedido.data;
-      // ✅ SOLO mostrar pedidos PENDIENTES en la vista global
       if (data.estado === 'Pendiente') {
         renderPedidoGlobal(pedido.doc, tiendaId, counts);
       }
@@ -1045,7 +1058,6 @@ function iniciarEscuchaGlobal() {
       const tiendaId = doc.id;
       const nombreTienda = tiendasCache[tiendaId] || tiendaId;
       
-      // Guardar referencia del listener
       const unsubscribe = db.collection('tiendas').doc(tiendaId)
         .collection('pedidos')
         .orderBy('fecha', 'desc')
@@ -1061,7 +1073,6 @@ function iniciarEscuchaGlobal() {
               const data = change.doc.data();
               const pedidoId = change.doc.id;
               
-              // ✅ Solo notificar si está PENDIENTE y no se ha notificado antes
               if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
                 notificacionesMostradas.add(pedidoId);
                 
@@ -1069,13 +1080,9 @@ function iniciarEscuchaGlobal() {
                 const total = data.total || 0;
                 const items = data.items?.length || 0;
                 
-                // ✅ SONIDO Y VOZ
                 startAlarm(nombreTienda, cliente);
-                
-                // ✅ NOTIFICACIÓN FLOTANTE
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
-                // ✅ TOAST
                 toast(
                   `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
                   'new', 7000,
@@ -1088,7 +1095,6 @@ function iniciarEscuchaGlobal() {
                   }
                 );
                 
-                // ✅ Marcar tienda en lista
                 const tiendaElement = document.getElementById('tienda-' + tiendaId);
                 if (tiendaElement) {
                   tiendaElement.classList.add('tiene-pedidos');
@@ -1102,7 +1108,6 @@ function iniciarEscuchaGlobal() {
             }
           });
           
-          // ✅ Actualizar vista global si no hay tienda seleccionada
           if (!tiendaSeleccionada) {
             mostrarPedidosPendientesGlobal();
           }
@@ -1110,7 +1115,6 @@ function iniciarEscuchaGlobal() {
           console.error(`Error escuchando tienda ${tiendaId}:`, err);
         });
       
-      // Guardar el unsubscribe para limpiar después
       listenersTiendas[tiendaId] = unsubscribe;
     });
   }).catch(err => {
@@ -1304,7 +1308,7 @@ function renderPedido(doc, tiendaId, counts) {
 }
 
 // ============================================================
-// ✅ CAMBIAR ESTADO - CON SELECCIÓN AUTOMÁTICA DE TIENDA
+// CAMBIAR ESTADO
 // ============================================================
 async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
   try {
@@ -1312,7 +1316,6 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
     await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
     toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
     
-    // ✅ Si el pedido pasa a "En Cocina", seleccionar la tienda automáticamente
     if (nuevoEstado === 'En Cocina') {
       const selector = document.getElementById('filtroTienda');
       if (selector) {
@@ -1359,6 +1362,7 @@ console.log('✅ Panel de administración cargado correctamente');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
 console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
 console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
+console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 </script>
 </body>
 </html>
