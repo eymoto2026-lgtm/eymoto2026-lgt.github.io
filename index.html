@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         
-        /* ===== HEADER ESTILO RAPPI ===== */
+        /* ===== HEADER ===== */
         .header {
             position: relative;
             width: 100%;
@@ -143,7 +143,7 @@
             padding-bottom: 180px;
         }
 
-        /* ===== CATEGORÍAS TIPO RAPPI ===== */
+        /* ===== CATEGORÍAS ===== */
         .categorias-wrapper {
             overflow-x: auto;
             overflow-y: hidden;
@@ -213,24 +213,25 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD ESTILO RAPPI ===== */
+        /* ===== PRODUCTO CARD ESTILO MODERNO ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
-            padding: 14px 16px;
+            padding: 12px 14px;
             margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             display: flex;
             gap: 14px;
             transition: transform 0.2s, box-shadow 0.2s;
             border: 1px solid #f0f0f0;
+            align-items: center;
         }
         .producto-card:active {
             transform: scale(0.98);
         }
         .producto-img {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             border-radius: 12px;
             object-fit: cover;
             flex-shrink: 0;
@@ -241,86 +242,53 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 28px;
             color: #ccc;
             background: #f8f8f8;
         }
         .producto-info {
             flex: 1;
             min-width: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
         .producto-info .producto-nombre {
             font-size: 15px;
             font-weight: 700;
             color: #1a1a2e;
             line-height: 1.3;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
-        /* ✅ DESCRIPCIÓN ESTILO RAPPI - TEXTO CORRIDO */
         .producto-info .descripcion {
-            font-size: 13px;
+            font-size: 12.5px;
             color: #777;
-            line-height: 1.5;
+            line-height: 1.4;
             font-weight: 400;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 6px;
-        }
-        .producto-info .descripcion-completa {
-            font-size: 13px;
-            color: #777;
-            line-height: 1.6;
-            font-weight: 400;
-            display: none;
-            margin-bottom: 6px;
-        }
-        .producto-info .descripcion-completa.visible {
-            display: block;
+            margin-bottom: 4px;
         }
         .producto-info .precio {
-            font-size: 16px;
-            font-weight: 800;
+            font-size: 15px;
+            font-weight: 700;
             color: #1a1a2e;
         }
-        .producto-info .precio .moneda {
-            font-size: 13px;
-            font-weight: 600;
-            color: #888;
-        }
 
-        /* Botón "ver más" */
-        .btn-ver-mas {
-            background: none;
-            border: none;
-            color: #FFD600;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 2px 0;
-            width: auto;
-        }
-        .btn-ver-mas:hover {
-            text-decoration: underline;
-        }
-
+        /* ===== SELECTOR - 0 + (reemplaza el botón "Comprar") ===== */
         .producto-acciones {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
-            margin-top: 6px;
         }
-        .producto-acciones button {
-            width: 32px;
-            height: 32px;
+        .producto-acciones .btn-restar {
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            border: none;
+            border: 1.5px solid #ddd;
+            background: #fff;
+            color: #333;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
@@ -328,35 +296,51 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0.4;
+            pointer-events: none;
         }
-        .btn-restar {
+        .producto-acciones .btn-restar.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .producto-acciones .btn-restar.visible:hover {
             background: #f0f0f0;
-            color: #333;
+            border-color: #ccc;
         }
-        .btn-restar:hover {
-            background: #e0e0e0;
-        }
-        .btn-sumar {
-            color: #ffffff;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-        .btn-sumar:hover {
-            transform: scale(1.05);
-            filter: brightness(0.9);
-        }
-        .btn-sumar:active {
-            transform: scale(0.92);
+        .producto-acciones .btn-restar.visible:active {
+            transform: scale(0.9);
         }
         .producto-acciones .cantidad {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
-            min-width: 24px;
+            min-width: 26px;
             text-align: center;
             color: #1a1a2e;
         }
+        .producto-acciones .btn-sumar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .producto-acciones .btn-sumar:hover {
+            transform: scale(1.05);
+            filter: brightness(0.9);
+        }
+        .producto-acciones .btn-sumar:active {
+            transform: scale(0.9);
+        }
 
-        /* ===== CARRITO ESTILO RAPPI ===== */
+        /* ===== CARRITO FLOTANTE ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -577,17 +561,6 @@
             display: block;
         }
 
-        .btn-ver-mas {
-            background: none;
-            border: none;
-            color: #FFD600;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 4px 0;
-            width: auto;
-        }
-
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -595,13 +568,14 @@
             .header .info .brand { font-size: 16px; }
             .header .info .subtitle { font-size: 10px; }
             .header-overlay { padding: 10px 12px; gap: 8px; }
-            .producto-img { width: 64px; height: 64px; }
+            .producto-img { width: 60px; height: 60px; }
             .producto-info .producto-nombre { font-size: 14px; }
-            .producto-info .descripcion { font-size: 12px; -webkit-line-clamp: 2; }
+            .producto-info .descripcion { font-size: 12px; }
             .producto-info .precio { font-size: 14px; }
-            .producto-card { padding: 12px; gap: 10px; }
-            .producto-acciones button { width: 28px; height: 28px; font-size: 14px; }
-            .producto-acciones .cantidad { font-size: 13px; min-width: 20px; }
+            .producto-card { padding: 10px 12px; gap: 10px; }
+            .producto-acciones .btn-restar { width: 26px; height: 26px; font-size: 14px; }
+            .producto-acciones .btn-sumar { width: 26px; height: 26px; font-size: 14px; }
+            .producto-acciones .cantidad { font-size: 14px; min-width: 22px; }
             .container { padding: 8px; padding-bottom: 170px; }
             .carrito-flotante { padding: 10px 12px; border-radius: 12px 12px 0 0; }
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
@@ -825,9 +799,6 @@
                     border-color: ${colorHex};
                     color: ${colorHex};
                 }
-                .btn-ver-mas {
-                    color: ${colorHex} !important;
-                }
             `;
             document.head.appendChild(style);
         }
@@ -1050,37 +1021,33 @@
                         `;
                     } else {
                         items.forEach(p => {
+                            const cantidad = carrito.find(c => c.id === p.id)?.cantidad || 0;
                             const imagenHtml = p.img && p.img.trim() !== ''
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
                             const descText = formatearDescripcion(p.descripcion);
-                            const descCorta = descText.length > 80 ? descText.substring(0, 80) + '...' : descText;
-                            const descCompleta = descText;
+                            const descCorta = descText.length > 70 ? descText.substring(0, 70) + '...' : descText;
 
                             let descripcionHtml = '';
                             if (descText) {
-                                const tieneMas = descText.length > 80;
-                                descripcionHtml = `
-                                    <div class="descripcion" id="desc-corta-${p.id}">${escHtml(descCorta)}</div>
-                                    <div class="descripcion-completa" id="desc-completa-${p.id}">${escHtml(descCompleta)}</div>
-                                    ${tieneMas ? `<button class="btn-ver-mas" onclick="toggleDescripcion('${p.id}')">Ver más</button>` : ''}
-                                `;
+                                descripcionHtml = `<div class="descripcion">${escHtml(descCorta)}</div>`;
                             }
+
+                            // ✅ Selector - 0 + (el botón "restar" solo aparece si hay cantidad)
+                            const restarVisible = cantidad > 0 ? 'visible' : '';
 
                             productosHtml += `
                                 <div class="producto-card">
                                     ${imagenHtml}
                                     <div class="producto-info">
-                                        <div>
-                                            <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
-                                            ${descripcionHtml}
-                                        </div>
+                                        <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
+                                        ${descripcionHtml}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                     </div>
                                     <div class="producto-acciones">
-                                        <button class="btn-restar" onclick="quitarDelCarrito('${p.id}')">−</button>
-                                        <span class="cantidad" id="cant-${p.id}">${carrito.find(c => c.id === p.id)?.cantidad || 0}</span>
+                                        <button class="btn-restar ${restarVisible}" id="restar-${p.id}" onclick="quitarDelCarrito('${p.id}')">−</button>
+                                        <span class="cantidad" id="cant-${p.id}">${cantidad}</span>
                                         <button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>
                                     </div>
                                 </div>
@@ -1096,34 +1063,11 @@
                     aplicarColoresDinamicos(colorPrincipal);
                 }
 
-                carrito.forEach(item => {
-                    const el = document.getElementById(`cant-${item.id}`);
-                    if (el) el.textContent = item.cantidad;
-                });
-
                 console.log(`✅ ${productos.length} productos cargados`);
 
             } catch (error) {
                 console.error('Error al cargar productos:', error);
                 lista.innerHTML = `<div style="color:#FF3D00;text-align:center;padding:30px;">❌ Error al cargar el menú</div>`;
-            }
-        }
-
-        function toggleDescripcion(productoId) {
-            const corta = document.getElementById(`desc-corta-${productoId}`);
-            const completa = document.getElementById(`desc-completa-${productoId}`);
-            const btn = document.querySelector(`#desc-corta-${productoId}`)?.nextElementSibling;
-            
-            if (corta && completa) {
-                if (corta.style.display !== 'none') {
-                    corta.style.display = 'none';
-                    completa.style.display = 'block';
-                    if (btn) btn.textContent = 'Ver menos';
-                } else {
-                    corta.style.display = 'block';
-                    completa.style.display = 'none';
-                    if (btn) btn.textContent = 'Ver más';
-                }
             }
         }
 
@@ -1175,8 +1119,7 @@
                 });
             }
             actualizarCarrito();
-            const el = document.getElementById(`cant-${productoId}`);
-            if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
+            actualizarContador(productoId);
         }
 
         function quitarDelCarrito(productoId) {
@@ -1188,8 +1131,22 @@
                 carrito.splice(index, 1);
             }
             actualizarCarrito();
+            actualizarContador(productoId);
+        }
+
+        function actualizarContador(productoId) {
+            const cantidad = carrito.find(p => p.id === productoId)?.cantidad || 0;
             const el = document.getElementById(`cant-${productoId}`);
-            if (el) el.textContent = carrito.find(p => p.id === productoId)?.cantidad || 0;
+            if (el) el.textContent = cantidad;
+            
+            const btnRestar = document.getElementById(`restar-${productoId}`);
+            if (btnRestar) {
+                if (cantidad > 0) {
+                    btnRestar.classList.add('visible');
+                } else {
+                    btnRestar.classList.remove('visible');
+                }
+            }
         }
 
         function actualizarCarrito() {
@@ -1236,6 +1193,8 @@
             productos.forEach(p => {
                 const el = document.getElementById(`cant-${p.id}`);
                 if (el) el.textContent = '0';
+                const btnRestar = document.getElementById(`restar-${p.id}`);
+                if (btnRestar) btnRestar.classList.remove('visible');
             });
             mostrarToast('Carrito vaciado', 'success');
         }
@@ -1396,6 +1355,8 @@
             productos.forEach(p => {
                 const el = document.getElementById(`cant-${p.id}`);
                 if (el) el.textContent = '0';
+                const btnRestar = document.getElementById(`restar-${p.id}`);
+                if (btnRestar) btnRestar.classList.remove('visible');
             });
         }
 
