@@ -9,13 +9,14 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
         body {
-            background: #f5f5f5;
+            background: #f0f0f0;
             min-height: 100vh;
         }
         
+        /* ===== HEADER ESTILO RAPPI ===== */
         .header {
             position: relative;
             width: 100%;
@@ -25,7 +26,7 @@
         
         .banner-container {
             width: 100%;
-            height: 160px;
+            height: 150px;
             overflow: hidden;
             position: relative;
             background: #1a1a2e;
@@ -52,61 +53,54 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 12px 14px;
-            background: linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%);
+            padding: 12px 16px;
+            background: linear-gradient(transparent 0%, rgba(0,0,0,0.8) 100%);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
             z-index: 2;
         }
-        .header-overlay .info-bg {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.3);
-            z-index: -1;
-        }
         
         .header .logo {
-            width: 55px;
-            height: 55px;
-            border-radius: 0;
-            object-fit: contain;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
             display: block;
             flex-shrink: 0;
-            background: transparent;
-            border: none;
-            padding: 0;
+            background: #fff;
+            border: 2px solid #FFD600;
+            padding: 2px;
         }
         .header .logo-placeholder {
-            width: 55px;
-            height: 55px;
-            border-radius: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
             background: #FFD600;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 900;
             color: #1a1a2e;
             flex-shrink: 0;
-            border: none;
         }
         
         .header .info {
             flex: 1;
             min-width: 0;
             color: #fff;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
         .header .info .brand {
             font-size: 18px;
-            font-weight: 900;
+            font-weight: 800;
+            color: #FFD600;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
         .header .info .subtitle {
-            font-size: 12px;
-            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
         }
         .header .info .estado {
             display: inline-block;
@@ -115,7 +109,6 @@
             font-size: 10px;
             font-weight: 700;
             margin-top: 2px;
-            text-shadow: none;
         }
         .header .info .estado.abierto {
             background: #00C853;
@@ -147,43 +140,45 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 10px;
-            padding-bottom: 200px;
+            padding-bottom: 180px;
         }
 
+        /* ===== CATEGORÍAS TIPO RAPPI ===== */
         .categorias-wrapper {
             overflow-x: auto;
             overflow-y: hidden;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding: 4px 0 10px 0;
+            padding: 0 0 12px 0;
             margin-bottom: 4px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 1px solid #e8e8e8;
         }
         .categorias-wrapper::-webkit-scrollbar {
             display: none;
         }
         .categorias-container {
             display: inline-flex;
-            gap: 6px;
+            gap: 8px;
             padding: 0 2px;
         }
         .categoria-tab {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid #e0e0e0;
-            background: #f0f0f0;
-            color: #555;
+            border: 1.5px solid #ddd;
+            background: #fff;
+            color: #666;
             white-space: nowrap;
             flex-shrink: 0;
             user-select: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .categoria-tab:hover {
             transform: scale(1.02);
@@ -191,20 +186,21 @@
         .categoria-tab.activa {
             border-color: transparent;
             color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .categoria-tab .tab-icono {
-            font-size: 12px;
+            font-size: 14px;
         }
         .categoria-tab .tab-badge {
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
-            background: rgba(255,255,255,0.25);
-            padding: 0 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 0 8px;
             border-radius: 10px;
-            line-height: 16px;
+            line-height: 18px;
         }
         .categoria-tab.activa .tab-badge {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.25);
         }
 
         .productos-grid {
@@ -217,81 +213,112 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - DESCRIPCIÓN HORIZONTAL ===== */
+        /* ===== PRODUCTO CARD ESTILO RAPPI ===== */
         .producto-card {
             background: #fff;
-            border-radius: 12px;
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             display: flex;
-            gap: 12px;
+            gap: 14px;
             transition: transform 0.2s, box-shadow 0.2s;
-            border: 1px solid #eee;
+            border: 1px solid #f0f0f0;
         }
-        .producto-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .producto-card:active {
+            transform: scale(0.98);
         }
         .producto-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
             object-fit: cover;
             flex-shrink: 0;
-            background: #f0f0f0;
-            border: 1px solid #e0e0e0;
+            background: #f5f5f5;
+            border: 1px solid #eee;
         }
         .producto-img.sin-imagen {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 30px;
             color: #ccc;
+            background: #f8f8f8;
         }
         .producto-info {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .producto-info .producto-nombre {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #1a1a2e;
-            margin-bottom: 3px;
+            line-height: 1.3;
+            margin-bottom: 4px;
         }
-        /* ✅ DESCRIPCIÓN HORIZONTAL - UNA SOLA LÍNEA */
+        /* ✅ DESCRIPCIÓN ESTILO RAPPI - TEXTO CORRIDO */
         .producto-info .descripcion {
             font-size: 13px;
-            color: #555;
+            color: #777;
             line-height: 1.5;
             font-weight: 400;
-            white-space: normal;
-            word-wrap: break-word;
-            overflow: visible;
-            max-height: none;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 6px;
+        }
+        .producto-info .descripcion-completa {
+            font-size: 13px;
+            color: #777;
+            line-height: 1.6;
+            font-weight: 400;
+            display: none;
+            margin-bottom: 6px;
+        }
+        .producto-info .descripcion-completa.visible {
             display: block;
-            margin-bottom: 4px;
-            background: transparent;
-            padding: 0;
-            border: none;
         }
         .producto-info .precio {
             font-size: 16px;
-            font-weight: 700;
+            font-weight: 800;
             color: #1a1a2e;
-            margin-top: 2px;
+        }
+        .producto-info .precio .moneda {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+        }
+
+        /* Botón "ver más" */
+        .btn-ver-mas {
+            background: none;
+            border: none;
+            color: #FFD600;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 2px 0;
+            width: auto;
+        }
+        .btn-ver-mas:hover {
+            text-decoration: underline;
         }
 
         .producto-acciones {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             flex-shrink: 0;
-            margin-top: 4px;
+            margin-top: 6px;
         }
         .producto-acciones button {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             border: none;
             font-size: 16px;
@@ -312,19 +339,24 @@
         .btn-sumar {
             color: #ffffff;
             transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         .btn-sumar:hover {
             transform: scale(1.05);
-            filter: brightness(0.85);
+            filter: brightness(0.9);
+        }
+        .btn-sumar:active {
+            transform: scale(0.92);
         }
         .producto-acciones .cantidad {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
             min-width: 24px;
             text-align: center;
             color: #1a1a2e;
         }
 
+        /* ===== CARRITO ESTILO RAPPI ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -332,12 +364,13 @@
             right: 0;
             background: #fff;
             border-top: 3px solid #FFD600;
-            padding: 10px 14px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            padding: 12px 16px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
             z-index: 200;
             max-height: 80vh;
             overflow-y: auto;
             transition: border-color 0.3s ease;
+            border-radius: 16px 16px 0 0;
         }
         .carrito-flotante .carrito-header {
             display: flex;
@@ -348,6 +381,7 @@
         .carrito-flotante .carrito-header h3 {
             font-size: 14px;
             color: #1a1a2e;
+            font-weight: 700;
         }
         .carrito-flotante .vaciar-btn {
             background: none;
@@ -363,10 +397,10 @@
         .carrito-item {
             display: flex;
             justify-content: space-between;
-            padding: 2px 0;
-            font-size: 12px;
+            padding: 3px 0;
+            font-size: 13px;
             color: #333;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f5f5f5;
         }
         .carrito-item .nombre {
             flex: 1;
@@ -379,10 +413,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0 4px 0;
+            padding: 8px 0 4px 0;
             border-top: 2px solid #FFD600;
-            margin-top: 4px;
-            font-size: 16px;
+            margin-top: 6px;
+            font-size: 17px;
             font-weight: 800;
             color: #1a1a2e;
             transition: border-color 0.3s ease;
@@ -393,24 +427,29 @@
         
         .btn-comprar {
             border: none;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 800;
             width: 100%;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 4px;
+            margin-top: 6px;
             color: #ffffff;
+            box-shadow: 0 4px 16px rgba(255,214,0,0.3);
         }
         .btn-comprar:hover {
             transform: scale(1.01);
-            filter: brightness(0.9);
+            filter: brightness(0.92);
+        }
+        .btn-comprar:active {
+            transform: scale(0.97);
         }
         .btn-comprar:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .form-datos {
@@ -434,11 +473,11 @@
         .form-datos input,
         .form-datos textarea {
             background: #f5f5f5;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 6px 10px;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 8px 12px;
             width: 100%;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             font-size: 13px;
             color: #1a1a2e;
             transition: border-color 0.3s ease;
@@ -461,8 +500,8 @@
         .toast {
             background: #1a1a2e;
             color: #fff;
-            border-radius: 10px;
-            padding: 8px 16px;
+            border-radius: 12px;
+            padding: 10px 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             animation: slideDown 0.3s ease;
             text-align: center;
@@ -517,7 +556,7 @@
 
         .categoria-vacia {
             text-align: center;
-            padding: 30px;
+            padding: 40px;
             color: #888;
             font-size: 14px;
         }
@@ -538,25 +577,36 @@
             display: block;
         }
 
+        .btn-ver-mas {
+            background: none;
+            border: none;
+            color: #FFD600;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 0;
+            width: auto;
+        }
+
         @media (max-width: 480px) {
-            .banner-container { height: 130px; }
-            .header .logo { width: 50px; height: 50px; }
-            .header .logo-placeholder { width: 50px; height: 50px; font-size: 20px; }
+            .banner-container { height: 120px; }
+            .header .logo { width: 44px; height: 44px; }
+            .header .logo-placeholder { width: 44px; height: 44px; font-size: 18px; }
             .header .info .brand { font-size: 16px; }
-            .header .info .subtitle { font-size: 11px; }
+            .header .info .subtitle { font-size: 10px; }
             .header-overlay { padding: 10px 12px; gap: 8px; }
-            .producto-img { width: 50px; height: 50px; border-radius: 8px; }
+            .producto-img { width: 64px; height: 64px; }
             .producto-info .producto-nombre { font-size: 14px; }
-            .producto-info .descripcion { font-size: 12px; }
+            .producto-info .descripcion { font-size: 12px; -webkit-line-clamp: 2; }
             .producto-info .precio { font-size: 14px; }
-            .producto-card { padding: 10px 12px; gap: 8px; }
-            .producto-acciones button { width: 26px; height: 26px; font-size: 14px; }
+            .producto-card { padding: 12px; gap: 10px; }
+            .producto-acciones button { width: 28px; height: 28px; font-size: 14px; }
             .producto-acciones .cantidad { font-size: 13px; min-width: 20px; }
-            .container { padding: 6px; padding-bottom: 200px; }
-            .carrito-flotante { padding: 8px 12px; }
-            .categoria-tab { padding: 4px 10px; font-size: 11px; }
-            .categoria-tab .tab-icono { font-size: 10px; }
-            .categoria-tab .tab-badge { font-size: 8px; padding: 0 4px; }
+            .container { padding: 8px; padding-bottom: 170px; }
+            .carrito-flotante { padding: 10px 12px; border-radius: 12px 12px 0 0; }
+            .categoria-tab { padding: 6px 12px; font-size: 12px; }
+            .categoria-tab .tab-icono { font-size: 11px; }
+            .categoria-tab .tab-badge { font-size: 8px; padding: 0 6px; }
         }
     </style>
 </head>
@@ -570,13 +620,13 @@
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
+    <!-- HEADER -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
             <div class="banner-placeholder" id="bannerPlaceholder" style="display:none;">🍔</div>
         </div>
         <div class="header-overlay" id="headerOverlay">
-            <div class="info-bg"></div>
             <img class="logo" id="logoHeader" src="" alt="Logo" onerror="this.style.display='none'">
             <div class="logo-placeholder" id="logoPlaceholder" style="display:none;">EM</div>
             <div class="info" id="infoContainer">
@@ -587,6 +637,7 @@
         </div>
     </div>
 
+    <!-- CONTENIDO -->
     <div class="container" id="contenedorMenu">
         <div class="categorias-wrapper" id="categoriasWrapper">
             <div class="categorias-container" id="categoriasContainer"></div>
@@ -601,6 +652,7 @@
         </div>
     </div>
 
+    <!-- CARRITO -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -740,6 +792,7 @@
             if (btnComprar) {
                 btnComprar.style.background = colorHex;
                 btnComprar.style.color = textColor;
+                btnComprar.style.boxShadow = `0 4px 16px ${colorHex}66`;
             }
 
             document.querySelectorAll('.categoria-tab.activa').forEach(el => {
@@ -771,6 +824,9 @@
                 .categoria-tab:hover:not(.activa) {
                     border-color: ${colorHex};
                     color: ${colorHex};
+                }
+                .btn-ver-mas {
+                    color: ${colorHex} !important;
                 }
             `;
             document.head.appendChild(style);
@@ -894,19 +950,9 @@
             }
         }
 
-        // ============================================================
-        // FUNCIÓN PARA FORMATEAR DESCRIPCIÓN - HORIZONTAL
-        // ============================================================
         function formatearDescripcion(texto) {
             if (!texto) return '';
-            
-            // ✅ Convertir saltos de línea en ESPACIOS para que sea horizontal
-            let html = texto
-                .replace(/\n/g, ' ')  // Saltos de línea → espacios
-                .replace(/\s+/g, ' ')  // Múltiples espacios → uno solo
-                .trim();
-            
-            return html;
+            return texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
         async function cargarProductos() {
@@ -1008,18 +1054,28 @@
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN HORIZONTAL - UNA SOLA LÍNEA
+                            const descText = formatearDescripcion(p.descripcion);
+                            const descCorta = descText.length > 80 ? descText.substring(0, 80) + '...' : descText;
+                            const descCompleta = descText;
+
                             let descripcionHtml = '';
-                            if (p.descripcion && p.descripcion.trim() !== '') {
-                                descripcionHtml = `<div class="descripcion">${formatearDescripcion(p.descripcion)}</div>`;
+                            if (descText) {
+                                const tieneMas = descText.length > 80;
+                                descripcionHtml = `
+                                    <div class="descripcion" id="desc-corta-${p.id}">${escHtml(descCorta)}</div>
+                                    <div class="descripcion-completa" id="desc-completa-${p.id}">${escHtml(descCompleta)}</div>
+                                    ${tieneMas ? `<button class="btn-ver-mas" onclick="toggleDescripcion('${p.id}')">Ver más</button>` : ''}
+                                `;
                             }
 
                             productosHtml += `
                                 <div class="producto-card">
                                     ${imagenHtml}
                                     <div class="producto-info">
-                                        <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
-                                        ${descripcionHtml}
+                                        <div>
+                                            <div class="producto-nombre">${escHtml(p.name || 'Producto')}</div>
+                                            ${descripcionHtml}
+                                        </div>
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                     </div>
                                     <div class="producto-acciones">
@@ -1050,6 +1106,24 @@
             } catch (error) {
                 console.error('Error al cargar productos:', error);
                 lista.innerHTML = `<div style="color:#FF3D00;text-align:center;padding:30px;">❌ Error al cargar el menú</div>`;
+            }
+        }
+
+        function toggleDescripcion(productoId) {
+            const corta = document.getElementById(`desc-corta-${productoId}`);
+            const completa = document.getElementById(`desc-completa-${productoId}`);
+            const btn = document.querySelector(`#desc-corta-${productoId}`)?.nextElementSibling;
+            
+            if (corta && completa) {
+                if (corta.style.display !== 'none') {
+                    corta.style.display = 'none';
+                    completa.style.display = 'block';
+                    if (btn) btn.textContent = 'Ver menos';
+                } else {
+                    corta.style.display = 'block';
+                    completa.style.display = 'none';
+                    if (btn) btn.textContent = 'Ver más';
+                }
             }
         }
 
