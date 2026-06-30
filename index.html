@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
     <style>
         * {
@@ -25,7 +25,7 @@
         
         .banner-container {
             width: 100%;
-            height: 180px;
+            height: 160px;
             overflow: hidden;
             position: relative;
             background: #1a1a2e;
@@ -42,7 +42,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
+            font-size: 40px;
             color: #FFD600;
             background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
@@ -52,11 +52,11 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 16px 20px;
+            padding: 12px 14px;
             background: linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%);
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
             flex-wrap: wrap;
             z-index: 2;
         }
@@ -68,8 +68,8 @@
         }
         
         .header .logo {
-            width: 70px;
-            height: 70px;
+            width: 55px;
+            height: 55px;
             border-radius: 0;
             object-fit: contain;
             display: block;
@@ -79,14 +79,14 @@
             padding: 0;
         }
         .header .logo-placeholder {
-            width: 70px;
-            height: 70px;
+            width: 55px;
+            height: 55px;
             border-radius: 0;
             background: #FFD600;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 22px;
             font-weight: 900;
             color: #1a1a2e;
             flex-shrink: 0;
@@ -100,21 +100,21 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
         .header .info .brand {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 900;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
         .header .info .subtitle {
-            font-size: 13px;
+            font-size: 12px;
             color: rgba(255,255,255,0.9);
         }
         .header .info .estado {
             display: inline-block;
-            padding: 3px 14px;
+            padding: 2px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            margin-top: 3px;
+            margin-top: 2px;
             text-shadow: none;
         }
         .header .info .estado.abierto {
@@ -146,7 +146,7 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 12px;
+            padding: 10px;
             padding-bottom: 200px;
         }
 
@@ -156,7 +156,7 @@
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding: 4px 0 12px 0;
+            padding: 4px 0 10px 0;
             margin-bottom: 4px;
             border-bottom: 2px solid #eee;
         }
@@ -171,10 +171,10 @@
         .categoria-tab {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
+            gap: 4px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -193,15 +193,15 @@
             color: #ffffff;
         }
         .categoria-tab .tab-icono {
-            font-size: 14px;
+            font-size: 12px;
         }
         .categoria-tab .tab-badge {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             background: rgba(255,255,255,0.25);
-            padding: 0 8px;
+            padding: 0 6px;
             border-radius: 10px;
-            line-height: 18px;
+            line-height: 16px;
         }
         .categoria-tab.activa .tab-badge {
             background: rgba(255,255,255,0.3);
@@ -217,26 +217,26 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - DESCRIPCIÓN CON FORMATO ===== */
+        /* ===== PRODUCTO CARD - OPTIMIZADO MÓVIL ===== */
         .producto-card {
             background: #fff;
-            border-radius: 14px;
-            padding: 14px 16px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             display: flex;
-            gap: 14px;
+            gap: 10px;
             transition: transform 0.2s, box-shadow 0.2s;
             border: 1px solid #eee;
         }
         .producto-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .producto-img {
-            width: 80px;
-            height: 80px;
-            border-radius: 12px;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
             object-fit: cover;
             flex-shrink: 0;
             background: #f0f0f0;
@@ -246,7 +246,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 24px;
             color: #ccc;
         }
         .producto-info {
@@ -254,63 +254,68 @@
             min-width: 0;
         }
         .producto-info .producto-nombre {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             color: #1a1a2e;
             margin-bottom: 2px;
         }
         .producto-info .producto-subtitulo {
-            font-size: 13px;
+            font-size: 12px;
             color: #888;
             font-weight: 500;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
-        /* ✅ DESCRIPCIÓN CON FORMATO MEJORADO */
+        /* ✅ DESCRIPCIÓN COMPACTA PARA MÓVIL */
         .producto-info .descripcion {
-            font-size: 13px;
+            font-size: 12px;
             color: #555;
-            line-height: 1.7;
+            line-height: 1.6;
             font-weight: 400;
-            white-space: pre-wrap;
+            white-space: normal;
             word-wrap: break-word;
             overflow: visible;
             max-height: none;
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             background: #f8f8f8;
-            padding: 8px 10px;
-            border-radius: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
             border-left: 3px solid #FFD600;
         }
         .producto-info .descripcion .ingrediente {
             display: inline-block;
-            background: #eee;
-            padding: 1px 8px;
+            background: #e8e8e8;
+            padding: 1px 6px;
             border-radius: 4px;
             margin: 1px 2px;
-            font-size: 12px;
+            font-size: 11px;
             color: #333;
         }
+        .producto-info .descripcion .salto {
+            display: block;
+            width: 100%;
+            height: 2px;
+        }
         .producto-info .precio {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 800;
             color: #1a1a2e;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .producto-acciones {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
             margin-top: 4px;
         }
         .producto-acciones button {
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             border: none;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
@@ -334,9 +339,9 @@
             filter: brightness(0.85);
         }
         .producto-acciones .cantidad {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
-            min-width: 28px;
+            min-width: 24px;
             text-align: center;
             color: #1a1a2e;
         }
@@ -348,7 +353,7 @@
             right: 0;
             background: #fff;
             border-top: 3px solid #FFD600;
-            padding: 14px 18px;
+            padding: 10px 14px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
             z-index: 200;
             max-height: 80vh;
@@ -359,10 +364,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .carrito-flotante .carrito-header h3 {
-            font-size: 15px;
+            font-size: 14px;
             color: #1a1a2e;
         }
         .carrito-flotante .vaciar-btn {
@@ -379,8 +384,8 @@
         .carrito-item {
             display: flex;
             justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
+            padding: 2px 0;
+            font-size: 12px;
             color: #333;
             border-bottom: 1px solid #f0f0f0;
         }
@@ -395,10 +400,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0 4px 0;
+            padding: 6px 0 4px 0;
             border-top: 2px solid #FFD600;
             margin-top: 4px;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 800;
             color: #1a1a2e;
             transition: border-color 0.3s ease;
@@ -409,14 +414,14 @@
         
         .btn-comprar {
             border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 800;
             width: 100%;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 6px;
+            margin-top: 4px;
             color: #ffffff;
         }
         .btn-comprar:hover {
@@ -430,8 +435,8 @@
         }
 
         .form-datos {
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px solid #eee;
             display: none;
         }
@@ -445,17 +450,17 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
         .form-datos input,
         .form-datos textarea {
             background: #f5f5f5;
             border: 1px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 8px 12px;
+            border-radius: 8px;
+            padding: 6px 10px;
             width: 100%;
-            margin-bottom: 6px;
-            font-size: 14px;
+            margin-bottom: 4px;
+            font-size: 13px;
             color: #1a1a2e;
             transition: border-color 0.3s ease;
         }
@@ -477,14 +482,14 @@
         .toast {
             background: #1a1a2e;
             color: #fff;
-            border-radius: 12px;
-            padding: 10px 20px;
+            border-radius: 10px;
+            padding: 8px 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             animation: slideDown 0.3s ease;
             text-align: center;
             border-left: 4px solid #FFD600;
             transition: border-color 0.3s ease;
-            font-size: 14px;
+            font-size: 13px;
         }
         .toast.success {
             border-left-color: #00C853;
@@ -520,13 +525,13 @@
         }
         .tienda-cerrada-overlay h2 {
             color: #FFD600;
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 10px;
             transition: color 0.3s ease;
         }
         .tienda-cerrada-overlay p {
             color: #ddd;
-            font-size: 16px;
+            font-size: 14px;
             text-align: center;
             max-width: 400px;
         }
@@ -556,18 +561,24 @@
 
         @media (max-width: 480px) {
             .banner-container { height: 130px; }
-            .header .logo { width: 55px; height: 55px; }
-            .header .logo-placeholder { width: 55px; height: 55px; font-size: 22px; }
-            .header .info .brand { font-size: 18px; }
-            .header-overlay { padding: 12px 14px; gap: 10px; }
-            .producto-img { width: 60px; height: 60px; }
-            .producto-info .producto-nombre { font-size: 14px; }
-            .producto-info .descripcion { font-size: 12px; padding: 6px 8px; }
-            .producto-info .precio { font-size: 16px; }
-            .container { padding: 8px; padding-bottom: 200px; }
-            .carrito-flotante { padding: 10px 14px; }
-            .categoria-tab { padding: 6px 12px; font-size: 12px; }
-            .categoria-tab .tab-icono { font-size: 12px; }
+            .header .logo { width: 50px; height: 50px; }
+            .header .logo-placeholder { width: 50px; height: 50px; font-size: 20px; }
+            .header .info .brand { font-size: 16px; }
+            .header .info .subtitle { font-size: 11px; }
+            .header-overlay { padding: 10px 12px; gap: 8px; }
+            .producto-img { width: 50px; height: 50px; border-radius: 8px; }
+            .producto-info .producto-nombre { font-size: 13px; }
+            .producto-info .descripcion { font-size: 11px; padding: 4px 6px; }
+            .producto-info .descripcion .ingrediente { font-size: 10px; padding: 1px 4px; }
+            .producto-info .precio { font-size: 14px; }
+            .producto-card { padding: 8px 10px; gap: 8px; }
+            .producto-acciones button { width: 26px; height: 26px; font-size: 14px; }
+            .producto-acciones .cantidad { font-size: 13px; min-width: 20px; }
+            .container { padding: 6px; padding-bottom: 200px; }
+            .carrito-flotante { padding: 8px 12px; }
+            .categoria-tab { padding: 4px 10px; font-size: 11px; }
+            .categoria-tab .tab-icono { font-size: 10px; }
+            .categoria-tab .tab-badge { font-size: 8px; padding: 0 4px; }
         }
     </style>
 </head>
@@ -618,7 +629,7 @@
             <button class="vaciar-btn" onclick="vaciarCarrito()">Vaciar</button>
         </div>
         <div id="itemsCarrito">
-            <div style="color:#888;font-size:13px;text-align:center;padding:6px 0;">
+            <div style="color:#888;font-size:12px;text-align:center;padding:4px 0;">
                 No hay productos en el carrito
             </div>
         </div>
@@ -763,6 +774,11 @@
 
             const totalLine = document.getElementById('carritoTotal');
             if (totalLine) totalLine.style.borderTopColor = colorHex;
+
+            // Actualizar también el borde de las descripciones
+            document.querySelectorAll('.producto-info .descripcion').forEach(el => {
+                el.style.borderLeftColor = colorHex;
+            });
 
             const style = document.getElementById('dynamic-colors') || document.createElement('style');
             style.id = 'dynamic-colors';
@@ -916,14 +932,11 @@
                 .replace(/\n/g, '<br>')
                 .replace(/, /g, ', ');
             
-            // Detectar si hay ingredientes separados por comas y darles formato
             // Si la descripción tiene comas, convertir cada ingrediente en un span
             if (texto.includes(',')) {
-                // Dividir por comas y crear spans individuales
                 const items = texto.split(',').map(item => item.trim());
                 if (items.length > 1) {
                     html = items.map(item => {
-                        // Si el item contiene un salto de línea, mantenerlo
                         if (item.includes('\n')) {
                             return item.replace(/\n/g, '<br>');
                         }
@@ -1034,10 +1047,9 @@
                                 ? `<img class="producto-img" src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.className='producto-img sin-imagen';this.textContent='🍔'">`
                                 : `<div class="producto-img sin-imagen">🍔</div>`;
 
-                            // ✅ DESCRIPCIÓN CON FORMATO MEJORADO
+                            // ✅ DESCRIPCIÓN FORMATEADA PARA MÓVIL
                             let descripcionHtml = '';
                             if (p.descripcion && p.descripcion.trim() !== '') {
-                                // Reemplazar saltos de línea con <br>
                                 let descFormateada = p.descripcion
                                     .replace(/\n/g, '<br>')
                                     .replace(/, /g, ', ');
@@ -1055,10 +1067,10 @@
                                     }
                                 }
                                 
-                                descripcionHtml = `<div class="descripcion">${descFormateada}</div>`;
+                                descripcionHtml = `<div class="descripcion" style="border-left-color: ${colorPrincipal};">${descFormateada}</div>`;
                             }
 
-                            // Extraer subtítulo (si existe)
+                            // Extraer subtítulo
                             let subtitulo = '';
                             if (p.subtitulo) {
                                 subtitulo = `<div class="producto-subtitulo">${escHtml(p.subtitulo)}</div>`;
@@ -1176,7 +1188,7 @@
 
             if (carrito.length === 0) {
                 itemsContainer.innerHTML = `
-                    <div style="color:#888;font-size:13px;text-align:center;padding:6px 0;">
+                    <div style="color:#888;font-size:12px;text-align:center;padding:4px 0;">
                         No hay productos en el carrito
                     </div>
                 `;
