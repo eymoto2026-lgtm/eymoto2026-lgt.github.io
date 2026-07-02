@@ -268,8 +268,11 @@ header .spacer{flex:1}
 .prod-cat{display:inline-block;background:var(--surface3);color:var(--text-muted);font-size:10px;padding:2px 7px;border-radius:6px;margin-top:4px}
 .prod-price{font-size:15px;font-weight:900;color:var(--yellow);margin-right:8px;white-space:nowrap}
 .prod-actions{display:flex;gap:5px;flex-shrink:0}
-/* ✅ INDICADOR DE IMAGENES EXTRA */
 .prod-img-badge{font-size:10px;color:#888;margin-left:6px}
+/* ✅ ESTADO AGOTADO EN ADMIN */
+.prod-estado-badge{font-size:10px;font-weight:700;margin-left:4px}
+.prod-estado-badge.agotado{color:var(--red)}
+.prod-estado-badge.disponible{color:var(--green)}
 
 /* ESTADO */
 .estado-wrap{max-width:460px}
@@ -413,6 +416,12 @@ header .spacer{flex:1}
           <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
           <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
           <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
+          <!-- ✅ CAMPO: CATEGORÍAS AGOTADAS -->
+          <div class="form-group">
+            <label>Categorías agotadas (separadas por coma)</label>
+            <input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas">
+            <small style="color:var(--text-muted);font-size:11px;">Los productos de estas categorías no se podrán pedir</small>
+          </div>
           <div style="display:flex;gap:8px">
             <button onclick="guardarTienda()">Guardar</button>
             <button class="btn-ghost hidden" id="btnCancelTienda" onclick="cancelarEdTienda()" style="width:auto;padding:10px 16px;">Cancelar</button>
@@ -439,8 +448,15 @@ header .spacer{flex:1}
           </div>
           <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Ingredientes o detalles..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
-          <!-- ✅ NUEVO CAMPO: URL imagen 2 (opcional) -->
           <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
+          <!-- ✅ NUEVO CAMPO: ESTADO DEL PRODUCTO -->
+          <div class="form-group">
+            <label>Estado del producto</label>
+            <select id="nuevoEstado">
+              <option value="disponible">✅ Disponible</option>
+              <option value="agotado">❌ Agotado</option>
+            </select>
+          </div>
           <div style="display:flex;gap:8px">
             <button onclick="guardarProducto()">Guardar</button>
             <button class="btn-ghost hidden" id="btnCancelProd" onclick="cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button>
@@ -662,7 +678,7 @@ async function inicializar() {
 }
 
 // ============================================================
-// TIENDAS
+// TIENDAS (CON CATEGORÍAS AGOTADAS)
 // ============================================================
 async function cargarTiendas() {
   ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
@@ -689,6 +705,10 @@ async function cargarTiendas() {
       const div = document.createElement('div');
       div.className = 'tienda-item';
       div.id = 'tienda-' + id;
+      // ✅ Mostrar categorías agotadas si existen
+      const catsAgotadas = t.categoriasAgotadas && t.categoriasAgotadas.length > 0
+        ? `<div style="font-size:10px;color:var(--red);margin-top:2px;">⛔ Categorías agotadas: ${t.categoriasAgotadas.join(', ')}</div>`
+        : '';
       div.innerHTML = `
         <div class="tienda-logo">
           ${t.logo ? `<img src="${escHtml(t.logo)}" alt="${escHtml(t.nombre||'')}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
@@ -698,6 +718,7 @@ async function cargarTiendas() {
           <p class="meta">📱 ${escHtml(t.whatsapp || '-')}</p>
           <a class="link" href="${url}" target="_blank">🔗 Ver menú digital</a>
           <br><span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? 'Abierta' : 'Cerrada'}</span>
+          ${catsAgotadas}
         </div>
         <div class="tienda-actions">
           <button class="btn-info btn-sm" onclick="editarTienda('${id}')">Editar</button>
@@ -715,19 +736,21 @@ async function cargarTiendas() {
   } catch(e) { lista.innerHTML = `<p style="color:var(--red);font-size:13px">Error al cargar tiendas.</p>`; console.error(e); }
 }
 
-// ============================================================
-// TIENDAS - CRUD
-// ============================================================
 async function guardarTienda() {
   const id = document.getElementById('editTiendaId').value;
   const nombre = document.getElementById('nombreTienda').value.trim();
   const wa = document.getElementById('whatsapp').value.trim();
   const logo = document.getElementById('logoTienda').value.trim();
   const banner = document.getElementById('bannerTienda').value.trim();
+  // ✅ Obtener categorías agotadas
+  const categoriasAgotadas = document.getElementById('categoriasAgotadas').value
+    .split(',')
+    .map(c => c.trim())
+    .filter(c => c !== '');
 
   if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
 
-  const datos = { nombre, whatsapp: wa, logo, banner };
+  const datos = { nombre, whatsapp: wa, logo, banner, categoriasAgotadas };
   try {
     if (id) {
       await db.collection('tiendas').doc(id).update(datos);
@@ -751,6 +774,8 @@ async function editarTienda(id) {
     document.getElementById('whatsapp').value = t.whatsapp || '';
     document.getElementById('logoTienda').value = t.logo || '';
     document.getElementById('bannerTienda').value = t.banner || '';
+    // ✅ Cargar categorías agotadas
+    document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
     document.getElementById('btnCancelTienda').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[1];
     switchTab('tiendas', btn);
@@ -758,7 +783,8 @@ async function editarTienda(id) {
 }
 
 function cancelarEdTienda() {
-  ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda'].forEach(id => document.getElementById(id).value = '');
+  ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda','categoriasAgotadas']
+    .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelTienda').classList.add('hidden');
 }
 
@@ -772,7 +798,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS (con img2)
+// PRODUCTOS (CON ESTADO AGOTADO)
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -786,14 +812,17 @@ async function cargarProductos() {
     snap.forEach(doc => {
       const p = doc.data();
       const pid = doc.id;
+      // ✅ Badge de estado
+      const estadoBadge = p.estado === 'agotado' 
+        ? '<span class="prod-estado-badge agotado">❌ Agotado</span>' 
+        : '<span class="prod-estado-badge disponible">✅ Disponible</span>';
+      const imgBadge = p.img2 ? '<span class="prod-img-badge">📸 +1</span>' : '';
       const div = document.createElement('div');
       div.className = 'prod-item';
-      // ✅ Mostrar indicador si tiene imagen secundaria
-      const imgBadge = p.img2 ? '<span class="prod-img-badge">📸 +1</span>' : '';
       div.innerHTML = `
         <div class="prod-img">${p.img ? `<img src="${escHtml(p.img)}" alt="${escHtml(p.name||'')}" onerror="this.parentElement.innerHTML='🍔'">` : '🍔'}</div>
         <div class="prod-info">
-          <h5>${escHtml(p.name || 'Sin nombre')} ${imgBadge}</h5>
+          <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge} ${imgBadge}</h5>
           <p class="pdesc">${escHtml(p.descripcion || '')}</p>
           <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
         </div>
@@ -818,12 +847,13 @@ async function guardarProducto() {
   const categoria = document.getElementById('nuevoCategoria').value.trim();
   const descripcion = document.getElementById('nuevoDescripcion').value.trim();
   const img = document.getElementById('nuevoImagen').value.trim();
-  // ✅ Obtener imagen secundaria
   const img2 = document.getElementById('nuevoImagen2').value.trim();
+  // ✅ Obtener estado
+  const estado = document.getElementById('nuevoEstado').value;
 
   if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
 
-  const datos = { name, precio, categoria, descripcion, img, img2 };
+  const datos = { name, precio, categoria, descripcion, img, img2, estado };
   try {
     const ref = db.collection('tiendas').doc(tid).collection('productos');
     if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
@@ -846,8 +876,9 @@ async function editarProducto(pid, tid) {
     document.getElementById('nuevoCategoria').value = p.categoria || '';
     document.getElementById('nuevoDescripcion').value = p.descripcion || '';
     document.getElementById('nuevoImagen').value = p.img || '';
-    // ✅ Cargar imagen secundaria
     document.getElementById('nuevoImagen2').value = p.img2 || '';
+    // ✅ Cargar estado
+    document.getElementById('nuevoEstado').value = p.estado || 'disponible';
     document.getElementById('btnCancelProd').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[2];
     switchTab('productos', btn);
@@ -855,7 +886,7 @@ async function editarProducto(pid, tid) {
 }
 
 function cancelarEdProducto() {
-  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2']
+  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2','nuevoEstado']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelProd').classList.add('hidden');
 }
@@ -1363,6 +1394,7 @@ console.log('🔔 Escuchando pedidos de todas las tiendas...');
 console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
 console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
+console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
 </script>
 </body>
 </html>
