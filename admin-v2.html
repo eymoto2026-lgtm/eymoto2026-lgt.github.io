@@ -326,24 +326,50 @@ header .spacer{flex:1}
 .notif-total{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
 .notif-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:6px}
 
-/* ===== INVENTARIO ===== */
-.stock-critico{color:var(--red)}
-.stock-bajo{color:var(--yellow)}
-.stock-normal{color:var(--green)}
-.inventario-stock-btn{width:28px;height:28px;padding:0;border-radius:50%;font-size:14px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;cursor:pointer;transition:all 0.2s;}
-.inventario-stock-btn:hover{transform:scale(1.1)}
-.inventario-stock-btn:active{transform:scale(0.9)}
+/* ===== INVENTARIO - VERSIÓN COMPACTA ===== */
+.inventario-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inventario-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.inventario-item .info {
+  flex: 2;
+  min-width: 100px;
+}
+.inventario-item .info .nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+.inventario-item .info .categoria {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.inventario-item .stock-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .inv-cantidad-input {
-  width: 60px;
-  padding: 4px 6px;
+  width: 50px;
+  padding: 2px 4px;
   background: var(--surface3);
   border: 1px solid var(--border2);
-  border-radius: 6px;
+  border-radius: 4px;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
-  font-weight: 700;
-  transition: border-color 0.2s;
+  font-weight: 600;
 }
 .inv-cantidad-input:focus {
   border-color: var(--yellow);
@@ -353,16 +379,55 @@ header .spacer{flex:1}
 .inv-cantidad-input::-webkit-outer-spin-button {
   opacity: 1;
 }
-.inv-btn-actualizar {
-  padding: 4px 12px;
+.inv-btn-mini {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
   font-size: 12px;
-  border-radius: 6px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.inv-btn-mini:hover {
+  transform: scale(1.05);
+}
+.inv-btn-mini:active {
+  transform: scale(0.9);
+}
+.inv-btn-mini.restar {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red);
+}
+.inv-btn-mini.sumar {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green);
+}
+.inv-btn-mini.reset {
+  background: var(--yellow-bg);
+  color: var(--yellow);
+  border-color: var(--yellow);
+  font-size: 10px;
+}
+.inv-btn-actualizar {
+  padding: 2px 10px;
+  font-size: 11px;
+  border-radius: 4px;
   background: var(--yellow);
   color: #1a1a2e;
   border: none;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
+  height: 24px;
+  display: flex;
+  align-items: center;
 }
 .inv-btn-actualizar:hover {
   background: var(--yellow-dim);
@@ -370,6 +435,18 @@ header .spacer{flex:1}
 .inv-btn-actualizar:active {
   transform: scale(0.95);
 }
+.inv-estado {
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 65px;
+  text-align: right;
+}
+.inv-estado .icono {
+  margin-right: 2px;
+}
+.inv-estado.critico { color: var(--red); }
+.inv-estado.bajo { color: var(--yellow); }
+.inv-estado.normal { color: var(--green); }
 
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -1030,7 +1107,7 @@ async function eliminarProducto(tid, pid) {
 }
 
 // ============================================================
-// INVENTARIO - VERSIÓN MEJORADA CON CAMPO NUMÉRICO
+// INVENTARIO - VERSIÓN COMPACTA
 // ============================================================
 async function cargarInventario() {
   const tid = document.getElementById('inventarioTienda').value;
@@ -1072,32 +1149,31 @@ async function cargarInventario() {
       if (stock === 0) stockBajo++;
       
       const estadoBadge = estado === 'agotado' 
-        ? '<span style="color:var(--red);font-size:10px;">⛔ Agotado</span>' 
-        : '<span style="color:var(--green);font-size:10px;">✅ Disponible</span>';
+        ? '<span style="color:var(--red);font-size:9px;">⛔</span>' 
+        : '<span style="color:var(--green);font-size:9px;">✅</span>';
       
-      const stockColor = stock === 0 ? 'var(--red)' : (stock <= 5 ? 'var(--yellow)' : 'var(--green)');
-      const stockIcon = stock === 0 ? '🔴' : (stock <= 5 ? '⚠️' : '✅');
+      let estadoClase = 'normal';
+      let estadoTexto = 'En stock';
+      if (stock === 0) { estadoClase = 'critico'; estadoTexto = 'Agotado'; }
+      else if (stock <= 5) { estadoClase = 'bajo'; estadoTexto = 'Stock bajo'; }
       
       html += `
-        <div class="prod-item" style="border-bottom:1px solid var(--border2);padding:10px 0;flex-wrap:wrap;gap:8px;">
-          <div class="prod-info" style="flex:2;min-width:120px;">
-            <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge}</h5>
-            <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
+        <div class="inventario-item">
+          <div class="info">
+            <div class="nombre">${escHtml(p.name || 'Sin nombre')} ${estadoBadge}</div>
+            <div class="categoria">${escHtml(p.categoria || 'General')}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',-1)" style="background:var(--red-bg);color:var(--red);border-color:var(--red);">−</button>
-            
+          <div class="stock-control">
+            <button class="inv-btn-mini restar" onclick="ajustarStock('${tid}','${pid}',-1)" title="Quitar 1">−</button>
             <input type="number" class="inv-cantidad-input" id="inv-cant-${pid}" value="${stock}" min="0" step="1" 
                    onkeydown="if(event.key==='Enter'){event.preventDefault();actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'));}">
-            
-            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',1)" style="background:var(--green-bg);color:var(--green);border-color:var(--green);">+</button>
-            
-            <button class="inv-btn-actualizar" onclick="actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'))">📦 Actualizar</button>
-            
-            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',0)" style="background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow);font-size:12px;" title="Resetear a 0">↺</button>
+            <button class="inv-btn-mini sumar" onclick="ajustarStock('${tid}','${pid}',1)" title="Agregar 1">+</button>
+            <button class="inv-btn-mini reset" onclick="ajustarStock('${tid}','${pid}',0)" title="Resetear a 0">↺</button>
+            <button class="inv-btn-actualizar" onclick="actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'))">📦</button>
           </div>
-          <div style="font-size:11px;color:var(--text-muted);min-width:60px;text-align:right;">
-            ${stockIcon} ${stock === 0 ? 'Agotado' : (stock <= 5 ? 'Stock bajo' : 'En stock')}
+          <div class="inv-estado ${estadoClase}">
+            <span class="icono">${stock === 0 ? '🔴' : (stock <= 5 ? '⚠️' : '✅')}</span>
+            ${estadoTexto}
           </div>
         </div>
       `;
@@ -1138,12 +1214,12 @@ async function ajustarStock(tiendaId, productoId, cambio) {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
         estado: 'agotado'
       });
-      toast('⛔ Producto marcado como AGOTADO automáticamente', 'warn', 2000);
+      toast('⛔ Producto marcado como AGOTADO automáticamente', 'warn', 1500);
     } else if (nuevoStock > 0 && p.estado === 'agotado') {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
         estado: 'disponible'
       });
-      toast('✅ Producto disponible nuevamente', 'success', 2000);
+      toast('✅ Producto disponible nuevamente', 'success', 1500);
     }
     
     cargarInventario();
@@ -1176,12 +1252,12 @@ async function actualizarStockManual(tiendaId, productoId, inputElement) {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
         estado: 'agotado'
       });
-      toast('⛔ Producto marcado como AGOTADO', 'warn', 1500);
+      toast('⛔ Producto marcado como AGOTADO', 'warn', 1200);
     } else if (nuevoStock > 0 && p.estado === 'agotado') {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
         estado: 'disponible'
       });
-      toast('✅ Producto disponible nuevamente', 'success', 1500);
+      toast('✅ Producto disponible nuevamente', 'success', 1200);
     }
     
     cargarInventario();
@@ -1194,7 +1270,7 @@ async function actualizarStockManual(tiendaId, productoId, inputElement) {
 
 function exportarInventario() {
   const lista = document.getElementById('inventarioLista');
-  const items = lista.querySelectorAll('.prod-item');
+  const items = lista.querySelectorAll('.inventario-item');
   
   if (items.length === 0) {
     toast('No hay productos para exportar', 'error');
@@ -1203,10 +1279,10 @@ function exportarInventario() {
   
   let csv = 'Producto,Categoría,Stock,Estado\n';
   items.forEach(item => {
-    const nombre = item.querySelector('h5')?.textContent?.replace(/[✅❌⛔].*/, '').trim() || '';
-    const categoria = item.querySelector('.prod-cat')?.textContent?.trim() || '';
+    const nombre = item.querySelector('.nombre')?.textContent?.replace(/[✅⛔].*/, '').trim() || '';
+    const categoria = item.querySelector('.categoria')?.textContent?.trim() || '';
     const stock = item.querySelector('.inv-cantidad-input')?.value || '0';
-    const estado = item.querySelector('span[style*="color:var(--red)"]')?.textContent?.trim() || 'Disponible';
+    const estado = item.querySelector('.inv-estado')?.textContent?.trim() || 'En stock';
     csv += `"${nombre}","${categoria}",${stock},"${estado}"\n`;
   });
   
@@ -1293,7 +1369,7 @@ async function toggleEstado(tid) {
 }
 
 // ============================================================
-// PEDIDOS (funciones ya existentes)
+// PEDIDOS
 // ============================================================
 function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
@@ -1718,7 +1794,7 @@ console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda 
 console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
-console.log('📦 Nueva sección de INVENTARIO con campo numérico para actualizar stock fácilmente');
+console.log('📦 Nueva sección de INVENTARIO compacta con campo numérico');
 </script>
 </body>
 </html>
