@@ -211,6 +211,7 @@
             display: none;
         }
 
+        /* ===== PRODUCTO CARD - CON ESTADO AGOTADO ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
@@ -225,6 +226,55 @@
         }
         .producto-card:active {
             transform: scale(0.98);
+        }
+        /* ✅ ESTILO AGOTADO */
+        .producto-card.agotado {
+            opacity: 0.65;
+            border-color: var(--red);
+            background: #1a1a1a;
+        }
+        .producto-card.agotado .producto-nombre {
+            color: #888;
+        }
+        .producto-card.agotado .precio {
+            color: #888;
+        }
+        .producto-card.agotado .btn-sumar {
+            background: #555 !important;
+            cursor: not-allowed !important;
+            opacity: 0.5;
+            pointer-events: none;
+            box-shadow: none !important;
+        }
+        .producto-card.agotado .descripcion::after {
+            content: " ⛔ No disponible temporalmente";
+            color: var(--red);
+            font-weight: 700;
+            font-size: 12px;
+            display: block;
+            margin-top: 4px;
+        }
+        .producto-agotado-badge {
+            display: inline-block;
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .categoria-agotada-badge {
+            display: inline-block;
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 12px;
+            border-radius: 12px;
+            margin-left: 8px;
         }
 
         .producto-img-wrapper {
@@ -680,7 +730,6 @@
         .modal-producto .modal-acciones .btn-cerrar-modal:hover {
             background: #ddd;
         }
-        /* Botones de navegación de imágenes */
         .btn-nav-img {
             padding: 6px 14px;
             border: none;
@@ -873,6 +922,16 @@
         let tiendaAbierta = true;
         let colorPrincipal = '#FFD600';
         let formularioVisible = false;
+
+        // ============================================================
+        // FUNCIÓN PARA VERIFICAR SI UNA CATEGORÍA ESTÁ AGOTADA
+        // ============================================================
+        function categoriaEstaAgotada(categoria) {
+            if (!tiendaData.categoriasAgotadas) return false;
+            return tiendaData.categoriasAgotadas.some(cat => 
+                cat.toLowerCase().trim() === categoria.toLowerCase().trim()
+            );
+        }
 
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
@@ -1096,6 +1155,9 @@
                         estadoEl.className = 'estado cerrado';
                         overlayEl.classList.add('visible');
                     }
+                    
+                    // ✅ Guardar categorías agotadas
+                    console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
@@ -1166,11 +1228,15 @@
                     else if (catLower.includes('perro')) icono = '🌭';
                     else if (cat === 'Todos') icono = '📋';
                     
+                    // ✅ Verificar si la categoría está agotada
+                    const catAgotada = categoriaEstaAgotada(cat);
+                    const badgeAgotada = catAgotada ? ' ⛔' : '';
+                    
                     const activa = index === 0 ? 'activa' : '';
                     tabsHtml += `
                         <div class="categoria-tab ${activa}" data-categoria="${cat}" onclick="seleccionarCategoria('${cat}')">
                             <span class="tab-icono">${icono}</span>
-                            ${cat}
+                            ${cat}${badgeAgotada}
                             <span class="tab-badge">${count}</span>
                         </div>
                     `;
@@ -1194,6 +1260,7 @@
                         items = categoriasMap.get(cat) || [];
                     }
                     
+                    const catAgotada = categoriaEstaAgotada(cat);
                     const mostrar = index === 0 ? '' : 'oculta';
                     productosHtml += `<div class="categoria-seccion ${mostrar}" id="seccion-${cat.replace(/\s/g, '')}">`;
                     
@@ -1206,6 +1273,9 @@
                         `;
                     } else {
                         items.forEach(p => {
+                            // ✅ Verificar si el producto está agotado (individual o por categoría)
+                            const estaAgotado = p.estado === 'agotado' || catAgotada;
+                            
                             const cantidad = carrito.find(c => c.id === p.id)?.cantidad || 0;
                             
                             let imagenHtml = '';
@@ -1232,20 +1302,31 @@
                             }
 
                             const restarVisible = cantidad > 0 ? 'visible' : '';
+                            
+                            // ✅ Badge de agotado
+                            const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
+                            
+                            // ✅ Botón sumar deshabilitado si está agotado
+                            const btnSumarHtml = estaAgotado 
+                                ? `<button class="btn-sumar" style="background:#555;cursor:not-allowed;opacity:0.5;pointer-events:none;">+</button>`
+                                : `<button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>`;
+                            
+                            const claseAgotado = estaAgotado ? 'agotado' : '';
 
                             productosHtml += `
-                                <div class="producto-card">
+                                <div class="producto-card ${claseAgotado}">
                                     <div class="producto-img-wrapper" onclick="abrirModalProducto('${p.id}')">
                                         ${imagenHtml}
                                     </div>
                                     <div class="producto-info">
                                         <div class="producto-nombre" onclick="abrirModalProducto('${p.id}')">${escHtml(p.name || 'Producto')}</div>
                                         ${descripcionHtml}
+                                        ${badgeAgotado}
                                         <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
                                         <div class="producto-acciones">
                                             <button class="btn-restar ${restarVisible}" id="restar-${p.id}" onclick="quitarDelCarrito('${p.id}')">−</button>
                                             <span class="cantidad" id="cant-${p.id}">${cantidad}</span>
-                                            <button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>
+                                            ${btnSumarHtml}
                                         </div>
                                     </div>
                                 </div>
@@ -1296,6 +1377,9 @@
             });
         }
 
+        // ============================================================
+        // AGREGAR AL CARRITO - CON VERIFICACIÓN DE AGOTADO
+        // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
@@ -1303,6 +1387,18 @@
             }
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
+            
+            // ✅ Verificar si el producto está agotado
+            if (producto.estado === 'agotado') {
+                mostrarToast('⛔ Este producto no está disponible temporalmente', 'error', 3000);
+                return;
+            }
+            
+            // ✅ Verificar si la categoría está agotada
+            if (categoriaEstaAgotada(producto.categoria)) {
+                mostrarToast(`⛔ La categoría "${producto.categoria}" no está disponible temporalmente`, 'error', 3000);
+                return;
+            }
 
             const existente = carrito.find(p => p.id === productoId);
             if (existente) {
@@ -1581,7 +1677,7 @@
         }
 
         // ============================================================
-        // MODAL DE PRODUCTO - NAVEGACIÓN ENTRE IMÁGENES EXISTENTES
+        // MODAL DE PRODUCTO
         // ============================================================
         let productoModalActual = null;
         let imagenesModal = [];
@@ -1593,16 +1689,13 @@
             
             productoModalActual = producto;
             
-            // Recopilar todas las imágenes disponibles
             imagenesModal = [];
             if (producto.img && producto.img.trim() !== '') {
                 imagenesModal.push(producto.img);
             }
-            // Si existe img2, agregarla como segunda imagen
             if (producto.img2 && producto.img2.trim() !== '') {
                 imagenesModal.push(producto.img2);
             }
-            // Si no hay imágenes, usar un emoji como fallback
             if (imagenesModal.length === 0) {
                 let emoji = '🍔';
                 const nombreLower = (producto.name || '').toLowerCase();
@@ -1618,11 +1711,8 @@
             }
             
             indiceImagenActual = 0;
-            
-            // Mostrar la imagen actual
             mostrarImagenModal(indiceImagenActual);
             
-            // Nombre, descripción y precio
             document.getElementById('modalNombre').textContent = producto.name || 'Producto';
             const descText = formatearDescripcion(producto.descripcion);
             document.getElementById('modalDescripcion').textContent = descText || 'Sin descripción';
@@ -1630,7 +1720,6 @@
             
             document.getElementById('modalBtnAgregar').dataset.productoId = productoId;
             
-            // Mostrar modal
             document.getElementById('modalProducto').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -1642,7 +1731,6 @@
             const btnAnterior = document.getElementById('btnImgAnterior');
             const btnSiguiente = document.getElementById('btnImgSiguiente');
             
-            // Actualizar indicador
             if (imagenesModal.length > 1) {
                 indicatorEl.textContent = `Imagen ${indice + 1} de ${imagenesModal.length}`;
                 indicatorEl.style.display = 'block';
@@ -1651,13 +1739,11 @@
                 indicatorEl.style.display = 'none';
             }
             
-            // Habilitar/deshabilitar botones de navegación
             btnAnterior.disabled = (indice === 0);
             btnSiguiente.disabled = (indice >= imagenesModal.length - 1);
             
             const src = imagenesModal[indice];
             
-            // Verificar si es una URL de imagen o un emoji
             if (src && (src.startsWith('http') || src.startsWith('data:'))) {
                 imgEl.src = src;
                 imgEl.style.display = 'block';
@@ -1668,7 +1754,6 @@
                     placeholderEl.textContent = '❌';
                 };
             } else {
-                // Es un emoji o texto (fallback)
                 imgEl.style.display = 'none';
                 placeholderEl.style.display = 'flex';
                 placeholderEl.textContent = src || '🍔';
@@ -1719,7 +1804,6 @@
                         mostrarFormularioYEnviar();
                     }
                 }
-                // Cerrar modal con ESC
                 if (e.key === 'Escape') {
                     cerrarModalProducto();
                 }
@@ -1739,6 +1823,7 @@
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
         console.log('📸 Si el producto tiene imagen secundaria (img2), podrás ver ambas');
+        console.log('⛔ Los productos agotados aparecerán con badge rojo y no se podrán agregar');
     </script>
 </body>
 </html>
