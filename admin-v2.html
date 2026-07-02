@@ -269,7 +269,6 @@ header .spacer{flex:1}
 .prod-price{font-size:15px;font-weight:900;color:var(--yellow);margin-right:8px;white-space:nowrap}
 .prod-actions{display:flex;gap:5px;flex-shrink:0}
 .prod-img-badge{font-size:10px;color:#888;margin-left:6px}
-/* ✅ ESTADO AGOTADO EN ADMIN */
 .prod-estado-badge{font-size:10px;font-weight:700;margin-left:4px}
 .prod-estado-badge.agotado{color:var(--red)}
 .prod-estado-badge.disponible{color:var(--green)}
@@ -327,6 +326,14 @@ header .spacer{flex:1}
 .notif-total{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
 .notif-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:6px}
 
+/* ===== INVENTARIO ===== */
+.stock-critico{color:var(--red)}
+.stock-bajo{color:var(--yellow)}
+.stock-normal{color:var(--green)}
+.inventario-stock-btn{width:28px;height:28px;padding:0;border-radius:50%;font-size:14px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;cursor:pointer;transition:all 0.2s;}
+.inventario-stock-btn:hover{transform:scale(1.1)}
+.inventario-stock-btn:active{transform:scale(0.9)}
+
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
@@ -368,6 +375,7 @@ header .spacer{flex:1}
       <button class="tab-btn active" onclick="switchTab('pedidos',this)">Comandas <span class="tab-badge" id="tabBadge">0</span></button>
       <button class="tab-btn" onclick="switchTab('tiendas',this)">Tiendas</button>
       <button class="tab-btn" onclick="switchTab('productos',this)">Productos</button>
+      <button class="tab-btn" onclick="switchTab('inventario',this)">📦 Inventario</button>
       <button class="tab-btn" onclick="switchTab('estado',this)">Estado</button>
     </div>
 
@@ -416,7 +424,6 @@ header .spacer{flex:1}
           <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
           <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
           <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
-          <!-- ✅ CAMPO: CATEGORÍAS AGOTADAS -->
           <div class="form-group">
             <label>Categorías agotadas (separadas por coma)</label>
             <input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas">
@@ -449,13 +456,19 @@ header .spacer{flex:1}
           <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Ingredientes o detalles..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
           <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
-          <!-- ✅ NUEVO CAMPO: ESTADO DEL PRODUCTO -->
+          <!-- ✅ CAMPO: ESTADO DEL PRODUCTO -->
           <div class="form-group">
             <label>Estado del producto</label>
             <select id="nuevoEstado">
               <option value="disponible">✅ Disponible</option>
               <option value="agotado">❌ Agotado</option>
             </select>
+          </div>
+          <!-- ✅ CAMPO: STOCK INICIAL -->
+          <div class="form-group">
+            <label>Stock inicial</label>
+            <input id="nuevoStock" type="number" placeholder="0" value="0">
+            <small style="color:var(--text-muted);font-size:11px;">Cantidad disponible para la venta</small>
           </div>
           <div style="display:flex;gap:8px">
             <button onclick="guardarProducto()">Guardar</button>
@@ -465,6 +478,56 @@ header .spacer{flex:1}
         <div>
           <div class="section-title">Inventario</div>
           <div id="listaProductos"><p style="color:var(--text-muted);font-size:13px">Selecciona una tienda.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB INVENTARIO -->
+    <div class="tab-content" id="tab-inventario">
+      <div class="row2">
+        <div>
+          <div class="section-title">📦 Control de inventario</div>
+          <div class="form-group">
+            <label>Seleccionar tienda</label>
+            <select id="inventarioTienda" onchange="cargarInventario()">
+              <option value="">Seleccionar tienda...</option>
+            </select>
+          </div>
+          <div id="inventarioResumen" style="display:none;margin-bottom:12px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div class="stat-card" style="padding:10px;">
+                <div style="font-size:20px;font-weight:900;color:var(--green);" id="invTotalProductos">0</div>
+                <div style="font-size:10px;color:var(--text-muted);">Total productos</div>
+              </div>
+              <div class="stat-card" style="padding:10px;">
+                <div style="font-size:20px;font-weight:900;color:var(--yellow);" id="invStockTotal">0</div>
+                <div style="font-size:10px;color:var(--text-muted);">Stock total</div>
+              </div>
+              <div class="stat-card" style="padding:10px;">
+                <div style="font-size:20px;font-weight:900;color:var(--red);" id="invStockBajo">0</div>
+                <div style="font-size:10px;color:var(--text-muted);">Stock bajo</div>
+              </div>
+            </div>
+          </div>
+          <div id="inventarioLista" style="max-height:500px;overflow-y:auto;">
+            <p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda para ver su inventario.</p>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">⚙️ Acciones rápidas</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button onclick="exportarInventario()" class="btn-info" style="width:100%;">📊 Exportar inventario (CSV)</button>
+            <button onclick="resetearStockCero()" class="btn-danger" style="width:100%;">🔄 Resetear stock a 0</button>
+            <button onclick="actualizarTodosStock()" class="btn-ghost" style="width:100%;">📦 Actualizar todos los stocks</button>
+          </div>
+          <div style="margin-top:16px;background:var(--surface2);padding:16px;border-radius:12px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💡 Tips</div>
+            <ul style="font-size:12px;color:#aaa;padding:8px 0 0 16px;line-height:1.8;">
+              <li>Stock bajo: ⚠️ cuando queden <strong>menos de 5 unidades</strong></li>
+              <li>Stock crítico: 🔴 cuando queden <strong>0 unidades</strong></li>
+              <li>Puedes ajustar el stock manualmente con los botones + y -</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -514,6 +577,7 @@ let notificacionesMostradas = new Set();
 let todosLosPedidos = {};
 let escuchaGlobalActiva = false;
 let listenersTiendas = {};
+let inventarioTiendaActual = '';
 
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
@@ -639,6 +703,20 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+  
+  // Si es el tab de inventario, actualizar las tiendas en el selector
+  if (name === 'inventario') {
+    const sel = document.getElementById('inventarioTienda');
+    if (sel) {
+      sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
+      Object.keys(tiendasCache).forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = tiendasCache[id] || id;
+        sel.appendChild(opt);
+      });
+    }
+  }
 }
 
 // ============================================================
@@ -675,6 +753,17 @@ auth.onAuthStateChanged(user => {
 async function inicializar() {
   await cargarTiendas();
   iniciarEscuchaGlobal();
+  // Actualizar selector de inventario
+  const sel = document.getElementById('inventarioTienda');
+  if (sel) {
+    sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
+    Object.keys(tiendasCache).forEach(id => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = tiendasCache[id] || id;
+      sel.appendChild(opt);
+    });
+  }
 }
 
 // ============================================================
@@ -705,7 +794,6 @@ async function cargarTiendas() {
       const div = document.createElement('div');
       div.className = 'tienda-item';
       div.id = 'tienda-' + id;
-      // ✅ Mostrar categorías agotadas si existen
       const catsAgotadas = t.categoriasAgotadas && t.categoriasAgotadas.length > 0
         ? `<div style="font-size:10px;color:var(--red);margin-top:2px;">⛔ Categorías agotadas: ${t.categoriasAgotadas.join(', ')}</div>`
         : '';
@@ -732,6 +820,15 @@ async function cargarTiendas() {
         const sel = document.getElementById(sid);
         if (sel) sel.innerHTML += opt;
       });
+      
+      // También agregar al selector de inventario
+      const invSel = document.getElementById('inventarioTienda');
+      if (invSel) {
+        const optInv = document.createElement('option');
+        optInv.value = id;
+        optInv.textContent = t.nombre || id;
+        invSel.appendChild(optInv);
+      }
     });
   } catch(e) { lista.innerHTML = `<p style="color:var(--red);font-size:13px">Error al cargar tiendas.</p>`; console.error(e); }
 }
@@ -742,7 +839,6 @@ async function guardarTienda() {
   const wa = document.getElementById('whatsapp').value.trim();
   const logo = document.getElementById('logoTienda').value.trim();
   const banner = document.getElementById('bannerTienda').value.trim();
-  // ✅ Obtener categorías agotadas
   const categoriasAgotadas = document.getElementById('categoriasAgotadas').value
     .split(',')
     .map(c => c.trim())
@@ -774,7 +870,6 @@ async function editarTienda(id) {
     document.getElementById('whatsapp').value = t.whatsapp || '';
     document.getElementById('logoTienda').value = t.logo || '';
     document.getElementById('bannerTienda').value = t.banner || '';
-    // ✅ Cargar categorías agotadas
     document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
     document.getElementById('btnCancelTienda').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[1];
@@ -798,7 +893,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS (CON ESTADO AGOTADO)
+// PRODUCTOS (CON ESTADO AGOTADO Y STOCK)
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -812,11 +907,11 @@ async function cargarProductos() {
     snap.forEach(doc => {
       const p = doc.data();
       const pid = doc.id;
-      // ✅ Badge de estado
       const estadoBadge = p.estado === 'agotado' 
         ? '<span class="prod-estado-badge agotado">❌ Agotado</span>' 
         : '<span class="prod-estado-badge disponible">✅ Disponible</span>';
       const imgBadge = p.img2 ? '<span class="prod-img-badge">📸 +1</span>' : '';
+      const stockDisplay = p.stock !== undefined ? `📦 Stock: ${p.stock}` : '📦 Stock: 0';
       const div = document.createElement('div');
       div.className = 'prod-item';
       div.innerHTML = `
@@ -825,6 +920,7 @@ async function cargarProductos() {
           <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge} ${imgBadge}</h5>
           <p class="pdesc">${escHtml(p.descripcion || '')}</p>
           <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
+          <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">${stockDisplay}</span>
         </div>
         <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
         <div class="prod-actions">
@@ -848,12 +944,12 @@ async function guardarProducto() {
   const descripcion = document.getElementById('nuevoDescripcion').value.trim();
   const img = document.getElementById('nuevoImagen').value.trim();
   const img2 = document.getElementById('nuevoImagen2').value.trim();
-  // ✅ Obtener estado
   const estado = document.getElementById('nuevoEstado').value;
+  const stock = parseInt(document.getElementById('nuevoStock').value) || 0;
 
   if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
 
-  const datos = { name, precio, categoria, descripcion, img, img2, estado };
+  const datos = { name, precio, categoria, descripcion, img, img2, estado, stock };
   try {
     const ref = db.collection('tiendas').doc(tid).collection('productos');
     if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
@@ -877,8 +973,8 @@ async function editarProducto(pid, tid) {
     document.getElementById('nuevoDescripcion').value = p.descripcion || '';
     document.getElementById('nuevoImagen').value = p.img || '';
     document.getElementById('nuevoImagen2').value = p.img2 || '';
-    // ✅ Cargar estado
     document.getElementById('nuevoEstado').value = p.estado || 'disponible';
+    document.getElementById('nuevoStock').value = p.stock !== undefined ? p.stock : 0;
     document.getElementById('btnCancelProd').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[2];
     switchTab('productos', btn);
@@ -886,7 +982,7 @@ async function editarProducto(pid, tid) {
 }
 
 function cancelarEdProducto() {
-  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2','nuevoEstado']
+  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2','nuevoEstado','nuevoStock']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelProd').classList.add('hidden');
 }
@@ -898,6 +994,185 @@ async function eliminarProducto(tid, pid) {
     toast('Producto eliminado.', 'info');
     cargarProductos();
   } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// INVENTARIO
+// ============================================================
+async function cargarInventario() {
+  const tid = document.getElementById('inventarioTienda').value;
+  const lista = document.getElementById('inventarioLista');
+  const resumen = document.getElementById('inventarioResumen');
+  
+  if (!tid) {
+    lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda para ver su inventario.</p>';
+    resumen.style.display = 'none';
+    return;
+  }
+  
+  inventarioTiendaActual = tid;
+  lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Cargando inventario...</p>';
+  resumen.style.display = 'none';
+  
+  try {
+    const snap = await db.collection('tiendas').doc(tid).collection('productos').get();
+    
+    if (snap.empty) {
+      lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos en esta tienda.</p>';
+      return;
+    }
+    
+    let totalProductos = 0;
+    let stockTotal = 0;
+    let stockBajo = 0;
+    let html = '';
+    
+    snap.forEach(doc => {
+      const p = doc.data();
+      const pid = doc.id;
+      const stock = p.stock !== undefined ? p.stock : 0;
+      const estado = p.estado || 'disponible';
+      
+      totalProductos++;
+      stockTotal += stock;
+      if (stock <= 5 && stock > 0) stockBajo++;
+      if (stock === 0) stockBajo++;
+      
+      const estadoBadge = estado === 'agotado' 
+        ? '<span style="color:var(--red);font-size:10px;">⛔ Agotado</span>' 
+        : '<span style="color:var(--green);font-size:10px;">✅ Disponible</span>';
+      
+      const stockClase = stock === 0 ? 'stock-critico' : (stock <= 5 ? 'stock-bajo' : 'stock-normal');
+      const stockIcon = stock === 0 ? '🔴' : (stock <= 5 ? '⚠️' : '✅');
+      const stockColor = stock === 0 ? 'var(--red)' : (stock <= 5 ? 'var(--yellow)' : 'var(--green)');
+      
+      html += `
+        <div class="prod-item" style="border-bottom:1px solid var(--border2);padding:10px 0;">
+          <div class="prod-info" style="flex:2;">
+            <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge}</h5>
+            <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:var(--text-muted);">Stock:</span>
+            <span style="font-size:16px;font-weight:700;min-width:40px;text-align:center;color:${stockColor};">${stock}</span>
+            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',-1)" style="background:var(--red-bg);color:var(--red);border-color:var(--red);">−</button>
+            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',1)" style="background:var(--green-bg);color:var(--green);border-color:var(--green);">+</button>
+            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',0)" style="background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow);font-size:12px;">↺</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);min-width:80px;text-align:right;">
+            ${stockIcon} ${stock === 0 ? 'Agotado' : (stock <= 5 ? 'Stock bajo' : 'En stock')}
+          </div>
+        </div>
+      `;
+    });
+    
+    // Mostrar resumen
+    resumen.style.display = 'grid';
+    document.getElementById('invTotalProductos').textContent = totalProductos;
+    document.getElementById('invStockTotal').textContent = stockTotal;
+    document.getElementById('invStockBajo').textContent = stockBajo;
+    
+    lista.innerHTML = html;
+    
+  } catch(e) {
+    console.error('Error al cargar inventario:', e);
+    lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar el inventario.</p>';
+  }
+}
+
+async function ajustarStock(tiendaId, productoId, cambio) {
+  try {
+    const doc = await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).get();
+    if (!doc.exists) return;
+    
+    const p = doc.data();
+    let nuevoStock = p.stock !== undefined ? p.stock : 0;
+    
+    if (cambio === 0) {
+      nuevoStock = 0;
+    } else {
+      nuevoStock = Math.max(0, nuevoStock + cambio);
+    }
+    
+    await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+      stock: nuevoStock
+    });
+    
+    if (nuevoStock === 0) {
+      await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+        estado: 'agotado'
+      });
+      toast('⛔ Producto marcado como AGOTADO automáticamente', 'warn', 2000);
+    } else if (nuevoStock > 0 && p.estado === 'agotado') {
+      await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+        estado: 'disponible'
+      });
+      toast('✅ Producto disponible nuevamente', 'success', 2000);
+    }
+    
+    cargarInventario();
+    cargarProductos();
+  } catch(e) {
+    toast('Error al ajustar stock: ' + e.message, 'error');
+  }
+}
+
+function exportarInventario() {
+  const lista = document.getElementById('inventarioLista');
+  const items = lista.querySelectorAll('.prod-item');
+  
+  if (items.length === 0) {
+    toast('No hay productos para exportar', 'error');
+    return;
+  }
+  
+  let csv = 'Producto,Categoría,Stock,Estado\n';
+  items.forEach(item => {
+    const nombre = item.querySelector('h5')?.textContent?.replace(/[✅❌⛔].*/, '').trim() || '';
+    const categoria = item.querySelector('.prod-cat')?.textContent?.trim() || '';
+    const stock = item.querySelector('span[style*="min-width:40px"]')?.textContent?.trim() || '0';
+    const estado = item.querySelector('span[style*="color:var(--red)"]')?.textContent?.trim() || 'Disponible';
+    csv += `"${nombre}","${categoria}",${stock},"${estado}"\n`;
+  });
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inventario_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  toast('📊 Inventario exportado correctamente', 'success');
+}
+
+function resetearStockCero() {
+  if (!inventarioTiendaActual) {
+    toast('Selecciona una tienda primero', 'error');
+    return;
+  }
+  if (!confirm('¿Resetear el stock de TODOS los productos a 0?')) return;
+  
+  db.collection('tiendas').doc(inventarioTiendaActual).collection('productos').get().then(snap => {
+    const batch = db.batch();
+    snap.forEach(doc => {
+      batch.update(doc.ref, { stock: 0, estado: 'agotado' });
+    });
+    batch.commit().then(() => {
+      toast('✅ Todos los stocks reseteados a 0', 'success');
+      cargarInventario();
+      cargarProductos();
+    }).catch(e => toast('Error: ' + e.message, 'error'));
+  });
+}
+
+function actualizarTodosStock() {
+  if (!inventarioTiendaActual) {
+    toast('Selecciona una tienda primero', 'error');
+    return;
+  }
+  toast('🔄 Actualizando inventario...', 'info');
+  cargarInventario();
+  toast('✅ Inventario actualizado', 'success', 1500);
 }
 
 // ============================================================
@@ -1395,6 +1670,7 @@ console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda 
 console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
+console.log('📦 Nueva sección de INVENTARIO para gestionar el stock por tienda');
 </script>
 </body>
 </html>
