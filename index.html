@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
     <style>
+        /* ===== TODOS TUS ESTILOS EXISTENTES (no cambian) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -211,7 +212,6 @@
             display: none;
         }
 
-        /* ===== PRODUCTO CARD - CON ESTADO AGOTADO ===== */
         .producto-card {
             background: #fff;
             border-radius: 14px;
@@ -227,7 +227,6 @@
         .producto-card:active {
             transform: scale(0.98);
         }
-        /* ✅ ESTILO AGOTADO */
         .producto-card.agotado {
             opacity: 0.65;
             border-color: var(--red);
@@ -265,16 +264,6 @@
             margin-top: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-        }
-        .categoria-agotada-badge {
-            display: inline-block;
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 12px;
-            border-radius: 12px;
-            margin-left: 8px;
         }
 
         .producto-img-wrapper {
@@ -614,7 +603,6 @@
             display: block;
         }
 
-        /* ===== MODAL DE PRODUCTO ===== */
         .modal-producto {
             display: none;
             position: fixed;
@@ -798,7 +786,6 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ===== MODAL DE PRODUCTO ===== -->
     <div class="modal-producto" id="modalProducto" onclick="cerrarModalProducto(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
@@ -807,16 +794,13 @@
                 <div class="modal-img-placeholder" id="modalImgPlaceholder">🍔</div>
             </div>
             <div class="modal-indicador" id="modalImgIndicator">Imagen 1 de 1</div>
-            
             <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">
                 <button class="btn-nav-img" id="btnImgAnterior" onclick="cambiarImagenModal(-1)">◀ Anterior</button>
                 <button class="btn-nav-img" id="btnImgSiguiente" onclick="cambiarImagenModal(1)">Siguiente ▶</button>
             </div>
-            
             <div class="modal-nombre" id="modalNombre">Nombre del producto</div>
             <div class="modal-descripcion" id="modalDescripcion">Descripción del producto</div>
             <div class="modal-precio" id="modalPrecio">$0</div>
-            
             <div class="modal-acciones">
                 <button class="btn-agregar" id="modalBtnAgregar" onclick="agregarAlCarritoDesdeModal()">+ Agregar al carrito</button>
                 <button class="btn-cerrar-modal" onclick="cerrarModalProducto()">Cerrar</button>
@@ -923,9 +907,6 @@
         let colorPrincipal = '#FFD600';
         let formularioVisible = false;
 
-        // ============================================================
-        // FUNCIÓN PARA VERIFICAR SI UNA CATEGORÍA ESTÁ AGOTADA
-        // ============================================================
         function categoriaEstaAgotada(categoria) {
             if (!tiendaData.categoriasAgotadas) return false;
             return tiendaData.categoriasAgotadas.some(cat => 
@@ -1156,7 +1137,6 @@
                         overlayEl.classList.add('visible');
                     }
                     
-                    // ✅ Guardar categorías agotadas
                     console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
@@ -1228,7 +1208,6 @@
                     else if (catLower.includes('perro')) icono = '🌭';
                     else if (cat === 'Todos') icono = '📋';
                     
-                    // ✅ Verificar si la categoría está agotada
                     const catAgotada = categoriaEstaAgotada(cat);
                     const badgeAgotada = catAgotada ? ' ⛔' : '';
                     
@@ -1273,9 +1252,7 @@
                         `;
                     } else {
                         items.forEach(p => {
-                            // ✅ Verificar si el producto está agotado (individual o por categoría)
                             const estaAgotado = p.estado === 'agotado' || catAgotada;
-                            
                             const cantidad = carrito.find(c => c.id === p.id)?.cantidad || 0;
                             
                             let imagenHtml = '';
@@ -1302,15 +1279,10 @@
                             }
 
                             const restarVisible = cantidad > 0 ? 'visible' : '';
-                            
-                            // ✅ Badge de agotado
                             const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
-                            
-                            // ✅ Botón sumar deshabilitado si está agotado
                             const btnSumarHtml = estaAgotado 
                                 ? `<button class="btn-sumar" style="background:#555;cursor:not-allowed;opacity:0.5;pointer-events:none;">+</button>`
                                 : `<button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>`;
-                            
                             const claseAgotado = estaAgotado ? 'agotado' : '';
 
                             productosHtml += `
@@ -1377,9 +1349,6 @@
             });
         }
 
-        // ============================================================
-        // AGREGAR AL CARRITO - CON VERIFICACIÓN DE AGOTADO
-        // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
@@ -1388,13 +1357,11 @@
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
             
-            // ✅ Verificar si el producto está agotado
             if (producto.estado === 'agotado') {
                 mostrarToast('⛔ Este producto no está disponible temporalmente', 'error', 3000);
                 return;
             }
             
-            // ✅ Verificar si la categoría está agotada
             if (categoriaEstaAgotada(producto.categoria)) {
                 mostrarToast(`⛔ La categoría "${producto.categoria}" no está disponible temporalmente`, 'error', 3000);
                 return;
@@ -1532,6 +1499,9 @@
             return `#${num}`;
         }
 
+        // ============================================================
+        // ENVIAR PEDIDO - CON ACTUALIZACIÓN DE STOCK
+        // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada', 'error');
@@ -1569,6 +1539,7 @@
                 const subtotal = item.precio * item.cantidad;
                 total += subtotal;
                 return {
+                    id: item.id,
                     nombre: item.nombre,
                     cantidad: item.cantidad,
                     precio: item.precio,
@@ -1576,6 +1547,39 @@
                 };
             });
 
+            // ============================================================
+            // ✅ ACTUALIZAR STOCK DE CADA PRODUCTO
+            // ============================================================
+            try {
+                const batch = db.batch();
+                const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
+                
+                for (const item of items) {
+                    const productRef = tiendaRef.collection('productos').doc(item.id);
+                    const productDoc = await productRef.get();
+                    
+                    if (productDoc.exists) {
+                        const data = productDoc.data();
+                        const stockActual = data.stock !== undefined ? data.stock : 0;
+                        const nuevoStock = Math.max(0, stockActual - item.cantidad);
+                        
+                        batch.update(productRef, { 
+                            stock: nuevoStock,
+                            estado: nuevoStock === 0 ? 'agotado' : (data.estado === 'agotado' && nuevoStock > 0 ? 'disponible' : data.estado)
+                        });
+                    }
+                }
+                
+                await batch.commit();
+                console.log('✅ Stock actualizado correctamente');
+            } catch (error) {
+                console.error('❌ Error al actualizar stock:', error);
+                mostrarToast('⚠️ No se pudo actualizar el stock, pero el pedido se envió', 'warn', 3000);
+            }
+
+            // ============================================================
+            // MENSAJE WHATSAPP
+            // ============================================================
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
             const emojiFecha = '📅';
@@ -1606,6 +1610,9 @@
             
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
+            // ============================================================
+            // GUARDAR PEDIDO EN FIRESTORE
+            // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -1615,7 +1622,12 @@
                     barrio: barrio || '',
                     observaciones: observaciones || ''
                 },
-                items: items,
+                items: items.map(item => ({
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precio: item.precio,
+                    total: item.total
+                })),
                 total: total,
                 estado: 'Pendiente',
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1629,15 +1641,19 @@
                     console.log('✅ Pedido guardado en Firestore');
                 }
             } catch (error) {
-                console.error('❌ Error al guardar en Firestore:', error);
+                console.error('❌ Error al guardar pedido:', error);
             }
 
+            // ============================================================
+            // ENVIAR POR WHATSAPP
+            // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
+            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -1823,7 +1839,7 @@
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
         console.log('📸 Si el producto tiene imagen secundaria (img2), podrás ver ambas');
-        console.log('⛔ Los productos agotados aparecerán con badge rojo y no se podrán agregar');
+        console.log('📦 El stock se actualiza automáticamente al hacer un pedido');
     </script>
 </body>
 </html>
