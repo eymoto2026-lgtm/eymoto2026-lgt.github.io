@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
     <style>
-        /* ===== TODOS TUS ESTILOS EXISTENTES (no cambian) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -747,6 +746,30 @@
             margin-bottom: 6px;
         }
 
+        /* ===== CAMPOS OBLIGATORIOS ===== */
+        .form-datos input.required {
+            border-left: 3px solid var(--yellow);
+        }
+        .form-datos input.error {
+            border-color: var(--red) !important;
+            animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .form-datos .required-asterisk {
+            color: var(--red);
+            font-weight: 700;
+        }
+        .form-datos .helper-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            padding-left: 2px;
+        }
+
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -786,6 +809,7 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- MODAL DE PRODUCTO -->
     <div class="modal-producto" id="modalProducto" onclick="cerrarModalProducto(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
@@ -808,12 +832,14 @@
         </div>
     </div>
 
+    <!-- TIENDA CERRADA -->
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
         <h2 id="cerradoTitulo">Tienda Cerrada</h2>
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
+    <!-- HEADER -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
@@ -830,6 +856,7 @@
         </div>
     </div>
 
+    <!-- CONTENIDO -->
     <div class="container" id="contenedorMenu">
         <div class="categorias-wrapper" id="categoriasWrapper">
             <div class="categorias-container" id="categoriasContainer"></div>
@@ -844,6 +871,7 @@
         </div>
     </div>
 
+    <!-- CARRITO FLOTANTE -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -855,13 +883,17 @@
             </div>
         </div>
         
+        <!-- FORMULARIO CON CAMPOS OBLIGATORIOS -->
         <div class="form-datos" id="formDatos">
-            <span class="label-form">👤 Datos de entrega</span>
-            <input type="text" id="clienteNombre" placeholder="Tu nombre completo">
-            <input type="tel" id="clienteTelefono" placeholder="Teléfono (ej: 3169934516)">
-            <input type="text" id="clienteDireccion" placeholder="Dirección de entrega">
-            <input type="text" id="clienteBarrio" placeholder="Barrio">
+            <span class="label-form">👤 Datos de entrega <span class="required-asterisk">*</span></span>
+            <input type="text" id="clienteNombre" placeholder="Tu nombre completo *" class="required">
+            <input type="tel" id="clienteTelefono" placeholder="Teléfono (ej: 3169934516) *" class="required">
+            <input type="text" id="clienteDireccion" placeholder="Dirección de entrega *" class="required">
+            <input type="text" id="clienteBarrio" placeholder="Barrio *" class="required">
             <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
+            <div class="helper-text">
+                <span class="required-asterisk">*</span> Campos obligatorios
+            </div>
         </div>
 
         <div class="carrito-total" id="carritoTotal">
@@ -876,6 +908,7 @@
         </div>
     </div>
 
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -907,6 +940,9 @@
         let colorPrincipal = '#FFD600';
         let formularioVisible = false;
 
+        // ============================================================
+        // FUNCIÓN PARA VERIFICAR CATEGORÍA AGOTADA
+        // ============================================================
         function categoriaEstaAgotada(categoria) {
             if (!tiendaData.categoriasAgotadas) return false;
             return tiendaData.categoriasAgotadas.some(cat => 
@@ -914,6 +950,9 @@
             );
         }
 
+        // ============================================================
+        // FUNCIONES DE COLOR
+        // ============================================================
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
             let r, g, b;
@@ -1063,6 +1102,9 @@
             img.src = imagenUrl;
         }
 
+        // ============================================================
+        // CARGAR TIENDA
+        // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) return;
             try {
@@ -1152,6 +1194,9 @@
             return texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
+        // ============================================================
+        // CARGAR PRODUCTOS
+        // ============================================================
         async function cargarProductos() {
             const lista = document.getElementById('listaProductos');
             const categoriasContainer = document.getElementById('categoriasContainer');
@@ -1349,6 +1394,9 @@
             });
         }
 
+        // ============================================================
+        // CARRITO
+        // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
@@ -1500,7 +1548,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON ACTUALIZACIÓN DE STOCK
+        // ENVIAR PEDIDO - CON VALIDACIÓN OBLIGATORIA
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -1518,17 +1566,48 @@
             const barrio = document.getElementById('clienteBarrio').value.trim();
             const observaciones = document.getElementById('clienteObservaciones').value.trim();
 
+            // ============================================================
+            // ✅ VALIDACIÓN OBLIGATORIA DE CAMPOS
+            // ============================================================
             if (!nombre) {
-                mostrarToast('Por favor ingresa tu nombre', 'error');
-                document.getElementById('clienteNombre').focus();
+                mostrarToast('⚠️ Por favor ingresa tu NOMBRE', 'error');
+                const el = document.getElementById('clienteNombre');
+                el.focus();
+                el.classList.add('error');
+                setTimeout(() => el.classList.remove('error'), 3000);
                 return;
             }
+            
             if (!telefono) {
-                mostrarToast('Por favor ingresa tu teléfono', 'error');
-                document.getElementById('clienteTelefono').focus();
+                mostrarToast('⚠️ Por favor ingresa tu TELÉFONO', 'error');
+                const el = document.getElementById('clienteTelefono');
+                el.focus();
+                el.classList.add('error');
+                setTimeout(() => el.classList.remove('error'), 3000);
+                return;
+            }
+            
+            if (!direccion) {
+                mostrarToast('⚠️ Por favor ingresa tu DIRECCIÓN', 'error');
+                const el = document.getElementById('clienteDireccion');
+                el.focus();
+                el.classList.add('error');
+                setTimeout(() => el.classList.remove('error'), 3000);
+                return;
+            }
+            
+            if (!barrio) {
+                mostrarToast('⚠️ Por favor ingresa tu BARRIO', 'error');
+                const el = document.getElementById('clienteBarrio');
+                el.focus();
+                el.classList.add('error');
+                setTimeout(() => el.classList.remove('error'), 3000);
                 return;
             }
 
+            // ============================================================
+            // CONTINUAR CON EL ENVÍO
+            // ============================================================
             const numeroPedido = generarNumeroPedido();
             const fecha = new Date();
             const fechaStr = fecha.toLocaleDateString('es-CO');
@@ -1548,7 +1627,7 @@
             });
 
             // ============================================================
-            // ✅ ACTUALIZAR STOCK DE CADA PRODUCTO
+            // ACTUALIZAR STOCK
             // ============================================================
             try {
                 const batch = db.batch();
@@ -1599,8 +1678,8 @@
             mensajeWhatsApp += `${emojiHora} *Hora:* ${horaStr}\n\n`;
             mensajeWhatsApp += `${emojiCliente} *Cliente:*\n${nombre}\n\n`;
             mensajeWhatsApp += `${emojiTelefono} *Teléfono:*\n${telefono}\n\n`;
-            mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion || 'Recoge en tienda'}\n\n`;
-            if (barrio) mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
+            mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion}\n\n`;
+            mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
             if (observaciones) mensajeWhatsApp += `${emojiObservaciones} *Observaciones:*\n${observaciones}\n\n`;
             mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
             
@@ -1611,15 +1690,15 @@
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
             // ============================================================
-            // GUARDAR PEDIDO EN FIRESTORE
+            // GUARDAR PEDIDO
             // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
                     nombre: nombre,
                     telefono: telefono,
-                    direccion: direccion || 'Recoge en tienda',
-                    barrio: barrio || '',
+                    direccion: direccion,
+                    barrio: barrio,
                     observaciones: observaciones || ''
                 },
                 items: items.map(item => ({
@@ -1670,6 +1749,9 @@
             });
         }
 
+        // ============================================================
+        // TOAST
+        // ============================================================
         function mostrarToast(mensaje, tipo = 'success', duracion = 4000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -1840,6 +1922,7 @@
         console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
         console.log('📸 Si el producto tiene imagen secundaria (img2), podrás ver ambas');
         console.log('📦 El stock se actualiza automáticamente al hacer un pedido');
+        console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
     </script>
 </body>
 </html>
