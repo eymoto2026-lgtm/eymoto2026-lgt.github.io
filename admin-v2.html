@@ -333,6 +333,43 @@ header .spacer{flex:1}
 .inventario-stock-btn{width:28px;height:28px;padding:0;border-radius:50%;font-size:14px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;cursor:pointer;transition:all 0.2s;}
 .inventario-stock-btn:hover{transform:scale(1.1)}
 .inventario-stock-btn:active{transform:scale(0.9)}
+.inv-cantidad-input {
+  width: 60px;
+  padding: 4px 6px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 700;
+  transition: border-color 0.2s;
+}
+.inv-cantidad-input:focus {
+  border-color: var(--yellow);
+  outline: none;
+}
+.inv-cantidad-input::-webkit-inner-spin-button,
+.inv-cantidad-input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+.inv-btn-actualizar {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--yellow);
+  color: #1a1a2e;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.inv-btn-actualizar:hover {
+  background: var(--yellow-dim);
+}
+.inv-btn-actualizar:active {
+  transform: scale(0.95);
+}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -456,7 +493,6 @@ header .spacer{flex:1}
           <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Ingredientes o detalles..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
           <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
-          <!-- ✅ CAMPO: ESTADO DEL PRODUCTO -->
           <div class="form-group">
             <label>Estado del producto</label>
             <select id="nuevoEstado">
@@ -464,7 +500,6 @@ header .spacer{flex:1}
               <option value="agotado">❌ Agotado</option>
             </select>
           </div>
-          <!-- ✅ CAMPO: STOCK INICIAL -->
           <div class="form-group">
             <label>Stock inicial</label>
             <input id="nuevoStock" type="number" placeholder="0" value="0">
@@ -526,6 +561,7 @@ header .spacer{flex:1}
               <li>Stock bajo: ⚠️ cuando queden <strong>menos de 5 unidades</strong></li>
               <li>Stock crítico: 🔴 cuando queden <strong>0 unidades</strong></li>
               <li>Puedes ajustar el stock manualmente con los botones + y -</li>
+              <li>También puedes <strong>escribir la cantidad</strong> en el campo numérico y presionar "Actualizar"</li>
             </ul>
           </div>
         </div>
@@ -704,7 +740,6 @@ function switchTab(name, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
   
-  // Si es el tab de inventario, actualizar las tiendas en el selector
   if (name === 'inventario') {
     const sel = document.getElementById('inventarioTienda');
     if (sel) {
@@ -753,7 +788,6 @@ auth.onAuthStateChanged(user => {
 async function inicializar() {
   await cargarTiendas();
   iniciarEscuchaGlobal();
-  // Actualizar selector de inventario
   const sel = document.getElementById('inventarioTienda');
   if (sel) {
     sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
@@ -767,7 +801,7 @@ async function inicializar() {
 }
 
 // ============================================================
-// TIENDAS (CON CATEGORÍAS AGOTADAS)
+// TIENDAS
 // ============================================================
 async function cargarTiendas() {
   ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
@@ -821,7 +855,6 @@ async function cargarTiendas() {
         if (sel) sel.innerHTML += opt;
       });
       
-      // También agregar al selector de inventario
       const invSel = document.getElementById('inventarioTienda');
       if (invSel) {
         const optInv = document.createElement('option');
@@ -893,7 +926,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS (CON ESTADO AGOTADO Y STOCK)
+// PRODUCTOS
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -997,7 +1030,7 @@ async function eliminarProducto(tid, pid) {
 }
 
 // ============================================================
-// INVENTARIO
+// INVENTARIO - VERSIÓN MEJORADA CON CAMPO NUMÉRICO
 // ============================================================
 async function cargarInventario() {
   const tid = document.getElementById('inventarioTienda').value;
@@ -1042,31 +1075,34 @@ async function cargarInventario() {
         ? '<span style="color:var(--red);font-size:10px;">⛔ Agotado</span>' 
         : '<span style="color:var(--green);font-size:10px;">✅ Disponible</span>';
       
-      const stockClase = stock === 0 ? 'stock-critico' : (stock <= 5 ? 'stock-bajo' : 'stock-normal');
-      const stockIcon = stock === 0 ? '🔴' : (stock <= 5 ? '⚠️' : '✅');
       const stockColor = stock === 0 ? 'var(--red)' : (stock <= 5 ? 'var(--yellow)' : 'var(--green)');
+      const stockIcon = stock === 0 ? '🔴' : (stock <= 5 ? '⚠️' : '✅');
       
       html += `
-        <div class="prod-item" style="border-bottom:1px solid var(--border2);padding:10px 0;">
-          <div class="prod-info" style="flex:2;">
+        <div class="prod-item" style="border-bottom:1px solid var(--border2);padding:10px 0;flex-wrap:wrap;gap:8px;">
+          <div class="prod-info" style="flex:2;min-width:120px;">
             <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge}</h5>
             <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--text-muted);">Stock:</span>
-            <span style="font-size:16px;font-weight:700;min-width:40px;text-align:center;color:${stockColor};">${stock}</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',-1)" style="background:var(--red-bg);color:var(--red);border-color:var(--red);">−</button>
+            
+            <input type="number" class="inv-cantidad-input" id="inv-cant-${pid}" value="${stock}" min="0" step="1" 
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'));}">
+            
             <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',1)" style="background:var(--green-bg);color:var(--green);border-color:var(--green);">+</button>
-            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',0)" style="background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow);font-size:12px;">↺</button>
+            
+            <button class="inv-btn-actualizar" onclick="actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'))">📦 Actualizar</button>
+            
+            <button class="inventario-stock-btn" onclick="ajustarStock('${tid}','${pid}',0)" style="background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow);font-size:12px;" title="Resetear a 0">↺</button>
           </div>
-          <div style="font-size:11px;color:var(--text-muted);min-width:80px;text-align:right;">
+          <div style="font-size:11px;color:var(--text-muted);min-width:60px;text-align:right;">
             ${stockIcon} ${stock === 0 ? 'Agotado' : (stock <= 5 ? 'Stock bajo' : 'En stock')}
           </div>
         </div>
       `;
     });
     
-    // Mostrar resumen
     resumen.style.display = 'grid';
     document.getElementById('invTotalProductos').textContent = totalProductos;
     document.getElementById('invStockTotal').textContent = stockTotal;
@@ -1117,6 +1153,45 @@ async function ajustarStock(tiendaId, productoId, cambio) {
   }
 }
 
+async function actualizarStockManual(tiendaId, productoId, inputElement) {
+  const nuevoStock = parseInt(inputElement.value);
+  
+  if (isNaN(nuevoStock) || nuevoStock < 0) {
+    toast('⚠️ Ingresa un número válido (0 o mayor)', 'error');
+    inputElement.value = 0;
+    return;
+  }
+  
+  try {
+    const doc = await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).get();
+    if (!doc.exists) return;
+    
+    const p = doc.data();
+    
+    await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+      stock: nuevoStock
+    });
+    
+    if (nuevoStock === 0) {
+      await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+        estado: 'agotado'
+      });
+      toast('⛔ Producto marcado como AGOTADO', 'warn', 1500);
+    } else if (nuevoStock > 0 && p.estado === 'agotado') {
+      await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+        estado: 'disponible'
+      });
+      toast('✅ Producto disponible nuevamente', 'success', 1500);
+    }
+    
+    cargarInventario();
+    cargarProductos();
+    
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
 function exportarInventario() {
   const lista = document.getElementById('inventarioLista');
   const items = lista.querySelectorAll('.prod-item');
@@ -1130,7 +1205,7 @@ function exportarInventario() {
   items.forEach(item => {
     const nombre = item.querySelector('h5')?.textContent?.replace(/[✅❌⛔].*/, '').trim() || '';
     const categoria = item.querySelector('.prod-cat')?.textContent?.trim() || '';
-    const stock = item.querySelector('span[style*="min-width:40px"]')?.textContent?.trim() || '0';
+    const stock = item.querySelector('.inv-cantidad-input')?.value || '0';
     const estado = item.querySelector('span[style*="color:var(--red)"]')?.textContent?.trim() || 'Disponible';
     csv += `"${nombre}","${categoria}",${stock},"${estado}"\n`;
   });
@@ -1218,7 +1293,7 @@ async function toggleEstado(tid) {
 }
 
 // ============================================================
-// CAMBIAR TIENDA SELECCIONADA
+// PEDIDOS (funciones ya existentes)
 // ============================================================
 function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
@@ -1236,9 +1311,6 @@ function cambiarTiendaSeleccionada() {
   }
 }
 
-// ============================================================
-// MOSTRAR SOLO PEDIDOS PENDIENTES (MODO GLOBAL)
-// ============================================================
 function mostrarPedidosPendientesGlobal() {
   resetKanban();
   const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0 };
@@ -1272,9 +1344,6 @@ function mostrarPedidosPendientesGlobal() {
   document.getElementById('statE').textContent = counts['Entregado'] || 0;
 }
 
-// ============================================================
-// RENDER PEDIDO GLOBAL
-// ============================================================
 function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
   const p = pedidoDoc.data();
   const pid = pedidoDoc.id;
@@ -1350,9 +1419,6 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
   colEl.appendChild(card);
 }
 
-// ============================================================
-// INICIAR ESCUCHA GLOBAL
-// ============================================================
 function iniciarEscuchaGlobal() {
   if (escuchaGlobalActiva) return;
   escuchaGlobalActiva = true;
@@ -1428,9 +1494,6 @@ function iniciarEscuchaGlobal() {
   });
 }
 
-// ============================================================
-// ESCUCHAR PEDIDOS DE UNA TIENDA ESPECÍFICA
-// ============================================================
 function escucharPedidosDeTienda(tiendaId) {
   if (!tiendaId) return;
   
@@ -1511,9 +1574,6 @@ function escucharPedidosDeTienda(tiendaId) {
     });
 }
 
-// ============================================================
-// PEDIDOS - CONSTANTES
-// ============================================================
 const ESTADO_MAP = {
   'Pendiente': { col:'col-P', cnt:'cnt-P', ring:'r-pending' },
   'En Cocina': { col:'col-C', cnt:'cnt-C', ring:'r-cooking' },
@@ -1613,9 +1673,6 @@ function renderPedido(doc, tiendaId, counts) {
   colEl.appendChild(card);
 }
 
-// ============================================================
-// CAMBIAR ESTADO
-// ============================================================
 async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
   try {
     stopAlarm();
@@ -1636,9 +1693,6 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
   }
 }
 
-// ============================================================
-// ELIMINAR PEDIDO
-// ============================================================
 async function eliminarPedido(tiendaId, pedidoId) {
   if (!confirm('¿Remover este pedido?')) return;
   try {
@@ -1648,17 +1702,11 @@ async function eliminarPedido(tiendaId, pedidoId) {
   } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
 
-// ============================================================
-// ESCAPE HTML
-// ============================================================
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// ============================================================
-// INICIALIZAR
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('filtroTienda');
   if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
@@ -1670,7 +1718,7 @@ console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda 
 console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
-console.log('📦 Nueva sección de INVENTARIO para gestionar el stock por tienda');
+console.log('📦 Nueva sección de INVENTARIO con campo numérico para actualizar stock fácilmente');
 </script>
 </body>
 </html>
