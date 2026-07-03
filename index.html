@@ -232,7 +232,7 @@
         }
         .producto-card.agotado {
             opacity: 0.65;
-            border-color: var(--red);
+            border-color: #FF3D00;
             background: #1a1a1a;
         }
         .producto-card.agotado .producto-nombre {
@@ -250,7 +250,7 @@
         }
         .producto-card.agotado .descripcion::after {
             content: " ⛔ No disponible temporalmente";
-            color: var(--red);
+            color: #FF3D00;
             font-weight: 700;
             font-size: 12px;
             display: block;
@@ -258,7 +258,7 @@
         }
         .producto-agotado-badge {
             display: inline-block;
-            background: var(--red);
+            background: #FF3D00;
             color: #fff;
             font-size: 10px;
             font-weight: 800;
@@ -520,10 +520,10 @@
             transition: border-color 0.3s ease;
         }
         .form-datos input.required {
-            border-left: 3px solid var(--yellow);
+            border-left: 3px solid #FFD600;
         }
         .form-datos input.error {
-            border-color: var(--red) !important;
+            border-color: #FF3D00 !important;
             animation: shake 0.3s ease;
         }
         @keyframes shake {
@@ -532,12 +532,12 @@
             75% { transform: translateX(5px); }
         }
         .form-datos .required-asterisk {
-            color: var(--red);
+            color: #FF3D00;
             font-weight: 700;
         }
         .form-datos .helper-text {
             font-size: 10px;
-            color: var(--text-muted);
+            color: #888;
             margin-top: 2px;
             padding-left: 2px;
         }
@@ -548,23 +548,23 @@
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-            background: var(--surface3);
+            background: #f5f5f5;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             border: 2px solid transparent;
         }
         .metodo-pago-option:hover {
-            background: var(--surface2);
+            background: #eee;
         }
         .metodo-pago-option.seleccionado {
-            border-color: var(--yellow);
-            background: var(--yellow-bg);
+            border-color: #FFD600;
+            background: rgba(255,214,0,0.12);
         }
         .metodo-pago-option input[type="radio"] {
             width: 16px;
             height: 16px;
-            accent-color: var(--yellow);
+            accent-color: #FFD600;
         }
         .metodo-pago-option .icono {
             font-size: 20px;
@@ -575,14 +575,14 @@
         }
         .metodo-pago-option .desc {
             font-size: 10px;
-            color: var(--text-muted);
+            color: #888;
         }
         .pago-instrucciones {
             font-size: 11px;
-            color: var(--text-muted);
+            color: #888;
             margin-top: 6px;
             padding: 6px 10px;
-            background: var(--surface3);
+            background: #f5f5f5;
             border-radius: 6px;
         }
 
@@ -592,7 +592,7 @@
             bottom: 200px;
             right: 20px;
             z-index: 150;
-            background: var(--yellow);
+            background: #FFD600;
             color: #1a1a2e;
             border: none;
             border-radius: 50px;
@@ -745,6 +745,9 @@
         }
         .toast.error {
             border-left-color: #FF3D00;
+        }
+        .toast.info {
+            border-left-color: #00B0FF;
         }
         @keyframes slideDown {
             from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
@@ -1068,7 +1071,7 @@
     </div>
 
     <!-- ===== BOTÓN LECTOR QR ===== -->
-    <button class="btn-lector-qr" onclick="abrirModalQR()">
+    <button class="btn-lector-qr" id="btnAbrirQR" onclick="abrirModalQR()">
         📷 Escanear QR
     </button>
 
@@ -1108,7 +1111,7 @@
             <input type="text" id="clienteBarrio" placeholder="Barrio *" class="required">
             <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
             
-            <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+            <div style="margin-top:10px;padding:10px;background:#f5f5f5;border-radius:8px;border:1px solid #e8e8e8;">
                 <span class="label-form">💳 Método de pago</span>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">
                     <label class="metodo-pago-option seleccionado" onclick="seleccionarPago('nequi', this)">
@@ -1196,6 +1199,7 @@
         let productos = [];
         let tiendaData = {};
         let tiendaAbierta = true;
+        let escaneoActivado = true;
         let colorPrincipal = '#FFD600';
         let formularioVisible = false;
         let html5QrCode = null;
@@ -1222,9 +1226,32 @@
         }
 
         // ============================================================
-        // LECTOR QR
+        // VERIFICAR ESCANEO ACTIVADO
         // ============================================================
-        function abrirModalQR() {
+        async function verificarEscaneoActivado() {
+            if (!TIENDA_ID) return false;
+            try {
+                const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
+                if (!doc.exists) return false;
+                const t = doc.data();
+                return t.barcodeScanningEnabled !== false; // true por defecto
+            } catch(e) {
+                console.error('Error al verificar escaneo:', e);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // LECTOR QR - MODIFICADO PARA VERIFICAR ESTADO
+        // ============================================================
+        async function abrirModalQR() {
+            // Verificar si el escaneo está activado
+            const escaneoActivado = await verificarEscaneoActivado();
+            if (!escaneoActivado) {
+                mostrarToast('⛔ El escaneo de códigos está desactivado en esta tienda', 'error', 3000);
+                return;
+            }
+            
             document.getElementById('modalQR').classList.add('active');
             document.body.style.overflow = 'hidden';
             iniciarLectorQR();
@@ -1287,7 +1314,12 @@
             console.log('📷 QR escaneado:', decodedText);
             
             const mensaje = document.getElementById('qrMensaje');
-            const producto = productos.find(p => p.id === decodedText || p.codigoQR === decodedText);
+            // Buscar por codigoQR, id, o barcode
+            const producto = productos.find(p => 
+                p.codigoQR === decodedText || 
+                p.id === decodedText ||
+                p.barcode === decodedText
+            );
             
             if (producto) {
                 agregarAlCarrito(producto.id);
@@ -1545,6 +1577,8 @@
                     }
 
                     tiendaAbierta = tiendaData.abierta !== false;
+                    escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
+                    
                     const estadoEl = document.getElementById('estadoHeader');
                     const overlayEl = document.getElementById('tiendaCerradaOverlay');
                     if (tiendaAbierta) {
@@ -1558,6 +1592,7 @@
                     }
                     
                     console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
+                    console.log('📷 Escaneo activado:', escaneoActivado);
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
