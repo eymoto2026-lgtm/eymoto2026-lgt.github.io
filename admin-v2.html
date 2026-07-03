@@ -287,7 +287,7 @@ header .spacer{flex:1}
 .prod-qr-code{font-size:10px;color:var(--text-muted);display:block;margin-top:2px;font-family:monospace;}
 
 /* ESTADO */
-.estado-wrap{max-width:460px}
+.estado-wrap{max-width:700px;margin:0 auto}
 .estado-card{
   display:flex;align-items:center;gap:16px;
   background:var(--surface2);border:1px solid var(--border);
@@ -413,7 +413,7 @@ header .spacer{flex:1}
       <button class="tab-btn" onclick="switchTab('tiendas',this)">Tiendas</button>
       <button class="tab-btn" onclick="switchTab('productos',this)">Productos</button>
       <button class="tab-btn" onclick="switchTab('inventario',this)">📦 Inventario</button>
-      <button class="tab-btn" onclick="switchTab('estado',this)">Estado</button>
+      <button class="tab-btn" onclick="switchTab('estado',this)">✅ Estado</button>
     </div>
 
     <!-- TAB PEDIDOS -->
@@ -583,11 +583,16 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- TAB ESTADO -->
+    <!-- ===== TAB ESTADO - AQUÍ ESTÁ EL INTERRUPTOR QR ===== -->
     <div class="tab-content" id="tab-estado">
-      <div class="section-title">Estado de operación</div>
+      <div class="section-title">🔧 Control de operación por tienda</div>
       <div class="estado-wrap">
-        <div class="form-group"><label>Selecciona la tienda</label><select id="tiendaEstado" onchange="cargarEstado()"><option value="">Seleccionar...</option></select></div>
+        <div class="form-group">
+          <label>Selecciona la tienda</label>
+          <select id="tiendaEstado" onchange="cargarEstado()">
+            <option value="">Seleccionar...</option>
+          </select>
+        </div>
         <div id="estadoWrap"></div>
       </div>
     </div>
@@ -633,7 +638,7 @@ let inventarioTiendaActual = '';
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
 // ============================================================
-// ✅ ACTIVAR AUDIO AUTOMÁTICAMENTE
+// ACTIVAR AUDIO AUTOMÁTICAMENTE
 // ============================================================
 function activarAudioAutomatico() {
     try {
@@ -1205,8 +1210,7 @@ async function ajustarStock(tiendaId, productoId, accion) {
     }
     
     await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
-      stock: nuevoStock
-    });
+      stock: nuevoStock    });
     
     if (nuevoStock === 0) {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
@@ -1325,27 +1329,32 @@ function actualizarTodosStock() {
 }
 
 // ============================================================
-// ESTADO - CON CONTROL DE ESCANEO
+// ===== ESTADO - AQUÍ ESTÁ EL INTERRUPTOR QR =====
 // ============================================================
+
+// ===== CARGA EL ESTADO DE LA TIENDA Y MUESTRA EL INTERRUPTOR =====
 async function cargarEstado() {
   const tid = document.getElementById('tiendaEstado').value;
   const wrap = document.getElementById('estadoWrap');
   wrap.innerHTML = '';
   if (!tid) return;
+  
   try {
     const doc = await db.collection('tiendas').doc(tid).get();
     if (!doc.exists) return;
+    
     const t = doc.data();
     const abierta = t.abierta !== false;
     const escaneoActivado = t.barcodeScanningEnabled !== false;
+    const nombreTienda = t.nombre || 'Tienda sin nombre';
     
     wrap.innerHTML = `
-      <!-- Estado de apertura -->
+      <!-- ===== ESTADO DE APERTURA ===== -->
       <div class="estado-card">
         <div class="info">
-          <div class="tienda-name">${escHtml(t.nombre || 'Tienda')}</div>
+          <div class="tienda-name">🏪 ${escHtml(nombreTienda)}</div>
           <div class="estado-txt" id="estadoTexto" style="color:${abierta ? 'var(--green)' : 'var(--red)'}">
-            ${abierta ? '🟢 Abierta — recibiendo pedidos' : '🔴 Cerrada temporalmente'}
+            ${abierta ? '🟢 ABIERTA — Recibiendo pedidos' : '🔴 CERRADA — No recibe pedidos'}
           </div>
         </div>
         <label class="toggle">
@@ -1354,66 +1363,117 @@ async function cargarEstado() {
         </label>
       </div>
       
-      <!-- Estado del escaneo -->
-      <div class="estado-card" style="margin-top:10px;">
+      <!-- ===== INTERRUPTOR QR - AQUÍ ESTÁ EL CONTROL ===== -->
+      <div class="estado-card" style="margin-top:14px;flex-direction:column;align-items:stretch;gap:14px;border:2px solid ${escaneoActivado ? 'var(--green)' : 'var(--red)'};">
         <div class="info">
-          <div class="tienda-name">📷 Escaneo de códigos</div>
-          <div class="estado-txt" id="escaneoTexto" style="color:${escaneoActivado ? 'var(--green)' : 'var(--red)'}">
+          <div class="tienda-name" style="font-size:17px;">📷 Escaneo QR / Código de barras</div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px;">
+            <span class="estado-txt" id="escaneoTexto" style="color:${escaneoActivado ? 'var(--green)' : 'var(--red)'};font-size:15px;font-weight:700;">
+              ${escaneoActivado 
+                ? '✅ ACTIVADO — Clientes pueden escanear' 
+                : '❌ DESACTIVADO — Clientes NO pueden escanear'}
+            </span>
+            <span style="font-size:11px;color:var(--text-muted);background:var(--surface3);padding:2px 10px;border-radius:12px;">
+              ${escaneoActivado ? '🔓 Permitido' : '🔒 Bloqueado'}
+            </span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.6;">
             ${escaneoActivado 
-              ? '✅ Activado — Los clientes pueden escanear códigos'
-              : '❌ Desactivado — Los clientes NO pueden escanear códigos'}
+              ? '✅ Los clientes pueden escanear códigos QR o barras para agregar productos al carrito' 
+              : '⛔ Los clientes NO podrán usar el escáner QR. El botón de escaneo se bloqueará automáticamente.'}
           </div>
         </div>
-        <label class="toggle">
-          <input type="checkbox" id="toggleEscaneo" ${escaneoActivado ? 'checked' : ''} onchange="toggleEscaneo()">
-          <span class="toggle-slider"></span>
-        </label>
+        
+        <!-- ===== BOTÓN INTERRUPTOR QR ===== -->
+        <button id="btnToggleEscaneo" onclick="toggleEscaneoBoton()" 
+                style="padding:16px 20px;border-radius:12px;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;background:${escaneoActivado ? 'var(--red)' : 'var(--green)'};color:#fff;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+          ${escaneoActivado ? '❌ DESACTIVAR ESCANEO QR' : '✅ ACTIVAR ESCANEO QR'}
+        </button>
+        <!-- ===== FIN DEL INTERRUPTOR ===== -->
+        
+        <div style="font-size:11px;color:var(--text-muted);text-align:center;padding-top:4px;border-top:1px solid var(--border);">
+          ⚡ El cambio es inmediato. Los clientes verán el efecto al recargar la página.
+        </div>
       </div>
     `;
-  } catch(e) { toast('Error al cargar estado.', 'error'); }
+  } catch(e) {
+    toast('Error al cargar estado: ' + e.message, 'error');
+  }
 }
 
+// ===== ALTERNAR ESTADO DE APERTURA =====
 async function toggleEstado(tid) {
   const cb = document.getElementById('toggleAbierta');
   const txt = document.getElementById('estadoTexto');
   try {
     await db.collection('tiendas').doc(tid).update({ abierta: cb.checked });
     txt.style.color = cb.checked ? 'var(--green)' : 'var(--red)';
-    txt.textContent = cb.checked ? '🟢 Abierta — recibiendo pedidos' : '🔴 Cerrada temporalmente';
-    toast(cb.checked ? 'Tienda ABIERTA.' : 'Tienda CERRADA.', cb.checked ? 'success' : 'warn');
-    cargarTiendas();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-async function toggleEscaneo() {
-  const tid = document.getElementById('tiendaEstado').value;
-  if (!tid) {
-    toast('Selecciona una tienda primero.', 'error');
-    return;
-  }
-  
-  const cb = document.getElementById('toggleEscaneo');
-  const txt = document.getElementById('escaneoTexto');
-  const nuevoEstado = cb.checked;
-  
-  try {
-    await db.collection('tiendas').doc(tid).update({ 
-      barcodeScanningEnabled: nuevoEstado 
-    });
-    
-    txt.style.color = nuevoEstado ? 'var(--green)' : 'var(--red)';
-    txt.textContent = nuevoEstado 
-      ? '✅ Activado — Los clientes pueden escanear códigos'
-      : '❌ Desactivado — Los clientes NO pueden escanear códigos';
-    
-    toast(nuevoEstado ? '📷 Escaneo ACTIVADO' : '📷 Escaneo DESACTIVADO', 
-          nuevoEstado ? 'success' : 'warn');
-    
+    txt.textContent = cb.checked ? '🟢 ABIERTA — Recibiendo pedidos' : '🔴 CERRADA — No recibe pedidos';
+    toast(cb.checked ? '✅ Tienda ABIERTA' : '⛔ Tienda CERRADA', cb.checked ? 'success' : 'warn');
     cargarTiendas();
   } catch(e) {
     toast('Error: ' + e.message, 'error');
-    cb.checked = !nuevoEstado;
+    cb.checked = !cb.checked;
   }
+}
+
+// ===== FUNCIÓN DEL INTERRUPTOR QR - ACTIVA/DESACTIVA =====
+function toggleEscaneoBoton() {
+  const tid = document.getElementById('tiendaEstado').value;
+  if (!tid) {
+    toast('⚠️ Selecciona una tienda primero.', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('btnToggleEscaneo');
+  const txt = document.getElementById('escaneoTexto');
+  const card = btn.closest('.estado-card');
+  
+  // Determinar estado actual
+  const estaActivado = btn.textContent.includes('DESACTIVAR');
+  const nuevoEstado = !estaActivado;
+  
+  // Deshabilitar botón mientras se procesa
+  btn.disabled = true;
+  btn.textContent = '⏳ Procesando...';
+  btn.style.opacity = '0.6';
+  
+  // ===== ACTUALIZAR EN FIRESTORE =====
+  db.collection('tiendas').doc(tid).update({ 
+    barcodeScanningEnabled: nuevoEstado 
+  }).then(() => {
+    if (nuevoEstado) {
+      // ACTIVADO
+      btn.style.background = 'var(--red)';
+      btn.textContent = '❌ DESACTIVAR ESCANEO QR';
+      txt.style.color = 'var(--green)';
+      txt.textContent = '✅ ACTIVADO — Clientes pueden escanear';
+      if (card) card.style.borderColor = 'var(--green)';
+      toast('📷 Escaneo QR ACTIVADO para esta tienda', 'success', 3000);
+    } else {
+      // DESACTIVADO
+      btn.style.background = 'var(--green)';
+      btn.textContent = '✅ ACTIVAR ESCANEO QR';
+      txt.style.color = 'var(--red)';
+      txt.textContent = '❌ DESACTIVADO — Clientes NO pueden escanear';
+      if (card) card.style.borderColor = 'var(--red)';
+      toast('📷 Escaneo QR DESACTIVADO para esta tienda', 'warn', 3000);
+    }
+    
+    // Rehabilitar botón
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    
+    // Actualizar lista de tiendas para reflejar el cambio
+    cargarTiendas();
+    
+  }).catch(e => {
+    toast('❌ Error al cambiar estado: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    // Revertir texto
+    btn.textContent = estaActivado ? '❌ DESACTIVAR ESCANEO QR' : '✅ ACTIVAR ESCANEO QR';
+  });
 }
 
 // ============================================================
