@@ -1169,6 +1169,7 @@
     <!-- ===== FIREBASE SDK ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
     <script>
         // ============================================================
@@ -1184,6 +1185,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
         // ============================================================
         // OBTENER ID DE TIENDA
@@ -1738,7 +1740,6 @@
                     tiendaAbierta = tiendaData.abierta !== false;
                     escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
                     
-                    // ===== ACTUALIZAR VISIBILIDAD DEL BOTÓN QR =====
                     actualizarVisibilidadBotonQR(escaneoActivado);
                     
                     const estadoEl = document.getElementById('estadoHeader');
@@ -2130,7 +2131,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO
+        // ENVIAR PEDIDO - CORREGIDO
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -2277,7 +2278,9 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // Guardar pedido
+            // ============================================================
+            // GUARDAR PEDIDO - CON clienteId PARA LAS REGLAS
+            // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -2297,21 +2300,31 @@
                 estado: 'Pendiente',
                 metodoPago: metodoPago,
                 estadoPago: 'pendiente',
+                // ===== CAMPO CLAVE PARA LAS REGLAS =====
+                clienteId: 'anonimo',
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 fuente: 'whatsapp',
                 timestamp: Date.now()
             };
 
+            // Si hay usuario autenticado, usar su UID
+            if (auth.currentUser) {
+                pedidoData.clienteId = auth.currentUser.uid;
+                pedidoData.email = auth.currentUser.email;
+            }
+
             try {
                 if (TIENDA_ID) {
-                    await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
-                    console.log('✅ Pedido guardado en Firestore');
+                    const docRef = await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
+                    console.log('✅ Pedido guardado en Firestore con ID:', docRef.id);
                 }
             } catch (error) {
                 console.error('❌ Error al guardar pedido:', error);
+                mostrarToast('❌ Error al guardar el pedido: ' + error.message, 'error');
+                return;
             }
 
-            const telefonoWhatsApp = tiendaData.whatsapp || '573169094516';
+            const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
