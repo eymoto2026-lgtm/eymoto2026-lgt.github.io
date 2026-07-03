@@ -612,7 +612,7 @@
         .btn-lector-qr:active {
             transform: scale(0.95);
         }
-        /* ===== CLASE PARA OCULTAR EL BOTÓN ===== */
+        /* ===== CLASE PARA OCULTAR EL BOTÓN - CON !important ===== */
         .btn-lector-qr.oculto {
             display: none !important;
         }
@@ -1075,8 +1075,8 @@
         </div>
     </div>
 
-    <!-- ===== BOTÓN LECTOR QR - SE OCULTA AUTOMÁTICAMENTE ===== -->
-    <button class="btn-lector-qr" id="btnAbrirQR" onclick="abrirModalQR()">
+    <!-- ===== BOTÓN LECTOR QR - EMPIEZA OCULTO POR DEFECTO ===== -->
+    <button class="btn-lector-qr oculto" id="btnAbrirQR" onclick="abrirModalQR()" style="display:none;">
         📷 Escanear QR
     </button>
 
@@ -1212,9 +1212,8 @@
         let audioContextGlobal = null;
 
         // ============================================================
-        // SISTEMA DE AUDIO UNIVERSAL (ANDROID + IPHONE)
+        // SISTEMA DE AUDIO UNIVERSAL
         // ============================================================
-
         function getAudioContext() {
             if (!audioContextGlobal) {
                 try {
@@ -1323,36 +1322,31 @@
         // Activar audio con el primer clic
         document.addEventListener('click', function activarAudioPorClic() {
             activarAudio();
-            document.removeEventListener('click', activarAudioPorClic);
         }, { once: true });
 
-        // También al hacer clic en el botón de escáner
-        document.querySelector('.btn-lector-qr')?.addEventListener('click', function() {
-            activarAudio();
-        });
-
         // ============================================================
-        // SELECCIONAR MÉTODO DE PAGO
+        // FUNCIÓN PARA OCULTAR/MOSTRAR EL BOTÓN QR
         // ============================================================
-        function seleccionarPago(metodo, el) {
-            document.querySelectorAll('.metodo-pago-option').forEach(opt => {
-                opt.classList.remove('seleccionado');
-            });
-            el.classList.add('seleccionado');
-            document.querySelector(`input[name="metodoPago"][value="${metodo}"]`).checked = true;
+        function actualizarVisibilidadBotonQR(activado) {
+            const btn = document.getElementById('btnAbrirQR');
+            if (!btn) {
+                console.warn('⚠️ Botón QR no encontrado');
+                return;
+            }
             
-            const instrucciones = document.getElementById('pagoInstrucciones');
-            if (metodo === 'nequi') {
-                instrucciones.innerHTML = '💡 Pagas con Nequi al número que te indicaremos por WhatsApp. Envía el comprobante.';
-            } else if (metodo === 'daviplata') {
-                instrucciones.innerHTML = '💡 Pagas con Daviplata al número que te indicaremos por WhatsApp. Envía el comprobante.';
+            if (activado) {
+                btn.classList.remove('oculto');
+                btn.style.display = 'flex';
+                console.log('📷 Botón QR VISIBLE ✅');
             } else {
-                instrucciones.innerHTML = '💵 Pagas en efectivo al momento de la entrega.';
+                btn.classList.add('oculto');
+                btn.style.display = 'none';
+                console.log('📷 Botón QR OCULTO ❌');
             }
         }
 
         // ============================================================
-        // VERIFICAR ESCANEO ACTIVADO - Y OCULTAR BOTÓN SI ESTÁ DESACTIVADO
+        // VERIFICAR ESCANEO ACTIVADO
         // ============================================================
         async function verificarEscaneoActivado() {
             if (!TIENDA_ID) return false;
@@ -1365,164 +1359,6 @@
                 console.error('Error al verificar escaneo:', e);
                 return false;
             }
-        }
-
-        // ===== FUNCIÓN PARA OCULTAR/MOSTRAR EL BOTÓN QR =====
-        function actualizarVisibilidadBotonQR(activado) {
-            const btn = document.getElementById('btnAbrirQR');
-            if (!btn) return;
-            
-            if (activado) {
-                btn.classList.remove('oculto');
-                console.log('📷 Botón QR VISIBLE');
-            } else {
-                btn.classList.add('oculto');
-                console.log('📷 Botón QR OCULTO (desactivado por administrador)');
-            }
-        }
-
-        // ============================================================
-        // LECTOR QR - CON VERIFICACIÓN Y SONIDOS
-        // ============================================================
-        async function abrirModalQR() {
-            // Verificar si el escaneo está activado
-            const escaneoActivado = await verificarEscaneoActivado();
-            
-            if (!escaneoActivado) {
-                reproducirSonido('error');
-                mostrarToast('⛔ El escaneo de códigos está DESACTIVADO en esta tienda', 'error', 3500);
-                return;
-            }
-            
-            if (!tiendaAbierta) {
-                reproducirSonido('error');
-                mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error', 3000);
-                return;
-            }
-            
-            reproducirSonido('beep');
-            
-            document.getElementById('modalQR').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            const mensaje = document.getElementById('qrMensaje');
-            mensaje.innerHTML = '📷 Acerca la cámara al código QR del producto';
-            mensaje.style.borderLeft = 'none';
-            mensaje.style.background = '#f5f5f5';
-            
-            iniciarLectorQR();
-        }
-
-        function cerrarModalQR(event) {
-            if (event && event.target !== event.currentTarget) return;
-            document.getElementById('modalQR').classList.remove('active');
-            document.body.style.overflow = '';
-            detenerLectorQR();
-        }
-
-        function iniciarLectorQR() {
-            if (escaneandoQR) return;
-            escaneandoQR = true;
-
-            const container = document.getElementById('qrScanner');
-            const mensaje = document.getElementById('qrMensaje');
-            
-            container.innerHTML = '';
-
-            if (typeof Html5Qrcode === 'undefined') {
-                mensaje.innerHTML = '❌ La librería QR no se cargó correctamente. Revisa tu conexión.';
-                escaneandoQR = false;
-                return;
-            }
-
-            html5QrCode = new Html5Qrcode("qrScanner");
-
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            };
-
-            html5QrCode.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                onScanError
-            ).catch(err => {
-                console.warn('Error al iniciar cámara:', err);
-                mensaje.innerHTML = '⚠️ No se pudo acceder a la cámara. Revisa los permisos.';
-                escaneandoQR = false;
-            });
-        }
-
-        function detenerLectorQR() {
-            if (html5QrCode) {
-                try {
-                    html5QrCode.stop().then(() => {
-                        html5QrCode.clear();
-                        escaneandoQR = false;
-                    }).catch(err => {});
-                } catch(e) {}
-            }
-        }
-
-        // ============================================================
-        // ESCANEAR PRODUCTO - CON SONIDOS
-        // ============================================================
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log('📷 QR escaneado:', decodedText);
-            
-            const mensaje = document.getElementById('qrMensaje');
-            
-            const producto = productos.find(p => 
-                p.codigoQR === decodedText || 
-                p.id === decodedText ||
-                p.barcode === decodedText ||
-                (p.codigoQR && p.codigoQR.toString() === decodedText.toString())
-            );
-            
-            reproducirSonido('beep');
-            
-            if (producto) {
-                setTimeout(() => {
-                    reproducirSonido('success');
-                }, 150);
-                
-                agregarAlCarrito(producto.id);
-                
-                mensaje.innerHTML = `
-                    ✅ Producto agregado: <span class="producto-nombre">${escHtml(producto.name)}</span>
-                    <br>💰 $${(producto.precio || 0).toLocaleString('es-CO')}
-                    <br><span style="font-size:12px;color:#888;">📦 Stock: ${producto.stock !== undefined ? producto.stock : 'N/A'}</span>
-                    <br><span style="font-size:12px;color:#888;">Continúa escaneando o cierra el escáner</span>
-                `;
-                
-                mensaje.style.borderLeft = '4px solid #00C853';
-                mensaje.style.background = 'rgba(0,200,83,0.08)';
-                
-                actualizarCarrito();
-                
-            } else {
-                setTimeout(() => {
-                    reproducirSonido('error');
-                }, 150);
-                
-                mensaje.innerHTML = `
-                    ⚠️ Producto no encontrado: <strong>${escHtml(decodedText)}</strong>
-                    <br><span style="font-size:12px;color:#888;">Asegúrate de escanear el código QR correcto</span>
-                    <br><span style="font-size:11px;color:#aaa;">💡 El código debe coincidir con el campo "Código QR" del producto</span>
-                    <br><span style="font-size:11px;color:#aaa;">🔍 Código escaneado: ${escHtml(decodedText)}</span>
-                `;
-                
-                mensaje.style.borderLeft = '4px solid #FF3D00';
-                mensaje.style.background = 'rgba(255,61,0,0.08)';
-                
-                if (navigator.vibrate) navigator.vibrate(500);
-            }
-        }
-
-        function onScanError(err) {
-            // Ignorar errores de escaneo
         }
 
         // ============================================================
@@ -1678,7 +1514,165 @@
         }
 
         // ============================================================
-        // CARGAR TIENDA - CON ACTUALIZACIÓN DEL BOTÓN QR
+        // SELECCIONAR MÉTODO DE PAGO
+        // ============================================================
+        function seleccionarPago(metodo, el) {
+            document.querySelectorAll('.metodo-pago-option').forEach(opt => {
+                opt.classList.remove('seleccionado');
+            });
+            el.classList.add('seleccionado');
+            document.querySelector(`input[name="metodoPago"][value="${metodo}"]`).checked = true;
+            
+            const instrucciones = document.getElementById('pagoInstrucciones');
+            if (metodo === 'nequi') {
+                instrucciones.innerHTML = '💡 Pagas con Nequi al número que te indicaremos por WhatsApp. Envía el comprobante.';
+            } else if (metodo === 'daviplata') {
+                instrucciones.innerHTML = '💡 Pagas con Daviplata al número que te indicaremos por WhatsApp. Envía el comprobante.';
+            } else {
+                instrucciones.innerHTML = '💵 Pagas en efectivo al momento de la entrega.';
+            }
+        }
+
+        // ============================================================
+        // LECTOR QR
+        // ============================================================
+        async function abrirModalQR() {
+            const escaneoActivado = await verificarEscaneoActivado();
+            
+            if (!escaneoActivado) {
+                reproducirSonido('error');
+                mostrarToast('⛔ El escaneo de códigos está DESACTIVADO en esta tienda', 'error', 3500);
+                return;
+            }
+            
+            if (!tiendaAbierta) {
+                reproducirSonido('error');
+                mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error', 3000);
+                return;
+            }
+            
+            reproducirSonido('beep');
+            
+            document.getElementById('modalQR').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            const mensaje = document.getElementById('qrMensaje');
+            mensaje.innerHTML = '📷 Acerca la cámara al código QR del producto';
+            mensaje.style.borderLeft = 'none';
+            mensaje.style.background = '#f5f5f5';
+            
+            iniciarLectorQR();
+        }
+
+        function cerrarModalQR(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modalQR').classList.remove('active');
+            document.body.style.overflow = '';
+            detenerLectorQR();
+        }
+
+        function iniciarLectorQR() {
+            if (escaneandoQR) return;
+            escaneandoQR = true;
+
+            const container = document.getElementById('qrScanner');
+            const mensaje = document.getElementById('qrMensaje');
+            
+            container.innerHTML = '';
+
+            if (typeof Html5Qrcode === 'undefined') {
+                mensaje.innerHTML = '❌ La librería QR no se cargó correctamente. Revisa tu conexión.';
+                escaneandoQR = false;
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("qrScanner");
+
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanError
+            ).catch(err => {
+                console.warn('Error al iniciar cámara:', err);
+                mensaje.innerHTML = '⚠️ No se pudo acceder a la cámara. Revisa los permisos.';
+                escaneandoQR = false;
+            });
+        }
+
+        function detenerLectorQR() {
+            if (html5QrCode) {
+                try {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        escaneandoQR = false;
+                    }).catch(err => {});
+                } catch(e) {}
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('📷 QR escaneado:', decodedText);
+            
+            const mensaje = document.getElementById('qrMensaje');
+            
+            const producto = productos.find(p => 
+                p.codigoQR === decodedText || 
+                p.id === decodedText ||
+                p.barcode === decodedText ||
+                (p.codigoQR && p.codigoQR.toString() === decodedText.toString())
+            );
+            
+            reproducirSonido('beep');
+            
+            if (producto) {
+                setTimeout(() => {
+                    reproducirSonido('success');
+                }, 150);
+                
+                agregarAlCarrito(producto.id);
+                
+                mensaje.innerHTML = `
+                    ✅ Producto agregado: <span class="producto-nombre">${escHtml(producto.name)}</span>
+                    <br>💰 $${(producto.precio || 0).toLocaleString('es-CO')}
+                    <br><span style="font-size:12px;color:#888;">📦 Stock: ${producto.stock !== undefined ? producto.stock : 'N/A'}</span>
+                    <br><span style="font-size:12px;color:#888;">Continúa escaneando o cierra el escáner</span>
+                `;
+                
+                mensaje.style.borderLeft = '4px solid #00C853';
+                mensaje.style.background = 'rgba(0,200,83,0.08)';
+                
+                actualizarCarrito();
+                
+            } else {
+                setTimeout(() => {
+                    reproducirSonido('error');
+                }, 150);
+                
+                mensaje.innerHTML = `
+                    ⚠️ Producto no encontrado: <strong>${escHtml(decodedText)}</strong>
+                    <br><span style="font-size:12px;color:#888;">Asegúrate de escanear el código QR correcto</span>
+                    <br><span style="font-size:11px;color:#aaa;">💡 El código debe coincidir con el campo "Código QR" del producto</span>
+                    <br><span style="font-size:11px;color:#aaa;">🔍 Código escaneado: ${escHtml(decodedText)}</span>
+                `;
+                
+                mensaje.style.borderLeft = '4px solid #FF3D00';
+                mensaje.style.background = 'rgba(255,61,0,0.08)';
+                
+                if (navigator.vibrate) navigator.vibrate(500);
+            }
+        }
+
+        function onScanError(err) {}
+
+        // ============================================================
+        // CARGAR TIENDA
         // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) return;
@@ -1744,7 +1738,7 @@
                     tiendaAbierta = tiendaData.abierta !== false;
                     escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
                     
-                    // ===== OCULTAR O MOSTRAR EL BOTÓN QR SEGÚN EL ESTADO =====
+                    // ===== ACTUALIZAR VISIBILIDAD DEL BOTÓN QR =====
                     actualizarVisibilidadBotonQR(escaneoActivado);
                     
                     const estadoEl = document.getElementById('estadoHeader');
@@ -1759,9 +1753,8 @@
                         overlayEl.classList.add('visible');
                     }
                     
-                    console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
                     console.log('📷 Escaneo activado:', escaneoActivado);
-                    console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE' : 'OCULTO');
+                    console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE ✅' : 'OCULTO ❌');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
@@ -2513,8 +2506,6 @@
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('📷 El botón QR se oculta automáticamente si el administrador lo desactiva');
         console.log('🔊 Los sonidos se activan al escanear (Android e iPhone)');
-        console.log('💳 Métodos de pago: Nequi, Daviplata, Efectivo');
-        console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
     </script>
 </body>
 </html>
