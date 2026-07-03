@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin EyMoto — Panel General</title>
+<!-- ===== LIBRERÍA PARA LEER QR ===== -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
@@ -488,25 +490,38 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- TAB PRODUCTOS -->
+    <!-- ===== TAB PRODUCTOS - CON ESCANEO DE CÓDIGOS ===== -->
     <div class="tab-content" id="tab-productos">
       <div class="row2">
         <div>
           <div class="section-title">Añadir / editar producto</div>
           <input type="hidden" id="editProductoId">
-          <div class="form-group"><label>Tienda</label><select id="tiendaProducto" onchange="cargarProductos()"><option value="">Seleccionar...</option></select></div>
-          <div class="form-group"><label>Nombre</label><input id="nuevoNombre" placeholder="Ej: Hamburguesa"></div>
-          <div class="row2">
-            <div class="form-group"><label>Precio</label><input id="nuevoPrecio" type="number" placeholder="18000"></div>
-            <div class="form-group"><label>Categoría</label><input id="nuevoCategoria" placeholder="Hamburguesas"></div>
+          
+          <!-- ===== BOTONES DE ESCANEO ===== -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button onclick="abrirScannerAdmin()" style="background:var(--blue);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;border:none;cursor:pointer;">
+              📷 Escanear código de barras
+            </button>
+            <button onclick="abrirScannerManual()" style="background:var(--yellow);color:#1a1a2e;padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;border:none;cursor:pointer;">
+              ⌨️ Buscar por código
+            </button>
+            <button onclick="limpiarFormularioProducto()" class="btn-ghost btn-sm" style="width:auto;padding:10px 16px;">Limpiar</button>
           </div>
-          <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Ingredientes o detalles..."></textarea></div>
+          
+          <!-- ===== FORMULARIO ===== -->
+          <div class="form-group"><label>Tienda</label><select id="tiendaProducto" onchange="cargarProductos()"><option value="">Seleccionar...</option></select></div>
+          <div class="form-group"><label>Nombre *</label><input id="nuevoNombre" placeholder="Ej: Gaseosa Coca-Cola"></div>
+          <div class="row2">
+            <div class="form-group"><label>Precio *</label><input id="nuevoPrecio" type="number" placeholder="3500"></div>
+            <div class="form-group"><label>Categoría</label><input id="nuevoCategoria" placeholder="Bebidas"></div>
+          </div>
+          <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Descripción del producto..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
           <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
           <div class="form-group">
             <label>Código QR / Código de barras</label>
-            <input id="nuevoCodigoQR" placeholder="Ej: 7501234567890 o codigo-unico">
-            <small style="color:var(--text-muted);font-size:11px;">Código único para escanear. Puede ser el código de barras del producto o uno personalizado.</small>
+            <input id="nuevoCodigoQR" placeholder="7501234567890">
+            <small style="color:var(--text-muted);font-size:11px;">Código único para escanear. Se autocompleta al escanear.</small>
           </div>
           <div class="form-group">
             <label>Estado del producto</label>
@@ -529,6 +544,39 @@ header .spacer{flex:1}
           <div class="section-title">Inventario</div>
           <div id="listaProductos"><p style="color:var(--text-muted);font-size:13px">Selecciona una tienda.</p></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== MODAL ESCÁNER ===== -->
+    <div id="modalScannerAdmin" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;justify-content:center;align-items:center;padding:20px;">
+      <div style="background:#1e1e1e;border-radius:20px;max-width:500px;width:100%;padding:24px;border:1px solid var(--yellow);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="color:#fff;">📷 Escanear código de barras</h3>
+          <button onclick="cerrarScannerAdmin()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">✕</button>
+        </div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Escanea el código de barras de la botella para buscar el producto en Open Food Facts</p>
+        <div id="qrScannerAdmin" style="width:100%;aspect-ratio:1/1;background:#000;border-radius:12px;overflow:hidden;"></div>
+        <div id="qrMensajeAdmin" style="color:var(--text-muted);font-size:13px;text-align:center;padding:12px;margin-top:12px;background:var(--surface2);border-radius:8px;">
+          💡 Acerca la cámara al código de barras de la botella
+        </div>
+        <button onclick="cerrarScannerAdmin()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--surface3);color:#fff;font-weight:700;cursor:pointer;margin-top:12px;">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- ===== MODAL BUSCAR MANUAL ===== -->
+    <div id="modalBuscarManual" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;justify-content:center;align-items:center;padding:20px;">
+      <div style="background:#1e1e1e;border-radius:20px;max-width:500px;width:100%;padding:24px;border:1px solid var(--yellow);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="color:#fff;">⌨️ Buscar producto por código</h3>
+          <button onclick="cerrarBuscarManual()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">✕</button>
+        </div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Ingresa el código de barras del producto (ej: 7501234567890)</p>
+        <input type="text" id="codigoBarrasManual" placeholder="Código de barras" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:12px;border-radius:10px;width:100%;font-size:16px;">
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button onclick="buscarPorCodigoManual()" style="flex:1;padding:12px;border-radius:10px;background:var(--yellow);color:#1a1a2e;font-weight:700;border:none;cursor:pointer;">🔍 Buscar</button>
+          <button onclick="cerrarBuscarManual()" style="padding:12px 20px;border-radius:10px;background:var(--surface3);color:#fff;border:none;cursor:pointer;">Cerrar</button>
+        </div>
+        <div id="manualResultado" style="margin-top:12px;padding:12px;border-radius:8px;background:var(--surface2);display:none;"></div>
       </div>
     </div>
 
@@ -583,7 +631,7 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- ===== TAB ESTADO - AQUÍ ESTÁ EL INTERRUPTOR QR ===== -->
+    <!-- TAB ESTADO -->
     <div class="tab-content" id="tab-estado">
       <div class="section-title">🔧 Control de operación por tienda</div>
       <div class="estado-wrap">
@@ -634,11 +682,13 @@ let todosLosPedidos = {};
 let escuchaGlobalActiva = false;
 let listenersTiendas = {};
 let inventarioTiendaActual = '';
+let scannerAdmin = null;
+let escaneandoAdmin = false;
 
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
 // ============================================================
-// ACTIVAR AUDIO AUTOMÁTICAMENTE
+// ACTIVAR AUDIO
 // ============================================================
 function activarAudioAutomatico() {
     try {
@@ -983,7 +1033,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS - CON CÓDIGO QR
+// PRODUCTOS
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -1026,6 +1076,9 @@ async function cargarProductos() {
   } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px">Error al cargar.</p>'; console.error(e); }
 }
 
+// ============================================================
+// GUARDAR PRODUCTO
+// ============================================================
 async function guardarProducto() {
   const tid = document.getElementById('tiendaProducto').value;
   const pid = document.getElementById('editProductoId').value;
@@ -1033,15 +1086,21 @@ async function guardarProducto() {
 
   const name = document.getElementById('nuevoNombre').value.trim();
   const precio = parseFloat(document.getElementById('nuevoPrecio').value) || 0;
-  const categoria = document.getElementById('nuevoCategoria').value.trim();
+  const categoria = document.getElementById('nuevoCategoria').value.trim() || 'General';
   const descripcion = document.getElementById('nuevoDescripcion').value.trim();
   const img = document.getElementById('nuevoImagen').value.trim();
   const img2 = document.getElementById('nuevoImagen2').value.trim();
   const estado = document.getElementById('nuevoEstado').value;
   const stock = parseInt(document.getElementById('nuevoStock').value) || 0;
-  const codigoQR = document.getElementById('nuevoCodigoQR').value.trim();
+  let codigoQR = document.getElementById('nuevoCodigoQR').value.trim();
 
   if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
+
+  // Si no tiene código QR, generar uno automático
+  if (!codigoQR) {
+    codigoQR = 'PROD-' + Date.now().toString().slice(-8);
+    document.getElementById('nuevoCodigoQR').value = codigoQR;
+  }
 
   const datos = { 
     name, 
@@ -1052,7 +1111,8 @@ async function guardarProducto() {
     img2, 
     estado, 
     stock,
-    codigoQR: codigoQR || null
+    codigoQR: codigoQR,
+    creadoEn: firebase.firestore.FieldValue.serverTimestamp()
   };
   
   try {
@@ -1062,11 +1122,15 @@ async function guardarProducto() {
       toast('Producto actualizado.', 'success'); 
     } else { 
       await ref.add(datos); 
-      toast('Producto añadido.', 'success'); 
+      toast('✅ Producto añadido correctamente.', 'success'); 
     }
     cancelarEdProducto();
     cargarProductos();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
+    limpiarFormularioProducto();
+  } catch(e) { 
+    toast('Error: ' + e.message, 'error'); 
+    console.error(e);
+  }
 }
 
 async function editarProducto(pid, tid) {
@@ -1106,6 +1170,293 @@ async function eliminarProducto(tid, pid) {
     toast('Producto eliminado.', 'info');
     cargarProductos();
   } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// ===== NUEVA FUNCIÓN: ESCANEAR CÓDIGO DE BARRAS =====
+// ============================================================
+
+// ===== ABRIR ESCÁNER =====
+function abrirScannerAdmin() {
+    const tid = document.getElementById('tiendaProducto').value;
+    if (!tid) {
+        toast('⚠️ Primero selecciona una tienda.', 'error');
+        return;
+    }
+    
+    document.getElementById('modalScannerAdmin').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+        iniciarScannerAdmin();
+    }, 300);
+}
+
+function cerrarScannerAdmin() {
+    document.getElementById('modalScannerAdmin').style.display = 'none';
+    document.body.style.overflow = '';
+    detenerScannerAdmin();
+}
+
+// ===== ABRIR BUSCADOR MANUAL =====
+function abrirScannerManual() {
+    const tid = document.getElementById('tiendaProducto').value;
+    if (!tid) {
+        toast('⚠️ Primero selecciona una tienda.', 'error');
+        return;
+    }
+    document.getElementById('modalBuscarManual').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('codigoBarrasManual').value = '';
+    document.getElementById('codigoBarrasManual').focus();
+    document.getElementById('manualResultado').style.display = 'none';
+}
+
+function cerrarBuscarManual() {
+    document.getElementById('modalBuscarManual').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// ===== BUSCAR POR CÓDIGO MANUAL =====
+async function buscarPorCodigoManual() {
+    const codigo = document.getElementById('codigoBarrasManual').value.trim();
+    if (!codigo) {
+        toast('⚠️ Ingresa un código de barras.', 'error');
+        return;
+    }
+    
+    const resultado = document.getElementById('manualResultado');
+    resultado.style.display = 'block';
+    resultado.innerHTML = '⏳ Buscando producto en Open Food Facts...';
+    resultado.style.borderLeft = 'none';
+    resultado.style.background = 'var(--surface2)';
+    
+    await buscarProductoPorCodigo(codigo, resultado);
+}
+
+// ===== FUNCIÓN PRINCIPAL PARA BUSCAR PRODUCTO =====
+async function buscarProductoPorCodigo(codigo, elementoResultado) {
+    const tid = document.getElementById('tiendaProducto').value;
+    if (!tid) {
+        toast('⚠️ Selecciona una tienda.', 'error');
+        return;
+    }
+    
+    try {
+        // ===== BUSCAR EN OPEN FOOD FACTS =====
+        const url = `https://world.openfoodfacts.org/api/v0/product/${codigo}.json`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status === 1) {
+            // ✅ PRODUCTO ENCONTRADO
+            const product = data.product;
+            
+            // Extraer datos
+            const nombre = product.product_name || product.generic_name || product.brands || 'Producto sin nombre';
+            const categoria = product.categories_tags && product.categories_tags.length > 0 
+                ? product.categories_tags[0].replace(/^en:/, '').replace(/-/g, ' ').toUpperCase()
+                : product.categories || 'General';
+            const descripcion = product.ingredients_text || product.ingredients_text_es || product.generic_name || '';
+            const imagen = product.image_url || product.image_front_url || '';
+            const marca = product.brands || '';
+            
+            // ===== AUTOCOMPLETAR FORMULARIO =====
+            document.getElementById('nuevoNombre').value = nombre;
+            document.getElementById('nuevoCategoria').value = categoria;
+            document.getElementById('nuevoDescripcion').value = descripcion || `Producto: ${nombre}`;
+            document.getElementById('nuevoImagen').value = imagen;
+            document.getElementById('nuevoCodigoQR').value = codigo;
+            
+            // Enfocar el precio
+            document.getElementById('nuevoPrecio').focus();
+            document.getElementById('nuevoPrecio').select();
+            
+            // ===== MOSTRAR RESULTADO =====
+            if (elementoResultado) {
+                elementoResultado.innerHTML = `
+                    ✅ ✅ PRODUCTO ENCONTRADO ✅ ✅
+                    <br><strong style="color:var(--green);font-size:16px;">${nombre}</strong>
+                    <br>📂 Categoría: ${categoria}
+                    ${marca ? `<br>🏷️ Marca: ${marca}` : ''}
+                    <br>🔲 Código: ${codigo}
+                    <br><span style="font-size:12px;color:var(--text-muted);">📷 Imagen: ${imagen ? '✅ Encontrada' : '❌ No disponible'}</span>
+                    <br><br>
+                    <span style="font-size:13px;color:var(--yellow);">✏️ Ahora agrega el PRECIO y haz clic en GUARDAR</span>
+                `;
+                elementoResultado.style.borderLeft = '4px solid var(--green)';
+                elementoResultado.style.background = 'var(--green-bg)';
+            }
+            
+            // Sonido de éxito
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                [523, 659, 784].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = i * 0.1;
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.2);
+                });
+            } catch(e) {}
+            
+            toast(`✅ Producto encontrado: ${nombre}`, 'success', 3000);
+            
+            // Cerrar modales automáticamente después de 3 segundos
+            setTimeout(() => {
+                if (document.getElementById('modalScannerAdmin').style.display === 'flex') {
+                    cerrarScannerAdmin();
+                }
+                if (document.getElementById('modalBuscarManual').style.display === 'flex') {
+                    cerrarBuscarManual();
+                }
+            }, 3000);
+            
+        } else {
+            // ❌ PRODUCTO NO ENCONTRADO
+            if (elementoResultado) {
+                elementoResultado.innerHTML = `
+                    ❌ Producto no encontrado en Open Food Facts
+                    <br><span style="font-size:12px;color:var(--text-muted);">Código: ${codigo}</span>
+                    <br><span style="font-size:11px;color:var(--text-muted);">💡 Puedes crearlo manualmente</span>
+                    <br><br>
+                    <span style="font-size:13px;color:var(--yellow);">✏️ Completa los datos manualmente y guarda</span>
+                `;
+                elementoResultado.style.borderLeft = '4px solid var(--orange)';
+                elementoResultado.style.background = 'var(--orange-bg)';
+            }
+            
+            // Sonido de error
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                [400, 300].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sawtooth';
+                    const t = i * 0.2;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.25);
+                });
+            } catch(e) {}
+            
+            toast(`❌ Producto no encontrado: ${codigo}`, 'error', 3000);
+        }
+        
+    } catch(error) {
+        console.error('Error al buscar:', error);
+        if (elementoResultado) {
+            elementoResultado.innerHTML = `
+                ❌ Error al buscar el producto
+                <br><span style="font-size:12px;color:var(--text-muted);">${error.message}</span>
+                <br><span style="font-size:11px;color:var(--text-muted);">💡 Verifica tu conexión a internet</span>
+            `;
+            elementoResultado.style.borderLeft = '4px solid var(--red)';
+            elementoResultado.style.background = 'var(--red-bg)';
+        }
+        toast('❌ Error al buscar producto', 'error');
+    }
+}
+
+// ===== FUNCIÓN PARA ESCANEAR QR =====
+function onScanSuccessAdmin(decodedText, decodedResult) {
+    console.log('📷 Código escaneado:', decodedText);
+    
+    const mensaje = document.getElementById('qrMensajeAdmin');
+    mensaje.innerHTML = '⏳ Buscando producto en Open Food Facts...';
+    mensaje.style.borderLeft = 'none';
+    mensaje.style.background = 'var(--surface2)';
+    
+    // Buscar el producto con el código escaneado
+    buscarProductoPorCodigo(decodedText, mensaje);
+}
+
+function onScanErrorAdmin(err) {
+    // Ignorar errores de escaneo
+}
+
+// ===== INICIAR ESCÁNER =====
+function iniciarScannerAdmin() {
+    if (escaneandoAdmin) return;
+    escaneandoAdmin = true;
+
+    const container = document.getElementById('qrScannerAdmin');
+    const mensaje = document.getElementById('qrMensajeAdmin');
+    
+    container.innerHTML = '';
+
+    if (typeof Html5Qrcode === 'undefined') {
+        mensaje.innerHTML = '❌ La librería QR no se cargó correctamente.';
+        escaneandoAdmin = false;
+        return;
+    }
+
+    if (scannerAdmin) {
+        try {
+            scannerAdmin.stop().then(() => {
+                scannerAdmin.clear();
+                scannerAdmin = null;
+            }).catch(e => {});
+        } catch(e) {}
+    }
+
+    scannerAdmin = new Html5Qrcode("qrScannerAdmin");
+
+    const config = {
+        fps: 10,
+        qrbox: { width: 280, height: 280 },
+        aspectRatio: 1.0
+    };
+
+    scannerAdmin.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccessAdmin,
+        onScanErrorAdmin
+    ).catch(err => {
+        console.warn('Error al iniciar cámara:', err);
+        mensaje.innerHTML = '⚠️ No se pudo acceder a la cámara. Revisa los permisos.';
+        escaneandoAdmin = false;
+    });
+}
+
+function detenerScannerAdmin() {
+    if (scannerAdmin) {
+        try {
+            scannerAdmin.stop().then(() => {
+                scannerAdmin.clear();
+                scannerAdmin = null;
+                escaneandoAdmin = false;
+            }).catch(err => {});
+        } catch(e) {}
+    }
+    escaneandoAdmin = false;
+}
+
+// ===== LIMPIAR FORMULARIO =====
+function limpiarFormularioProducto() {
+    document.getElementById('editProductoId').value = '';
+    document.getElementById('nuevoNombre').value = '';
+    document.getElementById('nuevoPrecio').value = '';
+    document.getElementById('nuevoCategoria').value = '';
+    document.getElementById('nuevoDescripcion').value = '';
+    document.getElementById('nuevoImagen').value = '';
+    document.getElementById('nuevoImagen2').value = '';
+    document.getElementById('nuevoCodigoQR').value = '';
+    document.getElementById('nuevoEstado').value = 'disponible';
+    document.getElementById('nuevoStock').value = '0';
+    document.getElementById('btnCancelProd').classList.add('hidden');
+    toast('🧹 Formulario limpiado', 'info', 1500);
 }
 
 // ============================================================
@@ -1210,7 +1561,8 @@ async function ajustarStock(tiendaId, productoId, accion) {
     }
     
     await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
-      stock: nuevoStock    });
+      stock: nuevoStock
+    });
     
     if (nuevoStock === 0) {
       await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
@@ -1329,10 +1681,8 @@ function actualizarTodosStock() {
 }
 
 // ============================================================
-// ===== ESTADO - AQUÍ ESTÁ EL INTERRUPTOR QR =====
+// ESTADO
 // ============================================================
-
-// ===== CARGA EL ESTADO DE LA TIENDA Y MUESTRA EL INTERRUPTOR =====
 async function cargarEstado() {
   const tid = document.getElementById('tiendaEstado').value;
   const wrap = document.getElementById('estadoWrap');
@@ -1349,7 +1699,6 @@ async function cargarEstado() {
     const nombreTienda = t.nombre || 'Tienda sin nombre';
     
     wrap.innerHTML = `
-      <!-- ===== ESTADO DE APERTURA ===== -->
       <div class="estado-card">
         <div class="info">
           <div class="tienda-name">🏪 ${escHtml(nombreTienda)}</div>
@@ -1363,7 +1712,6 @@ async function cargarEstado() {
         </label>
       </div>
       
-      <!-- ===== INTERRUPTOR QR - AQUÍ ESTÁ EL CONTROL ===== -->
       <div class="estado-card" style="margin-top:14px;flex-direction:column;align-items:stretch;gap:14px;border:2px solid ${escaneoActivado ? 'var(--green)' : 'var(--red)'};">
         <div class="info">
           <div class="tienda-name" style="font-size:17px;">📷 Escaneo QR / Código de barras</div>
@@ -1384,12 +1732,10 @@ async function cargarEstado() {
           </div>
         </div>
         
-        <!-- ===== BOTÓN INTERRUPTOR QR ===== -->
         <button id="btnToggleEscaneo" onclick="toggleEscaneoBoton()" 
                 style="padding:16px 20px;border-radius:12px;font-size:16px;font-weight:800;border:none;cursor:pointer;transition:all 0.3s;background:${escaneoActivado ? 'var(--red)' : 'var(--green)'};color:#fff;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
           ${escaneoActivado ? '❌ DESACTIVAR ESCANEO QR' : '✅ ACTIVAR ESCANEO QR'}
         </button>
-        <!-- ===== FIN DEL INTERRUPTOR ===== -->
         
         <div style="font-size:11px;color:var(--text-muted);text-align:center;padding-top:4px;border-top:1px solid var(--border);">
           ⚡ El cambio es inmediato. Los clientes verán el efecto al recargar la página.
@@ -1401,7 +1747,6 @@ async function cargarEstado() {
   }
 }
 
-// ===== ALTERNAR ESTADO DE APERTURA =====
 async function toggleEstado(tid) {
   const cb = document.getElementById('toggleAbierta');
   const txt = document.getElementById('estadoTexto');
@@ -1417,7 +1762,6 @@ async function toggleEstado(tid) {
   }
 }
 
-// ===== FUNCIÓN DEL INTERRUPTOR QR - ACTIVA/DESACTIVA =====
 function toggleEscaneoBoton() {
   const tid = document.getElementById('tiendaEstado').value;
   if (!tid) {
@@ -1429,21 +1773,17 @@ function toggleEscaneoBoton() {
   const txt = document.getElementById('escaneoTexto');
   const card = btn.closest('.estado-card');
   
-  // Determinar estado actual
   const estaActivado = btn.textContent.includes('DESACTIVAR');
   const nuevoEstado = !estaActivado;
   
-  // Deshabilitar botón mientras se procesa
   btn.disabled = true;
   btn.textContent = '⏳ Procesando...';
   btn.style.opacity = '0.6';
   
-  // ===== ACTUALIZAR EN FIRESTORE =====
   db.collection('tiendas').doc(tid).update({ 
     barcodeScanningEnabled: nuevoEstado 
   }).then(() => {
     if (nuevoEstado) {
-      // ACTIVADO
       btn.style.background = 'var(--red)';
       btn.textContent = '❌ DESACTIVAR ESCANEO QR';
       txt.style.color = 'var(--green)';
@@ -1451,7 +1791,6 @@ function toggleEscaneoBoton() {
       if (card) card.style.borderColor = 'var(--green)';
       toast('📷 Escaneo QR ACTIVADO para esta tienda', 'success', 3000);
     } else {
-      // DESACTIVADO
       btn.style.background = 'var(--green)';
       btn.textContent = '✅ ACTIVAR ESCANEO QR';
       txt.style.color = 'var(--red)';
@@ -1460,18 +1799,14 @@ function toggleEscaneoBoton() {
       toast('📷 Escaneo QR DESACTIVADO para esta tienda', 'warn', 3000);
     }
     
-    // Rehabilitar botón
     btn.disabled = false;
     btn.style.opacity = '1';
-    
-    // Actualizar lista de tiendas para reflejar el cambio
     cargarTiendas();
     
   }).catch(e => {
     toast('❌ Error al cambiar estado: ' + e.message, 'error');
     btn.disabled = false;
     btn.style.opacity = '1';
-    // Revertir texto
     btn.textContent = estaActivado ? '❌ DESACTIVAR ESCANEO QR' : '✅ ACTIVAR ESCANEO QR';
   });
 }
@@ -1997,16 +2332,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('✅ Panel de administración cargado correctamente');
+console.log('📷 Nueva función: Escanear código de barras para cargar productos desde Open Food Facts');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
-console.log('🔊 El sonido se activa automáticamente al iniciar sesión o hacer clic');
-console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
-console.log('📌 En "Todas las tiendas" solo se ven pedidos activos');
-console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
-console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
-console.log('📦 Nueva sección de INVENTARIO compacta con campo numérico');
-console.log('💳 Los pedidos con Nequi/Daviplata tienen botones para confirmar/rechazar pago');
-console.log('📷 Control de escaneo QR para cada tienda en la pestaña "Estado"');
-console.log('🔲 Cada producto puede tener un código QR único para escanear');
 </script>
 </body>
 </html>
