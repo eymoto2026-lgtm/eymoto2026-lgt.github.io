@@ -586,7 +586,7 @@
             border-radius: 6px;
         }
 
-        /* ===== BOTÓN LECTOR QR ===== */
+        /* ===== BOTÓN LECTOR QR - SE OCULTA CUANDO ESTÁ DESACTIVADO ===== */
         .btn-lector-qr {
             position: fixed;
             bottom: 200px;
@@ -611,6 +611,10 @@
         }
         .btn-lector-qr:active {
             transform: scale(0.95);
+        }
+        /* ===== CLASE PARA OCULTAR EL BOTÓN ===== */
+        .btn-lector-qr.oculto {
+            display: none !important;
         }
 
         /* ===== MODAL DEL LECTOR QR ===== */
@@ -1071,7 +1075,7 @@
         </div>
     </div>
 
-    <!-- ===== BOTÓN LECTOR QR ===== -->
+    <!-- ===== BOTÓN LECTOR QR - SE OCULTA AUTOMÁTICAMENTE ===== -->
     <button class="btn-lector-qr" id="btnAbrirQR" onclick="abrirModalQR()">
         📷 Escanear QR
     </button>
@@ -1211,7 +1215,6 @@
         // SISTEMA DE AUDIO UNIVERSAL (ANDROID + IPHONE)
         // ============================================================
 
-        // Obtener el contexto de audio
         function getAudioContext() {
             if (!audioContextGlobal) {
                 try {
@@ -1224,7 +1227,6 @@
             return audioContextGlobal;
         }
 
-        // Activar audio (llamar en eventos de clic)
         function activarAudio() {
             const ctx = getAudioContext();
             if (ctx && ctx.state === 'suspended') {
@@ -1236,12 +1238,10 @@
             }
         }
 
-        // Función principal de sonido
         function reproducirSonido(tipo) {
             try {
                 const ctx = getAudioContext();
                 if (!ctx) {
-                    // Fallback: usar vibración
                     if (navigator.vibrate) {
                         if (tipo === 'success') navigator.vibrate([50, 50, 50, 50, 100]);
                         else if (tipo === 'error') navigator.vibrate([200, 100, 200]);
@@ -1250,7 +1250,6 @@
                     return;
                 }
                 
-                // Si está suspendido, intentar reanudar
                 if (ctx.state === 'suspended') {
                     ctx.resume().then(() => {
                         reproducirSonidoReal(ctx, tipo);
@@ -1274,7 +1273,6 @@
             if (!ctx) return;
             
             if (tipo === 'success') {
-                // 🎵 Sonido de ÉXITO - Melodía ascendente
                 const notas = [523, 659, 784, 1047];
                 notas.forEach((freq, i) => {
                     const osc = ctx.createOscillator();
@@ -1292,7 +1290,6 @@
                 if (navigator.vibrate) navigator.vibrate([50, 50, 50, 50, 100]);
                 
             } else if (tipo === 'error') {
-                // 🎵 Sonido de ERROR - Dos tonos graves
                 const notas = [400, 300];
                 notas.forEach((freq, i) => {
                     const osc = ctx.createOscillator();
@@ -1310,7 +1307,6 @@
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 
             } else if (tipo === 'beep') {
-                // 🔔 Beep simple
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain);
@@ -1323,10 +1319,6 @@
                 osc.stop(ctx.currentTime + 0.15);
             }
         }
-
-        // ============================================================
-        // ACTIVAR AUDIO AL HACER CLIC (PARA IPHONE)
-        // ============================================================
 
         // Activar audio con el primer clic
         document.addEventListener('click', function activarAudioPorClic() {
@@ -1360,7 +1352,7 @@
         }
 
         // ============================================================
-        // VERIFICAR ESCANEO ACTIVADO
+        // VERIFICAR ESCANEO ACTIVADO - Y OCULTAR BOTÓN SI ESTÁ DESACTIVADO
         // ============================================================
         async function verificarEscaneoActivado() {
             if (!TIENDA_ID) return false;
@@ -1372,6 +1364,20 @@
             } catch(e) {
                 console.error('Error al verificar escaneo:', e);
                 return false;
+            }
+        }
+
+        // ===== FUNCIÓN PARA OCULTAR/MOSTRAR EL BOTÓN QR =====
+        function actualizarVisibilidadBotonQR(activado) {
+            const btn = document.getElementById('btnAbrirQR');
+            if (!btn) return;
+            
+            if (activado) {
+                btn.classList.remove('oculto');
+                console.log('📷 Botón QR VISIBLE');
+            } else {
+                btn.classList.add('oculto');
+                console.log('📷 Botón QR OCULTO (desactivado por administrador)');
             }
         }
 
@@ -1468,7 +1474,6 @@
             
             const mensaje = document.getElementById('qrMensaje');
             
-            // Buscar por: codigoQR, id, barcode
             const producto = productos.find(p => 
                 p.codigoQR === decodedText || 
                 p.id === decodedText ||
@@ -1476,11 +1481,9 @@
                 (p.codigoQR && p.codigoQR.toString() === decodedText.toString())
             );
             
-            // 🔔 SONIDO DE ESCANEO
             reproducirSonido('beep');
             
             if (producto) {
-                // ✅ ÉXITO
                 setTimeout(() => {
                     reproducirSonido('success');
                 }, 150);
@@ -1500,7 +1503,6 @@
                 actualizarCarrito();
                 
             } else {
-                // ❌ ERROR
                 setTimeout(() => {
                     reproducirSonido('error');
                 }, 150);
@@ -1676,7 +1678,7 @@
         }
 
         // ============================================================
-        // CARGAR TIENDA
+        // CARGAR TIENDA - CON ACTUALIZACIÓN DEL BOTÓN QR
         // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) return;
@@ -1742,6 +1744,9 @@
                     tiendaAbierta = tiendaData.abierta !== false;
                     escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
                     
+                    // ===== OCULTAR O MOSTRAR EL BOTÓN QR SEGÚN EL ESTADO =====
+                    actualizarVisibilidadBotonQR(escaneoActivado);
+                    
                     const estadoEl = document.getElementById('estadoHeader');
                     const overlayEl = document.getElementById('tiendaCerradaOverlay');
                     if (tiendaAbierta) {
@@ -1756,6 +1761,7 @@
                     
                     console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
                     console.log('📷 Escaneo activado:', escaneoActivado);
+                    console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE' : 'OCULTO');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
@@ -2505,7 +2511,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('📷 Escanea códigos QR para agregar productos al carrito');
+        console.log('📷 El botón QR se oculta automáticamente si el administrador lo desactiva');
         console.log('🔊 Los sonidos se activan al escanear (Android e iPhone)');
         console.log('💳 Métodos de pago: Nequi, Daviplata, Efectivo');
         console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
