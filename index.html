@@ -139,7 +139,7 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 10px;
-            padding-bottom: 180px;
+            padding-bottom: 200px;
         }
 
         .categorias-wrapper {
@@ -477,6 +477,9 @@
             box-shadow: none;
         }
 
+        /* ============================================================
+           FORMULARIO - CON MÉTODOS DE PAGO
+           ============================================================ */
         .form-datos {
             margin-top: 8px;
             padding-top: 8px;
@@ -512,6 +515,72 @@
             outline: none;
             border-color: #FFD600;
             transition: border-color 0.3s ease;
+        }
+        .form-datos input.required {
+            border-left: 3px solid var(--yellow);
+        }
+        .form-datos input.error {
+            border-color: var(--red) !important;
+            animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .form-datos .required-asterisk {
+            color: var(--red);
+            font-weight: 700;
+        }
+        .form-datos .helper-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            padding-left: 2px;
+        }
+
+        /* ===== MÉTODOS DE PAGO ===== */
+        .metodo-pago-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--surface3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .metodo-pago-option:hover {
+            background: var(--surface2);
+        }
+        .metodo-pago-option.seleccionado {
+            border-color: var(--yellow);
+            background: var(--yellow-bg);
+        }
+        .metodo-pago-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--yellow);
+        }
+        .metodo-pago-option .icono {
+            font-size: 20px;
+        }
+        .metodo-pago-option .nombre {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .metodo-pago-option .desc {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .pago-instrucciones {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding: 6px 10px;
+            background: var(--surface3);
+            border-radius: 6px;
         }
 
         .toast-container {
@@ -746,30 +815,6 @@
             margin-bottom: 6px;
         }
 
-        /* ===== CAMPOS OBLIGATORIOS ===== */
-        .form-datos input.required {
-            border-left: 3px solid var(--yellow);
-        }
-        .form-datos input.error {
-            border-color: var(--red) !important;
-            animation: shake 0.3s ease;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        .form-datos .required-asterisk {
-            color: var(--red);
-            font-weight: 700;
-        }
-        .form-datos .helper-text {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 2px;
-            padding-left: 2px;
-        }
-
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -785,7 +830,7 @@
             .producto-acciones .btn-restar { width: 32px; height: 32px; font-size: 16px; }
             .producto-acciones .btn-sumar { width: 32px; height: 32px; font-size: 16px; }
             .producto-acciones .cantidad { font-size: 16px; min-width: 28px; }
-            .container { padding: 8px; padding-bottom: 170px; }
+            .container { padding: 8px; padding-bottom: 200px; }
             .carrito-flotante { padding: 10px 12px; border-radius: 12px 12px 0 0; }
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
             .categoria-tab .tab-icono { font-size: 11px; }
@@ -801,6 +846,13 @@
             }
             .modal-producto .modal-precio {
                 font-size: 18px;
+            }
+            .metodo-pago-option {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+            .metodo-pago-option .icono {
+                font-size: 16px;
             }
         }
     </style>
@@ -871,7 +923,9 @@
         </div>
     </div>
 
-    <!-- CARRITO FLOTANTE -->
+    <!-- ============================================================
+    CARRITO FLOTANTE - CON MÉTODOS DE PAGO
+    ============================================================ -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -883,7 +937,9 @@
             </div>
         </div>
         
-        <!-- FORMULARIO CON CAMPOS OBLIGATORIOS -->
+        <!-- ============================================================
+        FORMULARIO DE DATOS + MÉTODOS DE PAGO
+        ============================================================ -->
         <div class="form-datos" id="formDatos">
             <span class="label-form">👤 Datos de entrega <span class="required-asterisk">*</span></span>
             <input type="text" id="clienteNombre" placeholder="Tu nombre completo *" class="required">
@@ -891,6 +947,41 @@
             <input type="text" id="clienteDireccion" placeholder="Dirección de entrega *" class="required">
             <input type="text" id="clienteBarrio" placeholder="Barrio *" class="required">
             <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
+            
+            <!-- ✅ SECCIÓN MÉTODO DE PAGO -->
+            <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+                <span class="label-form">💳 Método de pago</span>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">
+                    <label class="metodo-pago-option seleccionado" onclick="seleccionarPago('nequi', this)">
+                        <input type="radio" name="metodoPago" value="nequi" checked style="display:none;">
+                        <span class="icono">🟢</span>
+                        <div>
+                            <div class="nombre">Nequi</div>
+                            <div class="desc">Billetera</div>
+                        </div>
+                    </label>
+                    <label class="metodo-pago-option" onclick="seleccionarPago('daviplata', this)">
+                        <input type="radio" name="metodoPago" value="daviplata" style="display:none;">
+                        <span class="icono">🔵</span>
+                        <div>
+                            <div class="nombre">Daviplata</div>
+                            <div class="desc">Billetera</div>
+                        </div>
+                    </label>
+                    <label class="metodo-pago-option" onclick="seleccionarPago('efectivo', this)">
+                        <input type="radio" name="metodoPago" value="efectivo" style="display:none;">
+                        <span class="icono">💵</span>
+                        <div>
+                            <div class="nombre">Efectivo</div>
+                            <div class="desc">Contra entrega</div>
+                        </div>
+                    </label>
+                </div>
+                <div id="pagoInstrucciones" class="pago-instrucciones">
+                    💡 Pagas con Nequi al número que te indicaremos por WhatsApp
+                </div>
+            </div>
+            
             <div class="helper-text">
                 <span class="required-asterisk">*</span> Campos obligatorios
             </div>
@@ -941,17 +1032,27 @@
         let formularioVisible = false;
 
         // ============================================================
-        // FUNCIÓN PARA VERIFICAR CATEGORÍA AGOTADA
+        // SELECCIONAR MÉTODO DE PAGO
         // ============================================================
-        function categoriaEstaAgotada(categoria) {
-            if (!tiendaData.categoriasAgotadas) return false;
-            return tiendaData.categoriasAgotadas.some(cat => 
-                cat.toLowerCase().trim() === categoria.toLowerCase().trim()
-            );
+        function seleccionarPago(metodo, el) {
+            document.querySelectorAll('.metodo-pago-option').forEach(opt => {
+                opt.classList.remove('seleccionado');
+            });
+            el.classList.add('seleccionado');
+            document.querySelector(`input[name="metodoPago"][value="${metodo}"]`).checked = true;
+            
+            const instrucciones = document.getElementById('pagoInstrucciones');
+            if (metodo === 'nequi') {
+                instrucciones.innerHTML = '💡 Pagas con Nequi al número que te indicaremos por WhatsApp. Envía el comprobante.';
+            } else if (metodo === 'daviplata') {
+                instrucciones.innerHTML = '💡 Pagas con Daviplata al número que te indicaremos por WhatsApp. Envía el comprobante.';
+            } else {
+                instrucciones.innerHTML = '💵 Pagas en efectivo al momento de la entrega.';
+            }
         }
 
         // ============================================================
-        // FUNCIONES DE COLOR
+        // FUNCIONES DE COLOR (getColorBrightness, getDominantColor, etc.)
         // ============================================================
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
@@ -1180,6 +1281,8 @@
                     }
                     
                     console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
+                    console.log('💳 Nequi:', tiendaData.nequi || 'No configurado');
+                    console.log('💳 Daviplata:', tiendaData.daviplata || 'No configurado');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
@@ -1192,6 +1295,13 @@
         function formatearDescripcion(texto) {
             if (!texto) return '';
             return texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        function categoriaEstaAgotada(categoria) {
+            if (!tiendaData.categoriasAgotadas) return false;
+            return tiendaData.categoriasAgotadas.some(cat => 
+                cat.toLowerCase().trim() === categoria.toLowerCase().trim()
+            );
         }
 
         // ============================================================
@@ -1548,7 +1658,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON VALIDACIÓN OBLIGATORIA
+        // ENVIAR PEDIDO CON MÉTODO DE PAGO
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -1566,9 +1676,7 @@
             const barrio = document.getElementById('clienteBarrio').value.trim();
             const observaciones = document.getElementById('clienteObservaciones').value.trim();
 
-            // ============================================================
-            // ✅ VALIDACIÓN OBLIGATORIA DE CAMPOS
-            // ============================================================
+            // ✅ VALIDACIÓN OBLIGATORIA
             if (!nombre) {
                 mostrarToast('⚠️ Por favor ingresa tu NOMBRE', 'error');
                 const el = document.getElementById('clienteNombre');
@@ -1577,7 +1685,6 @@
                 setTimeout(() => el.classList.remove('error'), 3000);
                 return;
             }
-            
             if (!telefono) {
                 mostrarToast('⚠️ Por favor ingresa tu TELÉFONO', 'error');
                 const el = document.getElementById('clienteTelefono');
@@ -1586,7 +1693,6 @@
                 setTimeout(() => el.classList.remove('error'), 3000);
                 return;
             }
-            
             if (!direccion) {
                 mostrarToast('⚠️ Por favor ingresa tu DIRECCIÓN', 'error');
                 const el = document.getElementById('clienteDireccion');
@@ -1595,7 +1701,6 @@
                 setTimeout(() => el.classList.remove('error'), 3000);
                 return;
             }
-            
             if (!barrio) {
                 mostrarToast('⚠️ Por favor ingresa tu BARRIO', 'error');
                 const el = document.getElementById('clienteBarrio');
@@ -1605,9 +1710,9 @@
                 return;
             }
 
-            // ============================================================
-            // CONTINUAR CON EL ENVÍO
-            // ============================================================
+            // ✅ OBTENER MÉTODO DE PAGO
+            const metodoPago = document.querySelector('input[name="metodoPago"]:checked')?.value || 'efectivo';
+
             const numeroPedido = generarNumeroPedido();
             const fecha = new Date();
             const fechaStr = fecha.toLocaleDateString('es-CO');
@@ -1653,11 +1758,10 @@
                 console.log('✅ Stock actualizado correctamente');
             } catch (error) {
                 console.error('❌ Error al actualizar stock:', error);
-                mostrarToast('⚠️ No se pudo actualizar el stock, pero el pedido se envió', 'warn', 3000);
             }
 
             // ============================================================
-            // MENSAJE WHATSAPP
+            // MENSAJE WHATSAPP CON INSTRUCCIONES DE PAGO
             // ============================================================
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
@@ -1671,6 +1775,7 @@
             const emojiProductos = '🧾';
             const emojiProducto = '🍜';
             const emojiTotal = '💰';
+            const emojiPago = '💳';
 
             let mensajeWhatsApp = `${emojiTienda} *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
             mensajeWhatsApp += `${emojiPedido} *NUEVO PEDIDO ${numeroPedido}*\n\n`;
@@ -1681,6 +1786,7 @@
             mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion}\n\n`;
             mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
             if (observaciones) mensajeWhatsApp += `${emojiObservaciones} *Observaciones:*\n${observaciones}\n\n`;
+            mensajeWhatsApp += `${emojiPago} *Método de pago:* ${metodoPago.toUpperCase()}\n\n`;
             mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
             
             items.forEach(item => {
@@ -1689,8 +1795,25 @@
             
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
+            // ✅ INSTRUCCIONES DE PAGO SEGÚN MÉTODO
+            if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+                const nombreMetodo = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
+                const numeroPago = metodoPago === 'nequi' 
+                    ? (tiendaData.nequi || '3169934516') 
+                    : (tiendaData.daviplata || '3169934516');
+                
+                mensajeWhatsApp += `\n\n📲 *INSTRUCCIONES DE PAGO*`;
+                mensajeWhatsApp += `\n1. Abre tu app de ${nombreMetodo}`;
+                mensajeWhatsApp += `\n2. Transfiere a este número: *${numeroPago}*`;
+                mensajeWhatsApp += `\n3. Usa la referencia: *${numeroPedido}*`;
+                mensajeWhatsApp += `\n4. Envía el comprobante de pago por este mismo chat`;
+                mensajeWhatsApp += `\n\n⏳ El pedido se confirmará al recibir el comprobante.`;
+            } else {
+                mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
+            }
+
             // ============================================================
-            // GUARDAR PEDIDO
+            // GUARDAR PEDIDO EN FIRESTORE CON ESTADO DE PAGO
             // ============================================================
             const pedidoData = {
                 numeroPedido: numeroPedido,
@@ -1709,6 +1832,8 @@
                 })),
                 total: total,
                 estado: 'Pendiente',
+                metodoPago: metodoPago,
+                estadoPago: 'pendiente',
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 fuente: 'whatsapp',
                 timestamp: Date.now()
@@ -1919,9 +2044,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('🖼️ Haz clic en la imagen o nombre del producto para verlo ampliado');
-        console.log('📸 Si el producto tiene imagen secundaria (img2), podrás ver ambas');
-        console.log('📦 El stock se actualiza automáticamente al hacer un pedido');
+        console.log('💳 Métodos de pago: Nequi, Daviplata, Efectivo');
         console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
     </script>
 </body>
