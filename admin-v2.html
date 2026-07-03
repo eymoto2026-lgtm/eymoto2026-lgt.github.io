@@ -215,6 +215,18 @@ header .spacer{flex:1}
 .btn-remove{background:transparent;color:var(--text-muted);border:1px solid var(--border);font-size:11px;padding:5px}
 .btn-remove:hover{color:var(--red);border-color:var(--red)}
 
+/* ===== BOTONES DE PAGO ===== */
+.btn-pago-confirmar{background:var(--green-bg);color:var(--green);border:1px solid var(--green);font-size:11px;padding:6px;border-radius:6px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-pago-confirmar:hover{background:var(--green);color:#000;}
+.btn-pago-rechazar{background:var(--red-bg);color:var(--red);border:1px solid var(--red);font-size:11px;padding:6px;border-radius:6px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-pago-rechazar:hover{background:var(--red);color:#fff;}
+
+/* BADGE PAGO */
+.badge-pago{display:inline-block;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;margin-top:4px;}
+.badge-pago.pagado{background:var(--green-bg);color:var(--green);}
+.badge-pago.pendiente{background:var(--yellow-bg);color:var(--yellow);}
+.badge-pago.rechazado{background:var(--red-bg);color:var(--red);}
+
 .pedido-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .pedido-header h3{font-size:17px;font-weight:700}
 .pedido-header .spacer{flex:1}
@@ -326,127 +338,37 @@ header .spacer{flex:1}
 .notif-total{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
 .notif-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;margin-left:6px}
 
-/* ===== INVENTARIO - VERSIÓN COMPACTA ===== */
-.inventario-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* ===== INVENTARIO ===== */
+.inventario-container{display:flex;flex-direction:column;gap:4px}
+.inventario-item{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  background:var(--surface2);border-radius:8px;border:1px solid var(--border);
+  flex-wrap:wrap;
 }
-.inventario-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--surface2);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  flex-wrap: wrap;
+.inventario-item .info{flex:2;min-width:100px}
+.inventario-item .info .nombre{font-size:13px;font-weight:600;color:#fff}
+.inventario-item .info .categoria{font-size:10px;color:var(--text-muted)}
+.inventario-item .stock-control{display:flex;align-items:center;gap:4px}
+.inv-cantidad-input{
+  width:50px;padding:2px 4px;background:var(--surface3);border:1px solid var(--border2);
+  border-radius:4px;color:#fff;font-size:13px;text-align:center;font-weight:600;
 }
-.inventario-item .info {
-  flex: 2;
-  min-width: 100px;
-}
-.inventario-item .info .nombre {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-.inventario-item .info .categoria {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-.inventario-item .stock-control {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.inv-cantidad-input {
-  width: 50px;
-  padding: 2px 4px;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: 4px;
-  color: #fff;
-  font-size: 13px;
-  text-align: center;
-  font-weight: 600;
-}
-.inv-cantidad-input:focus {
-  border-color: var(--yellow);
-  outline: none;
-}
-.inv-cantidad-input::-webkit-inner-spin-button,
-.inv-cantidad-input::-webkit-outer-spin-button {
-  opacity: 1;
-}
-.inv-btn-mini {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.inv-btn-mini:hover {
-  transform: scale(1.05);
-}
-.inv-btn-mini:active {
-  transform: scale(0.9);
-}
-.inv-btn-mini.restar {
-  background: var(--red-bg);
-  color: var(--red);
-  border-color: var(--red);
-}
-.inv-btn-mini.sumar {
-  background: var(--green-bg);
-  color: var(--green);
-  border-color: var(--green);
-}
-.inv-btn-mini.reset {
-  background: var(--yellow-bg);
-  color: var(--yellow);
-  border-color: var(--yellow);
-  font-size: 10px;
-}
-.inv-btn-actualizar {
-  padding: 2px 10px;
-  font-size: 11px;
-  border-radius: 4px;
-  background: var(--yellow);
-  color: #1a1a2e;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  height: 24px;
-  display: flex;
-  align-items: center;
-}
-.inv-btn-actualizar:hover {
-  background: var(--yellow-dim);
-}
-.inv-btn-actualizar:active {
-  transform: scale(0.95);
-}
-.inv-estado {
-  font-size: 10px;
-  font-weight: 600;
-  min-width: 65px;
-  text-align: right;
-}
-.inv-estado .icono {
-  margin-right: 2px;
-}
-.inv-estado.critico { color: var(--red); }
-.inv-estado.bajo { color: var(--yellow); }
-.inv-estado.normal { color: var(--green); }
+.inv-cantidad-input:focus{border-color:var(--yellow);outline:none}
+.inv-cantidad-input::-webkit-inner-spin-button,.inv-cantidad-input::-webkit-outer-spin-button{opacity:1}
+.inv-btn-mini{width:24px;height:24px;padding:0;border-radius:4px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid transparent;cursor:pointer;transition:all 0.15s;}
+.inv-btn-mini:hover{transform:scale(1.05)}
+.inv-btn-mini:active{transform:scale(0.9)}
+.inv-btn-mini.restar{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.inv-btn-mini.sumar{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.inv-btn-mini.reset{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow);font-size:10px}
+.inv-btn-actualizar{padding:2px 10px;font-size:11px;border-radius:4px;background:var(--yellow);color:#1a1a2e;border:none;font-weight:600;cursor:pointer;transition:background 0.15s;height:24px;display:flex;align-items:center;}
+.inv-btn-actualizar:hover{background:var(--yellow-dim)}
+.inv-btn-actualizar:active{transform:scale(0.95)}
+.inv-estado{font-size:10px;font-weight:600;min-width:65px;text-align:right}
+.inv-estado .icono{margin-right:2px}
+.inv-estado.critico{color:var(--red)}
+.inv-estado.bajo{color:var(--yellow)}
+.inv-estado.normal{color:var(--green)}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -538,6 +460,17 @@ header .spacer{flex:1}
           <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
           <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
           <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
+          <!-- ✅ NÚMEROS PARA PAGOS -->
+          <div class="form-group">
+            <label>📱 Número Nequi (para pagos)</label>
+            <input id="nequi" placeholder="3169934516">
+            <small style="color:var(--text-muted);font-size:11px;">Número donde los clientes harán los pagos por Nequi</small>
+          </div>
+          <div class="form-group">
+            <label>📱 Número Daviplata (para pagos)</label>
+            <input id="daviplata" placeholder="3169934516">
+            <small style="color:var(--text-muted);font-size:11px;">Número donde los clientes harán los pagos por Daviplata</small>
+          </div>
           <div class="form-group">
             <label>Categorías agotadas (separadas por coma)</label>
             <input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas">
@@ -878,7 +811,7 @@ async function inicializar() {
 }
 
 // ============================================================
-// TIENDAS
+// TIENDAS (CON NÚMEROS DE PAGO)
 // ============================================================
 async function cargarTiendas() {
   ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
@@ -908,6 +841,10 @@ async function cargarTiendas() {
       const catsAgotadas = t.categoriasAgotadas && t.categoriasAgotadas.length > 0
         ? `<div style="font-size:10px;color:var(--red);margin-top:2px;">⛔ Categorías agotadas: ${t.categoriasAgotadas.join(', ')}</div>`
         : '';
+      // ✅ Mostrar números de pago
+      const pagosInfo = t.nequi || t.daviplata 
+        ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">💳 ${t.nequi ? '🟢 Nequi: '+t.nequi : ''} ${t.daviplata ? '🔵 Daviplata: '+t.daviplata : ''}</div>`
+        : '';
       div.innerHTML = `
         <div class="tienda-logo">
           ${t.logo ? `<img src="${escHtml(t.logo)}" alt="${escHtml(t.nombre||'')}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
@@ -915,6 +852,7 @@ async function cargarTiendas() {
         <div class="tienda-info">
           <h4>${escHtml(t.nombre || 'Sin nombre')}</h4>
           <p class="meta">📱 ${escHtml(t.whatsapp || '-')}</p>
+          ${pagosInfo}
           <a class="link" href="${url}" target="_blank">🔗 Ver menú digital</a>
           <br><span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? 'Abierta' : 'Cerrada'}</span>
           ${catsAgotadas}
@@ -949,6 +887,8 @@ async function guardarTienda() {
   const wa = document.getElementById('whatsapp').value.trim();
   const logo = document.getElementById('logoTienda').value.trim();
   const banner = document.getElementById('bannerTienda').value.trim();
+  const nequi = document.getElementById('nequi').value.trim();
+  const daviplata = document.getElementById('daviplata').value.trim();
   const categoriasAgotadas = document.getElementById('categoriasAgotadas').value
     .split(',')
     .map(c => c.trim())
@@ -956,7 +896,7 @@ async function guardarTienda() {
 
   if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
 
-  const datos = { nombre, whatsapp: wa, logo, banner, categoriasAgotadas };
+  const datos = { nombre, whatsapp: wa, logo, banner, nequi, daviplata, categoriasAgotadas };
   try {
     if (id) {
       await db.collection('tiendas').doc(id).update(datos);
@@ -980,6 +920,8 @@ async function editarTienda(id) {
     document.getElementById('whatsapp').value = t.whatsapp || '';
     document.getElementById('logoTienda').value = t.logo || '';
     document.getElementById('bannerTienda').value = t.banner || '';
+    document.getElementById('nequi').value = t.nequi || '';
+    document.getElementById('daviplata').value = t.daviplata || '';
     document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
     document.getElementById('btnCancelTienda').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[1];
@@ -988,7 +930,7 @@ async function editarTienda(id) {
 }
 
 function cancelarEdTienda() {
-  ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda','categoriasAgotadas']
+  ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda','nequi','daviplata','categoriasAgotadas']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelTienda').classList.add('hidden');
 }
@@ -1107,7 +1049,7 @@ async function eliminarProducto(tid, pid) {
 }
 
 // ============================================================
-// INVENTARIO - VERSIÓN COMPACTA
+// INVENTARIO
 // ============================================================
 async function cargarInventario() {
   const tid = document.getElementById('inventarioTienda').value;
@@ -1369,7 +1311,7 @@ async function toggleEstado(tid) {
 }
 
 // ============================================================
-// PEDIDOS
+// PEDIDOS - CON FUNCIONES DE PAGO
 // ============================================================
 function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
@@ -1395,7 +1337,7 @@ function mostrarPedidosPendientesGlobal() {
     const pedidos = todosLosPedidos[tiendaId] || [];
     pedidos.forEach(pedido => {
       const data = pedido.data;
-      if (data.estado === 'Pendiente') {
+      if (data.estado === 'Pendiente' || data.estado === 'En Cocina' || data.estado === 'En Camino' || data.estado === 'Entregado') {
         renderPedidoGlobal(pedido.doc, tiendaId, counts);
       }
     });
@@ -1433,6 +1375,8 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
 
   const num = p.numeroPedido || '#--';
   const cliente = p.cliente || {};
+  const metodoPago = p.metodoPago || 'efectivo';
+  const estadoPago = p.estadoPago || 'pendiente';
 
   let fechaStr = '--';
   let horaStr = '--';
@@ -1447,6 +1391,25 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     p.items.forEach(it => {
       itemsHtml += `<div class="item"><span>${escHtml(it.nombre)} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
     });
+  }
+
+  // ✅ BADGE DE PAGO
+  let badgePago = '';
+  if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+    const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
+    const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
+    badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
+  } else {
+    badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
+  }
+
+  // ✅ BOTONES DE PAGO (solo si es Nequi/Daviplata y está pendiente)
+  let btnPago = '';
+  if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
+    btnPago = `
+      <button class="btn-pago-confirmar" onclick="confirmarPago('${tiendaId}','${pid}')">✅ Confirmar pago</button>
+      <button class="btn-pago-rechazar" onclick="rechazarPago('${tiendaId}','${pid}')">✕ Rechazar pago</button>
+    `;
   }
 
   let acciones = '';
@@ -1466,7 +1429,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
   }
 
   const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
-  
+
   const card = document.createElement('div');
   card.className = `pedido-card ${cfg.ring}`;
   card.innerHTML = `
@@ -1475,6 +1438,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
       📅 ${fechaStr} ⏰ ${horaStr}
     </div>
+    ${badgePago}
     <div class="pedido-cliente">
       <div><span class="label">👤 Cliente:</span> ${escHtml(cliente.nombre || 'Desconocido')}</div>
       ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${escHtml(cliente.telefono)}</div>` : ''}
@@ -1490,6 +1454,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
         <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
       </div>
     </div>
+    ${btnPago}
     <div class="accion-btns">${acciones}</div>
   `;
   colEl.appendChild(card);
@@ -1531,8 +1496,10 @@ function iniciarEscuchaGlobal() {
                 startAlarm(nombreTienda, cliente);
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
+                const metodoPago = data.metodoPago || 'efectivo';
+                const metodoTexto = metodoPago === 'nequi' ? '🟢 Nequi' : (metodoPago === 'daviplata' ? '🔵 Daviplata' : '💵 Efectivo');
                 toast(
-                  `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente}`,
+                  `🛵 Nuevo pedido en <span class="toast-tienda">${nombreTienda}</span> de ${cliente} (${metodoTexto})`,
                   'new', 7000,
                   function() {
                     const selector = document.getElementById('filtroTienda');
@@ -1650,6 +1617,189 @@ function escucharPedidosDeTienda(tiendaId) {
     });
 }
 
+function renderPedido(doc, tiendaId, counts) {
+  const p = doc.data();
+  const pid = doc.id;
+  const estado = p.estado || 'Pendiente';
+  if (counts[estado] !== undefined) counts[estado]++;
+
+  const cfg = ESTADO_MAP[estado];
+  if (!cfg) return;
+  const colEl = document.getElementById(cfg.col);
+  if (!colEl) return;
+
+  const num = p.numeroPedido || '#--';
+  const cliente = p.cliente || {};
+  const metodoPago = p.metodoPago || 'efectivo';
+  const estadoPago = p.estadoPago || 'pendiente';
+
+  let fechaStr = '--';
+  let horaStr = '--';
+  if (p.fecha) {
+    const d = new Date(p.fecha);
+    fechaStr = d.toLocaleDateString('es-CO');
+    horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  let itemsHtml = '';
+  if (p.items && p.items.length) {
+    p.items.forEach(it => {
+      itemsHtml += `<div class="item"><span>${escHtml(it.nombre)} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
+    });
+  }
+
+  // ✅ BADGE DE PAGO
+  let badgePago = '';
+  if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+    const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
+    const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
+    badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
+  } else {
+    badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
+  }
+
+  // ✅ BOTONES DE PAGO
+  let btnPago = '';
+  if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
+    btnPago = `
+      <button class="btn-pago-confirmar" onclick="confirmarPago('${tiendaId}','${pid}')">✅ Confirmar pago</button>
+      <button class="btn-pago-rechazar" onclick="rechazarPago('${tiendaId}','${pid}')">✕ Rechazar pago</button>
+    `;
+  }
+
+  let acciones = '';
+  if (estado === 'Pendiente') {
+    acciones += `<button class="btn-cook" onclick="cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
+    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+  }
+  if (estado === 'En Cocina') {
+    acciones += `<button class="btn-go" onclick="cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
+    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+  }
+  if (estado === 'En Camino') {
+    acciones += `<button class="btn-done" onclick="cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>`;
+  }
+  if (estado === 'Entregado' || estado === 'Cancelado') {
+    acciones += `<button class="btn-remove" onclick="eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
+  }
+
+  const esNuevo = estado === 'Pendiente' && !esInicial;
+  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
+
+  const card = document.createElement('div');
+  card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
+  card.innerHTML = `
+    <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
+    <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+      📅 ${fechaStr} ⏰ ${horaStr}
+    </div>
+    ${badgePago}
+    <div class="pedido-cliente">
+      <div><span class="label">👤 Cliente:</span> ${escHtml(cliente.nombre || 'Desconocido')}</div>
+      ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${escHtml(cliente.telefono)}</div>` : ''}
+      ${cliente.direccion ? `<div><span class="label">📍 Dirección:</span> ${escHtml(cliente.direccion)}</div>` : ''}
+      ${cliente.barrio ? `<div><span class="label">🏘️ Barrio:</span> ${escHtml(cliente.barrio)}</div>` : ''}
+      ${cliente.observaciones ? `<div><span class="label">📝 Observaciones:</span> ${escHtml(cliente.observaciones)}</div>` : ''}
+    </div>
+    <div class="pedido-items">
+      <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
+      ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
+      <div class="pedido-total">
+        <span>TOTAL</span>
+        <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
+      </div>
+    </div>
+    ${btnPago}
+    <div class="accion-btns">${acciones}</div>
+  `;
+  colEl.appendChild(card);
+}
+
+// ============================================================
+// ✅ CONFIRMAR PAGO MANUALMENTE
+// ============================================================
+async function confirmarPago(tiendaId, pedidoId) {
+  if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
+  try {
+    await db.collection('tiendas').doc(tiendaId)
+      .collection('pedidos').doc(pedidoId)
+      .update({
+        estadoPago: 'pagado',
+        fechaPago: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    toast('✅ Pago confirmado. El pedido está listo para preparar.', 'success');
+    if (tiendaSeleccionada) {
+      escucharPedidosDeTienda(tiendaSeleccionada);
+    } else {
+      mostrarPedidosPendientesGlobal();
+    }
+  } catch(e) {
+    toast('Error al confirmar pago: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// ✅ RECHAZAR PAGO
+// ============================================================
+async function rechazarPago(tiendaId, pedidoId) {
+  if (!confirm('¿Rechazar el pago de este pedido? El cliente deberá realizar el pago nuevamente.')) return;
+  try {
+    await db.collection('tiendas').doc(tiendaId)
+      .collection('pedidos').doc(pedidoId)
+      .update({
+        estadoPago: 'rechazado',
+        estado: 'Cancelado'
+      });
+    toast('⛔ Pago rechazado. El pedido fue cancelado.', 'error');
+    if (tiendaSeleccionada) {
+      escucharPedidosDeTienda(tiendaSeleccionada);
+    } else {
+      mostrarPedidosPendientesGlobal();
+    }
+  } catch(e) {
+    toast('Error al rechazar pago: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// CAMBIAR ESTADO
+// ============================================================
+async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
+  try {
+    stopAlarm();
+    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
+    toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
+    
+    if (nuevoEstado === 'En Cocina') {
+      const selector = document.getElementById('filtroTienda');
+      if (selector) {
+        selector.value = tiendaId;
+        cambiarTiendaSeleccionada();
+        const nombreTienda = tiendasCache[tiendaId] || 'la tienda';
+        toast(`📋 Ahora viendo pedidos de ${nombreTienda}`, 'info', 2500);
+      }
+    }
+  } catch(e) { 
+    toast('Error: ' + e.message, 'error'); 
+  }
+}
+
+// ============================================================
+// ELIMINAR PEDIDO
+// ============================================================
+async function eliminarPedido(tiendaId, pedidoId) {
+  if (!confirm('¿Remover este pedido?')) return;
+  try {
+    stopAlarm();
+    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
+    toast('Pedido removido.', 'info');
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// CONSTANTES
+// ============================================================
 const ESTADO_MAP = {
   'Pendiente': { col:'col-P', cnt:'cnt-P', ring:'r-pending' },
   'En Cocina': { col:'col-C', cnt:'cnt-C', ring:'r-cooking' },
@@ -1672,117 +1822,14 @@ function resetKanban() {
   });
 }
 
-function renderPedido(doc, tiendaId, counts) {
-  const p = doc.data();
-  const pid = doc.id;
-  const estado = p.estado || 'Pendiente';
-  if (counts[estado] !== undefined) counts[estado]++;
-
-  const cfg = ESTADO_MAP[estado];
-  if (!cfg) return;
-  const colEl = document.getElementById(cfg.col);
-  if (!colEl) return;
-
-  const num = p.numeroPedido || '#--';
-  const cliente = p.cliente || {};
-
-  let fechaStr = '--';
-  let horaStr = '--';
-  if (p.fecha) {
-    const d = new Date(p.fecha);
-    fechaStr = d.toLocaleDateString('es-CO');
-    horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
-  }
-
-  let itemsHtml = '';
-  if (p.items && p.items.length) {
-    p.items.forEach(it => {
-      itemsHtml += `<div class="item"><span>${escHtml(it.nombre)} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
-    });
-  }
-
-  let acciones = '';
-  if (estado === 'Pendiente') {
-    acciones += `<button class="btn-cook" onclick="cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
-    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-  }
-  if (estado === 'En Cocina') {
-    acciones += `<button class="btn-go" onclick="cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
-    acciones += `<button class="btn-cancel" onclick="cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-  }
-  if (estado === 'En Camino') {
-    acciones += `<button class="btn-done" onclick="cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>`;
-  }
-  if (estado === 'Entregado' || estado === 'Cancelado') {
-    acciones += `<button class="btn-remove" onclick="eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
-  }
-
-  const esNuevo = estado === 'Pendiente' && !esInicial;
-  
-  const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
-
-  const card = document.createElement('div');
-  card.className = `pedido-card ${cfg.ring}${esNuevo ? ' nuevo-pedido' : ''}`;
-  card.innerHTML = `
-    <div class="pedido-tienda">🏪 ${escHtml(nombreTienda)}</div>
-    <div class="pedido-titulo">🛵 NUEVO PEDIDO ${escHtml(num)}</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
-      📅 ${fechaStr} ⏰ ${horaStr}
-    </div>
-    <div class="pedido-cliente">
-      <div><span class="label">👤 Cliente:</span> ${escHtml(cliente.nombre || 'Desconocido')}</div>
-      ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${escHtml(cliente.telefono)}</div>` : ''}
-      ${cliente.direccion ? `<div><span class="label">📍 Dirección:</span> ${escHtml(cliente.direccion)}</div>` : ''}
-      ${cliente.barrio ? `<div><span class="label">🏘️ Barrio:</span> ${escHtml(cliente.barrio)}</div>` : ''}
-      ${cliente.observaciones ? `<div><span class="label">📝 Observaciones:</span> ${escHtml(cliente.observaciones)}</div>` : ''}
-    </div>
-    <div class="pedido-items">
-      <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
-      ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-      <div class="pedido-total">
-        <span>TOTAL</span>
-        <span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span>
-      </div>
-    </div>
-    <div class="accion-btns">${acciones}</div>
-  `;
-  colEl.appendChild(card);
-}
-
-async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
-  try {
-    stopAlarm();
-    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
-    toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
-    
-    if (nuevoEstado === 'En Cocina') {
-      const selector = document.getElementById('filtroTienda');
-      if (selector) {
-        selector.value = tiendaId;
-        cambiarTiendaSeleccionada();
-        const nombreTienda = tiendasCache[tiendaId] || 'la tienda';
-        toast(`📋 Ahora viendo pedidos de ${nombreTienda}`, 'info', 2500);
-      }
-    }
-  } catch(e) { 
-    toast('Error: ' + e.message, 'error'); 
-  }
-}
-
-async function eliminarPedido(tiendaId, pedidoId) {
-  if (!confirm('¿Remover este pedido?')) return;
-  try {
-    stopAlarm();
-    await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
-    toast('Pedido removido.', 'info');
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ============================================================
+// INICIALIZAR
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('filtroTienda');
   if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
@@ -1791,10 +1838,11 @@ document.addEventListener('DOMContentLoaded', () => {
 console.log('✅ Panel de administración cargado correctamente');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
 console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
-console.log('📌 En "Todas las tiendas" solo se ven pedidos PENDIENTES');
+console.log('📌 En "Todas las tiendas" solo se ven pedidos activos');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
 console.log('📦 Nueva sección de INVENTARIO compacta con campo numérico');
+console.log('💳 Los pedidos con Nequi/Daviplata tienen botones para confirmar/rechazar pago');
 </script>
 </body>
 </html>
