@@ -694,6 +694,7 @@
             padding: 10px;
             background: #f5f5f5;
             border-radius: 8px;
+            transition: all 0.3s ease;
         }
         .modal-qr .qr-mensaje .producto-nombre {
             font-weight: 700;
@@ -1204,6 +1205,139 @@
         let formularioVisible = false;
         let html5QrCode = null;
         let escaneandoQR = false;
+        let audioContextGlobal = null;
+
+        // ============================================================
+        // SISTEMA DE AUDIO UNIVERSAL (ANDROID + IPHONE)
+        // ============================================================
+
+        // Obtener el contexto de audio
+        function getAudioContext() {
+            if (!audioContextGlobal) {
+                try {
+                    audioContextGlobal = new (window.AudioContext || window.webkitAudioContext)();
+                } catch(e) {
+                    console.log('⚠️ Web Audio API no soportada');
+                    return null;
+                }
+            }
+            return audioContextGlobal;
+        }
+
+        // Activar audio (llamar en eventos de clic)
+        function activarAudio() {
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().then(() => {
+                    console.log('🔊 Audio activado');
+                }).catch(e => {
+                    console.log('⚠️ Error al activar audio:', e);
+                });
+            }
+        }
+
+        // Función principal de sonido
+        function reproducirSonido(tipo) {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) {
+                    // Fallback: usar vibración
+                    if (navigator.vibrate) {
+                        if (tipo === 'success') navigator.vibrate([50, 50, 50, 50, 100]);
+                        else if (tipo === 'error') navigator.vibrate([200, 100, 200]);
+                        else navigator.vibrate(50);
+                    }
+                    return;
+                }
+                
+                // Si está suspendido, intentar reanudar
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(() => {
+                        reproducirSonidoReal(ctx, tipo);
+                    }).catch(e => {});
+                    return;
+                }
+                
+                reproducirSonidoReal(ctx, tipo);
+                
+            } catch(e) {
+                console.log('🔇 Error en sonido:', e);
+                if (navigator.vibrate) {
+                    if (tipo === 'success') navigator.vibrate([50, 50, 50, 50, 100]);
+                    else if (tipo === 'error') navigator.vibrate([200, 100, 200]);
+                    else navigator.vibrate(50);
+                }
+            }
+        }
+
+        function reproducirSonidoReal(ctx, tipo) {
+            if (!ctx) return;
+            
+            if (tipo === 'success') {
+                // 🎵 Sonido de ÉXITO - Melodía ascendente
+                const notas = [523, 659, 784, 1047];
+                notas.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = i * 0.12;
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.25);
+                });
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50, 50, 100]);
+                
+            } else if (tipo === 'error') {
+                // 🎵 Sonido de ERROR - Dos tonos graves
+                const notas = [400, 300];
+                notas.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sawtooth';
+                    const t = i * 0.2;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.25);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.3);
+                });
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                
+            } else if (tipo === 'beep') {
+                // 🔔 Beep simple
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            }
+        }
+
+        // ============================================================
+        // ACTIVAR AUDIO AL HACER CLIC (PARA IPHONE)
+        // ============================================================
+
+        // Activar audio con el primer clic
+        document.addEventListener('click', function activarAudioPorClic() {
+            activarAudio();
+            document.removeEventListener('click', activarAudioPorClic);
+        }, { once: true });
+
+        // También al hacer clic en el botón de escáner
+        document.querySelector('.btn-lector-qr')?.addEventListener('click', function() {
+            activarAudio();
+        });
 
         // ============================================================
         // SELECCIONAR MÉTODO DE PAGO
@@ -1234,7 +1368,7 @@
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
                 if (!doc.exists) return false;
                 const t = doc.data();
-                return t.barcodeScanningEnabled !== false; // true por defecto
+                return t.barcodeScanningEnabled !== false;
             } catch(e) {
                 console.error('Error al verificar escaneo:', e);
                 return false;
@@ -1242,18 +1376,34 @@
         }
 
         // ============================================================
-        // LECTOR QR - MODIFICADO PARA VERIFICAR ESTADO
+        // LECTOR QR - CON VERIFICACIÓN Y SONIDOS
         // ============================================================
         async function abrirModalQR() {
             // Verificar si el escaneo está activado
             const escaneoActivado = await verificarEscaneoActivado();
+            
             if (!escaneoActivado) {
-                mostrarToast('⛔ El escaneo de códigos está desactivado en esta tienda', 'error', 3000);
+                reproducirSonido('error');
+                mostrarToast('⛔ El escaneo de códigos está DESACTIVADO en esta tienda', 'error', 3500);
                 return;
             }
             
+            if (!tiendaAbierta) {
+                reproducirSonido('error');
+                mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error', 3000);
+                return;
+            }
+            
+            reproducirSonido('beep');
+            
             document.getElementById('modalQR').classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            const mensaje = document.getElementById('qrMensaje');
+            mensaje.innerHTML = '📷 Acerca la cámara al código QR del producto';
+            mensaje.style.borderLeft = 'none';
+            mensaje.style.background = '#f5f5f5';
+            
             iniciarLectorQR();
         }
 
@@ -1310,48 +1460,61 @@
             }
         }
 
+        // ============================================================
+        // ESCANEAR PRODUCTO - CON SONIDOS
+        // ============================================================
         function onScanSuccess(decodedText, decodedResult) {
             console.log('📷 QR escaneado:', decodedText);
             
             const mensaje = document.getElementById('qrMensaje');
-            // Buscar por codigoQR, id, o barcode
+            
+            // Buscar por: codigoQR, id, barcode
             const producto = productos.find(p => 
                 p.codigoQR === decodedText || 
                 p.id === decodedText ||
-                p.barcode === decodedText
+                p.barcode === decodedText ||
+                (p.codigoQR && p.codigoQR.toString() === decodedText.toString())
             );
             
+            // 🔔 SONIDO DE ESCANEO
+            reproducirSonido('beep');
+            
             if (producto) {
+                // ✅ ÉXITO
+                setTimeout(() => {
+                    reproducirSonido('success');
+                }, 150);
+                
                 agregarAlCarrito(producto.id);
+                
                 mensaje.innerHTML = `
                     ✅ Producto agregado: <span class="producto-nombre">${escHtml(producto.name)}</span>
                     <br>💰 $${(producto.precio || 0).toLocaleString('es-CO')}
+                    <br><span style="font-size:12px;color:#888;">📦 Stock: ${producto.stock !== undefined ? producto.stock : 'N/A'}</span>
                     <br><span style="font-size:12px;color:#888;">Continúa escaneando o cierra el escáner</span>
                 `;
                 
-                if (navigator.vibrate) navigator.vibrate(200);
-                
-                try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.frequency.value = 800;
-                    osc.type = 'sine';
-                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-                    osc.start(ctx.currentTime);
-                    osc.stop(ctx.currentTime + 0.2);
-                } catch(e) {}
+                mensaje.style.borderLeft = '4px solid #00C853';
+                mensaje.style.background = 'rgba(0,200,83,0.08)';
                 
                 actualizarCarrito();
                 
             } else {
+                // ❌ ERROR
+                setTimeout(() => {
+                    reproducirSonido('error');
+                }, 150);
+                
                 mensaje.innerHTML = `
                     ⚠️ Producto no encontrado: <strong>${escHtml(decodedText)}</strong>
                     <br><span style="font-size:12px;color:#888;">Asegúrate de escanear el código QR correcto</span>
+                    <br><span style="font-size:11px;color:#aaa;">💡 El código debe coincidir con el campo "Código QR" del producto</span>
+                    <br><span style="font-size:11px;color:#aaa;">🔍 Código escaneado: ${escHtml(decodedText)}</span>
                 `;
+                
+                mensaje.style.borderLeft = '4px solid #FF3D00';
+                mensaje.style.background = 'rgba(255,61,0,0.08)';
+                
                 if (navigator.vibrate) navigator.vibrate(500);
             }
         }
@@ -2343,6 +2506,7 @@
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('📷 Escanea códigos QR para agregar productos al carrito');
+        console.log('🔊 Los sonidos se activan al escanear (Android e iPhone)');
         console.log('💳 Métodos de pago: Nequi, Daviplata, Efectivo');
         console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
     </script>
