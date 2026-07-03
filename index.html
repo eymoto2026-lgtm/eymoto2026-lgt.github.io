@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
+    
+    <!-- ===== LIBRERÍA PARA LEER QR ===== -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -139,7 +143,7 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 10px;
-            padding-bottom: 200px;
+            padding-bottom: 220px;
         }
 
         .categorias-wrapper {
@@ -382,6 +386,7 @@
             transform: scale(0.9);
         }
 
+        /* ===== CARRITO FLOTANTE ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -477,9 +482,7 @@
             box-shadow: none;
         }
 
-        /* ============================================================
-           FORMULARIO - CON MÉTODOS DE PAGO
-           ============================================================ */
+        /* ===== FORMULARIO ===== */
         .form-datos {
             margin-top: 8px;
             padding-top: 8px;
@@ -583,6 +586,140 @@
             border-radius: 6px;
         }
 
+        /* ===== BOTÓN LECTOR QR ===== */
+        .btn-lector-qr {
+            position: fixed;
+            bottom: 200px;
+            right: 20px;
+            z-index: 150;
+            background: var(--yellow);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 4px 16px rgba(255,214,0,0.4);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-lector-qr:hover {
+            transform: scale(1.05);
+        }
+        .btn-lector-qr:active {
+            transform: scale(0.95);
+        }
+
+        /* ===== MODAL DEL LECTOR QR ===== */
+        .modal-qr {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: modalFadeIn 0.3s ease;
+        }
+        .modal-qr.active {
+            display: flex;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-qr .modal-contenido {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-qr .modal-cerrar {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #888;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: color 0.2s;
+            width: auto;
+        }
+        .modal-qr .modal-cerrar:hover {
+            color: #1a1a2e;
+        }
+        .modal-qr .qr-titulo {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .modal-qr .qr-subtitulo {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 16px;
+        }
+        .modal-qr .qr-scanner {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .modal-qr .qr-scanner video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .modal-qr .qr-mensaje {
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .modal-qr .qr-mensaje .producto-nombre {
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .modal-qr .btn-cerrar-qr {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: #eee;
+            color: #555;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+        .modal-qr .btn-cerrar-qr:hover {
+            background: #ddd;
+        }
+        .modal-qr .btn-cerrar-qr:active {
+            transform: scale(0.97);
+        }
+
+        /* ===== TOAST ===== */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -614,6 +751,7 @@
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
+        /* ===== TIENDA CERRADA ===== */
         .tienda-cerrada-overlay {
             position: fixed;
             top: 0;
@@ -671,6 +809,7 @@
             display: block;
         }
 
+        /* ===== MODAL DE PRODUCTO ===== */
         .modal-producto {
             display: none;
             position: fixed;
@@ -847,6 +986,12 @@
             .modal-producto .modal-precio {
                 font-size: 18px;
             }
+            .btn-lector-qr {
+                bottom: 180px;
+                right: 10px;
+                padding: 10px 16px;
+                font-size: 12px;
+            }
             .metodo-pago-option {
                 padding: 6px 8px;
                 font-size: 12px;
@@ -861,7 +1006,21 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- MODAL DE PRODUCTO -->
+    <!-- ===== MODAL LECTOR QR ===== -->
+    <div class="modal-qr" id="modalQR" onclick="cerrarModalQR(event)">
+        <div class="modal-contenido" onclick="event.stopPropagation()">
+            <button class="modal-cerrar" onclick="cerrarModalQR()">✕</button>
+            <div class="qr-titulo">📷 Escanear código QR</div>
+            <div class="qr-subtitulo">Escanea el código QR del producto para agregarlo al carrito</div>
+            <div class="qr-scanner" id="qrScanner"></div>
+            <div class="qr-mensaje" id="qrMensaje">
+                💡 Acerca la cámara al código QR del producto
+            </div>
+            <button class="btn-cerrar-qr" onclick="cerrarModalQR()">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE PRODUCTO ===== -->
     <div class="modal-producto" id="modalProducto" onclick="cerrarModalProducto(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
@@ -884,14 +1043,14 @@
         </div>
     </div>
 
-    <!-- TIENDA CERRADA -->
+    <!-- ===== TIENDA CERRADA ===== -->
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
         <h2 id="cerradoTitulo">Tienda Cerrada</h2>
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
-    <!-- HEADER -->
+    <!-- ===== HEADER ===== -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
@@ -908,7 +1067,12 @@
         </div>
     </div>
 
-    <!-- CONTENIDO -->
+    <!-- ===== BOTÓN LECTOR QR ===== -->
+    <button class="btn-lector-qr" onclick="abrirModalQR()">
+        📷 Escanear QR
+    </button>
+
+    <!-- ===== CONTENIDO ===== -->
     <div class="container" id="contenedorMenu">
         <div class="categorias-wrapper" id="categoriasWrapper">
             <div class="categorias-container" id="categoriasContainer"></div>
@@ -923,9 +1087,7 @@
         </div>
     </div>
 
-    <!-- ============================================================
-    CARRITO FLOTANTE - CON MÉTODOS DE PAGO
-    ============================================================ -->
+    <!-- ===== CARRITO FLOTANTE ===== -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -937,9 +1099,7 @@
             </div>
         </div>
         
-        <!-- ============================================================
-        FORMULARIO DE DATOS + MÉTODOS DE PAGO
-        ============================================================ -->
+        <!-- ===== FORMULARIO CON MÉTODOS DE PAGO ===== -->
         <div class="form-datos" id="formDatos">
             <span class="label-form">👤 Datos de entrega <span class="required-asterisk">*</span></span>
             <input type="text" id="clienteNombre" placeholder="Tu nombre completo *" class="required">
@@ -948,7 +1108,6 @@
             <input type="text" id="clienteBarrio" placeholder="Barrio *" class="required">
             <textarea id="clienteObservaciones" placeholder="Observaciones (ej: sin cebolla...)"></textarea>
             
-            <!-- ✅ SECCIÓN MÉTODO DE PAGO -->
             <div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
                 <span class="label-form">💳 Método de pago</span>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px;">
@@ -999,11 +1158,14 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK -->
+    <!-- ===== FIREBASE SDK ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <script>
+        // ============================================================
+        // CONFIGURACIÓN FIREBASE
+        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
             authDomain: "eymotocomidas.firebaseapp.com",
@@ -1015,6 +1177,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // ============================================================
+        // OBTENER ID DE TIENDA
+        // ============================================================
         const urlParams = new URLSearchParams(window.location.search);
         const TIENDA_ID = urlParams.get('tienda');
 
@@ -1024,12 +1189,17 @@
 
         console.log('🏪 Tienda ID:', TIENDA_ID);
 
+        // ============================================================
+        // GLOBALS
+        // ============================================================
         let carrito = [];
         let productos = [];
         let tiendaData = {};
         let tiendaAbierta = true;
         let colorPrincipal = '#FFD600';
         let formularioVisible = false;
+        let html5QrCode = null;
+        let escaneandoQR = false;
 
         // ============================================================
         // SELECCIONAR MÉTODO DE PAGO
@@ -1052,7 +1222,114 @@
         }
 
         // ============================================================
-        // FUNCIONES DE COLOR (getColorBrightness, getDominantColor, etc.)
+        // LECTOR QR
+        // ============================================================
+        function abrirModalQR() {
+            document.getElementById('modalQR').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            iniciarLectorQR();
+        }
+
+        function cerrarModalQR(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modalQR').classList.remove('active');
+            document.body.style.overflow = '';
+            detenerLectorQR();
+        }
+
+        function iniciarLectorQR() {
+            if (escaneandoQR) return;
+            escaneandoQR = true;
+
+            const container = document.getElementById('qrScanner');
+            const mensaje = document.getElementById('qrMensaje');
+            
+            container.innerHTML = '';
+
+            if (typeof Html5Qrcode === 'undefined') {
+                mensaje.innerHTML = '❌ La librería QR no se cargó correctamente. Revisa tu conexión.';
+                escaneandoQR = false;
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("qrScanner");
+
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanError
+            ).catch(err => {
+                console.warn('Error al iniciar cámara:', err);
+                mensaje.innerHTML = '⚠️ No se pudo acceder a la cámara. Revisa los permisos.';
+                escaneandoQR = false;
+            });
+        }
+
+        function detenerLectorQR() {
+            if (html5QrCode) {
+                try {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode.clear();
+                        escaneandoQR = false;
+                    }).catch(err => {});
+                } catch(e) {}
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log('📷 QR escaneado:', decodedText);
+            
+            const mensaje = document.getElementById('qrMensaje');
+            const producto = productos.find(p => p.id === decodedText || p.codigoQR === decodedText);
+            
+            if (producto) {
+                agregarAlCarrito(producto.id);
+                mensaje.innerHTML = `
+                    ✅ Producto agregado: <span class="producto-nombre">${escHtml(producto.name)}</span>
+                    <br>💰 $${(producto.precio || 0).toLocaleString('es-CO')}
+                    <br><span style="font-size:12px;color:#888;">Continúa escaneando o cierra el escáner</span>
+                `;
+                
+                if (navigator.vibrate) navigator.vibrate(200);
+                
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = 800;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.2);
+                } catch(e) {}
+                
+                actualizarCarrito();
+                
+            } else {
+                mensaje.innerHTML = `
+                    ⚠️ Producto no encontrado: <strong>${escHtml(decodedText)}</strong>
+                    <br><span style="font-size:12px;color:#888;">Asegúrate de escanear el código QR correcto</span>
+                `;
+                if (navigator.vibrate) navigator.vibrate(500);
+            }
+        }
+
+        function onScanError(err) {
+            // Ignorar errores de escaneo
+        }
+
+        // ============================================================
+        // FUNCIONES DE COLOR
         // ============================================================
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
@@ -1281,8 +1558,6 @@
                     }
                     
                     console.log('📦 Categorías agotadas:', tiendaData.categoriasAgotadas || 'Ninguna');
-                    console.log('💳 Nequi:', tiendaData.nequi || 'No configurado');
-                    console.log('💳 Daviplata:', tiendaData.daviplata || 'No configurado');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 }
@@ -1658,7 +1933,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO CON MÉTODO DE PAGO
+        // ENVIAR PEDIDO
         // ============================================================
         async function enviarPedido() {
             if (!tiendaAbierta) {
@@ -1676,7 +1951,6 @@
             const barrio = document.getElementById('clienteBarrio').value.trim();
             const observaciones = document.getElementById('clienteObservaciones').value.trim();
 
-            // ✅ VALIDACIÓN OBLIGATORIA
             if (!nombre) {
                 mostrarToast('⚠️ Por favor ingresa tu NOMBRE', 'error');
                 const el = document.getElementById('clienteNombre');
@@ -1710,7 +1984,6 @@
                 return;
             }
 
-            // ✅ OBTENER MÉTODO DE PAGO
             const metodoPago = document.querySelector('input[name="metodoPago"]:checked')?.value || 'efectivo';
 
             const numeroPedido = generarNumeroPedido();
@@ -1731,9 +2004,7 @@
                 };
             });
 
-            // ============================================================
-            // ACTUALIZAR STOCK
-            // ============================================================
+            // Actualizar stock
             try {
                 const batch = db.batch();
                 const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -1760,9 +2031,7 @@
                 console.error('❌ Error al actualizar stock:', error);
             }
 
-            // ============================================================
-            // MENSAJE WHATSAPP CON INSTRUCCIONES DE PAGO
-            // ============================================================
+            // Mensaje WhatsApp
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
             const emojiFecha = '📅';
@@ -1795,12 +2064,11 @@
             
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
-            // ✅ INSTRUCCIONES DE PAGO SEGÚN MÉTODO
             if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
                 const nombreMetodo = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
                 const numeroPago = metodoPago === 'nequi' 
-                    ? (tiendaData.nequi || '3002937289') 
-                    : (tiendaData.daviplata || '3002937289');
+                    ? (tiendaData.nequi || '3169934516') 
+                    : (tiendaData.daviplata || '3169934516');
                 
                 mensajeWhatsApp += `\n\n📲 *INSTRUCCIONES DE PAGO*`;
                 mensajeWhatsApp += `\n1. Abre tu app de ${nombreMetodo}`;
@@ -1812,9 +2080,7 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // ============================================================
-            // GUARDAR PEDIDO EN FIRESTORE CON ESTADO DE PAGO
-            // ============================================================
+            // Guardar pedido
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -1848,16 +2114,12 @@
                 console.error('❌ Error al guardar pedido:', error);
             }
 
-            // ============================================================
-            // ENVIAR POR WHATSAPP
-            // ============================================================
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
-            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -2029,6 +2291,7 @@
                 }
                 if (e.key === 'Escape') {
                     cerrarModalProducto();
+                    cerrarModalQR();
                 }
             });
 
@@ -2044,6 +2307,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('📷 Escanea códigos QR para agregar productos al carrito');
         console.log('💳 Métodos de pago: Nequi, Daviplata, Efectivo');
         console.log('📋 Campos obligatorios: Nombre, Teléfono, Dirección y Barrio');
     </script>
