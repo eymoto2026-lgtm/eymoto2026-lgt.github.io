@@ -1212,6 +1212,32 @@
         let html5QrCode = null;
         let escaneandoQR = false;
         let audioContextGlobal = null;
+        let clienteAutenticado = null;
+
+        // ============================================================
+        // AUTENTICACIÓN ANÓNIMA AUTOMÁTICA
+        // ============================================================
+        async function autenticarCliente() {
+            try {
+                if (auth.currentUser) {
+                    console.log('✅ Usuario ya autenticado:', auth.currentUser.uid);
+                    clienteAutenticado = auth.currentUser;
+                    return auth.currentUser;
+                }
+                
+                const result = await auth.signInAnonymously();
+                console.log('✅ Cliente autenticado anónimamente:', result.user.uid);
+                clienteAutenticado = result.user;
+                return result.user;
+            } catch (error) {
+                console.error('❌ Error al autenticar:', error);
+                // Fallback: crear ID temporal
+                const tempId = 'temp_' + Date.now();
+                console.log('⚠️ Usando ID temporal:', tempId);
+                clienteAutenticado = { uid: tempId, isAnonymous: true };
+                return clienteAutenticado;
+            }
+        }
 
         // ============================================================
         // SISTEMA DE AUDIO UNIVERSAL
@@ -2131,9 +2157,17 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CORREGIDO
+        // ENVIAR PEDIDO - CON AUTENTICACIÓN
         // ============================================================
         async function enviarPedido() {
+            // Asegurar que el cliente esté autenticado
+            const user = await autenticarCliente();
+            
+            if (!user) {
+                mostrarToast('❌ Error de autenticación. Intenta de nuevo.', 'error');
+                return;
+            }
+
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada', 'error');
                 return;
@@ -2278,9 +2312,7 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // ============================================================
-            // GUARDAR PEDIDO - CON clienteId PARA LAS REGLAS
-            // ============================================================
+            // ===== GUARDAR PEDIDO CON clienteId AUTENTICADO =====
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -2300,17 +2332,14 @@
                 estado: 'Pendiente',
                 metodoPago: metodoPago,
                 estadoPago: 'pendiente',
-                // ===== CAMPO CLAVE PARA LAS REGLAS =====
-                clienteId: 'anonimo',
+                clienteId: user.uid,  // ← UID autenticado
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 fuente: 'whatsapp',
                 timestamp: Date.now()
             };
 
-            // Si hay usuario autenticado, usar su UID
-            if (auth.currentUser) {
-                pedidoData.clienteId = auth.currentUser.uid;
-                pedidoData.email = auth.currentUser.email;
+            if (user.email) {
+                pedidoData.email = user.email;
             }
 
             try {
@@ -2487,6 +2516,10 @@
         // INICIALIZAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
+            // Autenticar cliente primero
+            await autenticarCliente();
+            
+            // Cargar tienda y productos
             await cargarTienda();
             await cargarProductos();
 
@@ -2519,6 +2552,7 @@
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('📷 El botón QR se oculta automáticamente si el administrador lo desactiva');
         console.log('🔊 Los sonidos se activan al escanear (Android e iPhone)');
+        console.log('🔐 Autenticación anónima activada para pedidos seguros');
     </script>
 </body>
 </html>
