@@ -460,7 +460,6 @@ header .spacer{flex:1}
           <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
           <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
           <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
-          <!-- ✅ NÚMEROS PARA PAGOS -->
           <div class="form-group">
             <label>📱 Número Nequi (para pagos)</label>
             <input id="nequi" placeholder="3169934516">
@@ -628,6 +627,23 @@ let inventarioTiendaActual = '';
 const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
 
 // ============================================================
+// ✅ ACTIVAR AUDIO AUTOMÁTICAMENTE
+// ============================================================
+function activarAudioAutomatico() {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        console.log('🔊 Audio activado automáticamente');
+    } catch(e) {
+        console.warn('⚠️ Error al activar audio:', e);
+    }
+}
+
+// ============================================================
 // TOAST
 // ============================================================
 function toast(msg, type = 'info', dur = 4000, onClick = null) {
@@ -694,6 +710,10 @@ function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId
 function beep() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // ✅ Asegurar que el audio esté activo
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
     [440,523,659,880].forEach((freq,i) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
@@ -707,7 +727,9 @@ function beep() {
       osc.start(audioCtx.currentTime + t);
       osc.stop(audioCtx.currentTime + t + 0.3);
     });
-  } catch(e) {}
+  } catch(e) {
+    console.warn('⚠️ Error al reproducir sonido:', e);
+  }
 }
 
 function hablar(msg) {
@@ -723,6 +745,10 @@ function hablar(msg) {
 
 function startAlarm(nombreTienda, cliente = '') {
   if (alarmInterval) return;
+  // ✅ Activar audio antes de sonar
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
   beep();
   const mensaje = `Nuevo pedido en ${nombreTienda}${cliente ? ` de ${cliente}` : ''}`;
   hablar(mensaje);
@@ -772,7 +798,12 @@ function iniciarSesion() {
   const pass = document.getElementById('password').value;
   const msg = document.getElementById('loginMsg');
   msg.textContent = '';
-  auth.signInWithEmailAndPassword(email, pass).catch(e => msg.textContent = 'Credenciales incorrectas.');
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      // ✅ Activar audio al iniciar sesión
+      setTimeout(activarAudioAutomatico, 1000);
+    })
+    .catch(e => msg.textContent = 'Credenciales incorrectas.');
 }
 
 function logout() {
@@ -788,8 +819,12 @@ function logout() {
 auth.onAuthStateChanged(user => {
   document.getElementById('loginBox').classList.toggle('hidden', !!user);
   document.getElementById('panel').classList.toggle('hidden', !user);
-  if (user) inicializar();
-  else stopAlarm();
+  if (user) {
+    inicializar();
+    setTimeout(activarAudioAutomatico, 1500);
+  } else {
+    stopAlarm();
+  }
 });
 
 // ============================================================
@@ -798,20 +833,10 @@ auth.onAuthStateChanged(user => {
 async function inicializar() {
   await cargarTiendas();
   iniciarEscuchaGlobal();
-  const sel = document.getElementById('inventarioTienda');
-  if (sel) {
-    sel.innerHTML = '<option value="">Seleccionar tienda...</option>';
-    Object.keys(tiendasCache).forEach(id => {
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = tiendasCache[id] || id;
-      sel.appendChild(opt);
-    });
-  }
 }
 
 // ============================================================
-// TIENDAS (CON NÚMEROS DE PAGO)
+// TIENDAS
 // ============================================================
 async function cargarTiendas() {
   ['filtroTienda','tiendaProducto','tiendaEstado'].forEach(id => {
@@ -841,7 +866,6 @@ async function cargarTiendas() {
       const catsAgotadas = t.categoriasAgotadas && t.categoriasAgotadas.length > 0
         ? `<div style="font-size:10px;color:var(--red);margin-top:2px;">⛔ Categorías agotadas: ${t.categoriasAgotadas.join(', ')}</div>`
         : '';
-      // ✅ Mostrar números de pago
       const pagosInfo = t.nequi || t.daviplata 
         ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">💳 ${t.nequi ? '🟢 Nequi: '+t.nequi : ''} ${t.daviplata ? '🔵 Daviplata: '+t.daviplata : ''}</div>`
         : '';
@@ -1311,7 +1335,7 @@ async function toggleEstado(tid) {
 }
 
 // ============================================================
-// PEDIDOS - CON FUNCIONES DE PAGO
+// PEDIDOS
 // ============================================================
 function cambiarTiendaSeleccionada() {
   const selector = document.getElementById('filtroTienda');
@@ -1393,7 +1417,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     });
   }
 
-  // ✅ BADGE DE PAGO
+  // BADGE DE PAGO
   let badgePago = '';
   if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
     const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -1403,7 +1427,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
   }
 
-  // ✅ BOTONES DE PAGO (solo si es Nequi/Daviplata y está pendiente)
+  // BOTONES DE PAGO
   let btnPago = '';
   if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
     btnPago = `
@@ -1493,6 +1517,7 @@ function iniciarEscuchaGlobal() {
                 const total = data.total || 0;
                 const items = data.items?.length || 0;
                 
+                // ✅ SONIDO Y VOZ SIEMPRE ACTIVOS
                 startAlarm(nombreTienda, cliente);
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
@@ -1648,7 +1673,7 @@ function renderPedido(doc, tiendaId, counts) {
     });
   }
 
-  // ✅ BADGE DE PAGO
+  // BADGE DE PAGO
   let badgePago = '';
   if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
     const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -1658,7 +1683,7 @@ function renderPedido(doc, tiendaId, counts) {
     badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
   }
 
-  // ✅ BOTONES DE PAGO
+  // BOTONES DE PAGO
   let btnPago = '';
   if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
     btnPago = `
@@ -1717,7 +1742,7 @@ function renderPedido(doc, tiendaId, counts) {
 }
 
 // ============================================================
-// ✅ CONFIRMAR PAGO MANUALMENTE
+// CONFIRMAR PAGO MANUALMENTE
 // ============================================================
 async function confirmarPago(tiendaId, pedidoId) {
   if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
@@ -1740,7 +1765,7 @@ async function confirmarPago(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// ✅ RECHAZAR PAGO
+// RECHAZAR PAGO
 // ============================================================
 async function rechazarPago(tiendaId, pedidoId) {
   if (!confirm('¿Rechazar el pago de este pedido? El cliente deberá realizar el pago nuevamente.')) return;
@@ -1833,10 +1858,17 @@ function escHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('filtroTienda');
   if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
+  
+  // ✅ Activar audio con cualquier clic en la página
+  document.addEventListener('click', function activarAudioPorClic() {
+    activarAudioAutomatico();
+    document.removeEventListener('click', activarAudioPorClic);
+  }, { once: true });
 });
 
 console.log('✅ Panel de administración cargado correctamente');
 console.log('🔔 Escuchando pedidos de todas las tiendas...');
+console.log('🔊 El sonido se activa automáticamente al iniciar sesión o hacer clic');
 console.log('📋 Al enviar un pedido a "En Cocina", se seleccionará la tienda automáticamente');
 console.log('📌 En "Todas las tiendas" solo se ven pedidos activos');
 console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
