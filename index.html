@@ -1188,16 +1188,38 @@
         const auth = firebase.auth();
 
         // ============================================================
-        // OBTENER ID DE TIENDA
+        // ===== SOLUCIÓN PARA APPCREATOR =====
         // ============================================================
+        
+        // Obtener parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
-        const TIENDA_ID = urlParams.get('tienda');
+        let TIENDA_ID = urlParams.get('tienda');
+        
+        // Si no viene en la URL, buscar en localStorage
+        if (!TIENDA_ID) {
+            TIENDA_ID = localStorage.getItem('tiendaId');
+            if (TIENDA_ID) {
+                console.log('📌 Tienda ID cargado desde localStorage:', TIENDA_ID);
+            }
+        }
+        
+        // Si aún no hay, usar el ID por defecto (cambia este ID por el tuyo)
+        if (!TIENDA_ID) {
+            TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
+            localStorage.setItem('tiendaId', TIENDA_ID);
+            console.log('📌 Usando tienda ID por defecto (AppCreator):', TIENDA_ID);
+        } else {
+            // Guardar en localStorage para futuras veces
+            localStorage.setItem('tiendaId', TIENDA_ID);
+            console.log('📌 Tienda ID desde URL:', TIENDA_ID);
+        }
 
         if (!TIENDA_ID) {
             mostrarToast('⚠️ No se especificó una tienda', 'error');
         }
 
-        console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('🏪 Tienda ID final:', TIENDA_ID);
+        console.log('📱 App detectada:', /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) ? 'Móvil' : 'Escritorio');
 
         // ============================================================
         // GLOBALS
@@ -1703,7 +1725,10 @@
         // CARGAR TIENDA
         // ============================================================
         async function cargarTienda() {
-            if (!TIENDA_ID) return;
+            if (!TIENDA_ID) {
+                mostrarToast('⚠️ No se especificó una tienda', 'error');
+                return;
+            }
             try {
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
                 if (doc.exists) {
@@ -1784,10 +1809,11 @@
                     console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE ✅' : 'OCULTO ❌');
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
+                    mostrarToast('⚠️ Tienda no encontrada. Verifica el ID.', 'error');
                 }
             } catch (e) {
                 console.error('Error al cargar tienda:', e);
-                mostrarToast('Error al cargar la tienda', 'error');
+                mostrarToast('Error al cargar la tienda: ' + e.message, 'error');
             }
         }
 
@@ -2332,7 +2358,7 @@
                 estado: 'Pendiente',
                 metodoPago: metodoPago,
                 estadoPago: 'pendiente',
-                clienteId: user.uid,  // ← UID autenticado
+                clienteId: user.uid,
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 fuente: 'whatsapp',
                 timestamp: Date.now()
