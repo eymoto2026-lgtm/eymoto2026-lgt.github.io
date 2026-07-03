@@ -284,6 +284,7 @@ header .spacer{flex:1}
 .prod-estado-badge{font-size:10px;font-weight:700;margin-left:4px}
 .prod-estado-badge.agotado{color:var(--red)}
 .prod-estado-badge.disponible{color:var(--green)}
+.prod-qr-code{font-size:10px;color:var(--text-muted);display:block;margin-top:2px;font-family:monospace;}
 
 /* ESTADO */
 .estado-wrap{max-width:460px}
@@ -503,6 +504,11 @@ header .spacer{flex:1}
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://... (principal)"></div>
           <div class="form-group"><label>URL imagen 2 (opcional)</label><input id="nuevoImagen2" placeholder="https://... (imagen secundaria)"></div>
           <div class="form-group">
+            <label>Código QR / Código de barras</label>
+            <input id="nuevoCodigoQR" placeholder="Ej: 7501234567890 o codigo-unico">
+            <small style="color:var(--text-muted);font-size:11px;">Código único para escanear. Puede ser el código de barras del producto o uno personalizado.</small>
+          </div>
+          <div class="form-group">
             <label>Estado del producto</label>
             <select id="nuevoEstado">
               <option value="disponible">✅ Disponible</option>
@@ -710,7 +716,6 @@ function mostrarNotificacionPedido(tiendaNombre, cliente, total, items, tiendaId
 function beep() {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // ✅ Asegurar que el audio esté activo
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
@@ -745,7 +750,6 @@ function hablar(msg) {
 
 function startAlarm(nombreTienda, cliente = '') {
   if (alarmInterval) return;
-  // ✅ Activar audio antes de sonar
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
@@ -800,7 +804,6 @@ function iniciarSesion() {
   msg.textContent = '';
   auth.signInWithEmailAndPassword(email, pass)
     .then(() => {
-      // ✅ Activar audio al iniciar sesión
       setTimeout(activarAudioAutomatico, 1000);
     })
     .catch(e => msg.textContent = 'Credenciales incorrectas.');
@@ -859,6 +862,7 @@ async function cargarTiendas() {
       tiendasCache[id] = t.nombre || id;
       const url = `${URL_BASE_MENU}?tienda=${id}`;
       const abierta = t.abierta !== false;
+      const escaneoActivado = t.barcodeScanningEnabled !== false;
 
       const div = document.createElement('div');
       div.className = 'tienda-item';
@@ -869,6 +873,10 @@ async function cargarTiendas() {
       const pagosInfo = t.nequi || t.daviplata 
         ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">💳 ${t.nequi ? '🟢 Nequi: '+t.nequi : ''} ${t.daviplata ? '🔵 Daviplata: '+t.daviplata : ''}</div>`
         : '';
+      const escaneoBadge = escaneoActivado 
+        ? '<span style="font-size:10px;color:var(--green);">📷 Escaneo activo</span>'
+        : '<span style="font-size:10px;color:var(--red);">📷 Escaneo desactivado</span>';
+      
       div.innerHTML = `
         <div class="tienda-logo">
           ${t.logo ? `<img src="${escHtml(t.logo)}" alt="${escHtml(t.nombre||'')}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
@@ -877,6 +885,7 @@ async function cargarTiendas() {
           <h4>${escHtml(t.nombre || 'Sin nombre')}</h4>
           <p class="meta">📱 ${escHtml(t.whatsapp || '-')}</p>
           ${pagosInfo}
+          ${escaneoBadge}
           <a class="link" href="${url}" target="_blank">🔗 Ver menú digital</a>
           <br><span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? 'Abierta' : 'Cerrada'}</span>
           ${catsAgotadas}
@@ -926,7 +935,7 @@ async function guardarTienda() {
       await db.collection('tiendas').doc(id).update(datos);
       toast('Tienda actualizada.', 'success');
     } else {
-      await db.collection('tiendas').add({ ...datos, abierta: true });
+      await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true });
       toast('Tienda registrada.', 'success');
     }
     cancelarEdTienda();
@@ -969,7 +978,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// PRODUCTOS
+// PRODUCTOS - CON CÓDIGO QR
 // ============================================================
 async function cargarProductos() {
   const tid = document.getElementById('tiendaProducto').value;
@@ -988,6 +997,8 @@ async function cargarProductos() {
         : '<span class="prod-estado-badge disponible">✅ Disponible</span>';
       const imgBadge = p.img2 ? '<span class="prod-img-badge">📸 +1</span>' : '';
       const stockDisplay = p.stock !== undefined ? `📦 Stock: ${p.stock}` : '📦 Stock: 0';
+      const qrDisplay = p.codigoQR ? `🔲 QR: ${p.codigoQR}` : '🔲 Sin QR';
+      
       const div = document.createElement('div');
       div.className = 'prod-item';
       div.innerHTML = `
@@ -996,6 +1007,7 @@ async function cargarProductos() {
           <h5>${escHtml(p.name || 'Sin nombre')} ${estadoBadge} ${imgBadge}</h5>
           <p class="pdesc">${escHtml(p.descripcion || '')}</p>
           <span class="prod-cat">${escHtml(p.categoria || 'General')}</span>
+          <span class="prod-qr-code">${qrDisplay}</span>
           <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">${stockDisplay}</span>
         </div>
         <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
@@ -1022,14 +1034,31 @@ async function guardarProducto() {
   const img2 = document.getElementById('nuevoImagen2').value.trim();
   const estado = document.getElementById('nuevoEstado').value;
   const stock = parseInt(document.getElementById('nuevoStock').value) || 0;
+  const codigoQR = document.getElementById('nuevoCodigoQR').value.trim();
 
   if (!name || !precio) { toast('Completa nombre y precio.', 'error'); return; }
 
-  const datos = { name, precio, categoria, descripcion, img, img2, estado, stock };
+  const datos = { 
+    name, 
+    precio, 
+    categoria, 
+    descripcion, 
+    img, 
+    img2, 
+    estado, 
+    stock,
+    codigoQR: codigoQR || null
+  };
+  
   try {
     const ref = db.collection('tiendas').doc(tid).collection('productos');
-    if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
-    else { await ref.add(datos); toast('Producto añadido.', 'success'); }
+    if (pid) { 
+      await ref.doc(pid).set(datos, { merge: true }); 
+      toast('Producto actualizado.', 'success'); 
+    } else { 
+      await ref.add(datos); 
+      toast('Producto añadido.', 'success'); 
+    }
     cancelarEdProducto();
     cargarProductos();
   } catch(e) { toast('Error: ' + e.message, 'error'); }
@@ -1051,6 +1080,7 @@ async function editarProducto(pid, tid) {
     document.getElementById('nuevoImagen2').value = p.img2 || '';
     document.getElementById('nuevoEstado').value = p.estado || 'disponible';
     document.getElementById('nuevoStock').value = p.stock !== undefined ? p.stock : 0;
+    document.getElementById('nuevoCodigoQR').value = p.codigoQR || '';
     document.getElementById('btnCancelProd').classList.remove('hidden');
     const btn = document.querySelectorAll('.tab-btn')[2];
     switchTab('productos', btn);
@@ -1058,7 +1088,8 @@ async function editarProducto(pid, tid) {
 }
 
 function cancelarEdProducto() {
-  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion','nuevoImagen','nuevoImagen2','nuevoEstado','nuevoStock']
+  ['editProductoId','nuevoNombre','nuevoPrecio','nuevoCategoria','nuevoDescripcion',
+   'nuevoImagen','nuevoImagen2','nuevoEstado','nuevoStock','nuevoCodigoQR']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('btnCancelProd').classList.add('hidden');
 }
@@ -1130,11 +1161,11 @@ async function cargarInventario() {
             <div class="categoria">${escHtml(p.categoria || 'General')}</div>
           </div>
           <div class="stock-control">
-            <button class="inv-btn-mini restar" onclick="ajustarStock('${tid}','${pid}',-1)" title="Quitar 1">−</button>
+            <button class="inv-btn-mini restar" onclick="ajustarStock('${tid}','${pid}','-1')" title="Quitar 1">−</button>
             <input type="number" class="inv-cantidad-input" id="inv-cant-${pid}" value="${stock}" min="0" step="1" 
                    onkeydown="if(event.key==='Enter'){event.preventDefault();actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'));}">
-            <button class="inv-btn-mini sumar" onclick="ajustarStock('${tid}','${pid}',1)" title="Agregar 1">+</button>
-            <button class="inv-btn-mini reset" onclick="ajustarStock('${tid}','${pid}',0)" title="Resetear a 0">↺</button>
+            <button class="inv-btn-mini sumar" onclick="ajustarStock('${tid}','${pid}','1')" title="Agregar 1">+</button>
+            <button class="inv-btn-mini reset" onclick="ajustarStock('${tid}','${pid}','reset')" title="Resetear a 0">↺</button>
             <button class="inv-btn-actualizar" onclick="actualizarStockManual('${tid}','${pid}',document.getElementById('inv-cant-${pid}'))">📦</button>
           </div>
           <div class="inv-estado ${estadoClase}">
@@ -1158,7 +1189,7 @@ async function cargarInventario() {
   }
 }
 
-async function ajustarStock(tiendaId, productoId, cambio) {
+async function ajustarStock(tiendaId, productoId, accion) {
   try {
     const doc = await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).get();
     if (!doc.exists) return;
@@ -1166,9 +1197,10 @@ async function ajustarStock(tiendaId, productoId, cambio) {
     const p = doc.data();
     let nuevoStock = p.stock !== undefined ? p.stock : 0;
     
-    if (cambio === 0) {
+    if (accion === 'reset') {
       nuevoStock = 0;
     } else {
+      const cambio = parseInt(accion);
       nuevoStock = Math.max(0, nuevoStock + cambio);
     }
     
@@ -1293,7 +1325,7 @@ function actualizarTodosStock() {
 }
 
 // ============================================================
-// ESTADO
+// ESTADO - CON CONTROL DE ESCANEO
 // ============================================================
 async function cargarEstado() {
   const tid = document.getElementById('tiendaEstado').value;
@@ -1305,7 +1337,10 @@ async function cargarEstado() {
     if (!doc.exists) return;
     const t = doc.data();
     const abierta = t.abierta !== false;
+    const escaneoActivado = t.barcodeScanningEnabled !== false;
+    
     wrap.innerHTML = `
+      <!-- Estado de apertura -->
       <div class="estado-card">
         <div class="info">
           <div class="tienda-name">${escHtml(t.nombre || 'Tienda')}</div>
@@ -1315,6 +1350,22 @@ async function cargarEstado() {
         </div>
         <label class="toggle">
           <input type="checkbox" id="toggleAbierta" ${abierta ? 'checked' : ''} onchange="toggleEstado('${tid}')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <!-- Estado del escaneo -->
+      <div class="estado-card" style="margin-top:10px;">
+        <div class="info">
+          <div class="tienda-name">📷 Escaneo de códigos</div>
+          <div class="estado-txt" id="escaneoTexto" style="color:${escaneoActivado ? 'var(--green)' : 'var(--red)'}">
+            ${escaneoActivado 
+              ? '✅ Activado — Los clientes pueden escanear códigos'
+              : '❌ Desactivado — Los clientes NO pueden escanear códigos'}
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggleEscaneo" ${escaneoActivado ? 'checked' : ''} onchange="toggleEscaneo()">
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -1332,6 +1383,37 @@ async function toggleEstado(tid) {
     toast(cb.checked ? 'Tienda ABIERTA.' : 'Tienda CERRADA.', cb.checked ? 'success' : 'warn');
     cargarTiendas();
   } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function toggleEscaneo() {
+  const tid = document.getElementById('tiendaEstado').value;
+  if (!tid) {
+    toast('Selecciona una tienda primero.', 'error');
+    return;
+  }
+  
+  const cb = document.getElementById('toggleEscaneo');
+  const txt = document.getElementById('escaneoTexto');
+  const nuevoEstado = cb.checked;
+  
+  try {
+    await db.collection('tiendas').doc(tid).update({ 
+      barcodeScanningEnabled: nuevoEstado 
+    });
+    
+    txt.style.color = nuevoEstado ? 'var(--green)' : 'var(--red)';
+    txt.textContent = nuevoEstado 
+      ? '✅ Activado — Los clientes pueden escanear códigos'
+      : '❌ Desactivado — Los clientes NO pueden escanear códigos';
+    
+    toast(nuevoEstado ? '📷 Escaneo ACTIVADO' : '📷 Escaneo DESACTIVADO', 
+          nuevoEstado ? 'success' : 'warn');
+    
+    cargarTiendas();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+    cb.checked = !nuevoEstado;
+  }
 }
 
 // ============================================================
@@ -1417,7 +1499,6 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     });
   }
 
-  // BADGE DE PAGO
   let badgePago = '';
   if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
     const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -1427,7 +1508,6 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
   }
 
-  // BOTONES DE PAGO
   let btnPago = '';
   if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
     btnPago = `
@@ -1517,7 +1597,6 @@ function iniciarEscuchaGlobal() {
                 const total = data.total || 0;
                 const items = data.items?.length || 0;
                 
-                // ✅ SONIDO Y VOZ SIEMPRE ACTIVOS
                 startAlarm(nombreTienda, cliente);
                 mostrarNotificacionPedido(nombreTienda, cliente, total, items, tiendaId, pedidoId);
                 
@@ -1673,7 +1752,6 @@ function renderPedido(doc, tiendaId, counts) {
     });
   }
 
-  // BADGE DE PAGO
   let badgePago = '';
   if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
     const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -1683,7 +1761,6 @@ function renderPedido(doc, tiendaId, counts) {
     badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
   }
 
-  // BOTONES DE PAGO
   let btnPago = '';
   if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
     btnPago = `
@@ -1742,7 +1819,7 @@ function renderPedido(doc, tiendaId, counts) {
 }
 
 // ============================================================
-// CONFIRMAR PAGO MANUALMENTE
+// CONFIRMAR PAGO
 // ============================================================
 async function confirmarPago(tiendaId, pedidoId) {
   if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
@@ -1764,9 +1841,6 @@ async function confirmarPago(tiendaId, pedidoId) {
   }
 }
 
-// ============================================================
-// RECHAZAR PAGO
-// ============================================================
 async function rechazarPago(tiendaId, pedidoId) {
   if (!confirm('¿Rechazar el pago de este pedido? El cliente deberá realizar el pago nuevamente.')) return;
   try {
@@ -1810,9 +1884,6 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
   }
 }
 
-// ============================================================
-// ELIMINAR PEDIDO
-// ============================================================
 async function eliminarPedido(tiendaId, pedidoId) {
   if (!confirm('¿Remover este pedido?')) return;
   try {
@@ -1859,7 +1930,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('filtroTienda');
   if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
   
-  // ✅ Activar audio con cualquier clic en la página
   document.addEventListener('click', function activarAudioPorClic() {
     activarAudioAutomatico();
     document.removeEventListener('click', activarAudioPorClic);
@@ -1875,6 +1945,8 @@ console.log('📸 Ahora puedes añadir una segunda imagen por producto (img2)');
 console.log('⛔ Puedes marcar productos como "Agotado" y categorías completas');
 console.log('📦 Nueva sección de INVENTARIO compacta con campo numérico');
 console.log('💳 Los pedidos con Nequi/Daviplata tienen botones para confirmar/rechazar pago');
+console.log('📷 Control de escaneo QR para cada tienda en la pestaña "Estado"');
+console.log('🔲 Cada producto puede tener un código QR único para escanear');
 </script>
 </body>
 </html>
