@@ -301,7 +301,7 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- ===== TAB TIENDAS - CON FORMULARIO DE EDICIÓN ===== -->
+    <!-- ===== TAB TIENDAS ===== -->
     <div class="tab-content" id="tab-tiendas">
       <div class="section-title">🏪 Gestionar tiendas</div>
       
@@ -312,27 +312,64 @@ header .spacer{flex:1}
         </button>
       </div>
 
-      <!-- Modal Crear Negocio -->
+      <!-- ===== MODAL CREAR NEGOCIO ===== -->
       <div id="modalCrearNegocio" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;justify-content:center;align-items:center;padding:20px;">
-        <div style="background:#1e1e1e;border-radius:20px;max-width:500px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;">
+        <div style="background:#1e1e1e;border-radius:20px;max-width:550px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <h3 style="color:#fff;">➕ Crear nuevo negocio</h3>
             <button onclick="cerrarModalCrearNegocio()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">✕</button>
           </div>
-          <div class="form-group"><label>Nombre del negocio *</label><input id="nuevoNegocioNombre" placeholder="Ej: TuMandadoVallenato"></div>
-          <div class="form-group"><label>WhatsApp *</label><input id="nuevoNegocioWhatsapp" placeholder="573000000000"></div>
-          <div class="form-group"><label>URL del logo</label><input id="nuevoNegocioLogo" placeholder="https://..."></div>
-          <div class="form-group"><label>URL del banner</label><input id="nuevoNegocioBanner" placeholder="https://..."></div>
-          <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
-            <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">🔐 Datos del administrador</p>
-            <div class="form-group"><label>Correo *</label><input id="nuevoNegocioAdminEmail" type="email" placeholder="admin@negocio.com"></div>
-            <div class="form-group"><label>Contraseña *</label><input id="nuevoNegocioAdminPassword" type="password" placeholder="Mínimo 6 caracteres"></div>
+
+          <!-- DATOS DE LA TIENDA -->
+          <div style="background:var(--surface3);border-radius:10px;padding:16px;margin-bottom:12px;">
+            <p style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏪 Datos de la tienda</p>
+            <div class="form-group"><label>Nombre del negocio *</label><input id="nuevoNegocioNombre" placeholder="Ej: TuMandadoVallenato"></div>
+            <div class="form-group"><label>WhatsApp principal *</label><input id="nuevoNegocioWhatsapp" placeholder="573000000000"></div>
+            <div class="form-group"><label>WhatsApp secundario (opcional)</label><input id="nuevoNegocioWhatsapp2" placeholder="573000000001"><small style="color:var(--text-muted);font-size:11px;">Los pedidos llegarán a ambos números.</small></div>
+            <div class="form-group"><label>URL del logo</label><input id="nuevoNegocioLogo" placeholder="https://..."></div>
+            <div class="form-group"><label>URL del banner</label><input id="nuevoNegocioBanner" placeholder="https://..."></div>
+            <div class="row2">
+              <div class="form-group"><label>📱 Nequi</label><input id="nuevoNegocioNequi" placeholder="3002937289"></div>
+              <div class="form-group"><label>📱 Daviplata</label><input id="nuevoNegocioDaviplata" placeholder="3002937289"></div>
+            </div>
           </div>
-          <button onclick="crearNegocioCompleto()" style="width:100%;padding:14px;border-radius:10px;background:var(--yellow);color:#1a1a2e;font-weight:800;font-size:15px;border:none;cursor:pointer;margin-top:8px;">🚀 Crear negocio</button>
+
+          <!-- DATOS DEL ADMINISTRADOR -->
+          <div style="background:var(--surface3);border-radius:10px;padding:16px;margin-top:12px;">
+            <p style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🔐 Datos del administrador</p>
+            
+            <div class="form-group">
+              <label>Correo del administrador *</label>
+              <input id="nuevoNegocioAdminEmail" type="email" placeholder="admin@negocio.com" oninput="verificarCorreoAdmin(this.value)">
+              <small id="emailAyuda" style="color:var(--text-muted);font-size:11px;">Si pones tu correo, la tienda se asignará a tu usuario Super Admin.</small>
+            </div>
+
+            <!-- CAMPO CONTRASEÑA -->
+            <div id="campoContraseña">
+              <div class="form-group">
+                <label>Contraseña *</label>
+                <input id="nuevoNegocioAdminPassword" type="password" placeholder="Mínimo 6 caracteres">
+                <small id="passwordAyuda" style="color:var(--text-muted);font-size:11px;">Obligatorio para nuevos administradores.</small>
+              </div>
+            </div>
+
+            <!-- AVISO SUPER ADMIN -->
+            <div id="avisoSuperAdmin" style="display:none;background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:12px;margin-top:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:20px;">👑</span>
+                <div>
+                  <span style="color:var(--yellow);font-weight:700;">Modo Super Admin</span>
+                  <p style="font-size:12px;color:var(--text-muted);margin-top:2px;">No necesitas contraseña. Esta tienda se asignará automáticamente a tu usuario <strong style="color:#fff;">eymoto2026@gmail.com</strong>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="crearNegocioCompleto()" style="width:100%;padding:14px;border-radius:10px;background:var(--yellow);color:#1a1a2e;font-weight:800;font-size:15px;border:none;cursor:pointer;margin-top:12px;">🚀 Crear negocio</button>
         </div>
       </div>
 
-      <!-- ===== FORMULARIO DE EDICIÓN DE TIENDAS ===== -->
+      <!-- FORMULARIO DE EDICIÓN -->
       <div id="formEditarTienda" style="display:none;background:var(--surface2);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--yellow);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h4 style="color:var(--yellow);">✏️ Editar tienda</h4>
@@ -340,19 +377,19 @@ header .spacer{flex:1}
         </div>
         <input type="hidden" id="editTiendaId">
         <div class="form-group"><label>Nombre comercial</label><input id="nombreTienda" placeholder="Ej: Burger House"></div>
-        <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
+        <div class="form-group"><label>WhatsApp principal</label><input id="whatsapp" placeholder="573000000000"></div>
+        <div class="form-group"><label>WhatsApp secundario</label><input id="whatsapp2" placeholder="573000000001"></div>
         <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
         <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
-        <div class="form-group"><label>📱 Número Nequi (para pagos)</label><input id="nequi" placeholder="3002937289"></div>
-        <div class="form-group"><label>📱 Número Daviplata (para pagos)</label><input id="daviplata" placeholder="3002937289"></div>
+        <div class="form-group"><label>📱 Nequi</label><input id="nequi" placeholder="3002937289"></div>
+        <div class="form-group"><label>📱 Daviplata</label><input id="daviplata" placeholder="3002937289"></div>
         <div class="form-group"><label>Categorías agotadas (separadas por coma)</label><input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas"></div>
         <div style="display:flex;gap:8px;">
-          <button onclick="guardarTienda()" style="flex:1;background:var(--yellow);color:#1a1a2e;font-weight:700;padding:12px;border-radius:10px;border:none;cursor:pointer;">💾 Guardar cambios</button>
-          <button class="btn-ghost" onclick="cancelarEdTienda()" style="width:auto;padding:12px 16px;">Cancelar</button>
+          <button onclick="guardarTienda()" style="flex:1;">💾 Guardar cambios</button>
+          <button class="btn-ghost" onclick="cancelarEdTienda()" style="width:auto;padding:10px 16px;">Cancelar</button>
         </div>
       </div>
 
-      <!-- LISTA DE TIENDAS -->
       <div id="listaTiendas"><p style="color:var(--text-muted);font-size:13px;">Cargando tiendas...</p></div>
     </div>
 
@@ -408,6 +445,7 @@ header .spacer{flex:1}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <script>
 // ============================================================
 // CONFIGURACIÓN FIREBASE
@@ -562,7 +600,150 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================
-// ===== CARGAR TIENDAS - SUPER ADMIN (CON BOTONES) =====
+// VERIFICAR CORREO - MOSTRAR/OCULTAR CONTRASEÑA
+// ============================================================
+function verificarCorreoAdmin(email) {
+    const campoContraseña = document.getElementById('campoContraseña');
+    const avisoSuperAdmin = document.getElementById('avisoSuperAdmin');
+    const passwordInput = document.getElementById('nuevoNegocioAdminPassword');
+    const ayudaPassword = document.getElementById('passwordAyuda');
+
+    if (email === 'eymoto2026@gmail.com') {
+        // ===== SUPER ADMIN =====
+        campoContraseña.style.display = 'none';
+        avisoSuperAdmin.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.removeAttribute('required');
+        ayudaPassword.textContent = '🔓 No necesitas contraseña. Eres Super Admin.';
+    } else {
+        // ===== CLIENTE NORMAL =====
+        campoContraseña.style.display = 'block';
+        avisoSuperAdmin.style.display = 'none';
+        passwordInput.setAttribute('required', 'required');
+        ayudaPassword.textContent = '🔑 Obligatorio para nuevos administradores.';
+    }
+}
+
+// ============================================================
+// CREAR NEGOCIO COMPLETO
+// ============================================================
+async function crearNegocioCompleto() {
+    const nombre = document.getElementById('nuevoNegocioNombre').value.trim();
+    const whatsapp = document.getElementById('nuevoNegocioWhatsapp').value.trim();
+    const whatsapp2 = document.getElementById('nuevoNegocioWhatsapp2').value.trim();
+    const logo = document.getElementById('nuevoNegocioLogo').value.trim();
+    const banner = document.getElementById('nuevoNegocioBanner').value.trim();
+    const adminEmail = document.getElementById('nuevoNegocioAdminEmail').value.trim();
+    const adminPassword = document.getElementById('nuevoNegocioAdminPassword').value.trim();
+    const nequi = document.getElementById('nuevoNegocioNequi').value.trim();
+    const daviplata = document.getElementById('nuevoNegocioDaviplata').value.trim();
+
+    if (!nombre || !whatsapp || !adminEmail) {
+        toast('⚠️ Completa todos los campos obligatorios (*)', 'error');
+        return;
+    }
+
+    const esSuperAdmin = (adminEmail === 'eymoto2026@gmail.com');
+    if (!esSuperAdmin && (!adminPassword || adminPassword.length < 6)) {
+        toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
+        return;
+    }
+
+    try {
+        toast('⏳ Creando negocio...', 'info');
+
+        // 1. Crear la tienda
+        const tiendaRef = await db.collection('tiendas').add({
+            nombre: nombre,
+            whatsapp: whatsapp,
+            whatsapp2: whatsapp2 || '',
+            logo: logo,
+            banner: banner,
+            nequi: nequi,
+            daviplata: daviplata,
+            abierta: true,
+            barcodeScanningEnabled: true,
+            categoriasAgotadas: [],
+            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const tiendaId = tiendaRef.id;
+
+        // 2. Buscar si el usuario ya existe por email
+        const userQuery = await db.collection('usuarios').where('email', '==', adminEmail).get();
+
+        if (userQuery.empty) {
+            // ===== NUEVO USUARIO (CLIENTE) =====
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(adminEmail, adminPassword);
+            const uid = userCredential.user.uid;
+
+            await db.collection('usuarios').doc(uid).set({
+                email: adminEmail,
+                tiendaId: tiendaId,
+                admin: false,
+                nombre: `Admin de ${nombre}`,
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+                activo: true
+            });
+
+            await userCredential.user.sendEmailVerification();
+            toast(`✅ Usuario creado para ${adminEmail}`, 'success');
+
+        } else {
+            // ===== USUARIO EXISTENTE =====
+            const userDoc = userQuery.docs[0];
+            const userData = userDoc.data();
+            const uid = userDoc.id;
+            const esSuperAdminExistente = userData.admin === true;
+
+            await db.collection('usuarios').doc(uid).update({
+                tiendaId: tiendaId
+            });
+
+            if (esSuperAdminExistente) {
+                toast(`👑 Tienda "${nombre}" asignada al Super Admin (${adminEmail})`, 'info', 5000);
+            } else {
+                toast(`✅ Tienda "${nombre}" asignada a ${adminEmail}`, 'success');
+            }
+        }
+
+        // 3. Productos por defecto
+        const productosDefault = [
+            { name: '📦 Servicio de Mandado', precio: 5000, categoria: 'Servicios', descripcion: 'Compramos y entregamos tus productos', codigoQR: 'MANDADO-001', estado: 'disponible', stock: 999 },
+            { name: '🍔 Hamburguesa', precio: 15000, categoria: 'Comidas', descripcion: 'Hamburguesa con queso', codigoQR: 'PROD-001', estado: 'disponible', stock: 50 }
+        ];
+
+        for (const prod of productosDefault) {
+            await db.collection('tiendas').doc(tiendaId).collection('productos').add(prod);
+        }
+
+        toast(`✅ Negocio "${nombre}" creado con éxito`, 'success');
+
+        cerrarModalCrearNegocio();
+        cargarTiendasSuperAdmin();
+        cargarSelectsTiendas();
+
+        // Limpiar formulario
+        document.getElementById('nuevoNegocioNombre').value = '';
+        document.getElementById('nuevoNegocioWhatsapp').value = '';
+        document.getElementById('nuevoNegocioWhatsapp2').value = '';
+        document.getElementById('nuevoNegocioLogo').value = '';
+        document.getElementById('nuevoNegocioBanner').value = '';
+        document.getElementById('nuevoNegocioAdminEmail').value = '';
+        document.getElementById('nuevoNegocioAdminPassword').value = '';
+        document.getElementById('nuevoNegocioNequi').value = '';
+        document.getElementById('nuevoNegocioDaviplata').value = '';
+        document.getElementById('campoContraseña').style.display = 'block';
+        document.getElementById('avisoSuperAdmin').style.display = 'none';
+
+    } catch(error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================================
+// CARGAR TIENDAS - SUPER ADMIN
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
@@ -617,10 +798,8 @@ async function cargarTiendasSuperAdmin() {
 }
 
 // ============================================================
-// ===== FUNCIONES DE CONTROL PARA SUPER ADMIN =====
+// FUNCIONES DE CONTROL PARA SUPER ADMIN
 // ============================================================
-
-// Ver pedidos de una tienda
 async function verPedidosTienda(tiendaId) {
     const selector = document.getElementById('filtroTienda');
     if (selector) {
@@ -632,7 +811,6 @@ async function verPedidosTienda(tiendaId) {
     toast('📦 Mostrando pedidos de la tienda seleccionada', 'info');
 }
 
-// Activar/Desactivar QR
 async function toggleQR(tiendaId, estado) {
     try {
         await db.collection('tiendas').doc(tiendaId).update({
@@ -645,7 +823,6 @@ async function toggleQR(tiendaId, estado) {
     }
 }
 
-// Abrir/Cerrar tienda
 async function toggleTienda(tiendaId, estado) {
     try {
         await db.collection('tiendas').doc(tiendaId).update({
@@ -659,7 +836,7 @@ async function toggleTienda(tiendaId, estado) {
 }
 
 // ============================================================
-// ===== EDITAR TIENDA - CON FORMULARIO =====
+// EDITAR TIENDA
 // ============================================================
 async function editarTienda(id) {
     try {
@@ -670,22 +847,18 @@ async function editarTienda(id) {
         }
         const t = doc.data();
         
-        // Mostrar formulario
         document.getElementById('formEditarTienda').style.display = 'block';
-        
-        // Llenar campos
         document.getElementById('editTiendaId').value = id;
         document.getElementById('nombreTienda').value = t.nombre || '';
         document.getElementById('whatsapp').value = t.whatsapp || '';
+        document.getElementById('whatsapp2').value = t.whatsapp2 || '';
         document.getElementById('logoTienda').value = t.logo || '';
         document.getElementById('bannerTienda').value = t.banner || '';
         document.getElementById('nequi').value = t.nequi || '';
         document.getElementById('daviplata').value = t.daviplata || '';
         document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
         
-        // Scroll al formulario
         document.getElementById('formEditarTienda').scrollIntoView({ behavior: 'smooth' });
-        
         toast('📝 Editando: ' + (t.nombre || id), 'info');
         
     } catch(e) {
@@ -694,13 +867,11 @@ async function editarTienda(id) {
     }
 }
 
-// ============================================================
-// ===== CANCELAR EDICIÓN =====
-// ============================================================
 function cancelarEdTienda() {
     document.getElementById('editTiendaId').value = '';
     document.getElementById('nombreTienda').value = '';
     document.getElementById('whatsapp').value = '';
+    document.getElementById('whatsapp2').value = '';
     document.getElementById('logoTienda').value = '';
     document.getElementById('bannerTienda').value = '';
     document.getElementById('nequi').value = '';
@@ -709,13 +880,11 @@ function cancelarEdTienda() {
     document.getElementById('formEditarTienda').style.display = 'none';
 }
 
-// ============================================================
-// ===== GUARDAR TIENDA =====
-// ============================================================
 async function guardarTienda() {
     const id = document.getElementById('editTiendaId').value;
     const nombre = document.getElementById('nombreTienda').value.trim();
     const wa = document.getElementById('whatsapp').value.trim();
+    const wa2 = document.getElementById('whatsapp2').value.trim();
     const logo = document.getElementById('logoTienda').value.trim();
     const banner = document.getElementById('bannerTienda').value.trim();
     const nequi = document.getElementById('nequi').value.trim();
@@ -730,7 +899,16 @@ async function guardarTienda() {
         return;
     }
 
-    const datos = { nombre, whatsapp: wa, logo, banner, nequi, daviplata, categoriasAgotadas };
+    const datos = { 
+        nombre, 
+        whatsapp: wa, 
+        whatsapp2: wa2 || '',
+        logo, 
+        banner, 
+        nequi, 
+        daviplata, 
+        categoriasAgotadas 
+    };
     
     try {
         if (id) {
@@ -748,7 +926,6 @@ async function guardarTienda() {
     }
 }
 
-// Eliminar tienda
 async function eliminarTienda(id) {
     if (!confirm('¿Eliminar esta tienda permanentemente? Esto eliminará TODOS sus productos y pedidos.')) return;
     try {
@@ -817,7 +994,7 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 }
 
 // ============================================================
-// CREAR NEGOCIO COMPLETO (SUPER ADMIN)
+// ABRIR/CERRAR MODAL
 // ============================================================
 function abrirModalCrearNegocio() {
     document.getElementById('modalCrearNegocio').style.display = 'flex';
@@ -826,69 +1003,6 @@ function abrirModalCrearNegocio() {
 function cerrarModalCrearNegocio() {
     document.getElementById('modalCrearNegocio').style.display = 'none';
     document.body.style.overflow = '';
-}
-
-async function crearNegocioCompleto() {
-    const nombre = document.getElementById('nuevoNegocioNombre').value.trim();
-    const whatsapp = document.getElementById('nuevoNegocioWhatsapp').value.trim();
-    const logo = document.getElementById('nuevoNegocioLogo').value.trim();
-    const banner = document.getElementById('nuevoNegocioBanner').value.trim();
-    const adminEmail = document.getElementById('nuevoNegocioAdminEmail').value.trim();
-    const adminPassword = document.getElementById('nuevoNegocioAdminPassword').value.trim();
-    
-    if (!nombre || !whatsapp || !adminEmail || !adminPassword) { toast('⚠️ Completa todos los campos obligatorios (*)', 'error'); return; }
-    if (adminPassword.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
-    
-    try {
-        toast('⏳ Creando negocio y administrador...', 'info');
-        const tiendaRef = await db.collection('tiendas').add({
-            nombre, whatsapp, logo, banner,
-            abierta: true,
-            barcodeScanningEnabled: true,
-            categoriasAgotadas: [],
-            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        const tiendaId = tiendaRef.id;
-        
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(adminEmail, adminPassword);
-        const uid = userCredential.user.uid;
-        
-        await db.collection('usuarios').doc(uid).set({
-            email: adminEmail,
-            tiendaId: tiendaId,
-            admin: false,
-            nombre: `Admin de ${nombre}`,
-            creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
-            activo: true
-        });
-        
-        const productosDefault = [
-            { name: '📦 Servicio de Mandado', precio: 5000, categoria: 'Servicios', descripcion: 'Compramos y entregamos tus productos', codigoQR: 'MANDADO-001', estado: 'disponible', stock: 999 },
-            { name: '🍔 Hamburguesa', precio: 15000, categoria: 'Comidas', descripcion: 'Hamburguesa con queso', codigoQR: 'PROD-001', estado: 'disponible', stock: 50 }
-        ];
-        for (const prod of productosDefault) {
-            await db.collection('tiendas').doc(tiendaId).collection('productos').add(prod);
-        }
-        
-        await userCredential.user.sendEmailVerification();
-        toast(`✅ Negocio "${nombre}" creado con éxito`, 'success');
-        toast(`📧 Admin: ${adminEmail} | Contraseña: ${adminPassword}`, 'info', 5000);
-        
-        cerrarModalCrearNegocio();
-        cargarTiendasSuperAdmin();
-        cargarSelectsTiendas();
-        
-        document.getElementById('nuevoNegocioNombre').value = '';
-        document.getElementById('nuevoNegocioWhatsapp').value = '';
-        document.getElementById('nuevoNegocioLogo').value = '';
-        document.getElementById('nuevoNegocioBanner').value = '';
-        document.getElementById('nuevoNegocioAdminEmail').value = '';
-        document.getElementById('nuevoNegocioAdminPassword').value = '';
-        
-    } catch(error) {
-        console.error('❌ Error:', error);
-        toast('❌ Error: ' + error.message, 'error');
-    }
 }
 
 // ============================================================
@@ -1018,7 +1132,7 @@ function switchTab(name, btn) {
 }
 
 // ============================================================
-// INVENTARIO (Simplificado)
+// INVENTARIO
 // ============================================================
 async function cargarInventario() {
     const tid = document.getElementById('inventarioTienda').value;
@@ -1131,7 +1245,7 @@ function actualizarTodosStock() {
 }
 
 // ============================================================
-// SONIDO / ALARMA (Simplificado)
+// SONIDO / ALARMA
 // ============================================================
 function probarAltavoz() {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
