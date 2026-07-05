@@ -480,7 +480,6 @@ async function inicializarPanel() {
         rolLabel.textContent = '👑 Super Administrador';
         rolLabel.style.color = 'var(--yellow)';
         document.getElementById('panelTitulo').textContent = 'Panel de Super Administración';
-        // Mostrar todo
         document.getElementById('tabBtnTiendas').style.display = 'flex';
         document.getElementById('btnCrearNegocioContainer').style.display = 'block';
         cargarTiendasSuperAdmin();
@@ -489,7 +488,6 @@ async function inicializarPanel() {
         rolLabel.textContent = '🏪 Administrador de tienda';
         rolLabel.style.color = 'var(--green)';
         document.getElementById('panelTitulo').textContent = 'Panel de Administración';
-        // Ocultar Super Admin
         document.getElementById('tabBtnTiendas').style.display = 'none';
         document.getElementById('btnCrearNegocioContainer').style.display = 'none';
         cargarTiendaUnica(tiendaIdUsuario);
@@ -498,7 +496,6 @@ async function inicializarPanel() {
         window.location.href = 'index.html';
         return;
     }
-    // Cargar audio y pedidos
     setTimeout(activarAudioAutomatico, 1000);
     iniciarEscuchaGlobal();
 }
@@ -544,22 +541,31 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================
-// TIENDAS - SUPER ADMIN
+// ===== CARGAR TIENDAS - SUPER ADMIN (CON BOTONES) =====
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
     lista.innerHTML = '<p style="color:var(--text-muted);">Cargando tiendas...</p>';
+    
     try {
         const snap = await db.collection('tiendas').get();
-        if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);">No hay tiendas registradas.</p>'; return; }
+        if (snap.empty) {
+            lista.innerHTML = '<p style="color:var(--text-muted);">No hay tiendas registradas.</p>';
+            return;
+        }
+        
         let html = '';
         snap.forEach(doc => {
             const t = doc.data();
             const id = doc.id;
             const abierta = t.abierta !== false;
+            const escaneoActivado = t.barcodeScanningEnabled !== false;
+            
             html += `
                 <div class="tienda-item" id="tienda-${id}">
-                    <div class="tienda-logo">${t.logo ? `<img src="${t.logo}" alt="${t.nombre||''}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}</div>
+                    <div class="tienda-logo">
+                        ${t.logo ? `<img src="${t.logo}" alt="${t.nombre||''}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}
+                    </div>
                     <div class="tienda-info">
                         <h4>${t.nombre || 'Sin nombre'}</h4>
                         <p class="meta">📱 ${t.whatsapp || '-'}</p>
@@ -567,16 +573,105 @@ async function cargarTiendasSuperAdmin() {
                         <a class="link" href="${URL_BASE_MENU}?tienda=${id}" target="_blank">🔗 Ver menú</a>
                     </div>
                     <div class="tienda-actions">
-                        <button class="btn-info btn-sm" onclick="editarTienda('${id}')">Editar</button>
-                        <button class="btn-danger btn-sm" onclick="eliminarTienda('${id}')">Eliminar</button>
+                        <button class="btn-info btn-sm" onclick="editarTienda('${id}')">✏️ Editar</button>
+                        <button class="btn-danger btn-sm" onclick="eliminarTienda('${id}')">🗑 Eliminar</button>
+                        <button class="btn-info btn-sm" onclick="verPedidosTienda('${id}')">📦 Pedidos</button>
+                        <button class="btn-info btn-sm" onclick="toggleQR('${id}', ${!escaneoActivado})">
+                            ${escaneoActivado ? '📷 Desactivar QR' : '📷 Activar QR'}
+                        </button>
+                        <button class="btn-info btn-sm" onclick="toggleTienda('${id}', ${!abierta})">
+                            ${abierta ? '🔴 Cerrar' : '🟢 Abrir'}
+                        </button>
                     </div>
                 </div>
             `;
         });
+        
         lista.innerHTML = html;
-    } catch(e) { lista.innerHTML = `<p style="color:var(--red);font-size:13px;">Error al cargar tiendas.</p>`; console.error(e); }
+        
+    } catch (error) {
+        console.error('❌ Error al cargar tiendas:', error);
+        lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar tiendas.</p>';
+    }
 }
 
+// ============================================================
+// ===== FUNCIONES DE CONTROL PARA SUPER ADMIN =====
+// ============================================================
+
+// Ver pedidos de una tienda
+async function verPedidosTienda(tiendaId) {
+    const selector = document.getElementById('filtroTienda');
+    if (selector) {
+        selector.value = tiendaId;
+        cambiarTiendaSeleccionada();
+    }
+    const btnPedidos = document.querySelectorAll('.tab-btn')[0];
+    if (btnPedidos) switchTab('pedidos', btnPedidos);
+    toast('📦 Mostrando pedidos de la tienda seleccionada', 'info');
+}
+
+// Activar/Desactivar QR
+async function toggleQR(tiendaId, estado) {
+    try {
+        await db.collection('tiendas').doc(tiendaId).update({
+            barcodeScanningEnabled: estado
+        });
+        toast(estado ? '✅ QR activado' : '❌ QR desactivado', estado ? 'success' : 'warn');
+        cargarTiendasSuperAdmin();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// Abrir/Cerrar tienda
+async function toggleTienda(tiendaId, estado) {
+    try {
+        await db.collection('tiendas').doc(tiendaId).update({
+            abierta: estado
+        });
+        toast(estado ? '✅ Tienda abierta' : '❌ Tienda cerrada', estado ? 'success' : 'warn');
+        cargarTiendasSuperAdmin();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// Editar tienda
+async function editarTienda(id) {
+    try {
+        const doc = await db.collection('tiendas').doc(id).get();
+        if (!doc.exists) { toast('❌ Tienda no encontrada', 'error'); return; }
+        const t = doc.data();
+        document.getElementById('editTiendaId').value = id;
+        document.getElementById('nombreTienda').value = t.nombre || '';
+        document.getElementById('whatsapp').value = t.whatsapp || '';
+        document.getElementById('logoTienda').value = t.logo || '';
+        document.getElementById('bannerTienda').value = t.banner || '';
+        document.getElementById('nequi').value = t.nequi || '';
+        document.getElementById('daviplata').value = t.daviplata || '';
+        document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
+        document.getElementById('btnCancelTienda').classList.remove('hidden');
+        const btn = document.querySelectorAll('.tab-btn')[1];
+        if (btn) switchTab('tiendas', btn);
+        toast('📝 Editando tienda: ' + (t.nombre || id), 'info');
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+// Eliminar tienda
+async function eliminarTienda(id) {
+    if (!confirm('¿Eliminar esta tienda permanentemente? Esto eliminará TODOS sus productos y pedidos.')) return;
+    try {
+        await db.collection('tiendas').doc(id).delete();
+        toast('✅ Tienda eliminada.', 'success');
+        cargarTiendasSuperAdmin();
+        cargarSelectsTiendas();
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// CARGAR TIENDA ÚNICA - ADMIN DE NEGOCIO
+// ============================================================
 async function cargarTiendaUnica(tiendaId) {
     const lista = document.getElementById('listaTiendas');
     lista.innerHTML = '<p style="color:var(--text-muted);">Cargando tu tienda...</p>';
@@ -596,7 +691,7 @@ async function cargarTiendaUnica(tiendaId) {
                     <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">🔑 Esta es tu tienda. Solo tú puedes administrarla.</p>
                 </div>
                 <div class="tienda-actions">
-                    <button class="btn-info btn-sm" onclick="editarTienda('${tiendaId}')">Editar</button>
+                    <button class="btn-info btn-sm" onclick="editarTienda('${tiendaId}')">✏️ Editar</button>
                 </div>
             </div>
         `;
@@ -631,36 +726,6 @@ async function cargarSelectsTiendasUnico(tiendaId) {
     } catch(e) { console.error('❌ Error:', e); }
 }
 
-async function editarTienda(id) {
-    try {
-        const doc = await db.collection('tiendas').doc(id).get();
-        if (!doc.exists) { toast('❌ Tienda no encontrada', 'error'); return; }
-        const t = doc.data();
-        document.getElementById('editTiendaId').value = id;
-        document.getElementById('nombreTienda').value = t.nombre || '';
-        document.getElementById('whatsapp').value = t.whatsapp || '';
-        document.getElementById('logoTienda').value = t.logo || '';
-        document.getElementById('bannerTienda').value = t.banner || '';
-        document.getElementById('nequi').value = t.nequi || '';
-        document.getElementById('daviplata').value = t.daviplata || '';
-        document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
-        document.getElementById('btnCancelTienda').classList.remove('hidden');
-        const btn = document.querySelectorAll('.tab-btn')[1];
-        if (btn) switchTab('tiendas', btn);
-        toast('📝 Editando tienda: ' + (t.nombre || id), 'info');
-    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
-}
-
-async function eliminarTienda(id) {
-    if (!confirm('¿Eliminar esta tienda permanentemente?')) return;
-    try {
-        await db.collection('tiendas').doc(id).delete();
-        toast('Tienda eliminada.', 'info');
-        cargarTiendasSuperAdmin();
-        cargarSelectsTiendas();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
 function cancelarEdTienda() {
     ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda','nequi','daviplata','categoriasAgotadas']
         .forEach(id => document.getElementById(id).value = '');
@@ -679,12 +744,12 @@ async function guardarTienda() {
     if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
     const datos = { nombre, whatsapp: wa, logo, banner, nequi, daviplata, categoriasAgotadas };
     try {
-        if (id) { await db.collection('tiendas').doc(id).update(datos); toast('Tienda actualizada.', 'success'); }
-        else { await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true }); toast('Tienda registrada.', 'success'); }
+        if (id) { await db.collection('tiendas').doc(id).update(datos); toast('✅ Tienda actualizada.', 'success'); }
+        else { await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true }); toast('✅ Tienda registrada.', 'success'); }
         cancelarEdTienda();
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
 // ============================================================
@@ -789,8 +854,8 @@ async function cargarProductos() {
                 </div>
                 <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
                 <div class="prod-actions">
-                    <button class="btn-info btn-sm" onclick="editarProducto('${pid}','${tid}')">Editar</button>
-                    <button class="btn-danger btn-sm" onclick="eliminarProducto('${tid}','${pid}')">Borrar</button>
+                    <button class="btn-info btn-sm" onclick="editarProducto('${pid}','${tid}')">✏️ Editar</button>
+                    <button class="btn-danger btn-sm" onclick="eliminarProducto('${tid}','${pid}')">🗑 Borrar</button>
                 </div>
             `;
             lista.appendChild(div);
@@ -816,12 +881,12 @@ async function guardarProducto() {
     const datos = { name, precio, categoria, descripcion, img, img2, estado, stock, codigoQR, creadoEn: firebase.firestore.FieldValue.serverTimestamp() };
     try {
         const ref = db.collection('tiendas').doc(tid).collection('productos');
-        if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('Producto actualizado.', 'success'); }
+        if (pid) { await ref.doc(pid).set(datos, { merge: true }); toast('✅ Producto actualizado.', 'success'); }
         else { await ref.add(datos); toast('✅ Producto añadido correctamente.', 'success'); }
         cancelarEdProducto();
         cargarProductos();
         limpiarFormularioProducto();
-    } catch(e) { toast('Error: ' + e.message, 'error'); console.error(e); }
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); console.error(e); }
 }
 
 async function editarProducto(pid, tid) {
@@ -1152,8 +1217,8 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
     try {
         stopAlarm();
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
-        toast(`Pedido actualizado → ${nuevoEstado}`, 'success');
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
+        toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
 async function confirmarPago(tiendaId, pedidoId) {
