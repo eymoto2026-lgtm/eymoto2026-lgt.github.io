@@ -258,6 +258,10 @@ header .spacer{flex:1}
     <h1 id="panelTitulo">Panel de Administración</h1>
     <span class="spacer"></span>
     <span id="rolUsuario" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+    <!-- ===== BOTÓN DE SONIDO GLOBAL ===== -->
+    <button id="btnSonidoGlobal" class="btn-speaker btn-sm" onclick="toggleSonidoGlobal()" style="width:auto;padding:6px 12px;font-size:12px;border-radius:8px;">
+      🔊 Sonido ON
+    </button>
     <span class="header-badge" id="headerBadge">0</span>
     <button class="btn-ghost btn-sm" onclick="logout()" style="width:auto;padding:8px 16px;">Salir</button>
   </header>
@@ -268,6 +272,33 @@ header .spacer{flex:1}
       <div class="stat-card c-blue"><div class="val" id="statC">0</div><div class="lbl">En cocina</div></div>
       <div class="stat-card c-orange"><div class="val" id="statM">0</div><div class="lbl">En camino</div></div>
       <div class="stat-card c-green"><div class="val" id="statE">0</div><div class="lbl">Entregados hoy</div></div>
+    </div>
+
+    <!-- ===== RESUMEN DE NOTIFICACIONES ===== -->
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;background:var(--surface2);padding:12px 16px;border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:14px;">👑</span>
+            <span style="font-size:13px;color:var(--text-muted);">
+                Tiendas que te notifican: 
+                <span id="notifActivas" style="color:var(--green);font-weight:700;">0</span>
+            </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:14px;">🔕</span>
+            <span style="font-size:13px;color:var(--text-muted);">
+                Tiendas silenciadas para ti: 
+                <span id="notifInactivas" style="color:var(--red);font-weight:700;">0</span>
+            </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;border-left:1px solid var(--border);padding-left:12px;">
+            <span style="font-size:14px;">ℹ️</span>
+            <span style="font-size:11px;color:var(--text-muted);">
+                Los admins de tiendas <strong style="color:#fff;">SIEMPRE</strong> reciben sus pedidos.
+            </span>
+        </div>
+        <button onclick="mostrarResumenNotificaciones()" class="btn-info btn-sm" style="width:auto;padding:4px 12px;font-size:11px;border-radius:6px;">
+            📊 Actualizar
+        </button>
     </div>
 
     <div class="tabs">
@@ -483,6 +514,7 @@ let scannerAdmin = null;
 let escaneandoAdmin = false;
 let rolUsuario = null;
 let tiendaIdUsuario = null;
+let sonidoGlobal = true;
 
 // ============================================================
 // TOAST
@@ -541,6 +573,7 @@ async function inicializarPanel() {
         document.getElementById('panelTitulo').textContent = 'Panel de Super Administración';
         document.getElementById('tabBtnTiendas').style.display = 'flex';
         document.getElementById('btnCrearNegocioContainer').style.display = 'block';
+        cargarPreferenciaSonido();
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
     } else if (rolUsuario === 'admin') {
@@ -609,14 +642,12 @@ function verificarCorreoAdmin(email) {
     const ayudaPassword = document.getElementById('passwordAyuda');
 
     if (email === 'eymoto2026@gmail.com') {
-        // ===== SUPER ADMIN =====
         campoContraseña.style.display = 'none';
         avisoSuperAdmin.style.display = 'block';
         passwordInput.value = '';
         passwordInput.removeAttribute('required');
         ayudaPassword.textContent = '🔓 No necesitas contraseña. Eres Super Admin.';
     } else {
-        // ===== CLIENTE NORMAL =====
         campoContraseña.style.display = 'block';
         avisoSuperAdmin.style.display = 'none';
         passwordInput.setAttribute('required', 'required');
@@ -652,7 +683,6 @@ async function crearNegocioCompleto() {
     try {
         toast('⏳ Creando negocio...', 'info');
 
-        // 1. Crear la tienda
         const tiendaRef = await db.collection('tiendas').add({
             nombre: nombre,
             whatsapp: whatsapp,
@@ -664,16 +694,15 @@ async function crearNegocioCompleto() {
             abierta: true,
             barcodeScanningEnabled: true,
             categoriasAgotadas: [],
+            notificacionesSuperAdmin: true, // Por defecto, Super Admin recibe notificaciones
             creadoEn: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         const tiendaId = tiendaRef.id;
 
-        // 2. Buscar si el usuario ya existe por email
         const userQuery = await db.collection('usuarios').where('email', '==', adminEmail).get();
 
         if (userQuery.empty) {
-            // ===== NUEVO USUARIO (CLIENTE) =====
             const userCredential = await firebase.auth().createUserWithEmailAndPassword(adminEmail, adminPassword);
             const uid = userCredential.user.uid;
 
@@ -690,7 +719,6 @@ async function crearNegocioCompleto() {
             toast(`✅ Usuario creado para ${adminEmail}`, 'success');
 
         } else {
-            // ===== USUARIO EXISTENTE =====
             const userDoc = userQuery.docs[0];
             const userData = userDoc.data();
             const uid = userDoc.id;
@@ -707,7 +735,6 @@ async function crearNegocioCompleto() {
             }
         }
 
-        // 3. Productos por defecto
         const productosDefault = [
             { name: '📦 Servicio de Mandado', precio: 5000, categoria: 'Servicios', descripcion: 'Compramos y entregamos tus productos', codigoQR: 'MANDADO-001', estado: 'disponible', stock: 999 },
             { name: '🍔 Hamburguesa', precio: 15000, categoria: 'Comidas', descripcion: 'Hamburguesa con queso', codigoQR: 'PROD-001', estado: 'disponible', stock: 50 }
@@ -723,7 +750,6 @@ async function crearNegocioCompleto() {
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
 
-        // Limpiar formulario
         document.getElementById('nuevoNegocioNombre').value = '';
         document.getElementById('nuevoNegocioWhatsapp').value = '';
         document.getElementById('nuevoNegocioWhatsapp2').value = '';
@@ -743,7 +769,7 @@ async function crearNegocioCompleto() {
 }
 
 // ============================================================
-// CARGAR TIENDAS - SUPER ADMIN
+// CARGAR TIENDAS - SUPER ADMIN (CON BOTÓN DE NOTIFICACIONES)
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
@@ -762,6 +788,7 @@ async function cargarTiendasSuperAdmin() {
             const id = doc.id;
             const abierta = t.abierta !== false;
             const escaneoActivado = t.barcodeScanningEnabled !== false;
+            const notificacionesSuperAdmin = t.notificacionesSuperAdmin !== false;
             
             html += `
                 <div class="tienda-item" id="tienda-${id}">
@@ -784,6 +811,11 @@ async function cargarTiendasSuperAdmin() {
                         <button class="btn-info btn-sm" onclick="toggleTienda('${id}', ${!abierta})">
                             ${abierta ? '🔴 Cerrar' : '🟢 Abrir'}
                         </button>
+                        <!-- ===== BOTÓN DE NOTIFICACIONES PARA SUPER ADMIN ===== -->
+                        <button class="btn-info btn-sm" onclick="toggleNotificacionSuperAdmin('${id}')" 
+                                style="background:${notificacionesSuperAdmin ? 'var(--green-bg)' : 'var(--red-bg)'};border:1px solid ${notificacionesSuperAdmin ? 'var(--green)' : 'var(--red)'};color:${notificacionesSuperAdmin ? 'var(--green)' : 'var(--red)'};">
+                            ${notificacionesSuperAdmin ? '👑 Recibir' : '👑 No recibir'}
+                        </button>
                     </div>
                 </div>
             `;
@@ -791,9 +823,188 @@ async function cargarTiendasSuperAdmin() {
         
         lista.innerHTML = html;
         
+        // Actualizar contadores
+        setTimeout(actualizarContadoresNotificaciones, 100);
+        
     } catch (error) {
         console.error('❌ Error al cargar tiendas:', error);
         lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar tiendas.</p>';
+    }
+}
+
+// ============================================================
+// ALTERNAR NOTIFICACIONES PARA SUPER ADMIN (POR TIENDA)
+// ============================================================
+async function toggleNotificacionSuperAdmin(tiendaId) {
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId).get();
+        if (!doc.exists) return;
+        
+        const t = doc.data();
+        const estadoActual = t.notificacionesSuperAdmin !== false;
+        const nuevoEstado = !estadoActual;
+        const nombreTienda = t.nombre || tiendaId;
+        
+        await db.collection('tiendas').doc(tiendaId).update({
+            notificacionesSuperAdmin: nuevoEstado
+        });
+        
+        if (nuevoEstado) {
+            toast(`👑 Ahora RECIBIRÁS notificaciones de "${nombreTienda}" (solo tú, Super Admin)`, 'success', 4000);
+        } else {
+            toast(`👑 Ya NO recibirás notificaciones de "${nombreTienda}" (solo tú, Super Admin)`, 'warn', 4000);
+        }
+        
+        cargarTiendasSuperAdmin();
+        mostrarResumenNotificaciones();
+        
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// CONTADORES DE NOTIFICACIONES
+// ============================================================
+function actualizarContadoresNotificaciones() {
+    const tiendas = document.querySelectorAll('.tienda-item');
+    let activas = 0;
+    let inactivas = 0;
+    
+    tiendas.forEach(item => {
+        const btn = item.querySelector('[onclick*="toggleNotificacionSuperAdmin"]');
+        if (btn) {
+            if (btn.textContent.includes('Recibir')) {
+                activas++;
+            } else {
+                inactivas++;
+            }
+        }
+    });
+    
+    document.getElementById('notifActivas').textContent = activas;
+    document.getElementById('notifInactivas').textContent = inactivas;
+}
+
+// ============================================================
+// MOSTRAR RESUMEN DE NOTIFICACIONES
+// ============================================================
+function mostrarResumenNotificaciones() {
+    const tiendas = document.querySelectorAll('.tienda-item');
+    let activas = 0;
+    let inactivas = 0;
+    let listaActivas = [];
+    let listaInactivas = [];
+    
+    tiendas.forEach(item => {
+        const nombre = item.querySelector('.tienda-info h4')?.textContent || 'Sin nombre';
+        const btn = item.querySelector('[onclick*="toggleNotificacionSuperAdmin"]');
+        if (btn) {
+            if (btn.textContent.includes('Recibir')) {
+                activas++;
+                listaActivas.push(nombre);
+            } else {
+                inactivas++;
+                listaInactivas.push(nombre);
+            }
+        }
+    });
+    
+    document.getElementById('notifActivas').textContent = activas;
+    document.getElementById('notifInactivas').textContent = inactivas;
+    
+    console.log('📊 RESUMEN DE NOTIFICACIONES:');
+    console.log(`   👑 Activas (${activas}):`, listaActivas.join(', ') || 'Ninguna');
+    console.log(`   🔕 Inactivas (${inactivas}):`, listaInactivas.join(', ') || 'Ninguna');
+    console.log(`   ℹ️  Los admins de todas las tiendas SIEMPRE reciben sus pedidos.`);
+    
+    toast(
+        `📊 ${activas} tiendas te notifican, ${inactivas} no.`,
+        'info', 3000
+    );
+}
+
+// ============================================================
+// NOTIFICAR NUEVO PEDIDO (CON FILTRO PARA SUPER ADMIN)
+// ============================================================
+function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId) {
+    // 1. El admin de la tienda SIEMPRE recibe (manejado en su panel)
+    console.log(`📦 Pedido en ${nombreTienda} - Admin de tienda NOTIFICADO (SIEMPRE)`);
+    
+    // 2. Super Admin SOLO si está activo para esta tienda
+    const tienda = tiendasCache[tiendaId];
+    const superAdminActivo = tienda && tienda.notificacionesSuperAdmin !== false;
+    
+    if (superAdminActivo) {
+        toast(
+            `🛵 Nuevo pedido en ${nombreTienda} de ${cliente} - $${total.toLocaleString('es-CO')}`,
+            'new', 5000
+        );
+        
+        if (sonidoGlobal) {
+            reproducirSonidoNotificacion();
+        }
+        
+        console.log(`🔔 Super Admin NOTIFICADO para ${nombreTienda}`);
+    } else {
+        console.log(`🔕 Super Admin NO NOTIFICADO para ${nombreTienda}`);
+    }
+}
+
+// ============================================================
+// SONIDO
+// ============================================================
+function reproducirSonidoNotificacion() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        [800, 1000, 1200].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            const t = i * 0.15;
+            gain.gain.setValueAtTime(0.2, ctx.currentTime + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+            osc.start(ctx.currentTime + t);
+            osc.stop(ctx.currentTime + t + 0.25);
+        });
+    } catch(e) {
+        console.log('🔇 Error al reproducir sonido:', e);
+    }
+}
+
+// ============================================================
+// CONTROL DE SONIDO GLOBAL
+// ============================================================
+function toggleSonidoGlobal() {
+    sonidoGlobal = !sonidoGlobal;
+    localStorage.setItem('sonidoGlobal', sonidoGlobal ? 'true' : 'false');
+    
+    const btn = document.getElementById('btnSonidoGlobal');
+    if (sonidoGlobal) {
+        btn.textContent = '🔊 Sonido ON';
+        btn.style.color = 'var(--green)';
+        toast('🔊 Sonido de notificaciones ACTIVADO', 'success');
+    } else {
+        btn.textContent = '🔇 Sonido OFF';
+        btn.style.color = 'var(--red)';
+        toast('🔇 Sonido de notificaciones DESACTIVADO', 'warn');
+    }
+}
+
+function cargarPreferenciaSonido() {
+    const saved = localStorage.getItem('sonidoGlobal');
+    if (saved !== null) {
+        sonidoGlobal = saved === 'true';
+    }
+    const btn = document.getElementById('btnSonidoGlobal');
+    if (btn) {
+        btn.textContent = sonidoGlobal ? '🔊 Sonido ON' : '🔇 Sonido OFF';
+        btn.style.color = sonidoGlobal ? 'var(--green)' : 'var(--red)';
     }
 }
 
@@ -915,7 +1126,7 @@ async function guardarTienda() {
             await db.collection('tiendas').doc(id).update(datos);
             toast('✅ Tienda actualizada.', 'success');
         } else {
-            await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true });
+            await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true, notificacionesSuperAdmin: true });
             toast('✅ Tienda registrada.', 'success');
         }
         cancelarEdTienda();
@@ -1006,7 +1217,7 @@ function cerrarModalCrearNegocio() {
 }
 
 // ============================================================
-// PRODUCTOS
+// PRODUCTOS (SIN CAMBIOS)
 // ============================================================
 async function cargarProductos() {
     const tid = document.getElementById('tiendaProducto').value;
@@ -1245,7 +1456,7 @@ function actualizarTodosStock() {
 }
 
 // ============================================================
-// SONIDO / ALARMA
+// SONIDO / ALARMA (PARA ALTABOZ)
 // ============================================================
 function probarAltavoz() {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
@@ -1439,7 +1650,11 @@ function iniciarEscuchaGlobal() {
     db.collection('tiendas').get().then(snap => {
         snap.forEach(doc => {
             const tiendaId = doc.id;
-            const nombreTienda = doc.data().nombre || tiendaId;
+            const tiendaData = doc.data();
+            const nombreTienda = tiendaData.nombre || tiendaId;
+            
+            tiendasCache[tiendaId] = tiendaData;
+            
             const unsubscribe = db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos')
                 .orderBy('fecha', 'desc')
@@ -1447,24 +1662,35 @@ function iniciarEscuchaGlobal() {
                     const pedidos = [];
                     snapPedidos.forEach(pedidoDoc => { pedidos.push({ doc: pedidoDoc, data: pedidoDoc.data() }); });
                     todosLosPedidos[tiendaId] = pedidos;
+                    
                     snapPedidos.docChanges().forEach(change => {
-                        if (change.type === 'added' && change.doc.data().estado === 'Pendiente') {
+                        if (change.type === 'added') {
                             const data = change.doc.data();
                             const pedidoId = change.doc.id;
-                            if (!notificacionesMostradas.has(pedidoId)) {
+                            
+                            if (data.estado === 'Pendiente' && !notificacionesMostradas.has(pedidoId)) {
                                 notificacionesMostradas.add(pedidoId);
+                                
                                 const cliente = data.cliente?.nombre || 'Cliente';
                                 const total = data.total || 0;
                                 const items = data.items?.length || 0;
-                                toast(`🛵 Nuevo pedido en ${nombreTienda} de ${cliente} - $${total.toLocaleString('es-CO')}`, 'new', 5000);
+                                
+                                // ===== NOTIFICAR CON FILTRO =====
+                                notificarNuevoPedido(nombreTienda, cliente, total, tiendaId);
                             }
                         }
                     });
+                    
                     if (!tiendaSeleccionada) mostrarPedidosPendientesGlobal();
-                }, err => { console.error(`Error escuchando tienda ${tiendaId}:`, err); });
+                }, err => {
+                    console.error(`Error escuchando tienda ${tiendaId}:`, err);
+                });
+            
             listenersTiendas[tiendaId] = unsubscribe;
         });
-    }).catch(err => { console.error('Error obteniendo tiendas:', err); });
+    }).catch(err => {
+        console.error('Error obteniendo tiendas:', err);
+    });
 }
 
 function mostrarPedidosPendientesGlobal() {
@@ -1664,11 +1890,14 @@ document.addEventListener('DOMContentLoaded', () => {
         activarAudioAutomatico();
         document.removeEventListener('click', activarAudioPorClic);
     }, { once: true });
+    
+    cargarPreferenciaSonido();
 });
 
 console.log('✅ Panel de administración cargado correctamente');
 console.log('👑 Sistema de roles activado');
 console.log('📷 Escáner QR integrado');
+console.log('🔔 Control de notificaciones por tienda activado');
 </script>
 </body>
 </html>
