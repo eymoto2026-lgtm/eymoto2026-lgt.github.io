@@ -301,7 +301,7 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- TAB TIENDAS -->
+    <!-- ===== TAB TIENDAS - CON FORMULARIO DE EDICIÓN ===== -->
     <div class="tab-content" id="tab-tiendas">
       <div class="section-title">🏪 Gestionar tiendas</div>
       
@@ -332,6 +332,27 @@ header .spacer{flex:1}
         </div>
       </div>
 
+      <!-- ===== FORMULARIO DE EDICIÓN DE TIENDAS ===== -->
+      <div id="formEditarTienda" style="display:none;background:var(--surface2);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--yellow);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h4 style="color:var(--yellow);">✏️ Editar tienda</h4>
+          <button onclick="cancelarEdTienda()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <input type="hidden" id="editTiendaId">
+        <div class="form-group"><label>Nombre comercial</label><input id="nombreTienda" placeholder="Ej: Burger House"></div>
+        <div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="573000000000"></div>
+        <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
+        <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
+        <div class="form-group"><label>📱 Número Nequi (para pagos)</label><input id="nequi" placeholder="3002937289"></div>
+        <div class="form-group"><label>📱 Número Daviplata (para pagos)</label><input id="daviplata" placeholder="3002937289"></div>
+        <div class="form-group"><label>Categorías agotadas (separadas por coma)</label><input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas"></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="guardarTienda()" style="flex:1;background:var(--yellow);color:#1a1a2e;font-weight:700;padding:12px;border-radius:10px;border:none;cursor:pointer;">💾 Guardar cambios</button>
+          <button class="btn-ghost" onclick="cancelarEdTienda()" style="width:auto;padding:12px 16px;">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- LISTA DE TIENDAS -->
       <div id="listaTiendas"><p style="color:var(--text-muted);font-size:13px;">Cargando tiendas...</p></div>
     </div>
 
@@ -637,12 +658,22 @@ async function toggleTienda(tiendaId, estado) {
     }
 }
 
-// Editar tienda
+// ============================================================
+// ===== EDITAR TIENDA - CON FORMULARIO =====
+// ============================================================
 async function editarTienda(id) {
     try {
         const doc = await db.collection('tiendas').doc(id).get();
-        if (!doc.exists) { toast('❌ Tienda no encontrada', 'error'); return; }
+        if (!doc.exists) {
+            toast('❌ Tienda no encontrada', 'error');
+            return;
+        }
         const t = doc.data();
+        
+        // Mostrar formulario
+        document.getElementById('formEditarTienda').style.display = 'block';
+        
+        // Llenar campos
         document.getElementById('editTiendaId').value = id;
         document.getElementById('nombreTienda').value = t.nombre || '';
         document.getElementById('whatsapp').value = t.whatsapp || '';
@@ -651,11 +682,70 @@ async function editarTienda(id) {
         document.getElementById('nequi').value = t.nequi || '';
         document.getElementById('daviplata').value = t.daviplata || '';
         document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
-        document.getElementById('btnCancelTienda').classList.remove('hidden');
-        const btn = document.querySelectorAll('.tab-btn')[1];
-        if (btn) switchTab('tiendas', btn);
-        toast('📝 Editando tienda: ' + (t.nombre || id), 'info');
-    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+        
+        // Scroll al formulario
+        document.getElementById('formEditarTienda').scrollIntoView({ behavior: 'smooth' });
+        
+        toast('📝 Editando: ' + (t.nombre || id), 'info');
+        
+    } catch(e) {
+        console.error('❌ Error:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// ===== CANCELAR EDICIÓN =====
+// ============================================================
+function cancelarEdTienda() {
+    document.getElementById('editTiendaId').value = '';
+    document.getElementById('nombreTienda').value = '';
+    document.getElementById('whatsapp').value = '';
+    document.getElementById('logoTienda').value = '';
+    document.getElementById('bannerTienda').value = '';
+    document.getElementById('nequi').value = '';
+    document.getElementById('daviplata').value = '';
+    document.getElementById('categoriasAgotadas').value = '';
+    document.getElementById('formEditarTienda').style.display = 'none';
+}
+
+// ============================================================
+// ===== GUARDAR TIENDA =====
+// ============================================================
+async function guardarTienda() {
+    const id = document.getElementById('editTiendaId').value;
+    const nombre = document.getElementById('nombreTienda').value.trim();
+    const wa = document.getElementById('whatsapp').value.trim();
+    const logo = document.getElementById('logoTienda').value.trim();
+    const banner = document.getElementById('bannerTienda').value.trim();
+    const nequi = document.getElementById('nequi').value.trim();
+    const daviplata = document.getElementById('daviplata').value.trim();
+    const categoriasAgotadas = document.getElementById('categoriasAgotadas').value
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c !== '');
+
+    if (!nombre || !wa) {
+        toast('Completa el nombre y el WhatsApp.', 'error');
+        return;
+    }
+
+    const datos = { nombre, whatsapp: wa, logo, banner, nequi, daviplata, categoriasAgotadas };
+    
+    try {
+        if (id) {
+            await db.collection('tiendas').doc(id).update(datos);
+            toast('✅ Tienda actualizada.', 'success');
+        } else {
+            await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true });
+            toast('✅ Tienda registrada.', 'success');
+        }
+        cancelarEdTienda();
+        cargarTiendasSuperAdmin();
+        cargarSelectsTiendas();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 // Eliminar tienda
@@ -724,32 +814,6 @@ async function cargarSelectsTiendasUnico(tiendaId) {
             if (sel) { sel.innerHTML = opt; if (selId === 'tiendaProducto') cargarProductos(); }
         }
     } catch(e) { console.error('❌ Error:', e); }
-}
-
-function cancelarEdTienda() {
-    ['editTiendaId','nombreTienda','whatsapp','logoTienda','bannerTienda','nequi','daviplata','categoriasAgotadas']
-        .forEach(id => document.getElementById(id).value = '');
-    document.getElementById('btnCancelTienda').classList.add('hidden');
-}
-
-async function guardarTienda() {
-    const id = document.getElementById('editTiendaId').value;
-    const nombre = document.getElementById('nombreTienda').value.trim();
-    const wa = document.getElementById('whatsapp').value.trim();
-    const logo = document.getElementById('logoTienda').value.trim();
-    const banner = document.getElementById('bannerTienda').value.trim();
-    const nequi = document.getElementById('nequi').value.trim();
-    const daviplata = document.getElementById('daviplata').value.trim();
-    const categoriasAgotadas = document.getElementById('categoriasAgotadas').value.split(',').map(c => c.trim()).filter(c => c !== '');
-    if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
-    const datos = { nombre, whatsapp: wa, logo, banner, nequi, daviplata, categoriasAgotadas };
-    try {
-        if (id) { await db.collection('tiendas').doc(id).update(datos); toast('✅ Tienda actualizada.', 'success'); }
-        else { await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true }); toast('✅ Tienda registrada.', 'success'); }
-        cancelarEdTienda();
-        cargarTiendasSuperAdmin();
-        cargarSelectsTiendas();
-    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
 // ============================================================
