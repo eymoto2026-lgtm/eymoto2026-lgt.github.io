@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -422,6 +422,11 @@
             color: #999;
             text-align: center;
             margin-top: 2px;
+        }
+        .selector-peso .peso-precio-por-kilo {
+            font-size: 11px;
+            color: #888;
+            text-align: center;
         }
 
         .producto-acciones {
@@ -1924,18 +1929,36 @@
         // FUNCIONES PARA PRODUCTOS POR PESO CON INPUT NUMÉRICO
         // ============================================================
         
+        // Calcular precio según el peso y el modo
+        function calcularPrecioPorPeso(producto, gramos) {
+            if (!producto || producto.tipoProducto !== 'peso') return 0;
+            
+            const modo = producto.modoPeso || 'por_gramo';
+            
+            if (modo === 'por_gramo') {
+                const precioPorGramo = producto.precioPorGramo || 0;
+                return precioPorGramo * gramos;
+            } else {
+                // Modo por base (regla de 3)
+                const pesoBase = producto.pesoBase || 500;
+                const precioBase = producto.precioBase || 0;
+                if (pesoBase === 0) return 0;
+                return (precioBase / pesoBase) * gramos;
+            }
+        }
+
         // Actualizar peso desde el input
         function actualizarPesoInput(productoId, valor) {
             let gramos = parseInt(valor);
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
             
-            const pesoMinimo = producto.pesoMinimo || 250;
+            const pesoMinimo = producto.pesoMinimo || 1;
             const pesoMaximo = 10000;
             
-            // Si no es un número válido, usar el mínimo
-            if (isNaN(gramos) || gramos < pesoMinimo) {
-                gramos = pesoMinimo;
+            // Si no es un número válido o es menor a 1, usar 1
+            if (isNaN(gramos) || gramos < 1) {
+                gramos = 1;
             }
             if (gramos > pesoMaximo) {
                 gramos = pesoMaximo;
@@ -1954,19 +1977,24 @@
             const label = document.getElementById(`pesoLabel-${productoId}`);
             if (label) label.textContent = `${gramos}g`;
             
-            // Actualizar el precio
-            const precioPorGramo = producto.precioPorGramo || 0;
-            const precioTotal = precioPorGramo * gramos;
+            // Calcular y mostrar el precio total
+            const precioTotal = calcularPrecioPorPeso(producto, gramos);
             const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
             if (precioEl) {
-                precioEl.innerHTML = `💰 <span class="label">Total:</span> $${precioTotal.toLocaleString('es-CO')}`;
+                precioEl.innerHTML = `💰 <span class="label">Total:</span> $${Math.round(precioTotal).toLocaleString('es-CO')}`;
+            }
+            
+            // Actualizar el precio mostrado en el producto
+            const precioDisplay = document.querySelector(`#producto-precio-${productoId}`);
+            if (precioDisplay) {
+                precioDisplay.textContent = `$${Math.round(precioTotal).toLocaleString('es-CO')}`;
             }
             
             // Si el producto ya está en el carrito, actualizarlo
             const itemEnCarrito = carrito.find(c => c.id === productoId);
             if (itemEnCarrito && itemEnCarrito.tipoProducto === 'peso') {
                 itemEnCarrito.pesoGramos = gramos;
-                itemEnCarrito.precio = precioTotal;
+                itemEnCarrito.precio = Math.round(precioTotal);
                 actualizarCarrito();
                 actualizarContador(productoId);
             }
@@ -1977,13 +2005,13 @@
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
             
-            const pesoMinimo = producto.pesoMinimo || 250;
+            const pesoMinimo = producto.pesoMinimo || 1;
             const pesoMaximo = 10000;
             let gramos = parseInt(valor);
             
-            if (isNaN(gramos) || gramos < pesoMinimo) {
-                gramos = pesoMinimo;
-                mostrarToast(`⚠️ El peso mínimo es ${pesoMinimo}g`, 'info', 2000);
+            if (isNaN(gramos) || gramos < 1) {
+                gramos = 1;
+                mostrarToast('⚠️ El peso mínimo es 1 gramo', 'info', 2000);
             }
             if (gramos > pesoMaximo) {
                 gramos = pesoMaximo;
@@ -1993,7 +2021,7 @@
             actualizarPesoInput(productoId, gramos);
         }
 
-        // Cambiar peso con los botones +50 / -50
+        // Cambiar peso con los botones + / -
         function cambiarPesoInput(productoId, cambio) {
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
@@ -2002,10 +2030,9 @@
             if (!input) return;
             
             let nuevoValor = parseInt(input.value) + cambio;
-            const pesoMinimo = producto.pesoMinimo || 250;
             const pesoMaximo = 10000;
             
-            if (nuevoValor < pesoMinimo) nuevoValor = pesoMinimo;
+            if (nuevoValor < 1) nuevoValor = 1;
             if (nuevoValor > pesoMaximo) nuevoValor = pesoMaximo;
             
             input.value = nuevoValor;
@@ -2144,18 +2171,30 @@
                             const restarVisible = cantidad > 0 ? 'visible' : '';
                             const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
                             
-                            // ===== SELECTOR DE PESO CON INPUT NUMÉRICO =====
+                            // ===== CALCULAR PRECIO POR PESO =====
+                            let precioDisplay = '';
+                            let precioPorKiloText = '';
                             let pesoSelectorHtml = '';
-                            if (p.tipoProducto === 'peso' && p.pesoMinimo) {
-                                const pesoMinimo = p.pesoMinimo || 250;
-                                const precioPorGramo = p.precioPorGramo || 0;
+                            
+                            if (p.tipoProducto === 'peso') {
+                                const pesoMinimo = p.pesoMinimo || 1;
                                 
-                                // Inicializar el peso seleccionado
+                                // Inicializar el peso seleccionado (mínimo 1 gramo)
                                 if (!pesosSeleccionados[p.id]) {
                                     pesosSeleccionados[p.id] = pesoMinimo;
                                 }
                                 const pesoInicial = pesosSeleccionados[p.id];
-                                const precioInicial = precioPorGramo * pesoInicial;
+                                const precioTotal = calcularPrecioPorPeso(p, pesoInicial);
+                                
+                                precioDisplay = `$${Math.round(precioTotal).toLocaleString('es-CO')}`;
+                                
+                                // Mostrar precio por kilo si está disponible
+                                if (p.modoPeso === 'por_gramo' && p.precioPorGramo) {
+                                    precioPorKiloText = `<div class="peso-precio-por-kilo">$${(p.precioPorGramo * 1000).toLocaleString('es-CO')}/kg</div>`;
+                                } else if (p.modoPeso === 'por_base' && p.pesoBase && p.precioBase) {
+                                    const precioKilo = (p.precioBase / p.pesoBase) * 1000;
+                                    precioPorKiloText = `<div class="peso-precio-por-kilo">≈ $${Math.round(precioKilo).toLocaleString('es-CO')}/kg</div>`;
+                                }
                                 
                                 pesoSelectorHtml = `
                                     <div class="selector-peso" id="selectorPeso-${p.id}">
@@ -2167,7 +2206,7 @@
                                             <input type="number" 
                                                    id="pesoInput-${p.id}"
                                                    class="peso-input"
-                                                   min="${pesoMinimo}" 
+                                                   min="1" 
                                                    max="10000" 
                                                    step="1" 
                                                    value="${pesoInicial}"
@@ -2176,23 +2215,17 @@
                                             <span class="peso-unidad">g</span>
                                             <button class="peso-btn-menos" onclick="window.cambiarPesoInput('${p.id}', -50)">−50</button>
                                             <button class="peso-btn-mas" onclick="window.cambiarPesoInput('${p.id}', 50)">+50</button>
+                                            <button class="peso-btn-menos" onclick="window.cambiarPesoInput('${p.id}', -10)" style="font-size:10px;padding:4px 6px;">−10</button>
+                                            <button class="peso-btn-mas" onclick="window.cambiarPesoInput('${p.id}', 10)" style="font-size:10px;padding:4px 6px;">+10</button>
                                         </div>
                                         <div class="peso-precio-total" id="pesoPrecioTotal-${p.id}">
-                                            💰 <span class="label">Total:</span> $${precioInicial.toLocaleString('es-CO')}
+                                            💰 <span class="label">Total:</span> $${Math.round(precioTotal).toLocaleString('es-CO')}
                                         </div>
                                         <div class="peso-minimo-info">Mínimo ${pesoMinimo}g</div>
                                     </div>
                                 `;
-                            }
-
-                            // ===== PRECIO A MOSTRAR =====
-                            let precioDisplay = (p.precio || 0).toLocaleString('es-CO');
-                            let precioPorPeso = '';
-                            if (p.tipoProducto === 'peso') {
-                                const pesoInicial = pesosSeleccionados[p.id] || p.pesoMinimo || 250;
-                                const precioTotal = (p.precioPorGramo || 0) * pesoInicial;
-                                precioDisplay = `$${precioTotal.toLocaleString('es-CO')}`;
-                                precioPorPeso = `<div style="font-size:11px;color:#888;">${p.precio.toLocaleString('es-CO')}/kg</div>`;
+                            } else {
+                                precioDisplay = `$${(p.precio || 0).toLocaleString('es-CO')}`;
                             }
 
                             const btnSumarHtml = estaAgotado 
@@ -2201,7 +2234,7 @@
                             const claseAgotado = estaAgotado ? 'agotado' : '';
 
                             productosHtml += `
-                                <div class="producto-card ${claseAgotado}">
+                                <div class="producto-card ${claseAgotado}" id="producto-${p.id}">
                                     <div class="producto-img-wrapper" onclick="abrirModalProducto('${p.id}')">
                                         ${imagenHtml}
                                     </div>
@@ -2209,8 +2242,8 @@
                                         <div class="producto-nombre" onclick="abrirModalProducto('${p.id}')">${escHtml(p.name || 'Producto')}</div>
                                         ${descripcionHtml}
                                         ${badgeAgotado}
-                                        <div class="precio">${precioDisplay}</div>
-                                        ${precioPorPeso}
+                                        <div class="precio" id="producto-precio-${p.id}">${precioDisplay}</div>
+                                        ${precioPorKiloText}
                                         ${pesoSelectorHtml}
                                         <div class="producto-acciones">
                                             <button class="btn-restar ${restarVisible}" id="restar-${p.id}" onclick="quitarDelCarrito('${p.id}')">−</button>
@@ -2292,14 +2325,13 @@
             let precioUnitario = producto.precio;
             
             if (producto.tipoProducto === 'peso') {
-                // Usar el peso guardado en pesosSeleccionados o el mínimo
-                pesoGramos = pesosSeleccionados[productoId] || producto.pesoMinimo || 250;
-                // Asegurar que el peso no sea menor al mínimo
-                if (pesoGramos < (producto.pesoMinimo || 250)) {
-                    pesoGramos = producto.pesoMinimo || 250;
-                    pesosSeleccionados[productoId] = pesoGramos;
+                // Usar el peso guardado en pesosSeleccionados o mínimo 1g
+                pesoGramos = pesosSeleccionados[productoId] || producto.pesoMinimo || 1;
+                if (pesoGramos < 1) {
+                    pesoGramos = 1;
+                    pesosSeleccionados[productoId] = 1;
                 }
-                precioUnitario = (producto.precioPorGramo || 0) * pesoGramos;
+                precioUnitario = calcularPrecioPorPeso(producto, pesoGramos);
                 cantidad = 1;
             }
 
@@ -2308,7 +2340,7 @@
                 if (producto.tipoProducto === 'peso') {
                     existente.cantidad = 1;
                     existente.pesoGramos = pesoGramos;
-                    existente.precio = precioUnitario;
+                    existente.precio = Math.round(precioUnitario);
                 } else {
                     existente.cantidad++;
                 }
@@ -2316,20 +2348,23 @@
                 carrito.push({
                     id: producto.id,
                     nombre: producto.name,
-                    precio: precioUnitario,
+                    precio: Math.round(precioUnitario),
                     cantidad: cantidad,
                     imagen: producto.img || '',
                     tipoProducto: producto.tipoProducto || 'unidad',
                     pesoGramos: pesoGramos,
                     pesoMinimo: producto.pesoMinimo || 0,
-                    precioPorGramo: producto.precioPorGramo || 0
+                    precioPorGramo: producto.precioPorGramo || 0,
+                    modoPeso: producto.modoPeso || 'por_gramo',
+                    pesoBase: producto.pesoBase || 0,
+                    precioBase: producto.precioBase || 0
                 });
             }
             actualizarCarrito();
             actualizarContador(productoId);
             
             if (producto.tipoProducto === 'peso') {
-                mostrarToast(`✅ ${producto.name} (${pesoGramos}g) agregado`, 'success', 1500);
+                mostrarToast(`✅ ${producto.name} (${pesoGramos}g) - $${Math.round(precioUnitario).toLocaleString('es-CO')}`, 'success', 1500);
             }
         }
 
@@ -2740,7 +2775,16 @@
             document.getElementById('modalNombre').textContent = producto.name || 'Producto';
             const descText = formatearDescripcion(producto.descripcion);
             document.getElementById('modalDescripcion').textContent = descText || 'Sin descripción';
-            document.getElementById('modalPrecio').textContent = '$' + (producto.precio || 0).toLocaleString('es-CO');
+            
+            // Mostrar precio en el modal
+            let precioModal = 0;
+            if (producto.tipoProducto === 'peso') {
+                const pesoActual = pesosSeleccionados[productoId] || producto.pesoMinimo || 1;
+                precioModal = calcularPrecioPorPeso(producto, pesoActual);
+            } else {
+                precioModal = producto.precio || 0;
+            }
+            document.getElementById('modalPrecio').textContent = '$' + Math.round(precioModal).toLocaleString('es-CO');
             
             document.getElementById('modalBtnAgregar').dataset.productoId = productoId;
             
@@ -2869,7 +2913,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('⚖️ Soporte para productos por peso con input numérico activado');
+        console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
     </script>
 </body>
 </html>
