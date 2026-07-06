@@ -425,6 +425,55 @@ header .spacer{flex:1}
     flex-wrap: wrap;
 }
 
+/* ===== BUSCADOR DE PRODUCTOS ===== */
+.buscador-container {
+    background: var(--surface2);
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+}
+.buscador-container .buscador-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.buscador-container .buscador-header span:first-child {
+    font-size: 14px;
+}
+.buscador-container .buscador-header .buscador-titulo {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.buscador-input-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.buscador-input-group input {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 14px;
+}
+.buscador-input-group button {
+    width: auto;
+    padding: 10px 16px;
+    white-space: nowrap;
+}
+.buscador-resultados {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+.buscador-resultados .highlight {
+    color: var(--yellow);
+    font-weight: 600;
+}
+
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
@@ -611,13 +660,30 @@ header .spacer{flex:1}
       <div id="listaTiendas"><p style="color:var(--text-muted);font-size:13px;">Cargando tiendas...</p></div>
     </div>
 
-    <!-- ===== TAB PRODUCTOS CON SOPORTE PARA PESO ===== -->
+    <!-- ===== TAB PRODUCTOS CON BUSCADOR ===== -->
     <div class="tab-content" id="tab-productos">
       <div class="row2">
         <div>
           <div class="section-title">Añadir / editar producto</div>
           <input type="hidden" id="editProductoId">
           <div class="form-group"><label>Tienda</label><select id="tiendaProducto" onchange="window.cargarProductos()"><option value="">Seleccionar...</option></select></div>
+          
+          <!-- ===== BUSCADOR DE PRODUCTOS ===== -->
+          <div class="buscador-container">
+            <div class="buscador-header">
+              <span>🔍</span>
+              <span class="buscador-titulo">Buscar producto</span>
+            </div>
+            <div class="buscador-input-group">
+              <input id="buscadorProducto" placeholder="Buscar por nombre o categoría..." oninput="window.filtrarProductos()">
+              <button class="btn-ghost btn-sm" onclick="window.limpiarBuscador()" style="width:auto;padding:8px 16px;">✕ Limpiar</button>
+              <button class="btn-info btn-sm" onclick="window.filtrarProductos()" style="width:auto;padding:8px 16px;">🔍 Buscar</button>
+            </div>
+            <div class="buscador-resultados">
+              <span id="resultadosBusqueda">Mostrando todos los productos</span>
+            </div>
+          </div>
+          
           <div class="form-group"><label>Nombre *</label><input id="nuevoNombre" placeholder="Ej: Gaseosa"></div>
           
           <!-- ===== TIPO DE PRODUCTO ===== -->
@@ -639,7 +705,6 @@ header .spacer{flex:1}
           <div class="campos-peso" id="camposPeso">
             <div class="titulo-peso">⚖️ Configuración de peso</div>
             
-            <!-- SELECTOR DE MODO DE PRECIO -->
             <div class="form-group">
               <label>Modo de precio por peso</label>
               <select id="nuevoModoPeso" onchange="window.cambiarModoPeso()">
@@ -649,7 +714,6 @@ header .spacer{flex:1}
               <small style="color:var(--text-muted);font-size:10px;">Elige cómo quieres definir el precio del producto</small>
             </div>
 
-            <!-- MODO 1: PRECIO POR GRAMO -->
             <div id="modoPorGramo" class="modo-peso">
               <div class="row2">
                 <div class="form-group">
@@ -671,7 +735,6 @@ header .spacer{flex:1}
               </div>
             </div>
 
-            <!-- MODO 2: PRECIO POR PESO BASE -->
             <div id="modoPorBase" class="modo-peso" style="display:none;">
               <div class="row2">
                 <div class="form-group">
@@ -699,7 +762,6 @@ header .spacer{flex:1}
             </div>
           </div>
 
-          <!-- ===== PRECIO NORMAL ===== -->
           <div class="form-group">
             <label id="labelPrecio">Precio *</label>
             <input id="nuevoPrecio" type="number" placeholder="3500" step="100">
@@ -712,7 +774,6 @@ header .spacer{flex:1}
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://..."></div>
           <div class="form-group"><label>URL imagen 2</label><input id="nuevoImagen2" placeholder="https://..."></div>
           
-          <!-- ===== CAMPO QR CON BOTÓN DE ESCANEO ===== -->
           <div class="form-group">
             <label>Código QR / Barras</label>
             <div class="input-with-btn">
@@ -724,7 +785,6 @@ header .spacer{flex:1}
             <small style="color:var(--text-muted);font-size:11px;">Escanea un código QR o código de barras (EAN/UPC)</small>
           </div>
 
-          <!-- ===== BOTONES DE BÚSQUEDA ===== -->
           <div class="buscar-info-btn">
             <button type="button" class="btn-info btn-sm" onclick="window.buscarInformacionProducto()" style="width:auto;padding:8px 16px;">
               🔍 Buscar en Open Food Facts
@@ -738,7 +798,10 @@ header .spacer{flex:1}
           <div class="form-group"><label>Stock</label><input id="nuevoStock" type="number" placeholder="0" value="0"></div>
           <div style="display:flex;gap:8px"><button onclick="window.guardarProducto()">Guardar</button><button class="btn-ghost hidden" id="btnCancelProd" onclick="window.cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button></div>
         </div>
-        <div><div class="section-title">Inventario</div><div id="listaProductos"><p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p></div></div>
+        <div>
+          <div class="section-title">Inventario</div>
+          <div id="listaProductos"><p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p></div>
+        </div>
       </div>
     </div>
 
@@ -836,6 +899,13 @@ let sonidoGlobal = true;
 let scannerAdmin = null;
 let scannerAdminActivo = false;
 let scannerAdminTiempoEspera = null;
+
+// ============================================================
+// VARIABLES DEL BUSCADOR DE PRODUCTOS
+// ============================================================
+let productosOriginales = [];
+let productosFiltrados = [];
+let filtroActivo = false;
 
 // ============================================================
 // TOAST
@@ -1757,9 +1827,6 @@ function detenerScannerAdmin() {
     scannerAdminActivo = false;
 }
 
-// ============================================================
-// FUNCIÓN PRINCIPAL DEL ESCÁNER - SIEMPRE PONE EL CÓDIGO
-// ============================================================
 function onScannerAdminSuccess(decodedText, decodedResult) {
     console.log('📷 Código escaneado (Admin):', decodedText);
     
@@ -1772,17 +1839,14 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
         return;
     }
     
-    // ===== 1. SIEMPRE PONER EL CÓDIGO EN EL CAMPO =====
     document.getElementById('nuevoCodigoQR').value = decodedText;
     
-    // ===== 2. INTENTAR BUSCAR SI EL PRODUCTO YA EXISTE =====
     db.collection('tiendas').doc(tid)
         .collection('productos')
         .where('codigoQR', '==', decodedText)
         .get()
         .then(async snap => {
             if (!snap.empty) {
-                // ===== PRODUCTO YA EXISTE - CARGAR TODOS LOS DATOS =====
                 const doc = snap.docs[0];
                 const p = doc.data();
                 
@@ -1794,7 +1858,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                 `;
                 mensaje.className = 'scanner-mensaje success';
                 
-                // Cargar TODOS los datos del producto
                 document.getElementById('editProductoId').value = doc.id;
                 document.getElementById('nuevoNombre').value = p.name || '';
                 document.getElementById('nuevoPrecio').value = p.precio || '';
@@ -1806,7 +1869,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                 document.getElementById('nuevoStock').value = p.stock !== undefined ? p.stock : 0;
                 document.getElementById('btnCancelProd').classList.remove('hidden');
                 
-                // Cargar campos de peso si existen
                 if (p.tipoProducto) {
                     document.getElementById('nuevoTipoProducto').value = p.tipoProducto;
                     document.getElementById('nuevoPesoMinimo').value = p.pesoMinimo || 250;
@@ -1831,7 +1893,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                 }, 2000);
                 
             } else {
-                // ===== PRODUCTO NUEVO - AUTCOMPLETAR LO QUE SE PUEDA =====
                 mensaje.innerHTML = `
                     🔍 Código leído: <strong>${decodedText}</strong>
                     <br><span style="font-size:12px;color:#FFD600;">💡 Completa los datos del producto y guarda</span>
@@ -1839,11 +1900,9 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                 `;
                 mensaje.className = 'scanner-mensaje warning';
                 
-                // ===== LIMPIAR FORMULARIO PARA NUEVO PRODUCTO =====
                 document.getElementById('editProductoId').value = '';
                 document.getElementById('btnCancelProd').classList.add('hidden');
                 
-                // ===== INTENTAR AUTCOMPLETAR DESDE OPEN FOOD FACTS =====
                 let datosEncontrados = false;
                 
                 if (decodedText.match(/^[0-9]{8,13}$/)) {
@@ -1869,7 +1928,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                                 document.getElementById('nuevoImagen').value = product.image_url;
                             }
                             
-                            // Si tiene peso, configurar como producto por peso
                             if (product.product_quantity) {
                                 const cantidad = parseInt(product.product_quantity);
                                 if (cantidad > 0) {
@@ -1901,7 +1959,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                     }
                 }
                 
-                // ===== SI ES UN CÓDIGO QR CON TEXTO LEGIBLE =====
                 if (!datosEncontrados && decodedText.includes(' ') && decodedText.length > 3) {
                     document.getElementById('nuevoNombre').value = decodedText;
                     mensaje.innerHTML = `
@@ -1913,7 +1970,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                     datosEncontrados = true;
                 }
                 
-                // ===== SI ES UN CÓDIGO NUMÉRICO CORTO =====
                 if (!datosEncontrados && decodedText.length <= 6 && decodedText.match(/^[0-9]+$/)) {
                     document.getElementById('nuevoNombre').value = `Producto ${decodedText}`;
                     mensaje.innerHTML = `
@@ -1925,7 +1981,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                     datosEncontrados = true;
                 }
                 
-                // ===== SI NO SE ENCONTRÓ NADA =====
                 if (!datosEncontrados) {
                     mensaje.innerHTML = `
                         ✅ Código leído: <strong>${decodedText}</strong>
@@ -1935,16 +1990,12 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
                     mensaje.className = 'scanner-mensaje warning';
                 }
                 
-                // ===== ASEGURAR QUE EL CAMPO DE CÓDIGO ESTÉ LLENO =====
                 document.getElementById('nuevoCodigoQR').value = decodedText;
-                
-                // ===== LIMPIAR EL ID DE EDICIÓN (ES PRODUCTO NUEVO) =====
                 document.getElementById('editProductoId').value = '';
                 document.getElementById('btnCancelProd').classList.add('hidden');
                 
                 reproducirSonidoScanner(true);
                 
-                // ===== CERRAR EL ESCÁNER Y DEJAR EL FORMULARIO LISTO =====
                 scannerAdminTiempoEspera = setTimeout(() => {
                     cerrarScannerAdmin();
                     toast('📷 Código cargado. Completa el formulario.', 'info', 3000);
@@ -1954,7 +2005,6 @@ function onScannerAdminSuccess(decodedText, decodedResult) {
         .catch(err => {
             console.error('Error al buscar producto:', err);
             
-            // ===== EN CASO DE ERROR, AL MENOS DEJAR EL CÓDIGO =====
             document.getElementById('nuevoCodigoQR').value = decodedText;
             mensaje.innerHTML = `
                 ⚠️ Código leído: <strong>${decodedText}</strong>
@@ -2045,44 +2095,139 @@ async function buscarInformacionProducto() {
 }
 
 // ============================================================
+// ===== BUSCADOR DE PRODUCTOS - POR NOMBRE O CATEGORÍA =====
+// ============================================================
+
+function filtrarProductos() {
+    const termino = document.getElementById('buscadorProducto').value.trim().toLowerCase();
+    const lista = document.getElementById('listaProductos');
+    
+    if (!termino) {
+        filtroActivo = false;
+        mostrarProductos(productosOriginales);
+        document.getElementById('resultadosBusqueda').textContent = 'Mostrando todos los productos';
+        return;
+    }
+    
+    const filtrados = productosOriginales.filter(producto => {
+        const nombre = (producto.name || '').toLowerCase();
+        const categoria = (producto.categoria || '').toLowerCase();
+        return nombre.includes(termino) || categoria.includes(termino);
+    });
+    
+    productosFiltrados = filtrados;
+    filtroActivo = true;
+    
+    if (filtrados.length === 0) {
+        lista.innerHTML = `
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                <div style="font-size:32px;margin-bottom:12px;">🔍</div>
+                <p>No se encontraron productos con "<strong>${termino}</strong>"</p>
+                <p style="font-size:12px;margin-top:6px;">Prueba con otra palabra o <button onclick="window.limpiarBuscador()" style="background:none;border:none;color:var(--yellow);cursor:pointer;text-decoration:underline;font-size:12px;padding:0;">limpiar la búsqueda</button></p>
+            </div>
+        `;
+        document.getElementById('resultadosBusqueda').textContent = `0 resultados para "${termino}"`;
+        return;
+    }
+    
+    mostrarProductos(filtrados);
+    document.getElementById('resultadosBusqueda').textContent = `${filtrados.length} resultados para "${termino}"`;
+}
+
+function mostrarProductos(productosArray) {
+    const lista = document.getElementById('listaProductos');
+    const tid = document.getElementById('tiendaProducto').value;
+    
+    if (!tid) {
+        lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>';
+        return;
+    }
+    
+    if (!productosArray || productosArray.length === 0) {
+        lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos.</p>';
+        return;
+    }
+    
+    lista.innerHTML = '';
+    productosArray.forEach(producto => {
+        const p = producto;
+        const pid = producto.id;
+        const estadoBadge = p.estado === 'agotado' ? '<span class="prod-estado-badge agotado">❌ Agotado</span>' : '<span class="prod-estado-badge disponible">✅ Disponible</span>';
+        const tipoBadge = p.tipoProducto === 'peso' 
+            ? '<span class="prod-tipo-badge peso">⚖️ Por peso</span>' 
+            : '<span class="prod-tipo-badge unidad">📦 Unidad</span>';
+        const pesoInfo = p.tipoProducto === 'peso' ? ` | ${p.pesoMinimo || 250}g min` : '';
+        
+        const div = document.createElement('div');
+        div.className = 'prod-item';
+        div.innerHTML = `
+            <div class="prod-img">${p.img ? `<img src="${p.img}" alt="${p.name||''}" onerror="this.parentElement.innerHTML='🍔'">` : '🍔'}</div>
+            <div class="prod-info">
+                <h5>${p.name || 'Sin nombre'} ${estadoBadge}</h5>
+                <p class="pdesc">${p.descripcion || ''}</p>
+                <span class="prod-cat">${p.categoria || 'General'}</span>
+                ${tipoBadge}
+                <span class="prod-qr-code">${p.codigoQR ? `🔲 QR: ${p.codigoQR}` : '🔲 Sin QR'}</span>
+                <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">📦 Stock: ${p.stock !== undefined ? p.stock : 0}${pesoInfo}</span>
+            </div>
+            <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
+            <div class="prod-actions">
+                <button class="btn-info btn-sm" onclick="window.editarProducto('${pid}','${tid}')">✏️ Editar</button>
+                <button class="btn-danger btn-sm" onclick="window.eliminarProducto('${tid}','${pid}')">🗑 Borrar</button>
+            </div>
+        `;
+        lista.appendChild(div);
+    });
+}
+
+function limpiarBuscador() {
+    document.getElementById('buscadorProducto').value = '';
+    filtroActivo = false;
+    document.getElementById('resultadosBusqueda').textContent = 'Mostrando todos los productos';
+    mostrarProductos(productosOriginales);
+    document.getElementById('buscadorProducto').focus();
+}
+
+// ============================================================
 // PRODUCTOS
 // ============================================================
 async function cargarProductos() {
     const tid = document.getElementById('tiendaProducto').value;
     const lista = document.getElementById('listaProductos');
-    if (!tid) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; return; }
+    if (!tid) { 
+        lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>';
+        productosOriginales = [];
+        document.getElementById('resultadosBusqueda').textContent = 'Selecciona una tienda';
+        return; 
+    }
     lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Cargando...</p>';
     try {
         const snap = await db.collection('tiendas').doc(tid).collection('productos').get();
-        if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin productos.</p>'; return; }
-        lista.innerHTML = '';
+        if (snap.empty) { 
+            lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin productos.</p>';
+            productosOriginales = [];
+            document.getElementById('resultadosBusqueda').textContent = '0 productos';
+            return; 
+        }
+        
+        productosOriginales = [];
         snap.forEach(doc => {
-            const p = doc.data(); const pid = doc.id;
-            const estadoBadge = p.estado === 'agotado' ? '<span class="prod-estado-badge agotado">❌ Agotado</span>' : '<span class="prod-estado-badge disponible">✅ Disponible</span>';
-            const tipoBadge = p.tipoProducto === 'peso' 
-                ? '<span class="prod-tipo-badge peso">⚖️ Por peso</span>' 
-                : '<span class="prod-tipo-badge unidad">📦 Unidad</span>';
-            const pesoInfo = p.tipoProducto === 'peso' ? ` | ${p.pesoMinimo || 250}g min` : '';
-            const div = document.createElement('div'); div.className = 'prod-item';
-            div.innerHTML = `
-                <div class="prod-img">${p.img ? `<img src="${p.img}" alt="${p.name||''}" onerror="this.parentElement.innerHTML='🍔'">` : '🍔'}</div>
-                <div class="prod-info">
-                    <h5>${p.name || 'Sin nombre'} ${estadoBadge}</h5>
-                    <p class="pdesc">${p.descripcion || ''}</p>
-                    <span class="prod-cat">${p.categoria || 'General'}</span>
-                    ${tipoBadge}
-                    <span class="prod-qr-code">${p.codigoQR ? `🔲 QR: ${p.codigoQR}` : '🔲 Sin QR'}</span>
-                    <span style="font-size:10px;color:var(--text-muted);display:block;margin-top:2px;">📦 Stock: ${p.stock !== undefined ? p.stock : 0}${pesoInfo}</span>
-                </div>
-                <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
-                <div class="prod-actions">
-                    <button class="btn-info btn-sm" onclick="window.editarProducto('${pid}','${tid}')">✏️ Editar</button>
-                    <button class="btn-danger btn-sm" onclick="window.eliminarProducto('${tid}','${pid}')">🗑 Borrar</button>
-                </div>
-            `;
-            lista.appendChild(div);
+            const p = doc.data();
+            const id = doc.id;
+            productosOriginales.push({ id, ...p });
         });
-    } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar.</p>'; console.error(e); }
+        
+        document.getElementById('buscadorProducto').value = '';
+        document.getElementById('resultadosBusqueda').textContent = `${productosOriginales.length} productos disponibles`;
+        filtroActivo = false;
+        
+        mostrarProductos(productosOriginales);
+        
+    } catch(e) { 
+        lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar.</p>'; 
+        console.error(e);
+        productosOriginales = [];
+    }
 }
 
 async function guardarProducto() {
@@ -2100,7 +2245,6 @@ async function guardarProducto() {
     const stock = parseInt(document.getElementById('nuevoStock').value) || 0;
     let codigoQR = document.getElementById('nuevoCodigoQR').value.trim();
     
-    // ===== CAMPOS DE PESO =====
     const tipoProducto = document.getElementById('nuevoTipoProducto').value || 'unidad';
     const modoPeso = document.getElementById('nuevoModoPeso').value || 'por_gramo';
     
@@ -2182,7 +2326,6 @@ async function editarProducto(pid, tid) {
         document.getElementById('nuevoStock').value = p.stock !== undefined ? p.stock : 0;
         document.getElementById('nuevoCodigoQR').value = p.codigoQR || '';
         
-        // ===== CARGAR CAMPOS DE PESO =====
         const tipo = p.tipoProducto || 'unidad';
         document.getElementById('nuevoTipoProducto').value = tipo;
         
@@ -2221,8 +2364,11 @@ function cancelarEdProducto() {
 
 async function eliminarProducto(tid, pid) {
     if (!confirm('¿Eliminar este producto?')) return;
-    try { await db.collection('tiendas').doc(tid).collection('productos').doc(pid).delete(); toast('Producto eliminado.', 'info'); cargarProductos(); }
-    catch(e) { toast('Error: ' + e.message, 'error'); }
+    try { 
+        await db.collection('tiendas').doc(tid).collection('productos').doc(pid).delete(); 
+        toast('Producto eliminado.', 'info'); 
+        cargarProductos(); 
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
 
 function limpiarFormularioProducto() {
@@ -2842,6 +2988,9 @@ window.calcularPrecioPorPeso = calcularPrecioPorPeso;
 window.abrirScannerAdmin = abrirScannerAdmin;
 window.cerrarScannerAdmin = cerrarScannerAdmin;
 window.buscarInformacionProducto = buscarInformacionProducto;
+window.filtrarProductos = filtrarProductos;
+window.limpiarBuscador = limpiarBuscador;
+window.mostrarProductos = mostrarProductos;
 window.cargarProductos = cargarProductos;
 window.guardarProducto = guardarProducto;
 window.editarProducto = editarProducto;
@@ -2888,6 +3037,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📷 Escáner QR mejorado - SIEMPRE deja el código en el campo');
     console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
     console.log('🔍 Búsqueda automática en Open Food Facts para códigos EAN/UPC');
+    console.log('🔎 Buscador de productos por nombre o categoría activado');
 });
 </script>
 </body>
