@@ -43,6 +43,8 @@ button:active{transform:scale(.98)}
 .btn-danger:hover{background:#a93226}
 .btn-info{background:#0288d1;color:#fff}
 .btn-info:hover{background:#0277bd}
+.btn-success{background:#00C853;color:#fff}
+.btn-success:hover{background:#00b748}
 .hidden{display:none!important}
 label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
 .form-group{margin-bottom:14px}
@@ -166,7 +168,7 @@ header .spacer{flex:1}
 .tienda-info .link:hover{text-decoration:underline}
 .badge-open{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--green-bg);color:var(--green);margin-top:6px}
 .badge-closed{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--red-bg);color:var(--red);margin-top:6px}
-.tienda-actions{display:flex;gap:6px;flex-shrink:0}
+.tienda-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
 .tienda-item.tiene-pedidos{border-color:var(--yellow);box-shadow:0 0 15px rgba(255,214,0,0.15)}
 
 .prod-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);}
@@ -231,6 +233,112 @@ header .spacer{flex:1}
 .inv-estado.critico{color:var(--red)}
 .inv-estado.bajo{color:var(--yellow)}
 .inv-estado.normal{color:var(--green)}
+
+/* ===== ESTILOS PARA EL SCANNER ADMIN ===== */
+.scanner-container {
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1/1;
+    position: relative;
+    width: 100%;
+}
+.scanner-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.scanner-mensaje {
+    color: #aaa;
+    text-align: center;
+    padding: 12px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+.scanner-mensaje.success { color: #00C853; }
+.scanner-mensaje.error { color: #FF3D00; }
+.scanner-mensaje.warning { color: #FFD600; }
+
+/* ===== MODAL ESCÁNER ===== */
+.modal-scanner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.modal-scanner.active {
+    display: flex;
+}
+.modal-scanner .modal-content {
+    background: #1e1e1e;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    padding: 24px;
+    border: 1px solid var(--yellow);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-scanner .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.modal-scanner .modal-header h3 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+}
+.modal-scanner .modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    width: auto;
+    padding: 0 8px;
+}
+.modal-scanner .modal-close:hover {
+    color: var(--red);
+}
+.modal-scanner .btn-cancel-scanner {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: #333;
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 8px;
+}
+.modal-scanner .btn-cancel-scanner:hover {
+    background: #444;
+}
+
+/* ===== INPUT CON BOTÓN ===== */
+.input-with-btn {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.input-with-btn input {
+    flex: 1;
+}
+.input-with-btn button {
+    width: auto;
+    padding: 11px 16px;
+    white-space: nowrap;
+}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -430,7 +538,20 @@ header .spacer{flex:1}
           <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Descripción..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://..."></div>
           <div class="form-group"><label>URL imagen 2</label><input id="nuevoImagen2" placeholder="https://..."></div>
-          <div class="form-group"><label>Código QR</label><input id="nuevoCodigoQR" placeholder="7501234567890"></div>
+          
+          <!-- ===== CAMPO QR CON BOTÓN DE ESCANEO ===== -->
+          <div class="form-group">
+            <label>Código QR / Barras</label>
+            <div class="input-with-btn">
+              <input id="nuevoCodigoQR" placeholder="7501234567890">
+              <button type="button" class="btn-success btn-sm" onclick="window.abrirScannerAdmin()" style="width:auto;padding:10px 16px;white-space:nowrap;">
+                📷 Escanear
+              </button>
+            </div>
+            <small style="color:var(--text-muted);font-size:11px;">Escanea un código QR o código de barras (EAN/UPC)</small>
+          </div>
+          <!-- ===== FIN CAMPO QR ===== -->
+          
           <div class="form-group"><label>Estado</label><select id="nuevoEstado"><option value="disponible">✅ Disponible</option><option value="agotado">❌ Agotado</option></select></div>
           <div class="form-group"><label>Stock</label><input id="nuevoStock" type="number" placeholder="0" value="0"></div>
           <div style="display:flex;gap:8px"><button onclick="window.guardarProducto()">Guardar</button><button class="btn-ghost hidden" id="btnCancelProd" onclick="window.cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button></div>
@@ -465,6 +586,25 @@ header .spacer{flex:1}
       </div>
     </div>
   </div>
+</div>
+
+<!-- ===== MODAL ESCÁNER ADMIN - PARA AGREGAR PRODUCTOS ===== -->
+<div class="modal-scanner" id="modalScannerAdmin">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📷 Escanear código</h3>
+            <button class="modal-close" onclick="window.cerrarScannerAdmin()">✕</button>
+        </div>
+        <div class="scanner-container" id="scannerAdminContainer">
+            <div id="scannerAdmin" style="width:100%;height:100%;"></div>
+        </div>
+        <div class="scanner-mensaje" id="scannerAdminMensaje">
+            📷 Acerca la cámara al código QR o código de barras
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn-cancel-scanner" onclick="window.cerrarScannerAdmin()">Cancelar</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -507,6 +647,13 @@ let inventarioTiendaActual = '';
 let rolUsuario = null;
 let tiendaIdUsuario = null;
 let sonidoGlobal = true;
+
+// ============================================================
+// VARIABLES DEL SCANNER ADMIN
+// ============================================================
+let scannerAdmin = null;
+let scannerAdminActivo = false;
+let scannerAdminTiempoEspera = null;
 
 // ============================================================
 // TOAST
@@ -977,6 +1124,48 @@ function reproducirSonidoNotificacion() {
 }
 
 // ============================================================
+// SONIDO PARA ESCÁNER ADMIN
+// ============================================================
+function reproducirSonidoScanner(exito) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        if (exito) {
+            // Sonido de éxito: dos tonos ascendentes
+            [880, 1100].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                const t = i * 0.15;
+                gain.gain.setValueAtTime(0.2, ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                osc.start(ctx.currentTime + t);
+                osc.stop(ctx.currentTime + t + 0.2);
+            });
+        } else {
+            // Sonido de error: tono grave
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 300;
+            osc.type = 'sawtooth';
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.35);
+            if (navigator.vibrate) navigator.vibrate(200);
+        }
+    } catch(e) {
+        if (navigator.vibrate) navigator.vibrate(exito ? 50 : 200);
+    }
+}
+
+// ============================================================
 // CONTROL DE SONIDO GLOBAL
 // ============================================================
 function toggleSonidoGlobal() {
@@ -1213,6 +1402,204 @@ function abrirModalCrearNegocio() {
 function cerrarModalCrearNegocio() {
     document.getElementById('modalCrearNegocio').style.display = 'none';
     document.body.style.overflow = '';
+}
+
+// ============================================================
+// ===== ESCÁNER ADMIN - AGREGAR PRODUCTOS POR QR/BARCODE =====
+// ============================================================
+function abrirScannerAdmin() {
+    const tid = document.getElementById('tiendaProducto').value;
+    if (!tid) {
+        toast('⚠️ Primero selecciona una tienda en el formulario.', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('modalScannerAdmin');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    const mensaje = document.getElementById('scannerAdminMensaje');
+    mensaje.textContent = '📷 Acerca la cámara al código QR o código de barras';
+    mensaje.className = 'scanner-mensaje';
+    
+    iniciarScannerAdmin();
+}
+
+function cerrarScannerAdmin() {
+    const modal = document.getElementById('modalScannerAdmin');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    detenerScannerAdmin();
+    
+    if (scannerAdminTiempoEspera) {
+        clearTimeout(scannerAdminTiempoEspera);
+        scannerAdminTiempoEspera = null;
+    }
+}
+
+function iniciarScannerAdmin() {
+    if (scannerAdminActivo) return;
+    scannerAdminActivo = true;
+    
+    const container = document.getElementById('scannerAdmin');
+    container.innerHTML = '';
+    
+    if (typeof Html5Qrcode === 'undefined') {
+        const mensaje = document.getElementById('scannerAdminMensaje');
+        mensaje.textContent = '❌ La librería QR no se cargó correctamente.';
+        mensaje.className = 'scanner-mensaje error';
+        scannerAdminActivo = false;
+        return;
+    }
+    
+    scannerAdmin = new Html5Qrcode("scannerAdmin");
+    
+    const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+    };
+    
+    scannerAdmin.start(
+        { facingMode: "environment" },
+        config,
+        onScannerAdminSuccess,
+        onScannerAdminError
+    ).catch(err => {
+        console.warn('Error al iniciar cámara:', err);
+        const mensaje = document.getElementById('scannerAdminMensaje');
+        mensaje.textContent = '⚠️ No se pudo acceder a la cámara. Revisa los permisos.';
+        mensaje.className = 'scanner-mensaje error';
+        scannerAdminActivo = false;
+    });
+}
+
+function detenerScannerAdmin() {
+    if (scannerAdmin) {
+        try {
+            scannerAdmin.stop().then(() => {
+                scannerAdmin.clear();
+                scannerAdminActivo = false;
+            }).catch(err => {});
+        } catch(e) {}
+    }
+    scannerAdminActivo = false;
+}
+
+function onScannerAdminSuccess(decodedText, decodedResult) {
+    console.log('📷 Código escaneado (Admin):', decodedText);
+    
+    const mensaje = document.getElementById('scannerAdminMensaje');
+    const tid = document.getElementById('tiendaProducto').value;
+    
+    if (!tid) {
+        mensaje.textContent = '⚠️ Primero selecciona una tienda en el formulario.';
+        mensaje.className = 'scanner-mensaje error';
+        return;
+    }
+    
+    // Poner el código en el campo
+    document.getElementById('nuevoCodigoQR').value = decodedText;
+    
+    // Buscar si ya existe un producto con ese código
+    db.collection('tiendas').doc(tid)
+        .collection('productos')
+        .where('codigoQR', '==', decodedText)
+        .get()
+        .then(snap => {
+            if (!snap.empty) {
+                // Ya existe un producto con ese código
+                const doc = snap.docs[0];
+                const p = doc.data();
+                mensaje.innerHTML = `
+                    ✅ Producto encontrado: <strong>${p.name || 'Sin nombre'}</strong>
+                    <br>💰 $${(p.precio || 0).toLocaleString('es-CO')}
+                    <br><span style="font-size:12px;color:#888;">📦 Stock: ${p.stock || 0}</span>
+                    <br><span style="font-size:11px;color:#FFD600;">💡 El código ya está asignado a este producto</span>
+                `;
+                mensaje.className = 'scanner-mensaje success';
+                
+                // Cargar los datos del producto en el formulario
+                document.getElementById('editProductoId').value = doc.id;
+                document.getElementById('nuevoNombre').value = p.name || '';
+                document.getElementById('nuevoPrecio').value = p.precio || '';
+                document.getElementById('nuevoCategoria').value = p.categoria || '';
+                document.getElementById('nuevoDescripcion').value = p.descripcion || '';
+                document.getElementById('nuevoImagen').value = p.img || '';
+                document.getElementById('nuevoImagen2').value = p.img2 || '';
+                document.getElementById('nuevoEstado').value = p.estado || 'disponible';
+                document.getElementById('nuevoStock').value = p.stock !== undefined ? p.stock : 0;
+                document.getElementById('btnCancelProd').classList.remove('hidden');
+                
+                reproducirSonidoScanner(true);
+                
+                // Cerrar después de 2.5 segundos
+                scannerAdminTiempoEspera = setTimeout(() => {
+                    cerrarScannerAdmin();
+                    toast('📦 Producto cargado para editar', 'success');
+                }, 2500);
+                
+            } else {
+                // Código nuevo - solo llenar el campo
+                let infoAdicional = '';
+                if (decodedText.match(/^[0-9]{8,13}$/)) {
+                    infoAdicional = `<br><span style="font-size:11px;color:#888;">📦 Código EAN/UPC detectado</span>`;
+                    
+                    // Intentar autocompletar desde Open Food Facts (opcional)
+                    try {
+                        fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 1) {
+                                    const product = data.product;
+                                    if (product.product_name) {
+                                        document.getElementById('nuevoNombre').value = product.product_name;
+                                    }
+                                    if (product.generic_name) {
+                                        document.getElementById('nuevoDescripcion').value = product.generic_name;
+                                    }
+                                    if (product.categories) {
+                                        document.getElementById('nuevoCategoria').value = product.categories.split(',')[0].trim();
+                                    }
+                                    if (product.image_url) {
+                                        document.getElementById('nuevoImagen').value = product.image_url;
+                                    }
+                                    const mensajeActual = document.getElementById('scannerAdminMensaje');
+                                    mensajeActual.innerHTML += `
+                                        <br><span style="font-size:11px;color:#00C853;">✅ Datos autocompletados desde Open Food Facts</span>
+                                    `;
+                                }
+                            })
+                            .catch(() => {});
+                    } catch(e) {}
+                }
+                
+                mensaje.innerHTML = `
+                    ✅ Código escaneado: <strong>${decodedText}</strong>
+                    ${infoAdicional}
+                    <br><span style="font-size:12px;color:#FFD600;">💡 Completa los datos del producto y guarda</span>
+                `;
+                mensaje.className = 'scanner-mensaje warning';
+                
+                reproducirSonidoScanner(true);
+                
+                // Cerrar después de 2 segundos
+                scannerAdminTiempoEspera = setTimeout(() => {
+                    cerrarScannerAdmin();
+                    toast('📷 Código cargado, completa el formulario', 'info');
+                }, 2000);
+            }
+        })
+        .catch(err => {
+            console.error('Error al buscar producto:', err);
+            mensaje.textContent = '❌ Error al buscar el producto: ' + err.message;
+            mensaje.className = 'scanner-mensaje error';
+            reproducirSonidoScanner(false);
+        });
+}
+
+function onScannerAdminError(err) {
+    // Ignorar errores de escaneo (son normales mientras busca)
 }
 
 // ============================================================
@@ -1903,6 +2290,8 @@ window.cargarSelectsTiendas = cargarSelectsTiendas;
 window.cargarSelectsTiendasUnico = cargarSelectsTiendasUnico;
 window.abrirModalCrearNegocio = abrirModalCrearNegocio;
 window.cerrarModalCrearNegocio = cerrarModalCrearNegocio;
+window.abrirScannerAdmin = abrirScannerAdmin;
+window.cerrarScannerAdmin = cerrarScannerAdmin;
 window.cargarProductos = cargarProductos;
 window.guardarProducto = guardarProducto;
 window.editarProducto = editarProducto;
@@ -1946,6 +2335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     cargarPreferenciaSonido();
     console.log('✅ Panel de administración cargado correctamente');
+    console.log('📷 Escáner QR para productos disponible en el tab "Productos"');
 });
 </script>
 </body>
