@@ -321,7 +321,7 @@
             text-align: center;
         }
 
-        /* ===== SELECTOR DE PESO ===== */
+        /* ===== SELECTOR DE PESO CON INPUT NUMÉRICO ===== */
         .selector-peso {
             margin-top: 8px;
             background: #f5f5f5;
@@ -333,7 +333,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .selector-peso .peso-header .peso-label {
             font-size: 12px;
@@ -344,45 +344,74 @@
             font-size: 14px;
             font-weight: 800;
             color: #1a1a2e;
+            min-width: 60px;
+            text-align: right;
         }
-        .selector-peso input[type="range"] {
-            width: 100%;
-            height: 6px;
+        .selector-peso .peso-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .selector-peso .peso-input-group .peso-input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            background: #fff;
+            color: #1a1a2e;
+            min-width: 60px;
+            -moz-appearance: textfield;
+        }
+        .selector-peso .peso-input-group .peso-input::-webkit-outer-spin-button,
+        .selector-peso .peso-input-group .peso-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
-            appearance: none;
-            background: #ddd;
-            border-radius: 3px;
+            margin: 0;
+        }
+        .selector-peso .peso-input-group .peso-input:focus {
             outline: none;
-            border: none;
-            padding: 0;
-            margin: 4px 0;
+            border-color: #FFD600;
+            box-shadow: 0 0 0 3px rgba(255,214,0,0.2);
         }
-        .selector-peso input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #FFD600;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        .selector-peso .peso-input-group .peso-unidad {
+            font-size: 14px;
+            font-weight: 700;
+            color: #555;
+            min-width: 20px;
         }
-        .selector-peso input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #FFD600;
+        .selector-peso .peso-input-group .peso-btn-menos,
+        .selector-peso .peso-input-group .peso-btn-mas {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            color: #555;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            width: auto;
+            white-space: nowrap;
+        }
+        .selector-peso .peso-input-group .peso-btn-menos:hover,
+        .selector-peso .peso-input-group .peso-btn-mas:hover {
+            background: #FFD600;
+            border-color: #FFD600;
+            color: #1a1a2e;
+        }
+        .selector-peso .peso-input-group .peso-btn-menos:active,
+        .selector-peso .peso-input-group .peso-btn-mas:active {
+            transform: scale(0.95);
         }
         .selector-peso .peso-precio-total {
             font-size: 13px;
             font-weight: 700;
             color: #1a1a2e;
             text-align: center;
-            margin-top: 2px;
+            margin-top: 4px;
         }
         .selector-peso .peso-precio-total .label {
             font-weight: 400;
@@ -1035,6 +1064,7 @@
             margin-bottom: 6px;
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -1055,40 +1085,19 @@
             .categoria-tab { padding: 6px 12px; font-size: 12px; }
             .categoria-tab .tab-icono { font-size: 11px; }
             .categoria-tab .tab-badge { font-size: 8px; padding: 0 6px; }
-            .modal-producto .modal-contenido {
-                padding: 16px;
-            }
-            .modal-producto .modal-img {
-                max-height: 200px;
-            }
-            .modal-producto .modal-nombre {
-                font-size: 18px;
-            }
-            .modal-producto .modal-precio {
-                font-size: 18px;
-            }
-            .btn-lector-qr {
-                bottom: 180px;
-                right: 10px;
-                padding: 10px 16px;
-                font-size: 12px;
-            }
-            .metodo-pago-option {
-                padding: 6px 8px;
-                font-size: 12px;
-            }
-            .metodo-pago-option .icono {
-                font-size: 16px;
-            }
-            .selector-peso {
-                padding: 8px 10px;
-            }
-            .selector-peso .peso-header .peso-label {
-                font-size: 11px;
-            }
-            .selector-peso .peso-header .peso-valor {
-                font-size: 13px;
-            }
+            .modal-producto .modal-contenido { padding: 16px; }
+            .modal-producto .modal-img { max-height: 200px; }
+            .modal-producto .modal-nombre { font-size: 18px; }
+            .modal-producto .modal-precio { font-size: 18px; }
+            .btn-lector-qr { bottom: 180px; right: 10px; padding: 10px 16px; font-size: 12px; }
+            .metodo-pago-option { padding: 6px 8px; font-size: 12px; }
+            .metodo-pago-option .icono { font-size: 16px; }
+            .selector-peso { padding: 8px 10px; }
+            .selector-peso .peso-header .peso-label { font-size: 11px; }
+            .selector-peso .peso-header .peso-valor { font-size: 13px; }
+            .selector-peso .peso-input-group .peso-input { font-size: 14px; padding: 6px 8px; }
+            .selector-peso .peso-input-group .peso-btn-menos,
+            .selector-peso .peso-input-group .peso-btn-mas { font-size: 11px; padding: 4px 8px; }
         }
     </style>
 </head>
@@ -1595,11 +1604,15 @@
                     border-color: ${colorHex};
                     color: ${colorHex};
                 }
-                .selector-peso input[type="range"]::-webkit-slider-thumb {
-                    background: ${colorHex};
+                .selector-peso .peso-input-group .peso-input:focus {
+                    border-color: ${colorHex} !important;
+                    box-shadow: 0 0 0 3px ${colorHex}33 !important;
                 }
-                .selector-peso input[type="range"]::-moz-range-thumb {
+                .selector-peso .peso-input-group .peso-btn-menos:hover,
+                .selector-peso .peso-input-group .peso-btn-mas:hover {
                     background: ${colorHex};
+                    border-color: ${colorHex};
+                    color: ${isLight ? '#1a1a2e' : '#ffffff'};
                 }
             `;
             document.head.appendChild(style);
@@ -1908,29 +1921,95 @@
         }
 
         // ============================================================
-        // FUNCIONES PARA PRODUCTOS POR PESO
+        // FUNCIONES PARA PRODUCTOS POR PESO CON INPUT NUMÉRICO
         // ============================================================
-        function actualizarPeso(productoId, valorGramos) {
-            pesosSeleccionados[productoId] = parseInt(valorGramos);
-            
-            const label = document.getElementById(`pesoLabel-${productoId}`);
-            if (label) label.textContent = `${valorGramos}g`;
-            
+        
+        // Actualizar peso desde el input
+        function actualizarPesoInput(productoId, valor) {
+            let gramos = parseInt(valor);
             const producto = productos.find(p => p.id === productoId);
-            if (producto) {
-                const precioPorGramo = producto.precioPorGramo || 0;
-                const precioTotal = precioPorGramo * parseInt(valorGramos);
-                const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
-                if (precioEl) {
-                    precioEl.innerHTML = `💰 <span class="label">Total:</span> $${precioTotal.toLocaleString('es-CO')}`;
-                }
-                
-                // Actualizar el precio mostrado en el botón de agregar
-                const precioDisplay = document.getElementById(`pesoPrecioDisplay-${productoId}`);
-                if (precioDisplay) {
-                    precioDisplay.textContent = `$${precioTotal.toLocaleString('es-CO')}`;
-                }
+            if (!producto) return;
+            
+            const pesoMinimo = producto.pesoMinimo || 250;
+            const pesoMaximo = 10000;
+            
+            // Si no es un número válido, usar el mínimo
+            if (isNaN(gramos) || gramos < pesoMinimo) {
+                gramos = pesoMinimo;
             }
+            if (gramos > pesoMaximo) {
+                gramos = pesoMaximo;
+            }
+            
+            // Guardar el peso seleccionado
+            pesosSeleccionados[productoId] = gramos;
+            
+            // Actualizar el campo input
+            const input = document.getElementById(`pesoInput-${productoId}`);
+            if (input && parseInt(input.value) !== gramos) {
+                input.value = gramos;
+            }
+            
+            // Actualizar el label
+            const label = document.getElementById(`pesoLabel-${productoId}`);
+            if (label) label.textContent = `${gramos}g`;
+            
+            // Actualizar el precio
+            const precioPorGramo = producto.precioPorGramo || 0;
+            const precioTotal = precioPorGramo * gramos;
+            const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
+            if (precioEl) {
+                precioEl.innerHTML = `💰 <span class="label">Total:</span> $${precioTotal.toLocaleString('es-CO')}`;
+            }
+            
+            // Si el producto ya está en el carrito, actualizarlo
+            const itemEnCarrito = carrito.find(c => c.id === productoId);
+            if (itemEnCarrito && itemEnCarrito.tipoProducto === 'peso') {
+                itemEnCarrito.pesoGramos = gramos;
+                itemEnCarrito.precio = precioTotal;
+                actualizarCarrito();
+                actualizarContador(productoId);
+            }
+        }
+
+        // Validar el input al perder el foco
+        function validarPesoInput(productoId, valor) {
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
+            
+            const pesoMinimo = producto.pesoMinimo || 250;
+            const pesoMaximo = 10000;
+            let gramos = parseInt(valor);
+            
+            if (isNaN(gramos) || gramos < pesoMinimo) {
+                gramos = pesoMinimo;
+                mostrarToast(`⚠️ El peso mínimo es ${pesoMinimo}g`, 'info', 2000);
+            }
+            if (gramos > pesoMaximo) {
+                gramos = pesoMaximo;
+                mostrarToast(`⚠️ El peso máximo es ${pesoMaximo}g`, 'info', 2000);
+            }
+            
+            actualizarPesoInput(productoId, gramos);
+        }
+
+        // Cambiar peso con los botones +50 / -50
+        function cambiarPesoInput(productoId, cambio) {
+            const producto = productos.find(p => p.id === productoId);
+            if (!producto) return;
+            
+            const input = document.getElementById(`pesoInput-${productoId}`);
+            if (!input) return;
+            
+            let nuevoValor = parseInt(input.value) + cambio;
+            const pesoMinimo = producto.pesoMinimo || 250;
+            const pesoMaximo = 10000;
+            
+            if (nuevoValor < pesoMinimo) nuevoValor = pesoMinimo;
+            if (nuevoValor > pesoMaximo) nuevoValor = pesoMaximo;
+            
+            input.value = nuevoValor;
+            actualizarPesoInput(productoId, nuevoValor);
         }
 
         // ============================================================
@@ -2065,27 +2144,39 @@
                             const restarVisible = cantidad > 0 ? 'visible' : '';
                             const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
                             
-                            // ===== SELECTOR DE PESO =====
+                            // ===== SELECTOR DE PESO CON INPUT NUMÉRICO =====
                             let pesoSelectorHtml = '';
                             if (p.tipoProducto === 'peso' && p.pesoMinimo) {
                                 const pesoMinimo = p.pesoMinimo || 250;
                                 const precioPorGramo = p.precioPorGramo || 0;
-                                const pesoInicial = pesosSeleccionados[p.id] || pesoMinimo;
+                                
+                                // Inicializar el peso seleccionado
+                                if (!pesosSeleccionados[p.id]) {
+                                    pesosSeleccionados[p.id] = pesoMinimo;
+                                }
+                                const pesoInicial = pesosSeleccionados[p.id];
                                 const precioInicial = precioPorGramo * pesoInicial;
                                 
                                 pesoSelectorHtml = `
                                     <div class="selector-peso" id="selectorPeso-${p.id}">
                                         <div class="peso-header">
-                                            <span class="peso-label">⚖️ Peso</span>
+                                            <span class="peso-label">⚖️ Peso en gramos</span>
                                             <span class="peso-valor" id="pesoLabel-${p.id}">${pesoInicial}g</span>
                                         </div>
-                                        <input type="range" 
-                                               id="pesoSlider-${p.id}"
-                                               min="${pesoMinimo}" 
-                                               max="5000" 
-                                               step="50" 
-                                               value="${pesoInicial}"
-                                               oninput="window.actualizarPeso('${p.id}', this.value)">
+                                        <div class="peso-input-group">
+                                            <input type="number" 
+                                                   id="pesoInput-${p.id}"
+                                                   class="peso-input"
+                                                   min="${pesoMinimo}" 
+                                                   max="10000" 
+                                                   step="1" 
+                                                   value="${pesoInicial}"
+                                                   oninput="window.actualizarPesoInput('${p.id}', this.value)"
+                                                   onblur="window.validarPesoInput('${p.id}', this.value)">
+                                            <span class="peso-unidad">g</span>
+                                            <button class="peso-btn-menos" onclick="window.cambiarPesoInput('${p.id}', -50)">−50</button>
+                                            <button class="peso-btn-mas" onclick="window.cambiarPesoInput('${p.id}', 50)">+50</button>
+                                        </div>
                                         <div class="peso-precio-total" id="pesoPrecioTotal-${p.id}">
                                             💰 <span class="label">Total:</span> $${precioInicial.toLocaleString('es-CO')}
                                         </div>
@@ -2196,13 +2287,18 @@
                 return;
             }
 
-            // ===== PRODUCTO POR PESO =====
             let cantidad = 1;
             let pesoGramos = null;
             let precioUnitario = producto.precio;
             
             if (producto.tipoProducto === 'peso') {
+                // Usar el peso guardado en pesosSeleccionados o el mínimo
                 pesoGramos = pesosSeleccionados[productoId] || producto.pesoMinimo || 250;
+                // Asegurar que el peso no sea menor al mínimo
+                if (pesoGramos < (producto.pesoMinimo || 250)) {
+                    pesoGramos = producto.pesoMinimo || 250;
+                    pesosSeleccionados[productoId] = pesoGramos;
+                }
                 precioUnitario = (producto.precioPorGramo || 0) * pesoGramos;
                 cantidad = 1;
             }
@@ -2231,6 +2327,10 @@
             }
             actualizarCarrito();
             actualizarContador(productoId);
+            
+            if (producto.tipoProducto === 'peso') {
+                mostrarToast(`✅ ${producto.name} (${pesoGramos}g) agregado`, 'success', 1500);
+            }
         }
 
         function quitarDelCarrito(productoId) {
@@ -2715,7 +2815,9 @@
         // ============================================================
         // EXPONER FUNCIONES AL GLOBAL
         // ============================================================
-        window.actualizarPeso = actualizarPeso;
+        window.actualizarPesoInput = actualizarPesoInput;
+        window.validarPesoInput = validarPesoInput;
+        window.cambiarPesoInput = cambiarPesoInput;
         window.agregarAlCarrito = agregarAlCarrito;
         window.quitarDelCarrito = quitarDelCarrito;
         window.actualizarCarrito = actualizarCarrito;
@@ -2767,7 +2869,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('⚖️ Soporte para productos por peso activado');
+        console.log('⚖️ Soporte para productos por peso con input numérico activado');
     </script>
 </body>
 </html>
