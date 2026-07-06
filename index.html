@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
     
-    <!-- ===== LIBRERÍA PARA LEER QR ===== -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <style>
@@ -322,11 +321,86 @@
             text-align: center;
         }
 
+        /* ===== SELECTOR DE PESO ===== */
+        .selector-peso {
+            margin-top: 8px;
+            background: #f5f5f5;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #e8e8e8;
+        }
+        .selector-peso .peso-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .selector-peso .peso-header .peso-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+        .selector-peso .peso-header .peso-valor {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
+        .selector-peso input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+            border: none;
+            padding: 0;
+            margin: 4px 0;
+        }
+        .selector-peso input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #FFD600;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .selector-peso input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #FFD600;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .selector-peso .peso-precio-total {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1a1a2e;
+            text-align: center;
+            margin-top: 2px;
+        }
+        .selector-peso .peso-precio-total .label {
+            font-weight: 400;
+            color: #888;
+        }
+        .selector-peso .peso-minimo-info {
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            margin-top: 2px;
+        }
+
         .producto-acciones {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
+            margin-top: 4px;
         }
         .producto-acciones .btn-restar {
             width: 36px;
@@ -586,7 +660,7 @@
             border-radius: 6px;
         }
 
-        /* ===== BOTÓN LECTOR QR - SE OCULTA CUANDO ESTÁ DESACTIVADO ===== */
+        /* ===== BOTÓN LECTOR QR ===== */
         .btn-lector-qr {
             position: fixed;
             bottom: 200px;
@@ -612,7 +686,6 @@
         .btn-lector-qr:active {
             transform: scale(0.95);
         }
-        /* ===== CLASE PARA OCULTAR EL BOTÓN - CON !important ===== */
         .btn-lector-qr.oculto {
             display: none !important;
         }
@@ -1007,6 +1080,15 @@
             .metodo-pago-option .icono {
                 font-size: 16px;
             }
+            .selector-peso {
+                padding: 8px 10px;
+            }
+            .selector-peso .peso-header .peso-label {
+                font-size: 11px;
+            }
+            .selector-peso .peso-header .peso-valor {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -1075,7 +1157,7 @@
         </div>
     </div>
 
-    <!-- ===== BOTÓN LECTOR QR - EMPIEZA OCULTO POR DEFECTO ===== -->
+    <!-- ===== BOTÓN LECTOR QR ===== -->
     <button class="btn-lector-qr oculto" id="btnAbrirQR" onclick="abrirModalQR()" style="display:none;">
         📷 Escanear QR
     </button>
@@ -1190,12 +1272,9 @@
         // ============================================================
         // ===== SOLUCIÓN PARA APPCREATOR =====
         // ============================================================
-        
-        // Obtener parámetros de la URL
         const urlParams = new URLSearchParams(window.location.search);
         let TIENDA_ID = urlParams.get('tienda');
         
-        // Si no viene en la URL, buscar en localStorage
         if (!TIENDA_ID) {
             TIENDA_ID = localStorage.getItem('tiendaId');
             if (TIENDA_ID) {
@@ -1203,13 +1282,11 @@
             }
         }
         
-        // Si aún no hay, usar el ID por defecto (cambia este ID por el tuyo)
         if (!TIENDA_ID) {
             TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
             localStorage.setItem('tiendaId', TIENDA_ID);
             console.log('📌 Usando tienda ID por defecto (AppCreator):', TIENDA_ID);
         } else {
-            // Guardar en localStorage para futuras veces
             localStorage.setItem('tiendaId', TIENDA_ID);
             console.log('📌 Tienda ID desde URL:', TIENDA_ID);
         }
@@ -1219,7 +1296,6 @@
         }
 
         console.log('🏪 Tienda ID final:', TIENDA_ID);
-        console.log('📱 App detectada:', /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) ? 'Móvil' : 'Escritorio');
 
         // ============================================================
         // GLOBALS
@@ -1235,9 +1311,10 @@
         let escaneandoQR = false;
         let audioContextGlobal = null;
         let clienteAutenticado = null;
+        let pesosSeleccionados = {};
 
         // ============================================================
-        // AUTENTICACIÓN ANÓNIMA AUTOMÁTICA
+        // AUTENTICACIÓN ANÓNIMA
         // ============================================================
         async function autenticarCliente() {
             try {
@@ -1253,7 +1330,6 @@
                 return result.user;
             } catch (error) {
                 console.error('❌ Error al autenticar:', error);
-                // Fallback: crear ID temporal
                 const tempId = 'temp_' + Date.now();
                 console.log('⚠️ Usando ID temporal:', tempId);
                 clienteAutenticado = { uid: tempId, isAnonymous: true };
@@ -1262,7 +1338,7 @@
         }
 
         // ============================================================
-        // SISTEMA DE AUDIO UNIVERSAL
+        // SISTEMA DE AUDIO
         // ============================================================
         function getAudioContext() {
             if (!audioContextGlobal) {
@@ -1369,7 +1445,6 @@
             }
         }
 
-        // Activar audio con el primer clic
         document.addEventListener('click', function activarAudioPorClic() {
             activarAudio();
         }, { once: true });
@@ -1379,10 +1454,7 @@
         // ============================================================
         function actualizarVisibilidadBotonQR(activado) {
             const btn = document.getElementById('btnAbrirQR');
-            if (!btn) {
-                console.warn('⚠️ Botón QR no encontrado');
-                return;
-            }
+            if (!btn) return;
             
             if (activado) {
                 btn.classList.remove('oculto');
@@ -1522,6 +1594,12 @@
                 .categoria-tab:hover:not(.activa) {
                     border-color: ${colorHex};
                     color: ${colorHex};
+                }
+                .selector-peso input[type="range"]::-webkit-slider-thumb {
+                    background: ${colorHex};
+                }
+                .selector-peso input[type="range"]::-moz-range-thumb {
+                    background: ${colorHex};
                 }
             `;
             document.head.appendChild(style);
@@ -1830,6 +1908,32 @@
         }
 
         // ============================================================
+        // FUNCIONES PARA PRODUCTOS POR PESO
+        // ============================================================
+        function actualizarPeso(productoId, valorGramos) {
+            pesosSeleccionados[productoId] = parseInt(valorGramos);
+            
+            const label = document.getElementById(`pesoLabel-${productoId}`);
+            if (label) label.textContent = `${valorGramos}g`;
+            
+            const producto = productos.find(p => p.id === productoId);
+            if (producto) {
+                const precioPorGramo = producto.precioPorGramo || 0;
+                const precioTotal = precioPorGramo * parseInt(valorGramos);
+                const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
+                if (precioEl) {
+                    precioEl.innerHTML = `💰 <span class="label">Total:</span> $${precioTotal.toLocaleString('es-CO')}`;
+                }
+                
+                // Actualizar el precio mostrado en el botón de agregar
+                const precioDisplay = document.getElementById(`pesoPrecioDisplay-${productoId}`);
+                if (precioDisplay) {
+                    precioDisplay.textContent = `$${precioTotal.toLocaleString('es-CO')}`;
+                }
+            }
+        }
+
+        // ============================================================
         // CARGAR PRODUCTOS
         // ============================================================
         async function cargarProductos() {
@@ -1960,6 +2064,46 @@
 
                             const restarVisible = cantidad > 0 ? 'visible' : '';
                             const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
+                            
+                            // ===== SELECTOR DE PESO =====
+                            let pesoSelectorHtml = '';
+                            if (p.tipoProducto === 'peso' && p.pesoMinimo) {
+                                const pesoMinimo = p.pesoMinimo || 250;
+                                const precioPorGramo = p.precioPorGramo || 0;
+                                const pesoInicial = pesosSeleccionados[p.id] || pesoMinimo;
+                                const precioInicial = precioPorGramo * pesoInicial;
+                                
+                                pesoSelectorHtml = `
+                                    <div class="selector-peso" id="selectorPeso-${p.id}">
+                                        <div class="peso-header">
+                                            <span class="peso-label">⚖️ Peso</span>
+                                            <span class="peso-valor" id="pesoLabel-${p.id}">${pesoInicial}g</span>
+                                        </div>
+                                        <input type="range" 
+                                               id="pesoSlider-${p.id}"
+                                               min="${pesoMinimo}" 
+                                               max="5000" 
+                                               step="50" 
+                                               value="${pesoInicial}"
+                                               oninput="window.actualizarPeso('${p.id}', this.value)">
+                                        <div class="peso-precio-total" id="pesoPrecioTotal-${p.id}">
+                                            💰 <span class="label">Total:</span> $${precioInicial.toLocaleString('es-CO')}
+                                        </div>
+                                        <div class="peso-minimo-info">Mínimo ${pesoMinimo}g</div>
+                                    </div>
+                                `;
+                            }
+
+                            // ===== PRECIO A MOSTRAR =====
+                            let precioDisplay = (p.precio || 0).toLocaleString('es-CO');
+                            let precioPorPeso = '';
+                            if (p.tipoProducto === 'peso') {
+                                const pesoInicial = pesosSeleccionados[p.id] || p.pesoMinimo || 250;
+                                const precioTotal = (p.precioPorGramo || 0) * pesoInicial;
+                                precioDisplay = `$${precioTotal.toLocaleString('es-CO')}`;
+                                precioPorPeso = `<div style="font-size:11px;color:#888;">${p.precio.toLocaleString('es-CO')}/kg</div>`;
+                            }
+
                             const btnSumarHtml = estaAgotado 
                                 ? `<button class="btn-sumar" style="background:#555;cursor:not-allowed;opacity:0.5;pointer-events:none;">+</button>`
                                 : `<button class="btn-sumar" onclick="agregarAlCarrito('${p.id}')">+</button>`;
@@ -1974,7 +2118,9 @@
                                         <div class="producto-nombre" onclick="abrirModalProducto('${p.id}')">${escHtml(p.name || 'Producto')}</div>
                                         ${descripcionHtml}
                                         ${badgeAgotado}
-                                        <div class="precio">$${(p.precio || 0).toLocaleString('es-CO')}</div>
+                                        <div class="precio">${precioDisplay}</div>
+                                        ${precioPorPeso}
+                                        ${pesoSelectorHtml}
                                         <div class="producto-acciones">
                                             <button class="btn-restar ${restarVisible}" id="restar-${p.id}" onclick="quitarDelCarrito('${p.id}')">−</button>
                                             <span class="cantidad" id="cant-${p.id}">${cantidad}</span>
@@ -2050,16 +2196,37 @@
                 return;
             }
 
+            // ===== PRODUCTO POR PESO =====
+            let cantidad = 1;
+            let pesoGramos = null;
+            let precioUnitario = producto.precio;
+            
+            if (producto.tipoProducto === 'peso') {
+                pesoGramos = pesosSeleccionados[productoId] || producto.pesoMinimo || 250;
+                precioUnitario = (producto.precioPorGramo || 0) * pesoGramos;
+                cantidad = 1;
+            }
+
             const existente = carrito.find(p => p.id === productoId);
             if (existente) {
-                existente.cantidad++;
+                if (producto.tipoProducto === 'peso') {
+                    existente.cantidad = 1;
+                    existente.pesoGramos = pesoGramos;
+                    existente.precio = precioUnitario;
+                } else {
+                    existente.cantidad++;
+                }
             } else {
                 carrito.push({
                     id: producto.id,
                     nombre: producto.name,
-                    precio: producto.precio,
-                    cantidad: 1,
-                    imagen: producto.img || ''
+                    precio: precioUnitario,
+                    cantidad: cantidad,
+                    imagen: producto.img || '',
+                    tipoProducto: producto.tipoProducto || 'unidad',
+                    pesoGramos: pesoGramos,
+                    pesoMinimo: producto.pesoMinimo || 0,
+                    precioPorGramo: producto.precioPorGramo || 0
                 });
             }
             actualizarCarrito();
@@ -2115,9 +2282,15 @@
             carrito.forEach(item => {
                 const subtotal = item.precio * item.cantidad;
                 total += subtotal;
+                
+                let nombreConPeso = item.nombre;
+                if (item.tipoProducto === 'peso' && item.pesoGramos) {
+                    nombreConPeso = `${item.nombre} (${item.pesoGramos}g)`;
+                }
+                
                 html += `
                     <div class="carrito-item">
-                        <span class="nombre">${escHtml(item.nombre)} x${item.cantidad}</span>
+                        <span class="nombre">${escHtml(nombreConPeso)} x${item.cantidad}</span>
                         <span class="subtotal">$${subtotal.toLocaleString('es-CO')}</span>
                     </div>
                 `;
@@ -2183,10 +2356,9 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON AUTENTICACIÓN
+        // ENVIAR PEDIDO
         // ============================================================
         async function enviarPedido() {
-            // Asegurar que el cliente esté autenticado
             const user = await autenticarCliente();
             
             if (!user) {
@@ -2258,7 +2430,10 @@
                     nombre: item.nombre,
                     cantidad: item.cantidad,
                     precio: item.precio,
-                    total: subtotal
+                    total: subtotal,
+                    tipoProducto: item.tipoProducto || 'unidad',
+                    pesoGramos: item.pesoGramos || null,
+                    precioPorGramo: item.precioPorGramo || 0
                 };
             });
 
@@ -2317,7 +2492,11 @@
             mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
             
             items.forEach(item => {
-                mensajeWhatsApp += `${emojiProducto} ${item.nombre} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
+                let nombreItem = item.nombre;
+                if (item.pesoGramos) {
+                    nombreItem += ` (${item.pesoGramos}g)`;
+                }
+                mensajeWhatsApp += `${emojiProducto} ${nombreItem} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
             });
             
             mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
@@ -2338,7 +2517,7 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // ===== GUARDAR PEDIDO CON clienteId AUTENTICADO =====
+            // Guardar pedido
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -2348,12 +2527,7 @@
                     barrio: barrio,
                     observaciones: observaciones || ''
                 },
-                items: items.map(item => ({
-                    nombre: item.nombre,
-                    cantidad: item.cantidad,
-                    precio: item.precio,
-                    total: item.total
-                })),
+                items: items,
                 total: total,
                 estado: 'Pendiente',
                 metodoPago: metodoPago,
@@ -2539,13 +2713,30 @@
         }
 
         // ============================================================
+        // EXPONER FUNCIONES AL GLOBAL
+        // ============================================================
+        window.actualizarPeso = actualizarPeso;
+        window.agregarAlCarrito = agregarAlCarrito;
+        window.quitarDelCarrito = quitarDelCarrito;
+        window.actualizarCarrito = actualizarCarrito;
+        window.vaciarCarrito = vaciarCarrito;
+        window.mostrarFormularioYEnviar = mostrarFormularioYEnviar;
+        window.enviarPedido = enviarPedido;
+        window.seleccionarCategoria = seleccionarCategoria;
+        window.seleccionarPago = seleccionarPago;
+        window.abrirModalQR = abrirModalQR;
+        window.cerrarModalQR = cerrarModalQR;
+        window.abrirModalProducto = abrirModalProducto;
+        window.cerrarModalProducto = cerrarModalProducto;
+        window.cambiarImagenModal = cambiarImagenModal;
+        window.agregarAlCarritoDesdeModal = agregarAlCarritoDesdeModal;
+        window.mostrarToast = mostrarToast;
+
+        // ============================================================
         // INICIALIZAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
-            // Autenticar cliente primero
             await autenticarCliente();
-            
-            // Cargar tienda y productos
             await cargarTienda();
             await cargarProductos();
 
@@ -2576,9 +2767,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('📷 El botón QR se oculta automáticamente si el administrador lo desactiva');
-        console.log('🔊 Los sonidos se activan al escanear (Android e iPhone)');
-        console.log('🔐 Autenticación anónima activada para pedidos seguros');
+        console.log('⚖️ Soporte para productos por peso activado');
     </script>
 </body>
 </html>
