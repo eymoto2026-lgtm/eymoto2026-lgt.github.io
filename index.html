@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -422,11 +422,6 @@
             color: #999;
             text-align: center;
             margin-top: 2px;
-        }
-        .selector-peso .peso-precio-por-kilo {
-            font-size: 11px;
-            color: #888;
-            text-align: center;
         }
 
         .producto-acciones {
@@ -1069,7 +1064,6 @@
             margin-bottom: 6px;
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 480px) {
             .banner-container { height: 120px; }
             .header .logo { width: 44px; height: 44px; }
@@ -1328,25 +1322,59 @@
         let pesosSeleccionados = {};
 
         // ============================================================
-        // AUTENTICACIÓN ANÓNIMA
+        // AUTENTICACIÓN ANÓNIMA - VERSIÓN CORREGIDA
         // ============================================================
         async function autenticarCliente() {
             try {
+                // Si ya hay un usuario autenticado, usarlo
                 if (auth.currentUser) {
                     console.log('✅ Usuario ya autenticado:', auth.currentUser.uid);
                     clienteAutenticado = auth.currentUser;
                     return auth.currentUser;
                 }
                 
-                const result = await auth.signInAnonymously();
-                console.log('✅ Cliente autenticado anónimamente:', result.user.uid);
-                clienteAutenticado = result.user;
-                return result.user;
+                // Intentar autenticación anónima
+                try {
+                    const result = await auth.signInAnonymously();
+                    console.log('✅ Cliente autenticado anónimamente:', result.user.uid);
+                    clienteAutenticado = result.user;
+                    return result.user;
+                } catch (authError) {
+                    console.error('❌ Error en autenticación anónima:', authError);
+                    
+                    // Si falla, intentar con credenciales por defecto
+                    try {
+                        const email = 'cliente_eymoto@email.com';
+                        const password = 'Cliente2026!';
+                        
+                        const result = await auth.signInWithEmailAndPassword(email, password);
+                        console.log('✅ Cliente autenticado con email por defecto:', result.user.uid);
+                        clienteAutenticado = result.user;
+                        return result.user;
+                    } catch (emailError) {
+                        if (emailError.code === 'auth/user-not-found') {
+                            // Crear usuario si no existe
+                            const email = 'cliente_eymoto@email.com';
+                            const password = 'Cliente2026!';
+                            const result = await auth.createUserWithEmailAndPassword(email, password);
+                            console.log('✅ Usuario cliente creado:', result.user.uid);
+                            clienteAutenticado = result.user;
+                            return result.user;
+                        }
+                        throw emailError;
+                    }
+                }
             } catch (error) {
                 console.error('❌ Error al autenticar:', error);
+                
+                // Último recurso: ID temporal
                 const tempId = 'temp_' + Date.now();
                 console.log('⚠️ Usando ID temporal:', tempId);
-                clienteAutenticado = { uid: tempId, isAnonymous: true };
+                clienteAutenticado = { 
+                    uid: tempId, 
+                    isAnonymous: true,
+                    getIdToken: () => Promise.resolve(null)
+                };
                 return clienteAutenticado;
             }
         }
@@ -1929,7 +1957,6 @@
         // FUNCIONES PARA PRODUCTOS POR PESO CON INPUT NUMÉRICO
         // ============================================================
         
-        // Calcular precio según el peso y el modo
         function calcularPrecioPorPeso(producto, gramos) {
             if (!producto || producto.tipoProducto !== 'peso') return 0;
             
@@ -1939,7 +1966,6 @@
                 const precioPorGramo = producto.precioPorGramo || 0;
                 return precioPorGramo * gramos;
             } else {
-                // Modo por base (regla de 3)
                 const pesoBase = producto.pesoBase || 500;
                 const precioBase = producto.precioBase || 0;
                 if (pesoBase === 0) return 0;
@@ -1947,7 +1973,6 @@
             }
         }
 
-        // Actualizar peso desde el input
         function actualizarPesoInput(productoId, valor) {
             let gramos = parseInt(valor);
             const producto = productos.find(p => p.id === productoId);
@@ -1956,7 +1981,6 @@
             const pesoMinimo = producto.pesoMinimo || 1;
             const pesoMaximo = 10000;
             
-            // Si no es un número válido o es menor a 1, usar 1
             if (isNaN(gramos) || gramos < 1) {
                 gramos = 1;
             }
@@ -1964,33 +1988,27 @@
                 gramos = pesoMaximo;
             }
             
-            // Guardar el peso seleccionado
             pesosSeleccionados[productoId] = gramos;
             
-            // Actualizar el campo input
             const input = document.getElementById(`pesoInput-${productoId}`);
             if (input && parseInt(input.value) !== gramos) {
                 input.value = gramos;
             }
             
-            // Actualizar el label
             const label = document.getElementById(`pesoLabel-${productoId}`);
             if (label) label.textContent = `${gramos}g`;
             
-            // Calcular y mostrar el precio total
             const precioTotal = calcularPrecioPorPeso(producto, gramos);
             const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
             if (precioEl) {
                 precioEl.innerHTML = `💰 <span class="label">Total:</span> $${Math.round(precioTotal).toLocaleString('es-CO')}`;
             }
             
-            // Actualizar el precio mostrado en el producto
             const precioDisplay = document.querySelector(`#producto-precio-${productoId}`);
             if (precioDisplay) {
                 precioDisplay.textContent = `$${Math.round(precioTotal).toLocaleString('es-CO')}`;
             }
             
-            // Si el producto ya está en el carrito, actualizarlo
             const itemEnCarrito = carrito.find(c => c.id === productoId);
             if (itemEnCarrito && itemEnCarrito.tipoProducto === 'peso') {
                 itemEnCarrito.pesoGramos = gramos;
@@ -2000,7 +2018,6 @@
             }
         }
 
-        // Validar el input al perder el foco
         function validarPesoInput(productoId, valor) {
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
@@ -2021,7 +2038,6 @@
             actualizarPesoInput(productoId, gramos);
         }
 
-        // Cambiar peso con los botones + / -
         function cambiarPesoInput(productoId, cambio) {
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
@@ -2171,7 +2187,6 @@
                             const restarVisible = cantidad > 0 ? 'visible' : '';
                             const badgeAgotado = estaAgotado ? `<div class="producto-agotado-badge">⛔ No disponible</div>` : '';
                             
-                            // ===== CALCULAR PRECIO POR PESO =====
                             let precioDisplay = '';
                             let precioPorKiloText = '';
                             let pesoSelectorHtml = '';
@@ -2179,7 +2194,6 @@
                             if (p.tipoProducto === 'peso') {
                                 const pesoMinimo = p.pesoMinimo || 1;
                                 
-                                // Inicializar el peso seleccionado (mínimo 1 gramo)
                                 if (!pesosSeleccionados[p.id]) {
                                     pesosSeleccionados[p.id] = pesoMinimo;
                                 }
@@ -2188,7 +2202,6 @@
                                 
                                 precioDisplay = `$${Math.round(precioTotal).toLocaleString('es-CO')}`;
                                 
-                                // Mostrar precio por kilo si está disponible
                                 if (p.modoPeso === 'por_gramo' && p.precioPorGramo) {
                                     precioPorKiloText = `<div class="peso-precio-por-kilo">$${(p.precioPorGramo * 1000).toLocaleString('es-CO')}/kg</div>`;
                                 } else if (p.modoPeso === 'por_base' && p.pesoBase && p.precioBase) {
@@ -2325,7 +2338,6 @@
             let precioUnitario = producto.precio;
             
             if (producto.tipoProducto === 'peso') {
-                // Usar el peso guardado en pesosSeleccionados o mínimo 1g
                 pesoGramos = pesosSeleccionados[productoId] || producto.pesoMinimo || 1;
                 if (pesoGramos < 1) {
                     pesoGramos = 1;
@@ -2491,9 +2503,10 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO
+        // ENVIAR PEDIDO - VERSIÓN CORREGIDA CON RETRY
         // ============================================================
         async function enviarPedido() {
+            // ===== 1. AUTENTICAR CLIENTE =====
             const user = await autenticarCliente();
             
             if (!user) {
@@ -2572,7 +2585,52 @@
                 };
             });
 
-            // Actualizar stock
+            // ===== 2. OBTENER UID REAL =====
+            let uidCliente = user.uid;
+            
+            if (uidCliente && uidCliente.startsWith('temp_')) {
+                try {
+                    if (auth.currentUser) {
+                        uidCliente = auth.currentUser.uid;
+                        console.log('✅ Usando UID real de Firebase:', uidCliente);
+                    }
+                } catch(e) {
+                    console.warn('⚠️ Usando UID temporal:', uidCliente);
+                }
+            }
+
+            // ===== 3. PREPARAR DATOS DEL PEDIDO =====
+            const pedidoData = {
+                numeroPedido: numeroPedido,
+                cliente: {
+                    nombre: nombre,
+                    telefono: telefono,
+                    direccion: direccion,
+                    barrio: barrio,
+                    observaciones: observaciones || ''
+                },
+                items: items.map(item => ({
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precio: item.precio,
+                    total: item.total,
+                    pesoGramos: item.pesoGramos || null
+                })),
+                total: total,
+                estado: 'Pendiente',
+                metodoPago: metodoPago,
+                estadoPago: 'pendiente',
+                clienteId: uidCliente,
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: Date.now(),
+                fuente: 'whatsapp'
+            };
+
+            if (user.email) {
+                pedidoData.email = user.email;
+            }
+
+            // ===== 4. ACTUALIZAR STOCK =====
             try {
                 const batch = db.batch();
                 const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -2599,7 +2657,54 @@
                 console.error('❌ Error al actualizar stock:', error);
             }
 
-            // Mensaje WhatsApp
+            // ===== 5. GUARDAR PEDIDO CON RETRY =====
+            try {
+                let guardado = false;
+                let intentos = 0;
+                const maxIntentos = 3;
+                
+                while (!guardado && intentos < maxIntentos) {
+                    try {
+                        intentos++;
+                        console.log(`📤 Intentando guardar pedido (intento ${intentos})...`);
+                        
+                        const docRef = await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
+                        console.log('✅ Pedido guardado en Firestore con ID:', docRef.id);
+                        guardado = true;
+                        
+                    } catch (error) {
+                        console.error(`❌ Intento ${intentos} falló:`, error);
+                        
+                        if (intentos < maxIntentos) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            
+                            if (error.message.includes('permission') || error.message.includes('permissions')) {
+                                console.log('🔄 Re-autenticando...');
+                                try {
+                                    await auth.signOut();
+                                    await autenticarCliente();
+                                    console.log('✅ Re-autenticación exitosa');
+                                } catch (authError) {
+                                    console.error('❌ Error en re-autenticación:', authError);
+                                }
+                            }
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+                
+                if (!guardado) {
+                    throw new Error('No se pudo guardar el pedido después de varios intentos');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al guardar pedido:', error);
+                mostrarToast('❌ Error al guardar el pedido: ' + error.message, 'error', 5000);
+                return;
+            }
+
+            // ===== 6. ENVIAR WHATSAPP =====
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
             const emojiFecha = '📅';
@@ -2652,48 +2757,13 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // Guardar pedido
-            const pedidoData = {
-                numeroPedido: numeroPedido,
-                cliente: {
-                    nombre: nombre,
-                    telefono: telefono,
-                    direccion: direccion,
-                    barrio: barrio,
-                    observaciones: observaciones || ''
-                },
-                items: items,
-                total: total,
-                estado: 'Pendiente',
-                metodoPago: metodoPago,
-                estadoPago: 'pendiente',
-                clienteId: user.uid,
-                fecha: firebase.firestore.FieldValue.serverTimestamp(),
-                fuente: 'whatsapp',
-                timestamp: Date.now()
-            };
-
-            if (user.email) {
-                pedidoData.email = user.email;
-            }
-
-            try {
-                if (TIENDA_ID) {
-                    const docRef = await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
-                    console.log('✅ Pedido guardado en Firestore con ID:', docRef.id);
-                }
-            } catch (error) {
-                console.error('❌ Error al guardar pedido:', error);
-                mostrarToast('❌ Error al guardar el pedido: ' + error.message, 'error');
-                return;
-            }
-
             const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
+            // ===== 7. LIMPIAR CARRITO =====
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -2776,7 +2846,6 @@
             const descText = formatearDescripcion(producto.descripcion);
             document.getElementById('modalDescripcion').textContent = descText || 'Sin descripción';
             
-            // Mostrar precio en el modal
             let precioModal = 0;
             if (producto.tipoProducto === 'peso') {
                 const pesoActual = pesosSeleccionados[productoId] || producto.pesoMinimo || 1;
@@ -2914,6 +2983,7 @@
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
         console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
+        console.log('🔐 Autenticación corregida con fallbacks');
     </script>
 </body>
 </html>
