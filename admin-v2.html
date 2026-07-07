@@ -47,6 +47,8 @@ button:active{transform:scale(.98)}
 .btn-success:hover{background:#00b748}
 .btn-whatsapp{background:#25D366;color:#fff}
 .btn-whatsapp:hover{background:#1da851}
+.btn-editar-pedido{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);font-size:11px;padding:8px;border-radius:7px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-editar-pedido:hover{background:var(--blue);color:#fff;}
 .btn-peso{background:var(--surface3);color:var(--text-muted);border:2px solid var(--border2);padding:10px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;flex:1;text-align:center}
 .btn-peso.active{background:var(--yellow);color:#1a1a2e;border-color:var(--yellow)}
 .btn-peso:hover:not(.active){border-color:var(--yellow);color:#fff}
@@ -167,6 +169,45 @@ header .spacer{flex:1}
 .peds-controls select{width:220px}
 .btn-speaker{background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 14px;border-radius:var(--radius);font-size:13px;cursor:pointer;width:auto;white-space:nowrap;}
 .btn-speaker:hover{background:var(--surface2)}
+
+/* ===== MODAL EDITAR PEDIDO ===== */
+.modal-editar-pedido{
+    display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;justify-content:center;align-items:center;padding:20px;
+}
+.modal-editar-pedido.active{display:flex;}
+.modal-editar-pedido .modal-content{
+    background:#1e1e1e;border-radius:20px;max-width:700px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;
+}
+.modal-editar-pedido .modal-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.modal-editar-pedido .modal-header h3{color:#fff;font-size:18px;font-weight:700;}
+.modal-editar-pedido .modal-close{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;}
+.modal-editar-pedido .modal-close:hover{color:var(--red);}
+.modal-editar-pedido .pedido-info{background:var(--surface2);padding:12px;border-radius:10px;margin-bottom:14px;font-size:13px;}
+.modal-editar-pedido .pedido-info .row{display:flex;justify-content:space-between;padding:2px 0;}
+.modal-editar-pedido .pedido-info .label{color:var(--text-muted);}
+.modal-editar-pedido .productos-lista{max-height:300px;overflow-y:auto;margin-bottom:14px;}
+.modal-editar-pedido .producto-editar-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);}
+.modal-editar-pedido .producto-editar-item .info{flex:1;}
+.modal-editar-pedido .producto-editar-item .info .nombre{font-size:13px;font-weight:600;}
+.modal-editar-pedido .producto-editar-item .info .detalle{font-size:11px;color:var(--text-muted);}
+.modal-editar-pedido .producto-editar-item .acciones{display:flex;gap:4px;align-items:center;}
+.modal-editar-pedido .producto-editar-item .acciones button{width:auto;padding:4px 10px;font-size:11px;border-radius:6px;border:none;cursor:pointer;font-weight:700;}
+.modal-editar-pedido .producto-editar-item .acciones .btn-quitar{background:var(--red-bg);color:var(--red);}
+.modal-editar-pedido .producto-editar-item .acciones .btn-quitar:hover{background:var(--red);color:#fff;}
+.modal-editar-pedido .producto-editar-item .acciones .cantidad{font-size:14px;font-weight:700;min-width:28px;text-align:center;color:#fff;}
+.modal-editar-pedido .producto-editar-item .acciones .btn-cant{background:var(--surface3);color:#fff;border:1px solid var(--border2);padding:2px 8px;}
+.modal-editar-pedido .producto-editar-item .acciones .btn-cant:hover{background:var(--yellow);color:#1a1a2e;}
+.modal-editar-pedido .agregar-producto-area{background:var(--surface2);padding:14px;border-radius:10px;border:1px solid var(--border);}
+.modal-editar-pedido .agregar-producto-area select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:#fff;margin-bottom:8px;}
+.modal-editar-pedido .agregar-producto-area .btn-agregar{width:100%;padding:10px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.modal-editar-pedido .agregar-producto-area .btn-agregar:hover{background:#00b748;}
+.modal-editar-pedido .total-editar{display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid var(--yellow);margin-top:10px;font-size:17px;font-weight:800;}
+.modal-editar-pedido .total-editar .val{color:var(--green);}
+.modal-editar-pedido .btn-guardar-edicion{width:100%;padding:14px;border-radius:10px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:800;font-size:15px;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.modal-editar-pedido .btn-guardar-edicion:hover{background:var(--yellow-dim);}
+.modal-editar-pedido .btn-guardar-edicion:disabled{opacity:0.5;cursor:not-allowed;}
 
 .tienda-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:14px;}
 .tienda-logo{width:54px;height:54px;border-radius:10px;object-fit:cover;background:var(--surface3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;border:1px solid var(--border);overflow:hidden;}
@@ -506,7 +547,6 @@ header .spacer{flex:1}
     <button id="btnSonidoGlobal" class="btn-speaker btn-sm" onclick="window.toggleSonidoGlobal()" style="width:auto;padding:6px 12px;font-size:12px;border-radius:8px;">
       🔊 Sonido ON
     </button>
-    <!-- ===== BOTÓN SILENCIAR ALARMA ===== -->
     <button class="btn-alarma" id="btnSilenciarAlarma" onclick="window.detenerAlarmaContinua()" style="display:none;">
       🔕 Silenciar Alarma
     </button>
@@ -859,6 +899,17 @@ header .spacer{flex:1}
     </div>
 </div>
 
+<!-- ===== MODAL EDITAR PEDIDO ===== -->
+<div class="modal-editar-pedido" id="modalEditarPedido">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Editar pedido</h3>
+            <button class="modal-close" onclick="window.cerrarEditarPedido()">✕</button>
+        </div>
+        <div id="editarPedidoContenido"></div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -920,6 +971,14 @@ let scannerAdminTiempoEspera = null;
 let productosOriginales = [];
 let productosFiltrados = [];
 let filtroActivo = false;
+
+// ============================================================
+// VARIABLES PARA EDICIÓN DE PEDIDOS
+// ============================================================
+let pedidoEditando = null;
+let tiendaEditando = null;
+let productosDisponibles = [];
+let itemsEditando = [];
 
 // ============================================================
 // TOAST
@@ -1005,6 +1064,8 @@ async function inicializarPanel() {
         }
         setTimeout(activarAudioAutomatico, 1000);
         iniciarEscuchaGlobal();
+        // Cargar productos para edición
+        cargarProductosParaEdicion();
         toast('✅ Panel cargado correctamente', 'success', 2000);
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
@@ -1095,14 +1156,11 @@ function iniciarAlarmaContinua(nombreTienda, pedidoId) {
     console.log(`🔔 Alarma activada para: ${nombreTienda} - ${pedidoId}`);
     alarmaActiva = true;
     
-    // Mostrar botón de silenciar
     document.getElementById('btnSilenciarAlarma').style.display = 'inline-block';
     
     alarmInterval = setInterval(() => {
-        // Sonido de alerta
         reproducirSonidoAlarma();
         
-        // Voz
         if ('speechSynthesis' in window) {
             try {
                 window.speechSynthesis.cancel();
@@ -1476,7 +1534,6 @@ function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId) 
             'new', 8000
         );
         
-        // ===== INICIAR ALARMA CONTINUA =====
         iniciarAlarmaContinua(nombreTienda, pedidoId);
         
         if (sonidoGlobal) {
@@ -2325,6 +2382,329 @@ function limpiarBuscador() {
 }
 
 // ============================================================
+// ===== CARGAR PRODUCTOS PARA EDICIÓN DE PEDIDOS =====
+// ============================================================
+async function cargarProductosParaEdicion() {
+    try {
+        const snap = await db.collectionGroup('productos').get();
+        productosDisponibles = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            const tiendaId = doc.ref.parent.parent.id;
+            productosDisponibles.push({ id, tiendaId, ...p });
+        });
+        console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
+    } catch (e) {
+        console.error('Error cargando productos para edición:', e);
+    }
+}
+
+// ============================================================
+// ===== EDITAR PEDIDO - FUNCIONES PRINCIPALES =====
+// ============================================================
+
+function abrirEditarPedido(tiendaId, pedidoId) {
+    // Obtener el pedido de la caché
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    pedidoEditando = { ...pedido, id: pedidoId };
+    tiendaEditando = tiendaId;
+    itemsEditando = pedido.items ? pedido.items.map(item => ({ ...item })) : [];
+    
+    // Cargar productos de la tienda para el selector
+    cargarProductosDeTienda(tiendaId);
+    
+    // Mostrar modal
+    renderizarEditarPedido();
+    document.getElementById('modalEditarPedido').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarEditarPedido() {
+    document.getElementById('modalEditarPedido').classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoEditando = null;
+    tiendaEditando = null;
+    itemsEditando = [];
+}
+
+async function cargarProductosDeTienda(tiendaId) {
+    try {
+        const snap = await db.collection('tiendas').doc(tiendaId).collection('productos').get();
+        productosDisponibles = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            if (p.estado !== 'agotado') {
+                productosDisponibles.push({ id, tiendaId, ...p });
+            }
+        });
+        console.log('📦 Productos de tienda cargados:', productosDisponibles.length);
+        actualizarSelectorProductos();
+    } catch (e) {
+        console.error('Error cargando productos de tienda:', e);
+    }
+}
+
+function actualizarSelectorProductos() {
+    const select = document.getElementById('productoAgregarSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Seleccionar producto...</option>';
+    productosDisponibles.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.name || 'Sin nombre'} - $${(p.precio || 0).toLocaleString('es-CO')}`;
+        if (p.tipoProducto === 'peso') opt.textContent += ` (⚖️ ${p.pesoMinimo || 1}g min)`;
+        select.appendChild(opt);
+    });
+}
+
+function renderizarEditarPedido() {
+    const container = document.getElementById('editarPedidoContenido');
+    if (!pedidoEditando) return;
+    
+    const p = pedidoEditando;
+    const tienda = tiendasCache[tiendaEditando] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    
+    // Calcular total
+    let total = 0;
+    itemsEditando.forEach(item => {
+        total += (item.precio || 0) * (item.cantidad || 1);
+    });
+    
+    let itemsHtml = '';
+    itemsEditando.forEach((item, index) => {
+        const subtotal = (item.precio || 0) * (item.cantidad || 1);
+        let nombreItem = item.nombre || 'Producto';
+        if (item.pesoGramos) {
+            nombreItem += ` (${item.pesoGramos}g)`;
+        }
+        itemsHtml += `
+            <div class="producto-editar-item">
+                <div class="info">
+                    <div class="nombre">${nombreItem}</div>
+                    <div class="detalle">$${(item.precio || 0).toLocaleString('es-CO')} c/u</div>
+                </div>
+                <div class="acciones">
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
+                    <span class="cantidad">${item.cantidad || 1}</span>
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
+                    <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    if (itemsHtml === '') {
+        itemsHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No hay productos en este pedido</div>';
+    }
+    
+    container.innerHTML = `
+        <div class="pedido-info">
+            <div class="row"><span class="label">🏪 Tienda:</span><span>${nombreTienda}</span></div>
+            <div class="row"><span class="label">🧾 Pedido:</span><span>${p.numeroPedido || '#' + p.id.slice(-6)}</span></div>
+            <div class="row"><span class="label">👤 Cliente:</span><span>${p.cliente?.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📱 Teléfono:</span><span>${p.cliente?.telefono || 'N/A'}</span></div>
+            <div class="row"><span class="label">📍 Dirección:</span><span>${p.cliente?.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">📝 Observaciones:</span><span>${p.cliente?.observaciones || 'Ninguna'}</span></div>
+        </div>
+        
+        <div class="productos-lista">
+            ${itemsHtml}
+        </div>
+        
+        <div class="agregar-producto-area">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <select id="productoAgregarSelect" style="flex:1;min-width:180px;">
+                    <option value="">Seleccionar producto...</option>
+                </select>
+                <button class="btn-agregar" onclick="window.agregarProductoAPedido()" style="width:auto;padding:10px 20px;">➕ Agregar</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+                Los productos se agregan con cantidad 1. Puedes ajustar la cantidad después.
+            </div>
+        </div>
+        
+        <div class="total-editar">
+            <span>TOTAL</span>
+            <span class="val">$${total.toLocaleString('es-CO')}</span>
+        </div>
+        
+        <button class="btn-guardar-edicion" onclick="window.guardarEdicionPedido()">
+            💾 Guardar cambios
+        </button>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="btn-ghost btn-sm" onclick="window.cerrarEditarPedido()" style="width:100%;">Cancelar</button>
+            <button class="btn-whatsapp btn-sm" onclick="window.enviarActualizacionPedido()" style="width:100%;">📱 Notificar al cliente</button>
+        </div>
+    `;
+    
+    // Actualizar selector de productos
+    actualizarSelectorProductos();
+}
+
+function cambiarCantidadItem(index, cambio) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    const nuevoCantidad = Math.max(1, itemsEditando[index].cantidad + cambio);
+    itemsEditando[index].cantidad = nuevoCantidad;
+    renderizarEditarPedido();
+}
+
+function quitarItemPedido(index) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    if (!confirm('¿Quitar este producto del pedido?')) return;
+    itemsEditando.splice(index, 1);
+    renderizarEditarPedido();
+}
+
+function agregarProductoAPedido() {
+    const select = document.getElementById('productoAgregarSelect');
+    const productoId = select.value;
+    if (!productoId) {
+        toast('⚠️ Selecciona un producto', 'error');
+        return;
+    }
+    
+    const producto = productosDisponibles.find(p => p.id === productoId);
+    if (!producto) {
+        toast('⚠️ Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Verificar si ya existe en el pedido
+    const existente = itemsEditando.find(item => item.id === productoId);
+    if (existente) {
+        existente.cantidad = (existente.cantidad || 1) + 1;
+    } else {
+        itemsEditando.push({
+            id: producto.id,
+            nombre: producto.name || 'Producto',
+            precio: producto.precio || 0,
+            cantidad: 1,
+            pesoGramos: producto.pesoGramos || null,
+            tipoProducto: producto.tipoProducto || 'unidad'
+        });
+    }
+    
+    renderizarEditarPedido();
+    toast(`✅ ${producto.name || 'Producto'} agregado`, 'success', 1500);
+}
+
+async function guardarEdicionPedido() {
+    if (!pedidoEditando || !tiendaEditando) {
+        toast('⚠️ No hay pedido para editar', 'error');
+        return;
+    }
+    
+    if (itemsEditando.length === 0) {
+        toast('⚠️ El pedido debe tener al menos un producto', 'error');
+        return;
+    }
+    
+    // Calcular nuevo total
+    let total = 0;
+    itemsEditando.forEach(item => {
+        total += (item.precio || 0) * (item.cantidad || 1);
+    });
+    
+    // Preparar datos actualizados
+    const updatedData = {
+        items: itemsEditando.map(item => ({
+            id: item.id,
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            total: (item.precio || 0) * (item.cantidad || 1),
+            pesoGramos: item.pesoGramos || null
+        })),
+        total: total,
+        editado: true,
+        fechaEdicion: firebase.firestore.FieldValue.serverTimestamp(),
+        editadoPor: auth.currentUser?.email || 'Admin'
+    };
+    
+    try {
+        toast('⏳ Guardando cambios...', 'info');
+        
+        await db.collection('tiendas').doc(tiendaEditando)
+            .collection('pedidos').doc(pedidoEditando.id)
+            .update(updatedData);
+        
+        toast('✅ Pedido actualizado correctamente', 'success');
+        
+        // Cerrar modal y refrescar
+        cerrarEditarPedido();
+        // Recargar pedidos
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+        // Actualizar caché local
+        if (todosLosPedidos[tiendaEditando]) {
+            const pedidoCache = todosLosPedidos[tiendaEditando].find(p => p.doc.id === pedidoEditando.id);
+            if (pedidoCache) {
+                pedidoCache.data.items = updatedData.items;
+                pedidoCache.data.total = updatedData.total;
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al guardar edición:', error);
+        toast('❌ Error al guardar: ' + error.message, 'error');
+    }
+}
+
+function enviarActualizacionPedido() {
+    if (!pedidoEditando || !tiendaEditando) return;
+    
+    const tienda = tiendasCache[tiendaEditando] || {};
+    const telefonoTienda = tienda.whatsapp || '';
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    const cliente = pedidoEditando.cliente || {};
+    const telefonoCliente = cliente.telefono || '';
+    
+    if (!telefonoCliente) {
+        toast('⚠️ El cliente no tiene número de teléfono', 'error');
+        return;
+    }
+    
+    let mensaje = `📝 *ACTUALIZACIÓN DE PEDIDO*\n\n`;
+    mensaje += `🏪 *${nombreTienda}*\n`;
+    mensaje += `🧾 *Pedido:* ${pedidoEditando.numeroPedido || '#' + pedidoEditando.id.slice(-6)}\n\n`;
+    mensaje += `*PRODUCTOS ACTUALIZADOS*\n`;
+    mensaje += `━━━━━━━━━━━━━━━━━━\n`;
+    
+    let total = 0;
+    itemsEditando.forEach(item => {
+        const subtotal = (item.precio || 0) * (item.cantidad || 1);
+        total += subtotal;
+        let nombre = item.nombre || 'Producto';
+        if (item.pesoGramos) nombre += ` (${item.pesoGramos}g)`;
+        mensaje += `${nombre} x${item.cantidad || 1} = $${subtotal.toLocaleString('es-CO')}\n`;
+    });
+    mensaje += `━━━━━━━━━━━━━━━━━━\n`;
+    mensaje += `💰 *NUEVO TOTAL: $${total.toLocaleString('es-CO')}*\n\n`;
+    mensaje += `📝 *Observaciones:* ${cliente.observaciones || 'Ninguna'}\n\n`;
+    mensaje += `✅ Tu pedido ha sido actualizado. ¿Necesitas algo más?`;
+    
+    const url = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+
+// ============================================================
+// CARGAR PRODUCTOS PARA EDICIÓN (en renderPedido)
+// ============================================================
+// Modificar renderPedido para agregar botón de editar
+
+// ============================================================
 // PRODUCTOS
 // ============================================================
 async function cargarProductos() {
@@ -2358,6 +2738,9 @@ async function cargarProductos() {
         filtroActivo = false;
         
         mostrarProductos(productosOriginales);
+        
+        // También cargar para edición
+        cargarProductosParaEdicion();
         
     } catch(e) { 
         lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar.</p>'; 
@@ -2765,10 +3148,14 @@ function renderPedido(doc, tiendaId, counts) {
     if (estado === 'Pendiente') {
         acciones += `<button class="btn-cook" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        // Botón Editar Pedido para pendientes
+        acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     if (estado === 'En Cocina') {
         acciones += `<button class="btn-go" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        // Botón Editar Pedido para en cocina también
+        acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     if (estado === 'En Camino') {
         acciones += `<button class="btn-done" onclick="window.cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>`;
@@ -2886,7 +3273,6 @@ function iniciarEscuchaGlobal() {
                                 const cliente = data.cliente?.nombre || 'Cliente';
                                 const total = data.total || 0;
                                 
-                                // Notificar con alarma continua
                                 notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId);
                             }
                         }
@@ -2990,7 +3376,9 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
         </div>
         <div class="accion-btns">
             ${estado === 'Pendiente' ? `<button class="btn-cook" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>` : ''}
+            ${estado === 'Pendiente' ? `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>` : ''}
             ${estado === 'En Cocina' ? `<button class="btn-go" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>` : ''}
+            ${estado === 'En Cocina' ? `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>` : ''}
             ${estado === 'En Camino' ? `<button class="btn-done" onclick="window.cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>` : ''}
             ${estado === 'Entregado' || estado === 'Cancelado' ? `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>` : ''}
             ${estado === 'Entregado' ? `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>` : ''}
@@ -3381,6 +3769,16 @@ window.toggleEscaneoBoton = toggleEscaneoBoton;
 window.detenerAlarmaContinua = detenerAlarmaContinua;
 window.iniciarAlarmaContinua = iniciarAlarmaContinua;
 window.reproducirSonidoAlarma = reproducirSonidoAlarma;
+window.abrirEditarPedido = abrirEditarPedido;
+window.cerrarEditarPedido = cerrarEditarPedido;
+window.cambiarCantidadItem = cambiarCantidadItem;
+window.quitarItemPedido = quitarItemPedido;
+window.agregarProductoAPedido = agregarProductoAPedido;
+window.guardarEdicionPedido = guardarEdicionPedido;
+window.enviarActualizacionPedido = enviarActualizacionPedido;
+window.cargarProductosParaEdicion = cargarProductosParaEdicion;
+window.cargarProductosDeTienda = cargarProductosDeTienda;
+window.actualizarSelectorProductos = actualizarSelectorProductos;
 
 // ============================================================
 // INICIALIZAR
@@ -3401,6 +3799,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔎 Buscador de productos por nombre o categoría activado');
     console.log('🧾 Sistema de facturación activado (colores corregidos)');
     console.log('🔔 Alarma continua con voz para nuevos pedidos activada');
+    console.log('✏️ Edición de pedidos en tiempo real activada');
     console.log('🔐 Autenticación corregida con verificación de usuario');
 });
 </script>
