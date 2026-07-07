@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>EyMoto - Panel Mensajero</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        :root {
+            --yellow: #FFD600;
+            --yellow-dim: #e6c200;
+            --green: #00C853;
+            --green-bg: rgba(0,200,83,0.12);
+            --blue: #00B0FF;
+            --blue-bg: rgba(0,176,255,0.12);
+            --red: #FF3D00;
+            --red-bg: rgba(255,61,0,0.12);
+            --orange: #FF6900;
+            --orange-bg: rgba(255,105,0,0.12);
+            --purple: #9B59B6;
+            --purple-bg: rgba(155,89,182,0.12);
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --surface3: #252525;
+            --border: #2e2e2e;
+            --border2: #3a3a3a;
+            --text-muted: #888;
+            --radius: 10px;
+        }
+        input, select, button {
+            font-family: inherit;
+            font-size: 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface3);
+            color: #fff;
+            padding: 11px 14px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color .2s, background .2s;
+        }
+        input:focus, select:focus { border-color: var(--yellow); }
+        select option { background: #1e1e1e; }
+        button {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
+        button:hover { background: var(--yellow-dim); }
+        button:active { transform: scale(.98); }
+        .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
+        .btn-danger { background: #c0392b; color: #fff; }
+        .btn-danger:hover { background: #a93226; }
+        .btn-success { background: #00C853; color: #fff; }
+        .btn-success:hover { background: #00b748; }
+        .btn-info { background: #0288d1; color: #fff; }
+        .btn-info:hover { background: #0277bd; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
+        .btn-ghost:hover { background: var(--surface3); }
+        .hidden { display: none !important; }
+
+        header {
+            background: #0d0d0d;
+            border-bottom: 1px solid var(--border);
+            padding: 13px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header .brand {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 900;
+            font-size: 14px;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
+        header h1 { font-size: 15px; font-weight: 600; color: #fff; }
+        header .spacer { flex: 1; }
+        .header-badge {
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
+
+        /* ===== LOGIN ===== */
+        #loginBox {
+            max-width: 420px;
+            margin: 60px auto;
+            padding: 32px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        #loginBox .brand {
+            display: inline-block;
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-size: 26px;
+            font-weight: 900;
+            padding: 10px 24px;
+            border-radius: 30px;
+        }
+        #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
+        #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
+        .login-logo { text-align: center; margin-bottom: 28px; }
+
+        /* ===== ESTADÍSTICAS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
+        .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+        .stat-card.c-yellow .val { color: var(--yellow); }
+        .stat-card.c-green .val { color: var(--green); }
+        .stat-card.c-blue .val { color: var(--blue); }
+        .stat-card.c-orange .val { color: var(--orange); }
+        .stat-card.c-red .val { color: var(--red); }
+
+        /* ===== LISTA DE PEDIDOS ===== */
+        .pedido-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .pedido-card:hover { border-color: var(--yellow); }
+        .pedido-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .pedido-card .header .numero {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--yellow);
+        }
+        .pedido-card .header .estado-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .estado-badge.pendiente { background: var(--yellow-bg); color: var(--yellow); }
+        .estado-badge.en-camino { background: var(--orange-bg); color: var(--orange); }
+        .estado-badge.entregado { background: var(--green-bg); color: var(--green); }
+        .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
+        .estado-badge.cancelado { background: var(--red-bg); color: var(--red); }
+
+        .pedido-card .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .pedido-card .info-grid .label { color: var(--text-muted); }
+        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
+
+        .pedido-card .items-list {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        .pedido-card .items-list .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .pedido-card .items-list .item:last-child { border-bottom: none; }
+
+        .pedido-card .total {
+            font-size: 16px;
+            font-weight: 800;
+            text-align: right;
+            color: var(--green);
+            margin-top: 6px;
+        }
+
+        .pedido-card .acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .pedido-card .acciones button {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        /* ===== FILTROS ===== */
+        .filtros {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .filtros select, .filtros input {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filtros button { flex: 0 0 auto; width: auto; }
+
+        /* ===== TOAST ===== */
+        #toastWrap {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1e1e1e;
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,.5);
+            animation: toastIn .3s ease;
+            pointer-events: auto;
+            max-width: 380px;
+            cursor: pointer;
+        }
+        .toast.t-success { border-left: 3px solid var(--green); }
+        .toast.t-error { border-left: 3px solid var(--red); }
+        .toast.t-info { border-left: 3px solid var(--blue); }
+        .toast.t-warn { border-left: 3px solid var(--yellow); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-fade { animation: toastOut .3s ease forwards; }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+        /* ===== MODAL DETALLE ===== */
+        .modal-detalle {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-detalle.active { display: flex; }
+        .modal-detalle .modal-content {
+            background: #1e1e1e;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            padding: 24px;
+            border: 1px solid var(--yellow);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-detalle .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-detalle .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
+        .modal-detalle .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-detalle .modal-close:hover { color: var(--red); }
+
+        .modal-detalle .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-detalle .info-row .label { color: var(--text-muted); }
+        .modal-detalle .info-row .value { color: #fff; font-weight: 500; }
+
+        /* ===== MAPA SIMULADO ===== */
+        .mapa-simulado {
+            background: var(--surface2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+            margin: 12px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .mapa-simulado .icono { font-size: 48px; margin-bottom: 8px; }
+        .mapa-simulado .texto { color: var(--text-muted); font-size: 13px; }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .pedido-card .info-grid { grid-template-columns: 1fr; }
+            .filtros select, .filtros input { min-width: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toastWrap"></div>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginBox">
+    <div class="login-logo"><span class="brand">EyMoto</span></div>
+    <h2>Panel de Mensajero</h2>
+    <p class="sub">Gestiona tus entregas</p>
+    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="mensajero@eymoto.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
+    <button onclick="iniciarSesion()">Ingresar</button>
+    <p id="loginMsg"></p>
+</div>
+
+<!-- ===== PANEL ===== -->
+<div id="panel" class="hidden">
+    <header>
+        <span class="brand">EyMoto</span>
+        <h1>Panel de Mensajero</h1>
+        <span class="spacer"></span>
+        <span id="nombreMensajero" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span class="header-badge" id="headerBadge">0</span>
+        <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
+    </header>
+
+    <div class="wrap">
+        <!-- ESTADÍSTICAS -->
+        <div class="stats-grid">
+            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pendientes</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
+            <div class="stat-card c-orange"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+            <div class="stat-card c-green"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados hoy</div></div>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filtros">
+            <select id="filtroEstado" onchange="filtrarPedidos()">
+                <option value="">📋 Todos los estados</option>
+                <option value="Pendiente">⏳ Pendiente</option>
+                <option value="Asignado">👤 Asignado</option>
+                <option value="En camino">🛵 En camino</option>
+                <option value="Entregado">✅ Entregado</option>
+                <option value="Cancelado">❌ Cancelado</option>
+            </select>
+            <select id="filtroTiendaMensajero" onchange="filtrarPedidos()">
+                <option value="">🏪 Todas las tiendas</option>
+            </select>
+            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar cliente o dirección..." oninput="filtrarPedidos()">
+            <button class="btn-info btn-sm" onclick="recargarPedidos()" style="width:auto;">🔄 Recargar</button>
+            <button class="btn-success btn-sm" onclick="alternarModoGPS()" id="btnGPS" style="width:auto;">📍 GPS: OFF</button>
+        </div>
+
+        <!-- LISTA DE PEDIDOS -->
+        <div id="listaPedidos">
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                <div style="font-size:32px;margin-bottom:12px;">🛵</div>
+                Cargando pedidos...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETALLE ===== -->
+<div class="modal-detalle" id="modalDetalle" onclick="cerrarModalDetalle(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Detalle del pedido</h3>
+            <button class="modal-close" onclick="cerrarModalDetalle()">✕</button>
+        </div>
+        <div id="modalContenido"></div>
+    </div>
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // ============================================================
+    // CONFIGURACIÓN FIREBASE
+    // ============================================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+        authDomain: "eymotocomidas.firebaseapp.com",
+        projectId: "eymotocomidas",
+        storageBucket: "eymotocomidas.firebasestorage.app",
+        messagingSenderId: "670474251560",
+        appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================================
+    // GLOBALS
+    // ============================================================
+    let mensajeroId = null;
+    let todosLosPedidos = [];
+    let pedidosFiltrados = [];
+    let modoGPS = false;
+    let watchId = null;
+    let ubicacionActual = null;
+    let tiendasCache = {};
+    let listenerPedidos = null;
+
+    // ============================================================
+    // AUTENTICACIÓN
+    // ============================================================
+    async function verificarRolMensajero() {
+        const user = auth.currentUser;
+        if (!user) return null;
+        try {
+            const doc = await db.collection('usuarios').doc(user.uid).get();
+            if (!doc.exists) return null;
+            const data = doc.data();
+            if (data.mensajero === true || data.rol === 'mensajero') {
+                return { uid: user.uid, ...data };
+            }
+            return null;
+        } catch (e) {
+            console.error('Error verificando rol:', e);
+            return null;
+        }
+    }
+
+    function iniciarSesion() {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const msg = document.getElementById('loginMsg');
+        msg.textContent = '';
+
+        if (!email || !pass) {
+            msg.textContent = '❌ Completa todos los campos.';
+            return;
+        }
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .then(async (userCredential) => {
+                const user = userCredential.user;
+                // Verificar si existe el usuario
+                const doc = await db.collection('usuarios').doc(user.uid).get();
+                if (!doc.exists) {
+                    await db.collection('usuarios').doc(user.uid).set({
+                        email: email,
+                        mensajero: true,
+                        rol: 'mensajero',
+                        nombre: email.split('@')[0] || 'Mensajero',
+                        activo: true,
+                        creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                document.getElementById('loginBox').classList.add('hidden');
+                document.getElementById('panel').classList.remove('hidden');
+                await inicializarPanel();
+            })
+            .catch(e => {
+                msg.textContent = '❌ Credenciales incorrectas.';
+                console.error('Login error:', e);
+            });
+    }
+
+    function logout() {
+        if (listenerPedidos) listenerPedidos();
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        auth.signOut();
+        document.getElementById('loginBox').classList.remove('hidden');
+        document.getElementById('panel').classList.add('hidden');
+        toast('👋 Sesión cerrada', 'info');
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('panel').classList.remove('hidden');
+            inicializarPanel();
+        } else {
+            document.getElementById('loginBox').classList.remove('hidden');
+            document.getElementById('panel').classList.add('hidden');
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        }
+    });
+
+    // ============================================================
+    // INICIALIZAR PANEL
+    // ============================================================
+    async function inicializarPanel() {
+        const info = await verificarRolMensajero();
+        if (!info) {
+            toast('⛔ No tienes permisos de mensajero', 'error');
+            setTimeout(() => logout(), 2000);
+            return;
+        }
+        mensajeroId = info.uid;
+        document.getElementById('nombreMensajero').textContent = '🛵 ' + (info.nombre || 'Mensajero');
+
+        await cargarTiendas();
+        await cargarSelectTiendas();
+        await escucharPedidos();
+        iniciarGPS();
+        toast('✅ Panel de mensajero cargado', 'success', 2000);
+    }
+
+    // ============================================================
+    // CARGAR TIENDAS
+    // ============================================================
+    async function cargarTiendas() {
+        try {
+            const snap = await db.collection('tiendas').get();
+            snap.forEach(doc => {
+                tiendasCache[doc.id] = doc.data();
+            });
+        } catch (e) {
+            console.error('Error cargando tiendas:', e);
+        }
+    }
+
+    async function cargarSelectTiendas() {
+        const sel = document.getElementById('filtroTiendaMensajero');
+        sel.innerHTML = '<option value="">🏪 Todas las tiendas</option>';
+        try {
+            const snap = await db.collection('tiendas').get();
+            snap.forEach(doc => {
+                const t = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.textContent = t.nombre || doc.id;
+                sel.appendChild(opt);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // ============================================================
+    // ESCUCHAR PEDIDOS
+    // ============================================================
+    function escucharPedidos() {
+        if (listenerPedidos) listenerPedidos();
+
+        // Escuchar todos los pedidos de todas las tiendas
+        const tiendasIds = Object.keys(tiendasCache);
+        if (tiendasIds.length === 0) {
+            document.getElementById('listaPedidos').innerHTML = `
+                <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                    <div style="font-size:32px;margin-bottom:12px;">🏪</div>
+                    No hay tiendas disponibles
+                </div>
+            `;
+            return;
+        }
+
+        // Escuchar cada tienda individualmente
+        let pedidosAcumulados = {};
+        let tiendasCompletadas = 0;
+
+        tiendasIds.forEach(tiendaId => {
+            const unsubscribe = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos')
+                .orderBy('fecha', 'desc')
+                .onSnapshot(snap => {
+                    pedidosAcumulados[tiendaId] = [];
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        pedidosAcumulados[tiendaId].push({
+                            id: doc.id,
+                            tiendaId: tiendaId,
+                            ...data
+                        });
+                    });
+
+                    // Reconstruir lista completa
+                    todosLosPedidos = [];
+                    Object.values(pedidosAcumulados).forEach(lista => {
+                        todosLosPedidos = todosLosPedidos.concat(lista);
+                    });
+                    // Ordenar por fecha
+                    todosLosPedidos.sort((a, b) => {
+                        const fa = a.fecha?.toDate?.() || new Date(a.fecha);
+                        const fb = b.fecha?.toDate?.() || new Date(b.fecha);
+                        return fb - fa;
+                    });
+
+                    filtrarPedidos();
+                    actualizarEstadisticas();
+                }, err => {
+                    console.error('Error en tienda:', err);
+                });
+
+            // Guardar referencia para limpiar después
+            if (!window._listenersMensajero) window._listenersMensajero = [];
+            window._listenersMensajero.push(unsubscribe);
+        });
+    }
+
+    // ============================================================
+    // FILTRAR PEDIDOS
+    // ============================================================
+    function filtrarPedidos() {
+        const estado = document.getElementById('filtroEstado').value;
+        const tiendaId = document.getElementById('filtroTiendaMensajero').value;
+        const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+
+        pedidosFiltrados = todosLosPedidos.filter(p => {
+            // Filtro de estado
+            if (estado && p.estado !== estado) return false;
+            // Filtro de tienda
+            if (tiendaId && p.tiendaId !== tiendaId) return false;
+            // Filtro de búsqueda
+            if (busqueda) {
+                const cliente = p.cliente || {};
+                const nombre = (cliente.nombre || '').toLowerCase();
+                const direccion = (cliente.direccion || '').toLowerCase();
+                if (!nombre.includes(busqueda) && !direccion.includes(busqueda)) return false;
+            }
+            return true;
+        });
+
+        renderizarPedidos();
+        actualizarEstadisticas();
+    }
+
+    function recargarPedidos() {
+        filtrarPedidos();
+        toast('🔄 Pedidos recargados', 'info', 1500);
+    }
+
+    // ============================================================
+    // RENDERIZAR PEDIDOS
+    // ============================================================
+    function renderizarPedidos() {
+        const container = document.getElementById('listaPedidos');
+
+        if (pedidosFiltrados.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center;padding:40px;color:var(--text-muted);">
+                    <div style="font-size:48px;margin-bottom:16px;">📭</div>
+                    <p style="font-size:16px;">No hay pedidos que coincidan con los filtros</p>
+                    <p style="font-size:12px;margin-top:4px;">Prueba cambiando los filtros o recargando</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        pedidosFiltrados.forEach(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const nombreTienda = tienda.nombre || 'Tienda';
+            const cliente = p.cliente || {};
+            const estadoBadge = getEstadoBadge(p.estado);
+            const total = p.total || 0;
+            const fechaStr = formatearFecha(p.fecha);
+
+            // Items
+            let itemsHtml = '';
+            if (p.items && p.items.length > 0) {
+                p.items.slice(0, 3).forEach(item => {
+                    let nombreItem = item.nombre || 'Producto';
+                    if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+                    itemsHtml += `
+                        <div class="item">
+                            <span>${nombreItem} x${item.cantidad || 1}</span>
+                            <span>$${(item.total || item.precio * item.cantidad || 0).toLocaleString('es-CO')}</span>
+                        </div>
+                    `;
+                });
+                if (p.items.length > 3) {
+                    itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
+                }
+            }
+
+            const esMio = p.mensajeroId === mensajeroId;
+            const estaPendiente = p.estado === 'Pendiente' || p.estado === 'Asignado';
+
+            html += `
+                <div class="pedido-card" style="${esMio ? 'border-color:var(--yellow);border-width:2px;' : ''}">
+                    <div class="header">
+                        <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                        <span class="estado-badge ${p.estado?.toLowerCase() || 'pendiente'}">${p.estado || 'Pendiente'}</span>
+                    </div>
+                    <div class="info-grid">
+                        <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
+                        <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
+                        <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                        <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
+                        <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
+                        <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
+                    </div>
+                    ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
+                    <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
+                    <div class="acciones">
+                        ${renderizarAcciones(p)}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        actualizarHeaderBadge();
+    }
+
+    function renderizarAcciones(pedido) {
+        const estado = pedido.estado || 'Pendiente';
+        const esMio = pedido.mensajeroId === mensajeroId;
+        let html = '';
+
+        // Ver detalles
+        html += `<button class="btn-info btn-sm" onclick="verDetalle('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>`;
+
+        // Si está pendiente y no asignado
+        if (estado === 'Pendiente' && !pedido.mensajeroId) {
+            html += `<button class="btn-success btn-sm" onclick="asignarPedido('${pedido.id}','${pedido.tiendaId}')">👤 Tomar pedido</button>`;
+        }
+
+        // Si es mío y está en camino
+        if (esMio && estado === 'Asignado') {
+            html += `<button class="btn-info btn-sm" onclick="iniciarEntrega('${pedido.id}','${pedido.tiendaId}')">🛵 Iniciar entrega</button>`;
+        }
+
+        // Si es mío y está en camino
+        if (esMio && estado === 'En camino') {
+            html += `<button class="btn-success btn-sm" onclick="entregarPedido('${pedido.id}','${pedido.tiendaId}')">✅ Entregar</button>`;
+            if (modoGPS) {
+                html += `<button class="btn-info btn-sm" onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')">📍 Enviar ubicación</button>`;
+            }
+        }
+
+        // Si es mío y está entregado
+        if (esMio && estado === 'Entregado') {
+            html += `<span style="color:var(--green);font-size:12px;padding:8px;">✅ Entregado</span>`;
+        }
+
+        return html;
+    }
+
+    function getEstadoBadge(estado) {
+        const map = {
+            'Pendiente': 'pendiente',
+            'Asignado': 'asignado',
+            'En camino': 'en-camino',
+            'Entregado': 'entregado',
+            'Cancelado': 'cancelado'
+        };
+        return map[estado] || 'pendiente';
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '--/--/--';
+        try {
+            let d;
+            if (fecha.toDate) d = fecha.toDate();
+            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
+            else d = new Date(fecha);
+            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+                   ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return '--/--/--'; }
+    }
+
+    // ============================================================
+    // ESTADÍSTICAS
+    // ============================================================
+    function actualizarEstadisticas() {
+        const pendientes = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
+        const asignados = todosLosPedidos.filter(p => p.estado === 'Asignado' && p.mensajeroId === mensajeroId).length;
+        const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' && p.mensajeroId === mensajeroId).length;
+        const entregados = todosLosPedidos.filter(p => p.estado === 'Entregado' && p.mensajeroId === mensajeroId).length;
+
+        document.getElementById('statPendientes').textContent = pendientes;
+        document.getElementById('statAsignados').textContent = asignados;
+        document.getElementById('statEnCamino').textContent = enCamino;
+        document.getElementById('statEntregados').textContent = entregados;
+
+        actualizarHeaderBadge();
+    }
+
+    function actualizarHeaderBadge() {
+        const total = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
+        const badge = document.getElementById('headerBadge');
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+    }
+
+    // ============================================================
+    // ACCIONES DE PEDIDOS
+    // ============================================================
+    async function asignarPedido(pedidoId, tiendaId) {
+        try {
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    mensajeroId: mensajeroId,
+                    estado: 'Asignado',
+                    fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            toast('✅ Pedido asignado correctamente', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    async function iniciarEntrega(pedidoId, tiendaId) {
+        try {
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    estado: 'En camino',
+                    fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            toast('🛵 Pedido en camino', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    async function entregarPedido(pedidoId, tiendaId) {
+        try {
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    estado: 'Entregado',
+                    fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            toast('✅ Pedido entregado correctamente', 'success');
+            if (modoGPS) {
+                toast('📍 Ubicación de entrega registrada', 'info', 2000);
+            }
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    async function enviarUbicacion(pedidoId, tiendaId) {
+        if (!ubicacionActual) {
+            toast('📍 Esperando ubicación...', 'warn', 2000);
+            return;
+        }
+        try {
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    ubicacionMensajero: ubicacionActual,
+                    ultimaUbicacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            toast('📍 Ubicación enviada al cliente', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ============================================================
+    // DETALLE DEL PEDIDO (MODAL)
+    // ============================================================
+    function verDetalle(pedidoId, tiendaId) {
+        const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+        if (!pedido) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+
+        const tienda = tiendasCache[pedido.tiendaId] || {};
+        const cliente = pedido.cliente || {};
+
+        let html = `
+            <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'Tienda'}</span></div>
+            <div class="info-row"><span class="label">🧾 Pedido</span><span class="value">${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</span></div>
+            <div class="info-row"><span class="label">📅 Fecha</span><span class="value">${formatearFecha(pedido.fecha)}</span></div>
+            <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:var(--yellow);">${pedido.estado || 'Pendiente'}</span></div>
+            <div class="info-row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${cliente.telefono || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">🏘️ Barrio</span><span class="value">${cliente.barrio || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+            <div class="info-row"><span class="label">📝 Observaciones</span><span class="value">${cliente.observaciones || 'Ninguna'}</span></div>
+        `;
+
+        // Items
+        if (pedido.items && pedido.items.length > 0) {
+            html += `<div style="margin-top:12px;"><strong>🧾 Productos</strong>`;
+            pedido.items.forEach(item => {
+                let nombreItem = item.nombre || 'Producto';
+                if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+                const subtotal = item.total || (item.precio * item.cantidad) || 0;
+                html += `
+                    <div class="info-row">
+                        <span class="value">${nombreItem} x${item.cantidad || 1}</span>
+                        <span class="value" style="color:var(--green);">$${subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        html += `
+            <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--yellow);">
+                <div class="info-row">
+                    <span style="font-weight:700;">💰 TOTAL</span>
+                    <span style="font-weight:800;color:var(--green);font-size:18px;">$${(pedido.total || 0).toLocaleString('es-CO')}</span>
+                </div>
+            </div>
+        `;
+
+        // Mapa simulado
+        html += `
+            <div class="mapa-simulado">
+                <div class="icono">📍</div>
+                <div class="texto">${cliente.direccion || 'Dirección no especificada'}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                    ${pedido.estado === 'En camino' ? '🛵 Mensajero en camino' :
+                      pedido.estado === 'Entregado' ? '✅ Pedido entregado' :
+                      '⏳ Esperando asignación'}
+                </div>
+                ${pedido.mensajeroId === mensajeroId && pedido.estado === 'En camino' ? `
+                    <button onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')" class="btn-info btn-sm" style="margin-top:8px;width:auto;">
+                        📍 Enviar mi ubicación
+                    </button>
+                ` : ''}
+            </div>
+        `;
+
+        document.getElementById('modalTitulo').textContent = `📋 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
+        document.getElementById('modalContenido').innerHTML = html;
+        document.getElementById('modalDetalle').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalDetalle(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalDetalle').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // ============================================================
+    // GPS
+    // ============================================================
+    function iniciarGPS() {
+        if (!navigator.geolocation) {
+            document.getElementById('btnGPS').textContent = '📍 GPS: No soportado';
+            document.getElementById('btnGPS').style.opacity = '0.5';
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                ubicacionActual = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                };
+                console.log('📍 Ubicación obtenida:', ubicacionActual);
+            },
+            err => {
+                console.warn('⚠️ Error GPS:', err.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    function alternarModoGPS() {
+        modoGPS = !modoGPS;
+        const btn = document.getElementById('btnGPS');
+        if (modoGPS) {
+            btn.textContent = '📍 GPS: ON';
+            btn.style.background = 'var(--green)';
+            btn.style.color = '#fff';
+
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    ubicacionActual = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude
+                    };
+                    // Actualizar pedidos en camino con ubicación automática
+                    if (modoGPS) {
+                        const misPedidos = todosLosPedidos.filter(p =>
+                            p.mensajeroId === mensajeroId && p.estado === 'En camino'
+                        );
+                        misPedidos.forEach(p => {
+                            enviarUbicacion(p.id, p.tiendaId);
+                        });
+                    }
+                },
+                err => console.warn('⚠️ Error GPS:', err.message),
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+            toast('📍 GPS activado - Ubicación compartida automáticamente', 'success', 3000);
+        } else {
+            btn.textContent = '📍 GPS: OFF';
+            btn.style.background = '';
+            btn.style.color = '';
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            toast('📍 GPS desactivado', 'info', 2000);
+        }
+    }
+
+    // ============================================================
+    // TOAST
+    // ============================================================
+    function toast(msg, type = 'info', dur = 4000) {
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+        const wrap = document.getElementById('toastWrap');
+        const el = document.createElement('div');
+        el.className = `toast t-${type}`;
+        el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+            el.classList.add('toast-fade');
+            setTimeout(() => el.remove(), 350);
+        }, dur);
+        return el;
+    }
+
+    // ============================================================
+    // EXPONER FUNCIONES GLOBALES
+    // ============================================================
+    window.iniciarSesion = iniciarSesion;
+    window.logout = logout;
+    window.filtrarPedidos = filtrarPedidos;
+    window.recargarPedidos = recargarPedidos;
+    window.asignarPedido = asignarPedido;
+    window.iniciarEntrega = iniciarEntrega;
+    window.entregarPedido = entregarPedido;
+    window.enviarUbicacion = enviarUbicacion;
+    window.verDetalle = verDetalle;
+    window.cerrarModalDetalle = cerrarModalDetalle;
+    window.alternarModoGPS = alternarModoGPS;
+    window.toast = toast;
+
+    console.log('🛵 Panel de Mensajero cargado correctamente');
+</script>
+</body>
+</html>
