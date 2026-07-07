@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMoto - Panel Mensajero</title>
     <style>
+        /* ===== ESTILOS (MANTENER LOS EXISTENTES) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
@@ -165,10 +166,10 @@
             font-size: 11px;
             font-weight: 700;
         }
-        .estado-badge.pendiente { background: var(--yellow-bg); color: var(--yellow); }
+        .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
         .estado-badge.en-camino { background: var(--orange-bg); color: var(--orange); }
         .estado-badge.entregado { background: var(--green-bg); color: var(--green); }
-        .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
+        .estado-badge.pendiente { background: var(--yellow-bg); color: var(--yellow); }
         .estado-badge.cancelado { background: var(--red-bg); color: var(--red); }
 
         .pedido-card .info-grid {
@@ -353,7 +354,7 @@
 <div id="loginBox">
     <div class="login-logo"><span class="brand">EyMoto</span></div>
     <h2>Panel de Mensajero</h2>
-    <p class="sub">Gestiona tus entregas en tiempo real</p>
+    <p class="sub">Gestiona tus entregas asignadas</p>
     <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="mensajero@eymoto.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
     <button onclick="iniciarSesion()">Ingresar</button>
@@ -372,16 +373,15 @@
 
     <div class="wrap">
         <div class="stats-grid">
-            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pendientes</div></div>
             <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
             <div class="stat-card c-orange"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
             <div class="stat-card c-green"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados hoy</div></div>
+            <div class="stat-card c-yellow"><div class="val" id="statTotal">0</div><div class="lbl">Total pedidos</div></div>
         </div>
 
         <div class="filtros">
             <select id="filtroEstado" onchange="filtrarPedidos()">
                 <option value="">📋 Todos los estados</option>
-                <option value="Pendiente">⏳ Pendiente</option>
                 <option value="Asignado">👤 Asignado</option>
                 <option value="En camino">🛵 En camino</option>
                 <option value="Entregado">✅ Entregado</option>
@@ -566,7 +566,10 @@
         const estado = document.getElementById('filtroEstado').value;
         const tiendaId = document.getElementById('filtroTiendaMensajero').value;
         const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+        
+        // SOLO mostrar pedidos del mensajero actual
         pedidosFiltrados = todosLosPedidos.filter(p => {
+            if (p.mensajeroId !== mensajeroId) return false;
             if (estado && p.estado !== estado) return false;
             if (tiendaId && p.tiendaId !== tiendaId) return false;
             if (busqueda) {
@@ -586,7 +589,7 @@
     function renderizarPedidos() {
         const container = document.getElementById('listaPedidos');
         if (pedidosFiltrados.length === 0) {
-            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No hay pedidos que coincidan con los filtros</p></div>`;
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No tienes pedidos asignados</p></div>`;
             return;
         }
         let html = '';
@@ -606,9 +609,8 @@
                 });
                 if (p.items.length > 3) itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
             }
-            const esMio = p.mensajeroId === mensajeroId;
             html += `
-                <div class="pedido-card" style="${esMio ? 'border-color:var(--yellow);border-width:2px;' : ''}">
+                <div class="pedido-card">
                     <div class="header">
                         <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
                         <span class="estado-badge ${p.estado?.toLowerCase() || 'pendiente'}">${p.estado || 'Pendiente'}</span>
@@ -632,7 +634,7 @@
     }
 
     // ============================================================
-    // RENDERIZAR ACCIONES - SOLO MENSAJERO (CORREGIDO)
+    // RENDERIZAR ACCIONES - SOLO MENSAJERO (SIN "TOMAR PEDIDO")
     // ============================================================
     function renderizarAcciones(pedido) {
         const estado = pedido.estado || 'Pendiente';
@@ -642,19 +644,12 @@
         // VER DETALLE (SIEMPRE)
         html += `<button class="btn-info btn-sm" onclick="verDetalle('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>`;
         
-        // 1. TOMAR PEDIDO (SOLO SI ESTÁ EN "En cocina" o "Pendiente" Y NO TIENE MENSAJERO)
-        // El mensajero SOLO puede tomar pedidos que están en "Pendiente" o "En cocina" o "Preparando"
-        const puedeTomar = (estado === 'Pendiente' || estado === 'En cocina' || estado === 'Preparando' || estado === 'Preparando pedido') && !pedido.mensajeroId;
-        if (puedeTomar) {
-            html += `<button class="btn-success btn-sm" onclick="asignarPedido('${pedido.id}','${pedido.tiendaId}')">👤 Tomar pedido</button>`;
-        }
-        
-        // 2. INICIAR ENTREGA (SOLO SI ES MÍO Y ESTÁ ASIGNADO)
+        // ===== 1. INICIAR ENTREGA (SOLO SI ES MÍO Y ESTÁ ASIGNADO) =====
         if (esMio && estado === 'Asignado') {
             html += `<button class="btn-info btn-sm" onclick="iniciarEntrega('${pedido.id}','${pedido.tiendaId}')">🛵 Iniciar entrega</button>`;
         }
         
-        // 3. ENTREGAR (SOLO SI ES MÍO Y ESTÁ EN CAMINO)
+        // ===== 2. ENTREGAR (SOLO SI ES MÍO Y ESTÁ EN CAMINO) =====
         if (esMio && estado === 'En camino') {
             html += `<button class="btn-success btn-sm" onclick="entregarPedido('${pedido.id}','${pedido.tiendaId}')">✅ Entregar</button>`;
             if (modoGPS) {
@@ -662,7 +657,7 @@
             }
         }
         
-        // 4. MOSTRAR SI YA ESTÁ ENTREGADO
+        // ===== 3. MOSTRAR SI YA ESTÁ ENTREGADO =====
         if (esMio && estado === 'Entregado') {
             html += `<span style="color:var(--green);font-size:12px;padding:8px;">✅ Entregado</span>`;
         }
@@ -671,7 +666,7 @@
     }
 
     function getEstadoBadge(estado) {
-        const map = { 'Pendiente': 'pendiente', 'Asignado': 'asignado', 'En camino': 'en-camino', 'Entregado': 'entregado', 'Cancelado': 'cancelado' };
+        const map = { 'Asignado': 'asignado', 'En camino': 'en-camino', 'Entregado': 'entregado', 'Cancelado': 'cancelado' };
         return map[estado] || 'pendiente';
     }
 
@@ -687,63 +682,27 @@
     }
 
     function actualizarEstadisticas() {
-        const pendientes = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
-        const asignados = todosLosPedidos.filter(p => p.estado === 'Asignado' && p.mensajeroId === mensajeroId).length;
-        const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' && p.mensajeroId === mensajeroId).length;
-        const entregados = todosLosPedidos.filter(p => p.estado === 'Entregado' && p.mensajeroId === mensajeroId).length;
-        document.getElementById('statPendientes').textContent = pendientes;
+        const asignados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Asignado').length;
+        const enCamino = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'En camino').length;
+        const entregados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Entregado').length;
+        const total = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId).length;
         document.getElementById('statAsignados').textContent = asignados;
         document.getElementById('statEnCamino').textContent = enCamino;
         document.getElementById('statEntregados').textContent = entregados;
+        document.getElementById('statTotal').textContent = total;
         actualizarHeaderBadge();
     }
 
     function actualizarHeaderBadge() {
-        const total = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
+        const asignados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Asignado').length;
         const badge = document.getElementById('headerBadge');
-        badge.textContent = total;
-        badge.style.display = total > 0 ? 'inline-block' : 'none';
+        badge.textContent = asignados;
+        badge.style.display = asignados > 0 ? 'inline-block' : 'none';
     }
 
     // ============================================================
-    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO) - CORREGIDAS
+    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO)
     // ============================================================
-    async function asignarPedido(pedidoId, tiendaId) {
-        try {
-            // Verificar que nadie más lo haya tomado
-            const doc = await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId).get();
-            
-            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-            const data = doc.data();
-            
-            if (data.mensajeroId) {
-                toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-                return;
-            }
-            
-            // SOLO permitir tomar si está en "Pendiente", "En cocina" o "Preparando"
-            if (data.estado !== 'Pendiente' && data.estado !== 'En cocina' && data.estado !== 'Preparando' && data.estado !== 'Preparando pedido') {
-                toast('⚠️ Este pedido no está disponible para tomar (estado: ' + data.estado + ')', 'warn');
-                return;
-            }
-            
-            toast('⏳ Asignando pedido...', 'info');
-            await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId)
-                .update({
-                    mensajeroId: mensajeroId,
-                    nombreMensajero: nombreMensajero,
-                    estado: 'Asignado',
-                    fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            toast('✅ Pedido asignado correctamente', 'success');
-            filtrarPedidos();
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
     async function iniciarEntrega(pedidoId, tiendaId) {
         try {
             const doc = await db.collection('tiendas').doc(tiendaId)
@@ -918,7 +877,6 @@
     window.logout = logout;
     window.filtrarPedidos = filtrarPedidos;
     window.recargarPedidos = recargarPedidos;
-    window.asignarPedido = asignarPedido;
     window.iniciarEntrega = iniciarEntrega;
     window.entregarPedido = entregarPedido;
     window.enviarUbicacion = enviarUbicacion;
