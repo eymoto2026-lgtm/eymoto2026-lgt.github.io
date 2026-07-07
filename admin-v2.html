@@ -2484,7 +2484,7 @@ function renderizarEditarPedido() {
     
     const p = pedidoEditando;
     const tienda = tiendasCache[tiendaEditando] || {};
-    const nombreTienda = tienda.nombre || 'Tienda';
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
     
     // Calcular total
     let total = 0;
@@ -2696,19 +2696,44 @@ async function guardarEdicionPedido() {
     }
 }
 
+// ============================================================
+// ENVIAR ACTUALIZACIÓN AL CLIENTE - CORREGIDO
+// ============================================================
 function enviarActualizacionPedido() {
-    if (!pedidoEditando || !tiendaEditando) return;
-    
-    const tienda = tiendasCache[tiendaEditando] || {};
-    const telefonoTienda = tienda.whatsapp || '';
-    const nombreTienda = tienda.nombre || 'EyMotoComidas';
-    const cliente = pedidoEditando.cliente || {};
-    const telefonoCliente = cliente.telefono || '';
-    
-    if (!telefonoCliente) {
-        toast('⚠️ El cliente no tiene número de teléfono', 'error');
+    if (!pedidoEditando || !tiendaEditando) {
+        toast('⚠️ No hay pedido para editar', 'error');
         return;
     }
+    
+    const tienda = tiendasCache[tiendaEditando] || {};
+    const telefonoTienda = tienda.whatsapp || '573164043436';
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    const cliente = pedidoEditando.cliente || {};
+    
+    // ===== LIMPIAR TELÉFONO DEL CLIENTE =====
+    let telefonoCliente = cliente.telefono || '';
+    // Eliminar espacios, guiones, paréntesis
+    telefonoCliente = telefonoCliente.replace(/\s/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
+    // Si empieza con 0, quitarlo
+    if (telefonoCliente.startsWith('0')) {
+        telefonoCliente = telefonoCliente.substring(1);
+    }
+    // Si no tiene código de país (57), agregarlo
+    if (!telefonoCliente.startsWith('57') && telefonoCliente.length > 0) {
+        telefonoCliente = '57' + telefonoCliente;
+    }
+    
+    if (!telefonoCliente || telefonoCliente.length < 10) {
+        toast('⚠️ El cliente no tiene un número de teléfono válido', 'error');
+        return;
+    }
+    
+    // Calcular total
+    let total = 0;
+    itemsEditando.forEach(item => {
+        const subtotal = (item.precio || 0) * (item.cantidad || 1);
+        total += subtotal;
+    });
     
     let mensaje = `📝 *ACTUALIZACIÓN DE PEDIDO*\n\n`;
     mensaje += `🏪 *${nombreTienda}*\n`;
@@ -2716,10 +2741,8 @@ function enviarActualizacionPedido() {
     mensaje += `*PRODUCTOS ACTUALIZADOS*\n`;
     mensaje += `━━━━━━━━━━━━━━━━━━\n`;
     
-    let total = 0;
     itemsEditando.forEach(item => {
         const subtotal = (item.precio || 0) * (item.cantidad || 1);
-        total += subtotal;
         let nombre = item.nombre || 'Producto';
         if (item.pesoGramos) nombre += ` (${item.pesoGramos}g)`;
         mensaje += `${nombre} x${item.cantidad || 1} = $${subtotal.toLocaleString('es-CO')}\n`;
@@ -2729,6 +2752,7 @@ function enviarActualizacionPedido() {
     mensaje += `📝 *Observaciones:* ${cliente.observaciones || 'Ninguna'}\n\n`;
     mensaje += `✅ Tu pedido ha sido actualizado. ¿Necesitas algo más?`;
     
+    console.log('📱 Enviando WhatsApp a:', telefonoCliente);
     const url = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
@@ -3136,6 +3160,9 @@ function resetKanban() {
     });
 }
 
+// ============================================================
+// RENDER PEDIDO - CORREGIDO (Fecha, nombre tienda)
+// ============================================================
 function renderPedido(doc, tiendaId, counts) {
     const p = doc.data();
     const pid = doc.id;
@@ -3149,12 +3176,21 @@ function renderPedido(doc, tiendaId, counts) {
     const cliente = p.cliente || {};
     const metodoPago = p.metodoPago || 'efectivo';
     const estadoPago = p.estadoPago || 'pendiente';
+    
+    // ===== FECHA CORREGIDA =====
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
-        const d = new Date(p.fecha);
-        fechaStr = d.toLocaleDateString('es-CO');
-        horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+        try {
+            const d = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
+            if (!isNaN(d.getTime())) {
+                fechaStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                horaStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            }
+        } catch(e) {
+            console.warn('Error al formatear fecha:', e);
+        }
     }
+    
     let itemsHtml = '';
     if (p.items && p.items.length) {
         p.items.forEach(it => {
@@ -3171,6 +3207,7 @@ function renderPedido(doc, tiendaId, counts) {
         const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
     } else { badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`; }
+    
     let acciones = '';
     if (estado === 'Pendiente') {
         acciones += `<button class="btn-cook" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
@@ -3198,12 +3235,15 @@ function renderPedido(doc, tiendaId, counts) {
             <button class="btn-pago-rechazar" onclick="window.rechazarPago('${tiendaId}','${pid}')">✕ Rechazar pago</button>
         `;
     }
-    const nombreTienda = tiendasCache[tiendaId] || tiendasCache[tiendaId] || 'Tienda';
+    
+    // ===== NOMBRE DE TIENDA CORREGIDO =====
+    const nombreTienda = tiendasCache[tiendaId]?.nombre || 'EyMotoComidas';
+    
     const card = document.createElement('div');
     card.className = `pedido-card ${cfg.ring}`;
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
-        <div class="pedido-titulo">🛵 NUEVO PEDIDO ${num}</div>
+        <div class="pedido-titulo">🛵 ${p.numeroPedido || 'NUEVO PEDIDO'}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -3344,6 +3384,9 @@ function mostrarPedidosPendientesGlobal() {
     document.getElementById('statE').textContent = counts['Entregado'] || 0;
 }
 
+// ============================================================
+// RENDER PEDIDO GLOBAL - CORREGIDO (Fecha, nombre tienda)
+// ============================================================
 function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     const p = pedidoDoc.data();
     const pid = pedidoDoc.id;
@@ -3357,12 +3400,21 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     const cliente = p.cliente || {};
     const metodoPago = p.metodoPago || 'efectivo';
     const estadoPago = p.estadoPago || 'pendiente';
+    
+    // ===== FECHA CORREGIDA =====
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
-        const d = new Date(p.fecha);
-        fechaStr = d.toLocaleDateString('es-CO');
-        horaStr = d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+        try {
+            const d = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
+            if (!isNaN(d.getTime())) {
+                fechaStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                horaStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            }
+        } catch(e) {
+            console.warn('Error al formatear fecha:', e);
+        }
     }
+    
     let itemsHtml = '';
     if (p.items && p.items.length) {
         p.items.forEach(it => {
@@ -3379,12 +3431,15 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
         const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
     } else { badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`; }
-    const nombreTienda = tiendasCache[tiendaId] || 'Tienda';
+    
+    // ===== NOMBRE DE TIENDA CORREGIDO =====
+    const nombreTienda = tiendasCache[tiendaId]?.nombre || 'EyMotoComidas';
+    
     const card = document.createElement('div');
     card.className = `pedido-card ${cfg.ring}`;
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
-        <div class="pedido-titulo">🛵 NUEVO PEDIDO ${num}</div>
+        <div class="pedido-titulo">🛵 ${p.numeroPedido || 'NUEVO PEDIDO'}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -3826,6 +3881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔔 Alarma continua con voz para nuevos pedidos activada');
     console.log('✏️ Edición de pedidos en tiempo real activada');
     console.log('🔐 Autenticación corregida con verificación de usuario');
+    console.log('📱 WhatsApp corregido para notificar al cliente');
 });
 </script>
 </body>
