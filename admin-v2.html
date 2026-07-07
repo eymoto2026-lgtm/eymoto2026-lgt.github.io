@@ -3511,7 +3511,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
 }
 
 // ============================================================
-// ===== SISTEMA DE FACTURACIÓN =====
+// ===== SISTEMA DE FACTURACIÓN CON FECHA CORREGIDA =====
 // ============================================================
 
 function obtenerPedidoDeCache(tiendaId, pedidoId) {
@@ -3562,9 +3562,54 @@ function mostrarModalFactura(tiendaId, pedido) {
         });
     }
     
-    const fecha = pedido.fecha ? new Date(pedido.fecha) : new Date();
-    const fechaStr = fecha.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    // ============================================================
+    // ===== FECHA Y HORA CORREGIDAS PARA LA FACTURA =====
+    // ============================================================
+    let fechaStr = '--', horaStr = '--';
+    
+    if (pedido.fecha) {
+        try {
+            let fechaDate = null;
+            
+            if (typeof pedido.fecha.toDate === 'function') {
+                fechaDate = pedido.fecha.toDate();
+            } else if (pedido.fecha.seconds !== undefined) {
+                fechaDate = new Date(pedido.fecha.seconds * 1000);
+            } else if (typeof pedido.fecha === 'string' || typeof pedido.fecha === 'number') {
+                fechaDate = new Date(pedido.fecha);
+            } else if (pedido.fecha instanceof Date) {
+                fechaDate = pedido.fecha;
+            }
+            
+            if (fechaDate && !isNaN(fechaDate.getTime())) {
+                fechaStr = fechaDate.toLocaleDateString('es-CO', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                horaStr = fechaDate.toLocaleTimeString('es-CO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } else {
+                console.warn('⚠️ Fecha inválida en factura:', pedido.fecha);
+            }
+        } catch(e) {
+            console.warn('Error al formatear fecha en factura:', e);
+        }
+    } else {
+        const ahora = new Date();
+        fechaStr = ahora.toLocaleDateString('es-CO', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+        });
+        horaStr = ahora.toLocaleTimeString('es-CO', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        console.log('📅 Usando fecha actual para la factura');
+    }
     
     const cliente = pedido.cliente || {};
     const nombreCliente = cliente.nombre || 'Cliente';
@@ -3923,7 +3968,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✏️ Edición de pedidos en tiempo real activada');
     console.log('🔐 Autenticación corregida con verificación de usuario');
     console.log('📱 WhatsApp corregido para notificar al cliente');
-    console.log('📅 Fecha y hora corregidas en los pedidos');
+    console.log('📅 Fecha y hora corregidas en los pedidos y facturas');
 });
 </script>
 </body>
