@@ -1006,9 +1006,6 @@ function activarAudioAutomatico() {
     } catch(e) { console.warn('⚠️ Error al activar audio:', e); }
 }
 
-// ============================================================
-// INICIAR SESIÓN - VERSIÓN CORREGIDA CON VERIFICACIÓN DE USUARIO
-// ============================================================
 function iniciarSesion() {
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
@@ -1028,7 +1025,6 @@ function iniciarSesion() {
       try {
         const doc = await db.collection('usuarios').doc(user.uid).get();
         if (!doc.exists) {
-          // Si no existe, crear entrada básica
           await db.collection('usuarios').doc(user.uid).set({
             email: email,
             admin: email === 'eymoto2026@gmail.com',
@@ -2885,7 +2881,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
 }
 
 // ============================================================
-// ===== SISTEMA DE FACTURACIÓN =====
+// ===== SISTEMA DE FACTURACIÓN - CON COLORES CORREGIDOS =====
 // ============================================================
 
 function obtenerPedidoDeCache(tiendaId, pedidoId) {
@@ -2927,10 +2923,10 @@ function mostrarModalFactura(tiendaId, pedido) {
             }
             itemsHtml += `
                 <tr>
-                    <td style="padding:6px 8px;border-bottom:1px solid #eee;">${nombreItem}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${item.cantidad || 1}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">$${(item.precio || 0).toLocaleString('es-CO')}</td>
-                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">$${subtotal.toLocaleString('es-CO')}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;color:#1a1a2e;">${nombreItem}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:center;color:#1a1a2e;">${item.cantidad || 1}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:right;color:#1a1a2e;">$${(item.precio || 0).toLocaleString('es-CO')}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:right;font-weight:600;color:#1a1a2e;">$${subtotal.toLocaleString('es-CO')}</td>
                 </tr>
             `;
         });
@@ -2958,7 +2954,7 @@ function mostrarModalFactura(tiendaId, pedido) {
     
     const modalHtml = `
         <div id="modalFactura" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;justify-content:center;align-items:center;padding:20px;animation:fadeIn 0.3s ease;">
-            <div id="facturaContainer" style="background:#fff;border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <div id="facturaContainer" style="background:#ffffff;border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
                 <div style="padding:16px 20px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;background:#f8f8f8;border-radius:16px 16px 0 0;">
                     <h3 style="color:#1a1a2e;font-size:18px;margin:0;">🧾 Factura</h3>
                     <div style="display:flex;gap:8px;" class="no-print">
@@ -2967,40 +2963,40 @@ function mostrarModalFactura(tiendaId, pedido) {
                         <button onclick="window.cerrarFactura()" style="padding:6px 14px;border-radius:8px;border:none;background:#eee;color:#555;font-weight:700;cursor:pointer;font-size:12px;">✕ Cerrar</button>
                     </div>
                 </div>
-                <div id="facturaContenido" style="padding:24px 20px;">
+                <div id="facturaContenido" style="padding:24px 20px;color:#1a1a2e;">
                     <!-- HEADER -->
                     <div style="text-align:center;margin-bottom:20px;border-bottom:2px solid #FFD600;padding-bottom:16px;">
                         ${logo ? `<img src="${logo}" alt="${nombreTienda}" style="max-height:60px;margin-bottom:8px;">` : ''}
                         <h2 style="font-size:22px;font-weight:900;color:#1a1a2e;margin:0;">${nombreTienda}</h2>
-                        ${whatsapp ? `<p style="font-size:13px;color:#666;margin:2px 0;">📱 ${whatsapp}</p>` : ''}
+                        ${whatsapp ? `<p style="font-size:13px;color:#555;margin:2px 0;">📱 ${whatsapp}</p>` : ''}
                     </div>
                     
                     <!-- INFO PEDIDO -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;">
-                        <div><strong>🧾 Factura:</strong> ${numeroFactura}</div>
-                        <div style="text-align:right;"><strong>📅 Fecha:</strong> ${fechaStr}</div>
-                        <div><strong>⏰ Hora:</strong> ${horaStr}</div>
-                        <div style="text-align:right;"><strong>🏪 Pedido:</strong> ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;color:#1a1a2e;">
+                        <div style="color:#1a1a2e;"><strong>🧾 Factura:</strong> ${numeroFactura}</div>
+                        <div style="text-align:right;color:#1a1a2e;"><strong>📅 Fecha:</strong> ${fechaStr}</div>
+                        <div style="color:#1a1a2e;"><strong>⏰ Hora:</strong> ${horaStr}</div>
+                        <div style="text-align:right;color:#1a1a2e;"><strong>🏪 Pedido:</strong> ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</div>
                     </div>
                     
                     <!-- CLIENTE -->
-                    <div style="margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;">
-                        <div><strong>👤 Cliente:</strong> ${nombreCliente}</div>
-                        ${telefonoCliente ? `<div><strong>📱 Teléfono:</strong> ${telefonoCliente}</div>` : ''}
-                        ${direccionCliente ? `<div><strong>📍 Dirección:</strong> ${direccionCliente}</div>` : ''}
-                        ${barrioCliente ? `<div><strong>🏘️ Barrio:</strong> ${barrioCliente}</div>` : ''}
-                        ${observaciones ? `<div><strong>📝 Observaciones:</strong> ${observaciones}</div>` : ''}
-                        <div><strong>💳 Pago:</strong> ${pagoTexto} - ${pagoEstado}</div>
+                    <div style="margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;color:#1a1a2e;">
+                        <div style="color:#1a1a2e;"><strong>👤 Cliente:</strong> ${nombreCliente}</div>
+                        ${telefonoCliente ? `<div style="color:#1a1a2e;"><strong>📱 Teléfono:</strong> ${telefonoCliente}</div>` : ''}
+                        ${direccionCliente ? `<div style="color:#1a1a2e;"><strong>📍 Dirección:</strong> ${direccionCliente}</div>` : ''}
+                        ${barrioCliente ? `<div style="color:#1a1a2e;"><strong>🏘️ Barrio:</strong> ${barrioCliente}</div>` : ''}
+                        ${observaciones ? `<div style="color:#1a1a2e;"><strong>📝 Observaciones:</strong> ${observaciones}</div>` : ''}
+                        <div style="color:#1a1a2e;"><strong>💳 Pago:</strong> ${pagoTexto} - ${pagoEstado}</div>
                     </div>
                     
                     <!-- PRODUCTOS -->
-                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;color:#1a1a2e;">
                         <thead>
-                            <tr style="background:#1a1a2e;color:#fff;">
-                                <th style="padding:8px 8px;text-align:left;">Producto</th>
-                                <th style="padding:8px 8px;text-align:center;">Cant</th>
-                                <th style="padding:8px 8px;text-align:right;">Precio</th>
-                                <th style="padding:8px 8px;text-align:right;">Total</th>
+                            <tr style="background:#1a1a2e;color:#ffffff;">
+                                <th style="padding:8px 8px;text-align:left;color:#ffffff;">Producto</th>
+                                <th style="padding:8px 8px;text-align:center;color:#ffffff;">Cant</th>
+                                <th style="padding:8px 8px;text-align:right;color:#ffffff;">Precio</th>
+                                <th style="padding:8px 8px;text-align:right;color:#ffffff;">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3008,7 +3004,7 @@ function mostrarModalFactura(tiendaId, pedido) {
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:700;font-size:15px;">TOTAL</td>
+                                <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:700;font-size:15px;color:#1a1a2e;">TOTAL</td>
                                 <td style="padding:10px 8px;text-align:right;font-weight:900;font-size:18px;color:#FFD600;">$${total.toLocaleString('es-CO')}</td>
                             </tr>
                         </tfoot>
@@ -3016,8 +3012,8 @@ function mostrarModalFactura(tiendaId, pedido) {
                     
                     <!-- FOOTER -->
                     <div style="text-align:center;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:12px;margin-top:8px;">
-                        <p>¡Gracias por tu compra! 🎉</p>
-                        <p style="font-size:10px;color:#aaa;">Este documento es un comprobante de pago.</p>
+                        <p style="color:#555;">¡Gracias por tu compra! 🎉</p>
+                        <p style="font-size:10px;color:#999;">Este documento es un comprobante de pago.</p>
                     </div>
                 </div>
             </div>
@@ -3284,7 +3280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
     console.log('🔍 Búsqueda automática en Open Food Facts para códigos EAN/UPC');
     console.log('🔎 Buscador de productos por nombre o categoría activado');
-    console.log('🧾 Sistema de facturación activado');
+    console.log('🧾 Sistema de facturación activado (con colores corregidos)');
     console.log('🔐 Autenticación corregida con verificación de usuario');
 });
 </script>
