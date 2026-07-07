@@ -1064,7 +1064,6 @@ async function inicializarPanel() {
         }
         setTimeout(activarAudioAutomatico, 1000);
         iniciarEscuchaGlobal();
-        // Cargar productos para edición
         cargarProductosParaEdicion();
         toast('✅ Panel cargado correctamente', 'success', 2000);
     } catch (error) {
@@ -2404,8 +2403,10 @@ async function cargarProductosParaEdicion() {
 // ===== EDITAR PEDIDO - FUNCIONES PRINCIPALES =====
 // ============================================================
 
+// ===== ABRIR EDITAR PEDIDO =====
 function abrirEditarPedido(tiendaId, pedidoId) {
-    // Obtener el pedido de la caché
+    console.log('📝 Abriendo edición para:', tiendaId, pedidoId);
+    
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
     if (!pedido) {
         toast('⚠️ No se encontró el pedido', 'error');
@@ -2414,12 +2415,25 @@ function abrirEditarPedido(tiendaId, pedidoId) {
     
     pedidoEditando = { ...pedido, id: pedidoId };
     tiendaEditando = tiendaId;
-    itemsEditando = pedido.items ? pedido.items.map(item => ({ ...item })) : [];
     
-    // Cargar productos de la tienda para el selector
+    // ===== INICIALIZAR ITEMS CON VALORES SEGUROS =====
+    itemsEditando = [];
+    if (pedido.items && Array.isArray(pedido.items)) {
+        pedido.items.forEach(item => {
+            itemsEditando.push({
+                id: item.id || 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                nombre: item.nombre || 'Producto sin nombre',
+                cantidad: parseInt(item.cantidad) || 1,
+                precio: parseFloat(item.precio) || 0,
+                pesoGramos: item.pesoGramos ? parseInt(item.pesoGramos) : null
+            });
+        });
+    }
+    
+    console.log('📦 Items cargados:', itemsEditando);
+    
     cargarProductosDeTienda(tiendaId);
     
-    // Mostrar modal
     renderizarEditarPedido();
     document.getElementById('modalEditarPedido').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -2475,44 +2489,53 @@ function renderizarEditarPedido() {
     // Calcular total
     let total = 0;
     itemsEditando.forEach(item => {
-        total += (item.precio || 0) * (item.cantidad || 1);
+        const precio = parseFloat(item.precio) || 0;
+        const cantidad = parseInt(item.cantidad) || 1;
+        total += precio * cantidad;
     });
     
     let itemsHtml = '';
-    itemsEditando.forEach((item, index) => {
-        const subtotal = (item.precio || 0) * (item.cantidad || 1);
-        let nombreItem = item.nombre || 'Producto';
-        if (item.pesoGramos) {
-            nombreItem += ` (${item.pesoGramos}g)`;
-        }
-        itemsHtml += `
-            <div class="producto-editar-item">
-                <div class="info">
-                    <div class="nombre">${nombreItem}</div>
-                    <div class="detalle">$${(item.precio || 0).toLocaleString('es-CO')} c/u</div>
-                </div>
-                <div class="acciones">
-                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
-                    <span class="cantidad">${item.cantidad || 1}</span>
-                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
-                    <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
-                </div>
-            </div>
-        `;
-    });
-    
-    if (itemsHtml === '') {
+    if (itemsEditando.length === 0) {
         itemsHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No hay productos en este pedido</div>';
+    } else {
+        itemsEditando.forEach((item, index) => {
+            const precio = parseFloat(item.precio) || 0;
+            const cantidad = parseInt(item.cantidad) || 1;
+            const subtotal = precio * cantidad;
+            const nombreItem = item.nombre || 'Producto sin nombre';
+            
+            itemsHtml += `
+                <div class="producto-editar-item">
+                    <div class="info">
+                        <div class="nombre">${nombreItem}</div>
+                        <div class="detalle">$${precio.toLocaleString('es-CO')} c/u</div>
+                    </div>
+                    <div class="acciones">
+                        <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
+                        <span class="cantidad">${cantidad}</span>
+                        <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
+                        <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
+                    </div>
+                </div>
+            `;
+        });
     }
+    
+    const cliente = p.cliente || {};
+    const nombreCliente = cliente.nombre || 'Desconocido';
+    const telefonoCliente = cliente.telefono || 'N/A';
+    const direccionCliente = cliente.direccion || 'N/A';
+    const observacionesCliente = cliente.observaciones || 'Ninguna';
+    const numPedido = p.numeroPedido || '#' + String(p.id).slice(-6);
     
     container.innerHTML = `
         <div class="pedido-info">
             <div class="row"><span class="label">🏪 Tienda:</span><span>${nombreTienda}</span></div>
-            <div class="row"><span class="label">🧾 Pedido:</span><span>${p.numeroPedido || '#' + p.id.slice(-6)}</span></div>
-            <div class="row"><span class="label">👤 Cliente:</span><span>${p.cliente?.nombre || 'Desconocido'}</span></div>
-            <div class="row"><span class="label">📱 Teléfono:</span><span>${p.cliente?.telefono || 'N/A'}</span></div>
-            <div class="row"><span class="label">📍 Dirección:</span><span>${p.cliente?.direccion || 'N/A'}</span></div>
-            <div class="row"><span class="label">📝 Observaciones:</span><span>${p.cliente?.observaciones || 'Ninguna'}</span></div>
+            <div class="row"><span class="label">🧾 Pedido:</span><span>${numPedido}</span></div>
+            <div class="row"><span class="label">👤 Cliente:</span><span>${nombreCliente}</span></div>
+            <div class="row"><span class="label">📱 Teléfono:</span><span>${telefonoCliente}</span></div>
+            <div class="row"><span class="label">📍 Dirección:</span><span>${direccionCliente}</span></div>
+            <div class="row"><span class="label">📝 Observaciones:</span><span>${observacionesCliente}</span></div>
         </div>
         
         <div class="productos-lista">
@@ -2545,7 +2568,6 @@ function renderizarEditarPedido() {
         </div>
     `;
     
-    // Actualizar selector de productos
     actualizarSelectorProductos();
 }
 
@@ -2577,7 +2599,6 @@ function agregarProductoAPedido() {
         return;
     }
     
-    // Verificar si ya existe en el pedido
     const existente = itemsEditando.find(item => item.id === productoId);
     if (existente) {
         existente.cantidad = (existente.cantidad || 1) + 1;
@@ -2596,6 +2617,9 @@ function agregarProductoAPedido() {
     toast(`✅ ${producto.name || 'Producto'} agregado`, 'success', 1500);
 }
 
+// ============================================================
+// GUARDAR EDICIÓN DE PEDIDO - CORREGIDO
+// ============================================================
 async function guardarEdicionPedido() {
     if (!pedidoEditando || !tiendaEditando) {
         toast('⚠️ No hay pedido para editar', 'error');
@@ -2607,27 +2631,39 @@ async function guardarEdicionPedido() {
         return;
     }
     
-    // Calcular nuevo total
     let total = 0;
     itemsEditando.forEach(item => {
-        total += (item.precio || 0) * (item.cantidad || 1);
+        const precio = parseFloat(item.precio) || 0;
+        const cantidad = parseInt(item.cantidad) || 1;
+        total += precio * cantidad;
     });
     
-    // Preparar datos actualizados
+    // ===== PREPARAR DATOS SIN UNDEFINED =====
+    const itemsActualizados = itemsEditando.map(item => {
+        const nombre = item.nombre || 'Producto sin nombre';
+        const precio = parseFloat(item.precio) || 0;
+        const cantidad = parseInt(item.cantidad) || 1;
+        const subtotal = precio * cantidad;
+        
+        return {
+            id: item.id ? String(item.id) : 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            nombre: nombre,
+            cantidad: cantidad,
+            precio: precio,
+            total: subtotal,
+            pesoGramos: item.pesoGramos ? parseInt(item.pesoGramos) : null
+        };
+    });
+    
     const updatedData = {
-        items: itemsEditando.map(item => ({
-            id: item.id,
-            nombre: item.nombre,
-            cantidad: item.cantidad,
-            precio: item.precio,
-            total: (item.precio || 0) * (item.cantidad || 1),
-            pesoGramos: item.pesoGramos || null
-        })),
+        items: itemsActualizados,
         total: total,
         editado: true,
         fechaEdicion: firebase.firestore.FieldValue.serverTimestamp(),
         editadoPor: auth.currentUser?.email || 'Admin'
     };
+    
+    console.log('📤 Datos a guardar:', JSON.stringify(updatedData, null, 2));
     
     try {
         toast('⏳ Guardando cambios...', 'info');
@@ -2638,21 +2674,19 @@ async function guardarEdicionPedido() {
         
         toast('✅ Pedido actualizado correctamente', 'success');
         
-        // Cerrar modal y refrescar
         cerrarEditarPedido();
-        // Recargar pedidos
+        
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
             mostrarPedidosPendientesGlobal();
         }
         
-        // Actualizar caché local
         if (todosLosPedidos[tiendaEditando]) {
             const pedidoCache = todosLosPedidos[tiendaEditando].find(p => p.doc.id === pedidoEditando.id);
             if (pedidoCache) {
-                pedidoCache.data.items = updatedData.items;
-                pedidoCache.data.total = updatedData.total;
+                pedidoCache.data.items = itemsActualizados;
+                pedidoCache.data.total = total;
             }
         }
         
@@ -2700,11 +2734,6 @@ function enviarActualizacionPedido() {
 }
 
 // ============================================================
-// CARGAR PRODUCTOS PARA EDICIÓN (en renderPedido)
-// ============================================================
-// Modificar renderPedido para agregar botón de editar
-
-// ============================================================
 // PRODUCTOS
 // ============================================================
 async function cargarProductos() {
@@ -2738,8 +2767,6 @@ async function cargarProductos() {
         filtroActivo = false;
         
         mostrarProductos(productosOriginales);
-        
-        // También cargar para edición
         cargarProductosParaEdicion();
         
     } catch(e) { 
@@ -3148,13 +3175,11 @@ function renderPedido(doc, tiendaId, counts) {
     if (estado === 'Pendiente') {
         acciones += `<button class="btn-cook" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>`;
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-        // Botón Editar Pedido para pendientes
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     if (estado === 'En Cocina') {
         acciones += `<button class="btn-go" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>`;
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-        // Botón Editar Pedido para en cocina también
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     if (estado === 'En Camino') {
