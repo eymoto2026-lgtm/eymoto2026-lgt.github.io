@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <style>
+        /* ===== TODOS LOS ESTILOS COMPLETOS (MANTENER TUS ESTILOS EXISTENTES) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -1278,17 +1279,31 @@
         const auth = firebase.auth();
 
         // ============================================================
-        // ===== CONFIGURACIÓN - TIENDA ID DINÁMICO =====
+        // ===== OBTENER TIENDA ID DESDE LA URL - CORREGIDO =====
         // ============================================================
         
-        // Obtener el ID de la tienda desde la URL (?tienda=ID)
+        // Obtener el ID de la tienda desde la URL
         const params = new URLSearchParams(window.location.search);
-        const TIENDA_ID = params.get('tienda') || 'XCkKIiYidzVh0z7Nk4Op';
+        const TIENDA_ID = params.get('tienda');
+        
+        // Si no hay tienda en la URL, mostrar error
+        if (!TIENDA_ID) {
+            document.getElementById('listaProductos').innerHTML = `
+                <div style="color:#FF3D00;text-align:center;padding:30px;">
+                    <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
+                    No se especificó una tienda.<br>
+                    Usa: ?tienda=ID_DE_LA_TIENDA
+                </div>
+            `;
+            document.getElementById('nombreTiendaHeader').textContent = '⚠️ Sin tienda';
+        } else {
+            console.log('🏪 Tienda ID desde URL:', TIENDA_ID);
+        }
         
         // Número de WhatsApp de la tienda (se cargará desde Firestore)
         let WHATSAPP_TIENDA = '573169934516';
         
-        console.log('🏪 Tienda ID desde URL:', TIENDA_ID);
+        console.log('🏪 Tienda ID final:', TIENDA_ID);
         console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
 
         // ============================================================
@@ -1487,6 +1502,22 @@
                 }
             } catch (e) {
                 console.error('Error cargando WhatsApp:', e);
+            }
+        }
+
+        // ============================================================
+        // VERIFICAR ESCANEO ACTIVADO
+        // ============================================================
+        async function verificarEscaneoActivado() {
+            if (!TIENDA_ID) return false;
+            try {
+                const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
+                if (!doc.exists) return false;
+                const t = doc.data();
+                return t.barcodeScanningEnabled !== false;
+            } catch(e) {
+                console.error('Error al verificar escaneo:', e);
+                return false;
             }
         }
 
@@ -1811,121 +1842,118 @@
         function onScanError(err) {}
 
         // ============================================================
-        // VERIFICAR ESCANEO ACTIVADO
-        // ============================================================
-        async function verificarEscaneoActivado() {
-            if (!TIENDA_ID) return false;
-            try {
-                const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
-                if (!doc.exists) return false;
-                const t = doc.data();
-                return t.barcodeScanningEnabled !== false;
-            } catch(e) {
-                console.error('Error al verificar escaneo:', e);
-                return false;
-            }
-        }
-
-        // ============================================================
         // CARGAR TIENDA
         // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) {
                 mostrarToast('⚠️ No se especificó una tienda', 'error');
-                document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
+                document.getElementById('nombreTiendaHeader').textContent = '⚠️ Sin tienda';
                 return;
             }
+            
             try {
+                console.log('🔍 Buscando tienda con ID:', TIENDA_ID);
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
-                if (doc.exists) {
-                    tiendaData = doc.data();
-                    document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
-                    document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
+                
+                if (!doc.exists) {
+                    console.error('❌ Tienda no encontrada en Firestore:', TIENDA_ID);
+                    document.getElementById('nombreTiendaHeader').textContent = '❌ Tienda no encontrada';
+                    document.getElementById('listaProductos').innerHTML = `
+                        <div style="color:#FF3D00;text-align:center;padding:30px;">
+                            <div style="font-size:32px;margin-bottom:12px;">🔍</div>
+                            No se encontró la tienda con ID: <strong>${TIENDA_ID}</strong><br>
+                            Verifica que el ID sea correcto.
+                        </div>
+                    `;
+                    return;
+                }
+                
+                tiendaData = doc.data();
+                console.log('✅ Tienda cargada:', tiendaData.nombre);
+                
+                document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
+                document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
 
-                    // Cargar WhatsApp
-                    WHATSAPP_TIENDA = tiendaData.whatsapp || '573169934516';
+                // Cargar WhatsApp
+                WHATSAPP_TIENDA = tiendaData.whatsapp || '573169934516';
 
-                    // Banner
-                    const bannerEl = document.getElementById('bannerHeader');
-                    const bannerPlaceholder = document.getElementById('bannerPlaceholder');
-                    if (tiendaData.banner && tiendaData.banner.trim() !== '') {
-                        bannerEl.src = tiendaData.banner;
-                        bannerEl.style.display = 'block';
-                        bannerPlaceholder.style.display = 'none';
-                        bannerEl.onload = function() {
-                            getDominantColor(tiendaData.banner, function(color) {
-                                aplicarColoresDinamicos(color);
-                            });
-                            aplicarContrasteBanner(tiendaData.banner);
-                        };
-                        bannerEl.onerror = function() {
-                            this.style.display = 'none';
-                            bannerPlaceholder.style.display = 'flex';
-                            if (tiendaData.logo) {
-                                getDominantColor(tiendaData.logo, function(color) {
-                                    aplicarColoresDinamicos(color);
-                                });
-                            }
-                        };
-                    } else {
-                        bannerEl.style.display = 'none';
+                // Banner
+                const bannerEl = document.getElementById('bannerHeader');
+                const bannerPlaceholder = document.getElementById('bannerPlaceholder');
+                if (tiendaData.banner && tiendaData.banner.trim() !== '') {
+                    bannerEl.src = tiendaData.banner;
+                    bannerEl.style.display = 'block';
+                    bannerPlaceholder.style.display = 'none';
+                    bannerEl.onload = function() {
+                        getDominantColor(tiendaData.banner, function(color) {
+                            aplicarColoresDinamicos(color);
+                        });
+                        aplicarContrasteBanner(tiendaData.banner);
+                    };
+                    bannerEl.onerror = function() {
+                        this.style.display = 'none';
                         bannerPlaceholder.style.display = 'flex';
                         if (tiendaData.logo) {
                             getDominantColor(tiendaData.logo, function(color) {
                                 aplicarColoresDinamicos(color);
                             });
                         }
+                    };
+                } else {
+                    bannerEl.style.display = 'none';
+                    bannerPlaceholder.style.display = 'flex';
+                    if (tiendaData.logo) {
+                        getDominantColor(tiendaData.logo, function(color) {
+                            aplicarColoresDinamicos(color);
+                        });
                     }
+                }
 
-                    // Logo
-                    const logoEl = document.getElementById('logoHeader');
-                    const logoPlaceholder = document.getElementById('logoPlaceholder');
-                    if (tiendaData.logo && tiendaData.logo.trim() !== '') {
-                        logoEl.src = tiendaData.logo;
-                        logoEl.style.display = 'block';
-                        logoPlaceholder.style.display = 'none';
-                        logoEl.onerror = function() {
-                            this.style.display = 'none';
-                            logoPlaceholder.style.display = 'flex';
-                            const nombre = tiendaData.nombre || 'EyMoto';
-                            const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-                            logoPlaceholder.textContent = iniciales || 'EM';
-                        };
-                    } else {
-                        logoEl.style.display = 'none';
+                // Logo
+                const logoEl = document.getElementById('logoHeader');
+                const logoPlaceholder = document.getElementById('logoPlaceholder');
+                if (tiendaData.logo && tiendaData.logo.trim() !== '') {
+                    logoEl.src = tiendaData.logo;
+                    logoEl.style.display = 'block';
+                    logoPlaceholder.style.display = 'none';
+                    logoEl.onerror = function() {
+                        this.style.display = 'none';
                         logoPlaceholder.style.display = 'flex';
                         const nombre = tiendaData.nombre || 'EyMoto';
                         const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
                         logoPlaceholder.textContent = iniciales || 'EM';
-                    }
-
-                    tiendaAbierta = tiendaData.abierta !== false;
-                    escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
-                    
-                    actualizarVisibilidadBotonQR(escaneoActivado);
-                    
-                    const estadoEl = document.getElementById('estadoHeader');
-                    const overlayEl = document.getElementById('tiendaCerradaOverlay');
-                    if (tiendaAbierta) {
-                        estadoEl.textContent = '🟢 Abierto';
-                        estadoEl.className = 'estado abierto';
-                        overlayEl.classList.remove('visible');
-                    } else {
-                        estadoEl.textContent = '🔴 Cerrado';
-                        estadoEl.className = 'estado cerrado';
-                        overlayEl.classList.add('visible');
-                    }
-                    
-                    console.log('📷 Escaneo activado:', escaneoActivado);
-                    console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE ✅' : 'OCULTO ❌');
-                    console.log('📱 WhatsApp cargado:', WHATSAPP_TIENDA);
+                    };
                 } else {
-                    document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
-                    mostrarToast('⚠️ Tienda no encontrada. Verifica el ID.', 'error');
+                    logoEl.style.display = 'none';
+                    logoPlaceholder.style.display = 'flex';
+                    const nombre = tiendaData.nombre || 'EyMoto';
+                    const iniciales = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                    logoPlaceholder.textContent = iniciales || 'EM';
                 }
-            } catch (e) {
-                console.error('Error al cargar tienda:', e);
-                mostrarToast('Error al cargar la tienda: ' + e.message, 'error');
+
+                tiendaAbierta = tiendaData.abierta !== false;
+                escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
+                
+                actualizarVisibilidadBotonQR(escaneoActivado);
+                
+                const estadoEl = document.getElementById('estadoHeader');
+                const overlayEl = document.getElementById('tiendaCerradaOverlay');
+                if (tiendaAbierta) {
+                    estadoEl.textContent = '🟢 Abierto';
+                    estadoEl.className = 'estado abierto';
+                    overlayEl.classList.remove('visible');
+                } else {
+                    estadoEl.textContent = '🔴 Cerrado';
+                    estadoEl.className = 'estado cerrado';
+                    overlayEl.classList.add('visible');
+                }
+                
+                console.log('📷 Escaneo activado:', escaneoActivado);
+                console.log('📱 WhatsApp cargado:', WHATSAPP_TIENDA);
+                
+            } catch (error) {
+                console.error('Error al cargar tienda:', error);
+                mostrarToast('Error al cargar la tienda: ' + error.message, 'error');
             }
         }
 
@@ -2056,6 +2084,7 @@
             }
 
             try {
+                console.log('📦 Cargando productos de tienda:', TIENDA_ID);
                 const snap = await db.collection('tiendas').doc(TIENDA_ID).collection('productos').get();
 
                 if (snap.empty) {
@@ -2065,6 +2094,7 @@
                             No hay productos disponibles en esta tienda
                         </div>
                     `;
+                    console.log('⚠️ No hay productos en la tienda');
                     return;
                 }
 
@@ -2081,6 +2111,8 @@
                     }
                     categoriasMap.get(categoria).push({ id, ...p });
                 });
+
+                console.log(`✅ ${productos.length} productos cargados`);
 
                 const categorias = Array.from(categoriasMap.keys());
                 const sortedCategorias = ['Todos', ...categorias.filter(c => c !== 'Todos').sort()];
@@ -2263,8 +2295,6 @@
                 if (colorPrincipal) {
                     aplicarColoresDinamicos(colorPrincipal);
                 }
-
-                console.log(`✅ ${productos.length} productos cargados`);
 
             } catch (error) {
                 console.error('Error al cargar productos:', error);
@@ -2490,7 +2520,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON NÚMERO REAL DE LA TIENDA
+        // ENVIAR PEDIDO
         // ============================================================
         async function enviarPedido() {
             const user = await autenticarCliente();
@@ -2688,46 +2718,31 @@
                 return;
             }
 
-            // ===== ENVIAR WHATSAPP AL NÚMERO REAL DE LA TIENDA =====
+            // ===== ENVIAR WHATSAPP =====
             const telefonoWhatsApp = WHATSAPP_TIENDA;
-            
-            const emojiTienda = '🏪';
-            const emojiPedido = '🛵';
-            const emojiFecha = '📅';
-            const emojiHora = '⏰';
-            const emojiCliente = '👤';
-            const emojiTelefono = '📱';
-            const emojiDireccion = '📍';
-            const emojiBarrio = '🏘️';
-            const emojiObservaciones = '📝';
-            const emojiProductos = '🧾';
-            const emojiProducto = '🍜';
-            const emojiTotal = '💰';
-            const emojiPago = '💳';
-
             const nombreTienda = tiendaData.nombre || 'EYMOTOCOMIDAS';
 
-            let mensajeWhatsApp = `${emojiTienda} *${nombreTienda}*\n\n`;
-            mensajeWhatsApp += `${emojiPedido} *NUEVO PEDIDO ${numeroPedido}*\n\n`;
-            mensajeWhatsApp += `${emojiFecha} *Fecha:* ${fechaStr}\n`;
-            mensajeWhatsApp += `${emojiHora} *Hora:* ${horaStr}\n\n`;
-            mensajeWhatsApp += `${emojiCliente} *Cliente:*\n${nombre}\n\n`;
-            mensajeWhatsApp += `${emojiTelefono} *Teléfono:*\n${telefono}\n\n`;
-            mensajeWhatsApp += `${emojiDireccion} *Dirección:*\n${direccion}\n\n`;
-            mensajeWhatsApp += `${emojiBarrio} *Barrio:*\n${barrio}\n\n`;
-            if (observaciones) mensajeWhatsApp += `${emojiObservaciones} *Observaciones:*\n${observaciones}\n\n`;
-            mensajeWhatsApp += `${emojiPago} *Método de pago:* ${metodoPago.toUpperCase()}\n\n`;
-            mensajeWhatsApp += `${emojiProductos} *PRODUCTOS*\n\n`;
+            let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n`;
+            mensajeWhatsApp += `🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n`;
+            mensajeWhatsApp += `📅 *Fecha:* ${fechaStr}\n`;
+            mensajeWhatsApp += `⏰ *Hora:* ${horaStr}\n\n`;
+            mensajeWhatsApp += `👤 *Cliente:*\n${nombre}\n\n`;
+            mensajeWhatsApp += `📱 *Teléfono:*\n${telefono}\n\n`;
+            mensajeWhatsApp += `📍 *Dirección:*\n${direccion}\n\n`;
+            mensajeWhatsApp += `🏘️ *Barrio:*\n${barrio}\n\n`;
+            if (observaciones) mensajeWhatsApp += `📝 *Observaciones:*\n${observaciones}\n\n`;
+            mensajeWhatsApp += `💳 *Método de pago:* ${metodoPago.toUpperCase()}\n\n`;
+            mensajeWhatsApp += `🧾 *PRODUCTOS*\n\n`;
             
             items.forEach(item => {
                 let nombreItem = item.nombre;
                 if (item.pesoGramos) {
                     nombreItem += ` (${item.pesoGramos}g)`;
                 }
-                mensajeWhatsApp += `${emojiProducto} ${nombreItem} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
+                mensajeWhatsApp += `🍜 ${nombreItem} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
             });
             
-            mensajeWhatsApp += `\n${emojiTotal} *TOTAL:* $${total.toLocaleString('es-CO')}`;
+            mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
 
             if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
                 const nombreMetodo = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
@@ -2941,6 +2956,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Iniciando menú digital...');
             console.log('🏪 Tienda ID:', TIENDA_ID);
+            console.log('🔗 URL completa:', window.location.href);
             
             await autenticarCliente();
             await cargarNumeroWhatsApp();
