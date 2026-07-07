@@ -45,6 +45,8 @@ button:active{transform:scale(.98)}
 .btn-info:hover{background:#0277bd}
 .btn-success{background:#00C853;color:#fff}
 .btn-success:hover{background:#00b748}
+.btn-whatsapp{background:#25D366;color:#fff}
+.btn-whatsapp:hover{background:#1da851}
 .btn-peso{background:var(--surface3);color:var(--text-muted);border:2px solid var(--border2);padding:10px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;flex:1;text-align:center}
 .btn-peso.active{background:var(--yellow);color:#1a1a2e;border-color:var(--yellow)}
 .btn-peso:hover:not(.active){border-color:var(--yellow);color:#fff}
@@ -142,6 +144,8 @@ header .spacer{flex:1}
 .btn-cancel:hover{background:var(--red);color:#fff}
 .btn-remove{background:transparent;color:var(--text-muted);border:1px solid var(--border);font-size:11px;padding:5px}
 .btn-remove:hover{color:var(--red);border-color:var(--red)}
+.btn-factura{background:var(--yellow);color:#1a1a2e;border:1px solid var(--yellow);font-size:11px;padding:8px;border-radius:7px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-factura:hover{background:var(--yellow-dim);color:#1a1a2e;}
 
 .btn-pago-confirmar{background:var(--green-bg);color:var(--green);border:1px solid var(--green);font-size:11px;padding:6px;border-radius:6px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
 .btn-pago-confirmar:hover{background:var(--green);color:#000;}
@@ -468,10 +472,6 @@ header .spacer{flex:1}
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 6px;
-}
-.buscador-resultados .highlight {
-    color: var(--yellow);
-    font-weight: 600;
 }
 
 @media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
@@ -2639,6 +2639,10 @@ function renderPedido(doc, tiendaId, counts) {
     }
     if (estado === 'Entregado' || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
+        // ===== BOTÓN DE FACTURA (solo para entregados) =====
+        if (estado === 'Entregado') {
+            acciones += `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>`;
+        }
     }
     let btnPago = '';
     if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
@@ -2851,11 +2855,227 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
             ${estado === 'En Cocina' ? `<button class="btn-go" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Camino')">🛵 Salió a entregar</button>` : ''}
             ${estado === 'En Camino' ? `<button class="btn-done" onclick="window.cambiarEstado('${tiendaId}','${pid}','Entregado')">✅ Marcar como entregado</button>` : ''}
             ${estado === 'Entregado' || estado === 'Cancelado' ? `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>` : ''}
+            ${estado === 'Entregado' ? `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>` : ''}
             ${estado === 'Pendiente' ? `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>` : ''}
             ${estado === 'En Cocina' ? `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>` : ''}
         </div>
     `;
     colEl.appendChild(card);
+}
+
+// ============================================================
+// ===== SISTEMA DE FACTURACIÓN =====
+// ============================================================
+
+function obtenerPedidoDeCache(tiendaId, pedidoId) {
+    if (todosLosPedidos[tiendaId]) {
+        const encontrado = todosLosPedidos[tiendaId].find(p => p.doc.id === pedidoId);
+        if (encontrado) {
+            return { ...encontrado.data, id: pedidoId };
+        }
+    }
+    // Si no está en caché, buscarlo en Firestore
+    return null;
+}
+
+function generarFactura(tiendaId, pedidoId) {
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    mostrarModalFactura(tiendaId, pedido);
+}
+
+function mostrarModalFactura(tiendaId, pedido) {
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    const whatsapp = tienda.whatsapp || '';
+    const logo = tienda.logo || '';
+    
+    let total = 0;
+    let itemsHtml = '';
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.forEach(item => {
+            const subtotal = (item.precio || 0) * (item.cantidad || 1);
+            total += subtotal;
+            let nombreItem = item.nombre || 'Producto';
+            if (item.pesoGramos) {
+                nombreItem += ` (${item.pesoGramos}g)`;
+            }
+            itemsHtml += `
+                <tr>
+                    <td style="padding:6px 8px;border-bottom:1px solid #eee;">${nombreItem}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${item.cantidad || 1}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">$${(item.precio || 0).toLocaleString('es-CO')}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">$${subtotal.toLocaleString('es-CO')}</td>
+                </tr>
+            `;
+        });
+    }
+    
+    const fecha = pedido.fecha ? new Date(pedido.fecha) : new Date();
+    const fechaStr = fecha.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    
+    const cliente = pedido.cliente || {};
+    const nombreCliente = cliente.nombre || 'Cliente';
+    const telefonoCliente = cliente.telefono || '';
+    const direccionCliente = cliente.direccion || '';
+    const barrioCliente = cliente.barrio || '';
+    const observaciones = cliente.observaciones || '';
+    
+    const metodoPago = pedido.metodoPago || 'efectivo';
+    const estadoPago = pedido.estadoPago || 'pagado';
+    const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : 
+                     metodoPago === 'daviplata' ? 'Daviplata' : 'Efectivo';
+    const pagoEstado = estadoPago === 'pagado' ? '✅ Pagado' : 
+                       estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente';
+    
+    const numeroFactura = pedido.numeroPedido || `FAC-${String(pedido.id).slice(-6).toUpperCase()}`;
+    
+    const modalHtml = `
+        <div id="modalFactura" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;justify-content:center;align-items:center;padding:20px;animation:fadeIn 0.3s ease;">
+            <div id="facturaContainer" style="background:#fff;border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                <div style="padding:16px 20px;border-bottom:1px solid #e8e8e8;display:flex;justify-content:space-between;align-items:center;background:#f8f8f8;border-radius:16px 16px 0 0;">
+                    <h3 style="color:#1a1a2e;font-size:18px;margin:0;">🧾 Factura</h3>
+                    <div style="display:flex;gap:8px;" class="no-print">
+                        <button onclick="window.imprimirFactura()" style="padding:6px 14px;border-radius:8px;border:none;background:#FFD600;color:#1a1a2e;font-weight:700;cursor:pointer;font-size:12px;">🖨️ Imprimir</button>
+                        <button onclick="window.enviarFacturaWhatsApp('${tiendaId}','${pedido.id}')" style="padding:6px 14px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;font-size:12px;">📱 WhatsApp</button>
+                        <button onclick="window.cerrarFactura()" style="padding:6px 14px;border-radius:8px;border:none;background:#eee;color:#555;font-weight:700;cursor:pointer;font-size:12px;">✕ Cerrar</button>
+                    </div>
+                </div>
+                <div id="facturaContenido" style="padding:24px 20px;">
+                    <!-- HEADER -->
+                    <div style="text-align:center;margin-bottom:20px;border-bottom:2px solid #FFD600;padding-bottom:16px;">
+                        ${logo ? `<img src="${logo}" alt="${nombreTienda}" style="max-height:60px;margin-bottom:8px;">` : ''}
+                        <h2 style="font-size:22px;font-weight:900;color:#1a1a2e;margin:0;">${nombreTienda}</h2>
+                        ${whatsapp ? `<p style="font-size:13px;color:#666;margin:2px 0;">📱 ${whatsapp}</p>` : ''}
+                    </div>
+                    
+                    <!-- INFO PEDIDO -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;">
+                        <div><strong>🧾 Factura:</strong> ${numeroFactura}</div>
+                        <div style="text-align:right;"><strong>📅 Fecha:</strong> ${fechaStr}</div>
+                        <div><strong>⏰ Hora:</strong> ${horaStr}</div>
+                        <div style="text-align:right;"><strong>🏪 Pedido:</strong> ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</div>
+                    </div>
+                    
+                    <!-- CLIENTE -->
+                    <div style="margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;">
+                        <div><strong>👤 Cliente:</strong> ${nombreCliente}</div>
+                        ${telefonoCliente ? `<div><strong>📱 Teléfono:</strong> ${telefonoCliente}</div>` : ''}
+                        ${direccionCliente ? `<div><strong>📍 Dirección:</strong> ${direccionCliente}</div>` : ''}
+                        ${barrioCliente ? `<div><strong>🏘️ Barrio:</strong> ${barrioCliente}</div>` : ''}
+                        ${observaciones ? `<div><strong>📝 Observaciones:</strong> ${observaciones}</div>` : ''}
+                        <div><strong>💳 Pago:</strong> ${pagoTexto} - ${pagoEstado}</div>
+                    </div>
+                    
+                    <!-- PRODUCTOS -->
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;">
+                        <thead>
+                            <tr style="background:#1a1a2e;color:#fff;">
+                                <th style="padding:8px 8px;text-align:left;">Producto</th>
+                                <th style="padding:8px 8px;text-align:center;">Cant</th>
+                                <th style="padding:8px 8px;text-align:right;">Precio</th>
+                                <th style="padding:8px 8px;text-align:right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml || '<tr><td colspan="4" style="text-align:center;padding:10px;color:#888;">Sin productos</td></tr>'}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:700;font-size:15px;">TOTAL</td>
+                                <td style="padding:10px 8px;text-align:right;font-weight:900;font-size:18px;color:#FFD600;">$${total.toLocaleString('es-CO')}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <!-- FOOTER -->
+                    <div style="text-align:center;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:12px;margin-top:8px;">
+                        <p>¡Gracias por tu compra! 🎉</p>
+                        <p style="font-size:10px;color:#aaa;">Este documento es un comprobante de pago.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            @media print {
+                body * { visibility: hidden; }
+                #facturaContainer, #facturaContainer * { visibility: visible; }
+                #facturaContainer { position: absolute; top: 0; left: 0; width: 100%; max-height: 100%; overflow: visible; border-radius: 0; box-shadow: none; }
+                #modalFactura { background: white !important; padding: 0 !important; }
+                .no-print { display: none !important; }
+                #facturaContainer .modal-header-actions { display: none !important; }
+            }
+        </style>
+    `;
+    
+    const modalExistente = document.getElementById('modalFactura');
+    if (modalExistente) modalExistente.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function cerrarFactura() {
+    const modal = document.getElementById('modalFactura');
+    if (modal) modal.remove();
+}
+
+function imprimirFactura() {
+    window.print();
+}
+
+function enviarFacturaWhatsApp(tiendaId, pedidoId) {
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    const tienda = tiendasCache[tiendaId] || {};
+    const telefonoTienda = tienda.whatsapp || '';
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    
+    if (!telefonoTienda) {
+        toast('⚠️ La tienda no tiene número de WhatsApp configurado', 'error');
+        return;
+    }
+    
+    let mensaje = `🧾 *FACTURA DE COMPRA*\n\n`;
+    mensaje += `🏪 *${nombreTienda}*\n`;
+    mensaje += `📅 ${new Date(pedido.fecha).toLocaleDateString('es-CO')}\n\n`;
+    mensaje += `👤 *Cliente:* ${pedido.cliente?.nombre || 'Cliente'}\n`;
+    mensaje += `📍 *Dirección:* ${pedido.cliente?.direccion || 'N/A'}\n`;
+    mensaje += `📱 *Teléfono:* ${pedido.cliente?.telefono || 'N/A'}\n\n`;
+    mensaje += `*PRODUCTOS*\n`;
+    mensaje += `━━━━━━━━━━━━━━━━━━\n`;
+    
+    let total = 0;
+    if (pedido.items) {
+        pedido.items.forEach(item => {
+            const subtotal = (item.precio || 0) * (item.cantidad || 1);
+            total += subtotal;
+            let nombre = item.nombre || 'Producto';
+            if (item.pesoGramos) nombre += ` (${item.pesoGramos}g)`;
+            mensaje += `${nombre} x${item.cantidad || 1} = $${subtotal.toLocaleString('es-CO')}\n`;
+        });
+    }
+    mensaje += `━━━━━━━━━━━━━━━━━━\n`;
+    mensaje += `💰 *TOTAL: $${total.toLocaleString('es-CO')}*\n\n`;
+    mensaje += `💳 *Pago:* ${pedido.metodoPago || 'Efectivo'}\n`;
+    mensaje += `✅ *Estado:* ${pedido.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente'}\n\n`;
+    mensaje += `¡Gracias por tu compra! 🎉`;
+    
+    const url = `https://wa.me/${telefonoTienda}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
 }
 
 // ============================================================
@@ -3017,6 +3237,12 @@ window.eliminarPedido = eliminarPedido;
 window.iniciarEscuchaGlobal = iniciarEscuchaGlobal;
 window.mostrarPedidosPendientesGlobal = mostrarPedidosPendientesGlobal;
 window.renderPedidoGlobal = renderPedidoGlobal;
+window.generarFactura = generarFactura;
+window.cerrarFactura = cerrarFactura;
+window.imprimirFactura = imprimirFactura;
+window.enviarFacturaWhatsApp = enviarFacturaWhatsApp;
+window.obtenerPedidoDeCache = obtenerPedidoDeCache;
+window.mostrarModalFactura = mostrarModalFactura;
 window.cargarEstado = cargarEstado;
 window.toggleEstado = toggleEstado;
 window.toggleEscaneoBoton = toggleEscaneoBoton;
@@ -3038,6 +3264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
     console.log('🔍 Búsqueda automática en Open Food Facts para códigos EAN/UPC');
     console.log('🔎 Buscador de productos por nombre o categoría activado');
+    console.log('🧾 Sistema de facturación activado');
 });
 </script>
 </body>
