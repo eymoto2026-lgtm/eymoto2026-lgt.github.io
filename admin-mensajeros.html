@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Mensajeros - EyMoto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        :root {
+            --yellow: #FFD600;
+            --yellow-dim: #e6c200;
+            --green: #00C853;
+            --green-bg: rgba(0,200,83,0.12);
+            --blue: #00B0FF;
+            --blue-bg: rgba(0,176,255,0.12);
+            --red: #FF3D00;
+            --red-bg: rgba(255,61,0,0.12);
+            --orange: #FF6900;
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --surface3: #252525;
+            --border: #2e2e2e;
+            --border2: #3a3a3a;
+            --text-muted: #888;
+            --radius: 10px;
+        }
+        input, select, textarea, button {
+            font-family: inherit;
+            font-size: 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface3);
+            color: #fff;
+            padding: 11px 14px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color .2s, background .2s;
+        }
+        input:focus, select:focus { border-color: var(--yellow); }
+        select option { background: #1e1e1e; }
+        button {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
+        button:hover { background: var(--yellow-dim); }
+        button:active { transform: scale(.98); }
+        .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
+        .btn-danger { background: #c0392b; color: #fff; }
+        .btn-danger:hover { background: #a93226; }
+        .btn-success { background: #00C853; color: #fff; }
+        .btn-success:hover { background: #00b748; }
+        .btn-info { background: #0288d1; color: #fff; }
+        .btn-info:hover { background: #0277bd; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
+        .btn-ghost:hover { background: var(--surface3); }
+        .hidden { display: none !important; }
+
+        header {
+            background: #0d0d0d;
+            border-bottom: 1px solid var(--border);
+            padding: 13px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header .brand {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 900;
+            font-size: 14px;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
+        header h1 { font-size: 15px; font-weight: 600; color: #fff; }
+        header .spacer { flex: 1; }
+
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
+
+        #loginBox {
+            max-width: 420px;
+            margin: 60px auto;
+            padding: 32px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        #loginBox .brand {
+            display: inline-block;
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-size: 26px;
+            font-weight: 900;
+            padding: 10px 24px;
+            border-radius: 30px;
+        }
+        #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
+        #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
+        .login-logo { text-align: center; margin-bottom: 28px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
+        .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+        .stat-card.c-yellow .val { color: var(--yellow); }
+        .stat-card.c-green .val { color: var(--green); }
+        .stat-card.c-blue .val { color: var(--blue); }
+        .stat-card.c-red .val { color: var(--red); }
+
+        .form-crear {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-crear .titulo {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--yellow);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-crear .row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-crear .acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .mensajero-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            transition: border-color 0.3s;
+        }
+        .mensajero-card:hover { border-color: var(--yellow); }
+        .mensajero-card .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--surface3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--yellow);
+            flex-shrink: 0;
+            border: 2px solid var(--border);
+        }
+        .mensajero-card .info {
+            flex: 1;
+            min-width: 150px;
+        }
+        .mensajero-card .info .nombre {
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .mensajero-card .info .email {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .mensajero-card .info .meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .mensajero-card .estado {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
+        .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
+        .mensajero-card .acciones {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        #toastWrap {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1e1e1e;
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,.5);
+            animation: toastIn .3s ease;
+            pointer-events: auto;
+            max-width: 380px;
+            cursor: pointer;
+        }
+        .toast.t-success { border-left: 3px solid var(--green); }
+        .toast.t-error { border-left: 3px solid var(--red); }
+        .toast.t-info { border-left: 3px solid var(--blue); }
+        .toast.t-warn { border-left: 3px solid var(--yellow); }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-fade { animation: toastOut .3s ease forwards; }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal.active { display: flex; }
+        .modal .modal-content {
+            background: #1e1e1e;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            padding: 24px;
+            border: 1px solid var(--yellow);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
+        .modal .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal .modal-close:hover { color: var(--red); }
+        .modal .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal .info-row .label { color: var(--text-muted); }
+        .modal .info-row .value { color: #fff; font-weight: 500; }
+
+        .filtros {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .filtros select, .filtros input {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filtros button { flex: 0 0 auto; width: auto; }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .form-crear .row2 { grid-template-columns: 1fr; }
+            .mensajero-card { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toastWrap"></div>
+
+<div id="loginBox">
+    <div class="login-logo"><span class="brand">EyMoto</span></div>
+    <h2>Admin Mensajeros</h2>
+    <p class="sub">Gestiona tu equipo de repartidores</p>
+    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="admin@eymoto.com"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
+    <button onclick="iniciarSesion()">Ingresar</button>
+    <p id="loginMsg"></p>
+</div>
+
+<div id="panel" class="hidden">
+    <header>
+        <span class="brand">EyMoto</span>
+        <h1>Administración de Mensajeros</h1>
+        <span class="spacer"></span>
+        <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
+    </header>
+
+    <div class="wrap">
+        <div class="stats-grid">
+            <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
+            <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Mensajeros inactivos</div></div>
+            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pedidos pendientes</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+        </div>
+
+        <div class="form-crear">
+            <div class="titulo">➕ Crear nuevo mensajero</div>
+            <div class="row2">
+                <div>
+                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label>
+                    <input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label>
+                    <input id="nuevoNombre" placeholder="Carlos Pérez">
+                </div>
+            </div>
+            <div class="row2">
+                <div>
+                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label>
+                    <input id="nuevoTelefono" placeholder="3169934516">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label>
+                    <input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!">
+                </div>
+            </div>
+            <div class="acciones">
+                <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
+                <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                ⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.
+            </div>
+        </div>
+
+        <div class="filtros">
+            <select id="filtroEstado" onchange="filtrarMensajeros()">
+                <option value="">📋 Todos</option>
+                <option value="activo">🟢 Activos</option>
+                <option value="inactivo">🔴 Inactivos</option>
+            </select>
+            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
+            <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
+        </div>
+
+        <div id="listaMensajeros">
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                <div style="font-size:32px;margin-bottom:12px;">🛵</div>
+                Cargando mensajeros...
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Detalle del mensajero</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div id="modalContenido"></div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+        authDomain: "eymotocomidas.firebaseapp.com",
+        projectId: "eymotocomidas",
+        storageBucket: "eymotocomidas.firebasestorage.app",
+        messagingSenderId: "670474251560",
+        appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let todosLosMensajeros = [];
+    let mensajerosFiltrados = [];
+    let listenerMensajeros = null;
+
+    function iniciarSesion() {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const msg = document.getElementById('loginMsg');
+        msg.textContent = '';
+        if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
+        auth.signInWithEmailAndPassword(email, pass)
+            .then(async (userCredential) => {
+                const user = userCredential.user;
+                const doc = await db.collection('usuarios').doc(user.uid).get();
+                if (!doc.exists) { await auth.signOut(); msg.textContent = '⛔ Usuario no registrado.'; return; }
+                const data = doc.data();
+                if (data.admin !== true && data.superAdmin !== true) {
+                    await auth.signOut();
+                    msg.textContent = '⛔ No tienes permisos de administrador.';
+                    return;
+                }
+                document.getElementById('loginBox').classList.add('hidden');
+                document.getElementById('panel').classList.remove('hidden');
+                document.getElementById('adminUser').textContent = '👑 ' + (data.nombre || email);
+                await inicializarPanel();
+            })
+            .catch(e => { msg.textContent = '❌ Credenciales incorrectas.'; console.error(e); });
+    }
+
+    function logout() {
+        if (listenerMensajeros) listenerMensajeros();
+        auth.signOut();
+        document.getElementById('loginBox').classList.remove('hidden');
+        document.getElementById('panel').classList.add('hidden');
+        toast('👋 Sesión cerrada', 'info');
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('panel').classList.remove('hidden');
+            inicializarPanel();
+        } else {
+            document.getElementById('loginBox').classList.remove('hidden');
+            document.getElementById('panel').classList.add('hidden');
+        }
+    });
+
+    async function inicializarPanel() {
+        await cargarMensajeros();
+        await cargarEstadisticasPedidos();
+    }
+
+    function cargarMensajeros() {
+        if (listenerMensajeros) listenerMensajeros();
+        listenerMensajeros = db.collection('usuarios')
+            .where('mensajero', '==', true)
+            .onSnapshot(snap => {
+                todosLosMensajeros = [];
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    todosLosMensajeros.push({ uid: doc.id, ...data });
+                });
+                filtrarMensajeros();
+                actualizarEstadisticas();
+            }, err => { toast('❌ Error al cargar mensajeros', 'error'); });
+    }
+
+    function filtrarMensajeros() {
+        const estado = document.getElementById('filtroEstado').value;
+        const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+        mensajerosFiltrados = todosLosMensajeros.filter(m => {
+            if (estado) {
+                const activo = m.activo !== false;
+                if (estado === 'activo' && !activo) return false;
+                if (estado === 'inactivo' && activo) return false;
+            }
+            if (busqueda) {
+                const nombre = (m.nombre || '').toLowerCase();
+                const email = (m.email || '').toLowerCase();
+                if (!nombre.includes(busqueda) && !email.includes(busqueda)) return false;
+            }
+            return true;
+        });
+        renderizarMensajeros();
+    }
+
+    function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
+
+    function renderizarMensajeros() {
+        const container = document.getElementById('listaMensajeros');
+        if (mensajerosFiltrados.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No hay mensajeros que coincidan con los filtros</p></div>`;
+            return;
+        }
+        let html = '';
+        mensajerosFiltrados.forEach(m => {
+            const activo = m.activo !== false;
+            const iniciales = (m.nombre || m.email || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            html += `
+                <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
+                    <div class="avatar">${iniciales}</div>
+                    <div class="info">
+                        <div class="nombre">${m.nombre || 'Sin nombre'}</div>
+                        <div class="email">📧 ${m.email || 'Sin email'}</div>
+                        <div class="meta">${m.telefono ? '📱 ' + m.telefono : ''} ${m.creadoEn ? ' | 📅 ' + formatearFecha(m.creadoEn) : ''}</div>
+                    </div>
+                    <span class="estado ${activo ? 'activo' : 'inactivo'}">${activo ? '🟢 Activo' : '🔴 Inactivo'}</span>
+                    <div class="acciones">
+                        <button class="btn-info btn-sm" onclick="verDetalle('${m.uid}')">📋 Ver</button>
+                        ${activo ? 
+                            `<button class="btn-danger btn-sm" onclick="toggleMensajero('${m.uid}', false)">🔴 Desactivar</button>` :
+                            `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', true)">🟢 Activar</button>`
+                        }
+                        <button class="btn-danger btn-sm" onclick="eliminarMensajero('${m.uid}')">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function actualizarEstadisticas() {
+        const activos = todosLosMensajeros.filter(m => m.activo !== false).length;
+        const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
+        document.getElementById('statActivos').textContent = activos;
+        document.getElementById('statInactivos').textContent = inactivos;
+    }
+
+    async function cargarEstadisticasPedidos() {
+        try {
+            let pendientes = 0, enCamino = 0;
+            const tiendasSnap = await db.collection('tiendas').get();
+            for (const tiendaDoc of tiendasSnap.docs) {
+                const pedidosSnap = await db.collection('tiendas').doc(tiendaDoc.id).collection('pedidos').where('estado', 'in', ['Pendiente', 'En camino']).get();
+                pedidosSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.estado === 'Pendiente') pendientes++;
+                    if (data.estado === 'En camino') enCamino++;
+                });
+            }
+            document.getElementById('statPendientes').textContent = pendientes;
+            document.getElementById('statEnCamino').textContent = enCamino;
+        } catch (e) { console.error(e); }
+    }
+
+    function formatearFecha(fecha) {
+        if (!fecha) return '--/--/--';
+        try {
+            let d;
+            if (fecha.toDate) d = fecha.toDate();
+            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
+            else d = new Date(fecha);
+            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch (e) { return '--/--/--'; }
+    }
+
+    async function crearMensajero() {
+        const email = document.getElementById('nuevoEmail').value.trim();
+        const nombre = document.getElementById('nuevoNombre').value.trim();
+        const telefono = document.getElementById('nuevoTelefono').value.trim();
+        const password = document.getElementById('nuevoPassword').value.trim();
+        if (!email) { toast('⚠️ Ingresa el Gmail del mensajero', 'error'); return; }
+        if (!nombre) { toast('⚠️ Ingresa el nombre del mensajero', 'error'); return; }
+        if (!password || password.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+        try {
+            toast('⏳ Creando mensajero...', 'info');
+            const result = await auth.createUserWithEmailAndPassword(email, password);
+            const uid = result.user.uid;
+            await db.collection('usuarios').doc(uid).set({
+                email, nombre, telefono: telefono || '',
+                mensajero: true, rol: 'mensajero', activo: true,
+                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await result.user.sendEmailVerification();
+            toast(`✅ Mensajero "${nombre}" creado exitosamente`, 'success', 5000);
+            limpiarFormulario();
+            filtrarMensajeros();
+            actualizarEstadisticas();
+        } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+                toast('⚠️ Este email ya está registrado. Usa otro Gmail.', 'error');
+            } else {
+                toast('❌ Error: ' + error.message, 'error');
+            }
+        }
+    }
+
+    function limpiarFormulario() {
+        document.getElementById('nuevoEmail').value = '';
+        document.getElementById('nuevoNombre').value = '';
+        document.getElementById('nuevoTelefono').value = '';
+        document.getElementById('nuevoPassword').value = 'Mensajero2026!';
+    }
+
+    async function toggleMensajero(uid, activo) {
+        if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} este mensajero?`)) return;
+        try {
+            await db.collection('usuarios').doc(uid).update({
+                activo: activo,
+                [`${activo ? 'activado' : 'desactivado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast(`✅ Mensajero ${activo ? 'activado' : 'desactivado'}`, 'success');
+            filtrarMensajeros();
+            actualizarEstadisticas();
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+    }
+
+    async function eliminarMensajero(uid) {
+        if (!confirm('⚠️ ¿Eliminar este mensajero permanentemente?')) return;
+        try {
+            await db.collection('usuarios').doc(uid).delete();
+            toast('✅ Mensajero eliminado de Firestore', 'success');
+            filtrarMensajeros();
+            actualizarEstadisticas();
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+    }
+
+    function verDetalle(uid) {
+        const mensajero = todosLosMensajeros.find(m => m.uid === uid);
+        if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
+        const activo = mensajero.activo !== false;
+        let html = `
+            <div class="info-row"><span class="label">👤 Nombre</span><span class="value">${mensajero.nombre || 'Sin nombre'}</span></div>
+            <div class="info-row"><span class="label">📧 Email</span><span class="value">${mensajero.email || 'Sin email'}</span></div>
+            <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${mensajero.telefono || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? 'var(--green)' : 'var(--red)'}">${activo ? '🟢 Activo' : '🔴 Inactivo'}</span></div>
+            <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
+            <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
+        `;
+        if (mensajero.activadoEn) html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
+        if (mensajero.desactivadoEn) html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
+        document.getElementById('modalTitulo').textContent = `📋 ${mensajero.nombre || 'Mensajero'}`;
+        document.getElementById('modalContenido').innerHTML = html;
+        document.getElementById('modalDetalle').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('modalDetalle').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function toast(msg, type = 'info', dur = 4000) {
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+        const wrap = document.getElementById('toastWrap');
+        const el = document.createElement('div');
+        el.className = `toast t-${type}`;
+        el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
+        wrap.appendChild(el);
+        setTimeout(() => { el.classList.add('toast-fade'); setTimeout(() => el.remove(), 350); }, dur);
+        return el;
+    }
+
+    window.iniciarSesion = iniciarSesion;
+    window.logout = logout;
+    window.crearMensajero = crearMensajero;
+    window.limpiarFormulario = limpiarFormulario;
+    window.filtrarMensajeros = filtrarMensajeros;
+    window.recargarMensajeros = recargarMensajeros;
+    window.toggleMensajero = toggleMensajero;
+    window.eliminarMensajero = eliminarMensajero;
+    window.verDetalle = verDetalle;
+    window.cerrarModal = cerrarModal;
+    window.toast = toast;
+</script>
+</body>
+</html>
