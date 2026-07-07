@@ -432,6 +432,7 @@
     const db = firebase.firestore();
 
     let mensajeroId = null;
+    let nombreMensajero = '';
     let todosLosPedidos = [];
     let pedidosFiltrados = [];
     let modoGPS = false;
@@ -500,7 +501,8 @@
         const info = await verificarRolMensajero();
         if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
         mensajeroId = info.uid;
-        document.getElementById('nombreMensajero').textContent = '🛵 ' + (info.nombre || 'Mensajero');
+        nombreMensajero = info.nombre || 'Mensajero';
+        document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
         await cargarTiendas();
         await cargarSelectTiendas();
         await escucharPedidos();
@@ -687,42 +689,75 @@
         badge.style.display = total > 0 ? 'inline-block' : 'none';
     }
 
+    // ============================================================
+    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO)
+    // ============================================================
     async function asignarPedido(pedidoId, tiendaId) {
         try {
-            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
-                mensajeroId: mensajeroId, estado: 'Asignado', fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            toast('⏳ Asignando pedido...', 'info');
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    mensajeroId: mensajeroId,
+                    nombreMensajero: nombreMensajero,
+                    estado: 'Asignado',
+                    fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
             toast('✅ Pedido asignado correctamente', 'success');
-        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+            filtrarPedidos();
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
     }
 
     async function iniciarEntrega(pedidoId, tiendaId) {
         try {
-            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
-                estado: 'En camino', fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            toast('⏳ Iniciando entrega...', 'info');
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    estado: 'En camino',
+                    fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
+                });
             toast('🛵 Pedido en camino', 'success');
-        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+            filtrarPedidos();
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
     }
 
     async function entregarPedido(pedidoId, tiendaId) {
         try {
-            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
-                estado: 'Entregado', fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            toast('⏳ Confirmando entrega...', 'info');
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    estado: 'Entregado',
+                    fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+                });
             toast('✅ Pedido entregado correctamente', 'success');
-            if (modoGPS) toast('📍 Ubicación de entrega registrada', 'info', 2000);
-        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+            filtrarPedidos();
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
     }
 
     async function enviarUbicacion(pedidoId, tiendaId) {
-        if (!ubicacionActual) { toast('📍 Esperando ubicación...', 'warn', 2000); return; }
+        if (!ubicacionActual) {
+            toast('📍 Esperando ubicación...', 'warn', 2000);
+            return;
+        }
         try {
-            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
-                ubicacionMensajero: ubicacionActual, ultimaUbicacion: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    ubicacionMensajero: ubicacionActual,
+                    ultimaUbicacion: firebase.firestore.FieldValue.serverTimestamp()
+                });
             toast('📍 Ubicación enviada al cliente', 'success');
-        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
     }
 
     function verDetalle(pedidoId, tiendaId) {
