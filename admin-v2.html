@@ -1006,6 +1006,9 @@ function activarAudioAutomatico() {
     } catch(e) { console.warn('⚠️ Error al activar audio:', e); }
 }
 
+// ============================================================
+// INICIAR SESIÓN - VERSIÓN CORREGIDA CON VERIFICACIÓN DE USUARIO
+// ============================================================
 function iniciarSesion() {
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
@@ -1018,7 +1021,26 @@ function iniciarSesion() {
   }
   
   auth.signInWithEmailAndPassword(email, pass)
-    .then(async () => {
+    .then(async (userCredential) => {
+      const user = userCredential.user;
+      
+      // Verificar que el usuario existe en la colección "usuarios"
+      try {
+        const doc = await db.collection('usuarios').doc(user.uid).get();
+        if (!doc.exists) {
+          // Si no existe, crear entrada básica
+          await db.collection('usuarios').doc(user.uid).set({
+            email: email,
+            admin: email === 'eymoto2026@gmail.com',
+            activo: true,
+            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log('✅ Usuario creado en la colección "usuarios"');
+        }
+      } catch (error) {
+        console.warn('⚠️ Error al verificar usuario:', error);
+      }
+      
       toast('✅ Sesión iniciada', 'success');
       document.getElementById('loginBox').classList.add('hidden');
       document.getElementById('panel').classList.remove('hidden');
@@ -2639,7 +2661,6 @@ function renderPedido(doc, tiendaId, counts) {
     }
     if (estado === 'Entregado' || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
-        // ===== BOTÓN DE FACTURA (solo para entregados) =====
         if (estado === 'Entregado') {
             acciones += `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>`;
         }
@@ -2874,7 +2895,6 @@ function obtenerPedidoDeCache(tiendaId, pedidoId) {
             return { ...encontrado.data, id: pedidoId };
         }
     }
-    // Si no está en caché, buscarlo en Firestore
     return null;
 }
 
@@ -3265,6 +3285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔍 Búsqueda automática en Open Food Facts para códigos EAN/UPC');
     console.log('🔎 Buscador de productos por nombre o categoría activado');
     console.log('🧾 Sistema de facturación activado');
+    console.log('🔐 Autenticación corregida con verificación de usuario');
 });
 </script>
 </body>
