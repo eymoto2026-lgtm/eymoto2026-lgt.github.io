@@ -631,26 +631,42 @@
         actualizarHeaderBadge();
     }
 
+    // ============================================================
+    // RENDERIZAR ACCIONES - SOLO MENSAJERO (CORREGIDO)
+    // ============================================================
     function renderizarAcciones(pedido) {
         const estado = pedido.estado || 'Pendiente';
         const esMio = pedido.mensajeroId === mensajeroId;
         let html = '';
+        
+        // VER DETALLE (SIEMPRE)
         html += `<button class="btn-info btn-sm" onclick="verDetalle('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>`;
-        if (estado === 'Pendiente' && !pedido.mensajeroId) {
+        
+        // 1. TOMAR PEDIDO (SOLO SI ESTÁ EN "En cocina" o "Pendiente" Y NO TIENE MENSAJERO)
+        // El mensajero SOLO puede tomar pedidos que están en "Pendiente" o "En cocina" o "Preparando"
+        const puedeTomar = (estado === 'Pendiente' || estado === 'En cocina' || estado === 'Preparando' || estado === 'Preparando pedido') && !pedido.mensajeroId;
+        if (puedeTomar) {
             html += `<button class="btn-success btn-sm" onclick="asignarPedido('${pedido.id}','${pedido.tiendaId}')">👤 Tomar pedido</button>`;
         }
+        
+        // 2. INICIAR ENTREGA (SOLO SI ES MÍO Y ESTÁ ASIGNADO)
         if (esMio && estado === 'Asignado') {
             html += `<button class="btn-info btn-sm" onclick="iniciarEntrega('${pedido.id}','${pedido.tiendaId}')">🛵 Iniciar entrega</button>`;
         }
+        
+        // 3. ENTREGAR (SOLO SI ES MÍO Y ESTÁ EN CAMINO)
         if (esMio && estado === 'En camino') {
             html += `<button class="btn-success btn-sm" onclick="entregarPedido('${pedido.id}','${pedido.tiendaId}')">✅ Entregar</button>`;
             if (modoGPS) {
                 html += `<button class="btn-info btn-sm" onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')">📍 Enviar ubicación</button>`;
             }
         }
+        
+        // 4. MOSTRAR SI YA ESTÁ ENTREGADO
         if (esMio && estado === 'Entregado') {
             html += `<span style="color:var(--green);font-size:12px;padding:8px;">✅ Entregado</span>`;
         }
+        
         return html;
     }
 
@@ -690,10 +706,28 @@
     }
 
     // ============================================================
-    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO)
+    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO) - CORREGIDAS
     // ============================================================
     async function asignarPedido(pedidoId, tiendaId) {
         try {
+            // Verificar que nadie más lo haya tomado
+            const doc = await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId).get();
+            
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            
+            if (data.mensajeroId) {
+                toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+                return;
+            }
+            
+            // SOLO permitir tomar si está en "Pendiente", "En cocina" o "Preparando"
+            if (data.estado !== 'Pendiente' && data.estado !== 'En cocina' && data.estado !== 'Preparando' && data.estado !== 'Preparando pedido') {
+                toast('⚠️ Este pedido no está disponible para tomar (estado: ' + data.estado + ')', 'warn');
+                return;
+            }
+            
             toast('⏳ Asignando pedido...', 'info');
             await db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -712,6 +746,17 @@
 
     async function iniciarEntrega(pedidoId, tiendaId) {
         try {
+            const doc = await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId).get();
+            
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            
             toast('⏳ Iniciando entrega...', 'info');
             await db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -728,6 +773,17 @@
 
     async function entregarPedido(pedidoId, tiendaId) {
         try {
+            const doc = await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId).get();
+            
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            
             toast('⏳ Confirmando entrega...', 'info');
             await db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
