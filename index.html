@@ -1278,19 +1278,17 @@
         const auth = firebase.auth();
 
         // ============================================================
-        // ===== CONFIGURACIÓN - CAMBIA ESTO =====
+        // ===== CONFIGURACIÓN =====
         // ============================================================
         
-        // 1. El ID de tu tienda en Firestore - ¡CAMBIA ESTO POR EL ID REAL DE TU TIENDA!
-        // Para obtenerlo: ve a Firebase Console → Firestore → Colección "tiendas" → Copia el ID del documento
+        // ID de tu tienda en Firestore
         const TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
         
-        // 2. Tu número de WhatsApp con código de país (57 para Colombia)
-        // Número real: 3169934516 → Formato internacional: 573164043436
-        const WHATSAPP_TIENDA = '573164043436';
+        // Número de WhatsApp de la tienda (formato internacional: 57 + 3169934516)
+        const WHATSAPP_TIENDA = '573169934516';
         
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('📱 WhatsApp:', WHATSAPP_TIENDA);
+        console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
 
         // ============================================================
         // GLOBALS
@@ -1319,7 +1317,6 @@
                     return auth.currentUser;
                 }
                 
-                // Credenciales fijas - siempre las mismas para todos los clientes
                 const EMAIL = 'cliente_eymoto@email.com';
                 const PASSWORD = 'Cliente2026!';
                 
@@ -1330,7 +1327,6 @@
                     return result.user;
                 } catch (error) {
                     if (error.code === 'auth/user-not-found') {
-                        // Crear usuario si no existe
                         const result = await auth.createUserWithEmailAndPassword(EMAIL, PASSWORD);
                         console.log('✅ Usuario cliente creado:', result.user.uid);
                         clienteAutenticado = result.user;
@@ -1340,7 +1336,6 @@
                 }
             } catch (error) {
                 console.error('❌ Error al autenticar:', error);
-                // Si todo falla, usar un ID temporal
                 const tempId = 'temp_' + Date.now();
                 clienteAutenticado = { uid: tempId };
                 return clienteAutenticado;
@@ -1922,9 +1917,8 @@
         }
 
         // ============================================================
-        // FUNCIONES PARA PRODUCTOS POR PESO CON INPUT NUMÉRICO
+        // FUNCIONES PARA PRODUCTOS POR PESO
         // ============================================================
-        
         function calcularPrecioPorPeso(producto, gramos) {
             if (!producto || producto.tipoProducto !== 'peso') return 0;
             
@@ -2471,7 +2465,7 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON TU NÚMERO DE WHATSAPP REAL
+        // ENVIAR PEDIDO - CON NÚMERO REAL: +57 3169934516
         // ============================================================
         async function enviarPedido() {
             // Autenticar
@@ -2670,8 +2664,9 @@
                 return;
             }
 
-            // ===== ENVIAR WHATSAPP CON TU NÚMERO REAL =====
-            const telefonoWhatsApp = WHATSAPP_TIENDA; // 573164043436
+            // ===== ENVIAR WHATSAPP AL NÚMERO REAL: +57 3169934516 =====
+            // FORMATO INTERNACIONAL: 573169934516
+            const telefonoWhatsApp = WHATSAPP_TIENDA;
             
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
@@ -2725,8 +2720,9 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // Abrir WhatsApp con tu número
+            // Abrir WhatsApp con tu número real
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+            console.log('📱 Abriendo WhatsApp con número:', telefonoWhatsApp);
             window.open(urlWhatsApp, '_blank');
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
@@ -2950,7 +2946,7 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
+        console.log('📱 WhatsApp tienda (real):', WHATSAPP_TIENDA);
         console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
         console.log('🔐 Autenticación por email activada');
     </script>
