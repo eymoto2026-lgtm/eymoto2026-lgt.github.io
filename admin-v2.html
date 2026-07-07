@@ -2416,7 +2416,6 @@ function abrirEditarPedido(tiendaId, pedidoId) {
     pedidoEditando = { ...pedido, id: pedidoId };
     tiendaEditando = tiendaId;
     
-    // ===== INICIALIZAR ITEMS CON VALORES SEGUROS =====
     itemsEditando = [];
     if (pedido.items && Array.isArray(pedido.items)) {
         pedido.items.forEach(item => {
@@ -2486,7 +2485,6 @@ function renderizarEditarPedido() {
     const tienda = tiendasCache[tiendaEditando] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     
-    // Calcular total
     let total = 0;
     itemsEditando.forEach(item => {
         const precio = parseFloat(item.precio) || 0;
@@ -2618,7 +2616,7 @@ function agregarProductoAPedido() {
 }
 
 // ============================================================
-// GUARDAR EDICIÓN DE PEDIDO - CORREGIDO
+// GUARDAR EDICIÓN DE PEDIDO
 // ============================================================
 async function guardarEdicionPedido() {
     if (!pedidoEditando || !tiendaEditando) {
@@ -2638,7 +2636,6 @@ async function guardarEdicionPedido() {
         total += precio * cantidad;
     });
     
-    // ===== PREPARAR DATOS SIN UNDEFINED =====
     const itemsActualizados = itemsEditando.map(item => {
         const nombre = item.nombre || 'Producto sin nombre';
         const precio = parseFloat(item.precio) || 0;
@@ -2697,7 +2694,7 @@ async function guardarEdicionPedido() {
 }
 
 // ============================================================
-// ENVIAR ACTUALIZACIÓN AL CLIENTE - CORREGIDO
+// ENVIAR ACTUALIZACIÓN AL CLIENTE
 // ============================================================
 function enviarActualizacionPedido() {
     if (!pedidoEditando || !tiendaEditando) {
@@ -2710,15 +2707,11 @@ function enviarActualizacionPedido() {
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const cliente = pedidoEditando.cliente || {};
     
-    // ===== LIMPIAR TELÉFONO DEL CLIENTE =====
     let telefonoCliente = cliente.telefono || '';
-    // Eliminar espacios, guiones, paréntesis
     telefonoCliente = telefonoCliente.replace(/\s/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
-    // Si empieza con 0, quitarlo
     if (telefonoCliente.startsWith('0')) {
         telefonoCliente = telefonoCliente.substring(1);
     }
-    // Si no tiene código de país (57), agregarlo
     if (!telefonoCliente.startsWith('57') && telefonoCliente.length > 0) {
         telefonoCliente = '57' + telefonoCliente;
     }
@@ -2728,7 +2721,6 @@ function enviarActualizacionPedido() {
         return;
     }
     
-    // Calcular total
     let total = 0;
     itemsEditando.forEach(item => {
         const subtotal = (item.precio || 0) * (item.cantidad || 1);
@@ -3161,7 +3153,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// RENDER PEDIDO - CORREGIDO (Fecha, nombre tienda)
+// RENDER PEDIDO - CORREGIDO
 // ============================================================
 function renderPedido(doc, tiendaId, counts) {
     const p = doc.data();
@@ -3181,32 +3173,57 @@ function renderPedido(doc, tiendaId, counts) {
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
         try {
-            const d = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
-            if (!isNaN(d.getTime())) {
-                fechaStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                horaStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            let fechaDate;
+            if (p.fecha.toDate) {
+                fechaDate = p.fecha.toDate();
+            } else if (p.fecha.seconds) {
+                fechaDate = new Date(p.fecha.seconds * 1000);
+            } else {
+                fechaDate = new Date(p.fecha);
+            }
+            if (!isNaN(fechaDate.getTime())) {
+                fechaStr = fechaDate.toLocaleDateString('es-CO', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                horaStr = fechaDate.toLocaleTimeString('es-CO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
             }
         } catch(e) {
             console.warn('Error al formatear fecha:', e);
         }
     }
     
+    // ===== NOMBRE DE TIENDA CORREGIDO =====
+    let nombreTienda = 'EyMotoComidas';
+    if (tiendaId && tiendasCache[tiendaId]) {
+        const tienda = tiendasCache[tiendaId];
+        nombreTienda = tienda.nombre || tienda || 'EyMotoComidas';
+    }
+    
     let itemsHtml = '';
-    if (p.items && p.items.length) {
+    if (p.items && p.items.length > 0) {
         p.items.forEach(it => {
-            let nombreItem = it.nombre || '';
+            let nombreItem = it.nombre || 'Producto';
             if (it.pesoGramos) {
                 nombreItem += ` (${it.pesoGramos}g)`;
             }
-            itemsHtml += `<div class="item"><span>${nombreItem} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
+            const totalItem = it.total || (it.precio * it.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombreItem} x${it.cantidad || 1}</span><span>$${totalItem.toLocaleString('es-CO')}</span></div>`;
         });
     }
+    
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
         const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
-    } else { badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`; }
+    } else {
+        badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
+    }
     
     let acciones = '';
     if (estado === 'Pendiente') {
@@ -3228,6 +3245,7 @@ function renderPedido(doc, tiendaId, counts) {
             acciones += `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>`;
         }
     }
+    
     let btnPago = '';
     if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
         btnPago = `
@@ -3236,14 +3254,13 @@ function renderPedido(doc, tiendaId, counts) {
         `;
     }
     
-    // ===== NOMBRE DE TIENDA CORREGIDO =====
-    const nombreTienda = tiendasCache[tiendaId]?.nombre || 'EyMotoComidas';
+    const totalPedido = p.total || 0;
     
     const card = document.createElement('div');
     card.className = `pedido-card ${cfg.ring}`;
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
-        <div class="pedido-titulo">🛵 ${p.numeroPedido || 'NUEVO PEDIDO'}</div>
+        <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -3256,7 +3273,7 @@ function renderPedido(doc, tiendaId, counts) {
         <div class="pedido-items">
             <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
             ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-            <div class="pedido-total"><span>TOTAL</span><span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span></div>
+            <div class="pedido-total"><span>TOTAL</span><span class="val">$${totalPedido.toLocaleString('es-CO')}</span></div>
         </div>
         ${btnPago}
         <div class="accion-btns">${acciones}</div>
@@ -3385,7 +3402,7 @@ function mostrarPedidosPendientesGlobal() {
 }
 
 // ============================================================
-// RENDER PEDIDO GLOBAL - CORREGIDO (Fecha, nombre tienda)
+// RENDER PEDIDO GLOBAL - CORREGIDO
 // ============================================================
 function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     const p = pedidoDoc.data();
@@ -3405,41 +3422,65 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
         try {
-            const d = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
-            if (!isNaN(d.getTime())) {
-                fechaStr = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                horaStr = d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            let fechaDate;
+            if (p.fecha.toDate) {
+                fechaDate = p.fecha.toDate();
+            } else if (p.fecha.seconds) {
+                fechaDate = new Date(p.fecha.seconds * 1000);
+            } else {
+                fechaDate = new Date(p.fecha);
+            }
+            if (!isNaN(fechaDate.getTime())) {
+                fechaStr = fechaDate.toLocaleDateString('es-CO', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                });
+                horaStr = fechaDate.toLocaleTimeString('es-CO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
             }
         } catch(e) {
             console.warn('Error al formatear fecha:', e);
         }
     }
     
+    // ===== NOMBRE DE TIENDA CORREGIDO =====
+    let nombreTienda = 'EyMotoComidas';
+    if (tiendaId && tiendasCache[tiendaId]) {
+        const tienda = tiendasCache[tiendaId];
+        nombreTienda = tienda.nombre || tienda || 'EyMotoComidas';
+    }
+    
     let itemsHtml = '';
-    if (p.items && p.items.length) {
+    if (p.items && p.items.length > 0) {
         p.items.forEach(it => {
-            let nombreItem = it.nombre || '';
+            let nombreItem = it.nombre || 'Producto';
             if (it.pesoGramos) {
                 nombreItem += ` (${it.pesoGramos}g)`;
             }
-            itemsHtml += `<div class="item"><span>${nombreItem} x${it.cantidad||1}</span><span>$${(it.total || 0).toLocaleString('es-CO')}</span></div>`;
+            const totalItem = it.total || (it.precio * it.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombreItem} x${it.cantidad || 1}</span><span>$${totalItem.toLocaleString('es-CO')}</span></div>`;
         });
     }
+    
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
         const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
-    } else { badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`; }
+    } else {
+        badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
+    }
     
-    // ===== NOMBRE DE TIENDA CORREGIDO =====
-    const nombreTienda = tiendasCache[tiendaId]?.nombre || 'EyMotoComidas';
+    const totalPedido = p.total || 0;
     
     const card = document.createElement('div');
     card.className = `pedido-card ${cfg.ring}`;
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
-        <div class="pedido-titulo">🛵 ${p.numeroPedido || 'NUEVO PEDIDO'}</div>
+        <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -3452,7 +3493,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
         <div class="pedido-items">
             <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
             ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-            <div class="pedido-total"><span>TOTAL</span><span class="val">$${(p.total || 0).toLocaleString('es-CO')}</span></div>
+            <div class="pedido-total"><span>TOTAL</span><span class="val">$${totalPedido.toLocaleString('es-CO')}</span></div>
         </div>
         <div class="accion-btns">
             ${estado === 'Pendiente' ? `<button class="btn-cook" onclick="window.cambiarEstado('${tiendaId}','${pid}','En Cocina')">👨‍🍳 Enviar a cocina</button>` : ''}
@@ -3882,6 +3923,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✏️ Edición de pedidos en tiempo real activada');
     console.log('🔐 Autenticación corregida con verificación de usuario');
     console.log('📱 WhatsApp corregido para notificar al cliente');
+    console.log('📅 Fecha y hora corregidas en los pedidos');
 });
 </script>
 </body>
