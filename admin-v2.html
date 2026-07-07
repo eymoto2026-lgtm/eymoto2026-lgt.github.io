@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1279,7 +1279,7 @@ function reproducirSonidoAlarma() {
 }
 
 // ============================================================
-// NOTIFICAR NUEVO PEDIDO (CORREGIDO)
+// NOTIFICAR NUEVO PEDIDO
 // ============================================================
 function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId) {
     if (pedidosNotificados.has(pedidoId)) return;
@@ -2386,7 +2386,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - CON ESTADOS DINÁMICOS (CORREGIDO)
+// PEDIDOS - CON ESTADOS DINÁMICOS (CORREGIDO - ADMIN SIEMPRE PUEDE AVANZAR)
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2490,6 +2490,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const metodoPago = p.metodoPago || 'efectivo';
     const estadoPago = p.estadoPago || 'pendiente';
     const totalPedido = p.total || 0;
+    const tieneMensajero = p.mensajeroId ? true : false;
     
     let itemsHtml = '';
     if (p.items && p.items.length > 0) {
@@ -2516,8 +2517,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     
-    // Botón para avanzar (ADMIN SIEMPRE PUEDE)
-    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado') {
+    // BOTÓN PARA AVANZAR (SIEMPRE DISPONIBLE PARA ADMIN)
+    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2536,25 +2537,25 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         </button>`;
     }
     
-    // Botón retroceder
+    // BOTÓN RETROCEDER (SIEMPRE DISPONIBLE PARA ADMIN)
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado') {
+    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
             ↩️ ${estadoAnterior}
         </button>`;
     }
     
-    // Botón cancelar
+    // BOTÓN CANCELAR (SIEMPRE DISPONIBLE PARA ADMIN)
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // Botón editar - SOLO si NO tiene mensajero asignado
-    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && !p.mensajeroId) {
+    // BOTÓN EDITAR (SOLO SI NO TIENE MENSAJERO)
+    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && !tieneMensajero) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
-    // Botones finales
+    // BOTONES FINALES
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2573,7 +2574,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const ringClass = obtenerColorClase(estado, tipoNegocio);
     
     let mensajeroInfo = '';
-    if (p.mensajeroId) {
+    if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
     }
@@ -2683,6 +2684,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
     const tipoNegocio = tienda.tipoNegocio || 'restaurante';
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
+    const tieneMensajero = p.mensajeroId ? true : false;
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
     
@@ -2730,7 +2732,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     
-    if (siguienteEstado && !esUltimo && estado !== 'Cancelado') {
+    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2747,7 +2749,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && !p.mensajeroId) {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && !tieneMensajero) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
@@ -2759,7 +2761,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
     }
     
     let mensajeroInfo = '';
-    if (p.mensajeroId) {
+    if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
     }
@@ -2818,9 +2820,6 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
             toast('⚠️ Este pedido ya está finalizado', 'warn');
             return;
         }
-        
-        // ADMIN PUEDE AVANZAR EL PEDIDO AUNQUE TENGA MENSAJERO
-        // Solo se bloquea la edición, no el avance
         
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
@@ -2885,7 +2884,7 @@ async function eliminarPedido(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// ESCUCHA GLOBAL DE TIENDAS (CORREGIDO PARA SONIDO)
+// ESCUCHA GLOBAL DE TIENDAS
 // ============================================================
 function iniciarEscuchaGlobal() {
     if (escuchaGlobalActiva) return;
@@ -2944,10 +2943,8 @@ function iniciarEscuchaGlobal() {
 }
 
 // ============================================================
-// FACTURAS, EDICIÓN DE PEDIDOS Y DEMÁS FUNCIONES...
-// ============================================================
-// (Las funciones de facturas, editar pedido, cargar estado, etc.
-//  se mantienen igual que en tu código original)
+// FACTURAS Y DEMÁS FUNCIONES...
+// (Mantener igual que en tu código original)
 // ============================================================
 
 // ============================================================
