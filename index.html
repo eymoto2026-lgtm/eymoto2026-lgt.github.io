@@ -1278,32 +1278,19 @@
         const auth = firebase.auth();
 
         // ============================================================
-        // ===== SOLUCIÓN PARA APPCREATOR =====
+        // ===== CONFIGURACIÓN - CAMBIA ESTO =====
         // ============================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        let TIENDA_ID = urlParams.get('tienda');
         
-        if (!TIENDA_ID) {
-            TIENDA_ID = localStorage.getItem('tiendaId');
-            if (TIENDA_ID) {
-                console.log('📌 Tienda ID cargado desde localStorage:', TIENDA_ID);
-            }
-        }
+        // 1. El ID de tu tienda en Firestore - ¡CAMBIA ESTO POR EL ID REAL DE TU TIENDA!
+        // Para obtenerlo: ve a Firebase Console → Firestore → Colección "tiendas" → Copia el ID del documento
+        const TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
         
-        if (!TIENDA_ID) {
-            TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
-            localStorage.setItem('tiendaId', TIENDA_ID);
-            console.log('📌 Usando tienda ID por defecto (AppCreator):', TIENDA_ID);
-        } else {
-            localStorage.setItem('tiendaId', TIENDA_ID);
-            console.log('📌 Tienda ID desde URL:', TIENDA_ID);
-        }
-
-        if (!TIENDA_ID) {
-            mostrarToast('⚠️ No se especificó una tienda', 'error');
-        }
-
-        console.log('🏪 Tienda ID final:', TIENDA_ID);
+        // 2. Tu número de WhatsApp con código de país (57 para Colombia)
+        // Número real: 3169934516 → Formato internacional: 573164043436
+        const WHATSAPP_TIENDA = '573164043436';
+        
+        console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('📱 WhatsApp:', WHATSAPP_TIENDA);
 
         // ============================================================
         // GLOBALS
@@ -1322,59 +1309,40 @@
         let pesosSeleccionados = {};
 
         // ============================================================
-        // AUTENTICACIÓN ANÓNIMA - VERSIÓN CORREGIDA
+        // AUTENTICACIÓN POR EMAIL (MÁS CONFIABLE)
         // ============================================================
         async function autenticarCliente() {
             try {
-                // Si ya hay un usuario autenticado, usarlo
                 if (auth.currentUser) {
                     console.log('✅ Usuario ya autenticado:', auth.currentUser.uid);
                     clienteAutenticado = auth.currentUser;
                     return auth.currentUser;
                 }
                 
-                // Intentar autenticación anónima
+                // Credenciales fijas - siempre las mismas para todos los clientes
+                const EMAIL = 'cliente_eymoto@email.com';
+                const PASSWORD = 'Cliente2026!';
+                
                 try {
-                    const result = await auth.signInAnonymously();
-                    console.log('✅ Cliente autenticado anónimamente:', result.user.uid);
+                    const result = await auth.signInWithEmailAndPassword(EMAIL, PASSWORD);
+                    console.log('✅ Cliente autenticado con email:', result.user.uid);
                     clienteAutenticado = result.user;
                     return result.user;
-                } catch (authError) {
-                    console.error('❌ Error en autenticación anónima:', authError);
-                    
-                    // Si falla, intentar con credenciales por defecto
-                    try {
-                        const email = 'cliente_eymoto@email.com';
-                        const password = 'Cliente2026!';
-                        
-                        const result = await auth.signInWithEmailAndPassword(email, password);
-                        console.log('✅ Cliente autenticado con email por defecto:', result.user.uid);
+                } catch (error) {
+                    if (error.code === 'auth/user-not-found') {
+                        // Crear usuario si no existe
+                        const result = await auth.createUserWithEmailAndPassword(EMAIL, PASSWORD);
+                        console.log('✅ Usuario cliente creado:', result.user.uid);
                         clienteAutenticado = result.user;
                         return result.user;
-                    } catch (emailError) {
-                        if (emailError.code === 'auth/user-not-found') {
-                            // Crear usuario si no existe
-                            const email = 'cliente_eymoto@email.com';
-                            const password = 'Cliente2026!';
-                            const result = await auth.createUserWithEmailAndPassword(email, password);
-                            console.log('✅ Usuario cliente creado:', result.user.uid);
-                            clienteAutenticado = result.user;
-                            return result.user;
-                        }
-                        throw emailError;
                     }
+                    throw error;
                 }
             } catch (error) {
                 console.error('❌ Error al autenticar:', error);
-                
-                // Último recurso: ID temporal
+                // Si todo falla, usar un ID temporal
                 const tempId = 'temp_' + Date.now();
-                console.log('⚠️ Usando ID temporal:', tempId);
-                clienteAutenticado = { 
-                    uid: tempId, 
-                    isAnonymous: true,
-                    getIdToken: () => Promise.resolve(null)
-                };
+                clienteAutenticado = { uid: tempId };
                 return clienteAutenticado;
             }
         }
@@ -2503,10 +2471,10 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - VERSIÓN CORREGIDA CON RETRY
+        // ENVIAR PEDIDO - CON TU NÚMERO DE WHATSAPP REAL
         // ============================================================
         async function enviarPedido() {
-            // ===== 1. AUTENTICAR CLIENTE =====
+            // Autenticar
             const user = await autenticarCliente();
             
             if (!user) {
@@ -2585,7 +2553,6 @@
                 };
             });
 
-            // ===== 2. OBTENER UID REAL =====
             let uidCliente = user.uid;
             
             if (uidCliente && uidCliente.startsWith('temp_')) {
@@ -2599,7 +2566,6 @@
                 }
             }
 
-            // ===== 3. PREPARAR DATOS DEL PEDIDO =====
             const pedidoData = {
                 numeroPedido: numeroPedido,
                 cliente: {
@@ -2630,7 +2596,7 @@
                 pedidoData.email = user.email;
             }
 
-            // ===== 4. ACTUALIZAR STOCK =====
+            // Actualizar stock
             try {
                 const batch = db.batch();
                 const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -2657,7 +2623,7 @@
                 console.error('❌ Error al actualizar stock:', error);
             }
 
-            // ===== 5. GUARDAR PEDIDO CON RETRY =====
+            // Guardar pedido con retry
             try {
                 let guardado = false;
                 let intentos = 0;
@@ -2704,7 +2670,9 @@
                 return;
             }
 
-            // ===== 6. ENVIAR WHATSAPP =====
+            // ===== ENVIAR WHATSAPP CON TU NÚMERO REAL =====
+            const telefonoWhatsApp = WHATSAPP_TIENDA; // 573164043436
+            
             const emojiTienda = '🏪';
             const emojiPedido = '🛵';
             const emojiFecha = '📅';
@@ -2757,13 +2725,13 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            const telefonoWhatsApp = tiendaData.whatsapp || '573164043436';
+            // Abrir WhatsApp con tu número
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-
-            mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
             window.open(urlWhatsApp, '_blank');
 
-            // ===== 7. LIMPIAR CARRITO =====
+            mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
+
+            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -2982,8 +2950,9 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
         console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
-        console.log('🔐 Autenticación corregida con fallbacks');
+        console.log('🔐 Autenticación por email activada');
     </script>
 </body>
 </html>
