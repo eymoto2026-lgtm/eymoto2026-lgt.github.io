@@ -189,7 +189,6 @@ header .spacer{flex:1}
 .btn-speaker{background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 14px;border-radius:var(--radius);font-size:13px;cursor:pointer;width:auto;white-space:nowrap;}
 .btn-speaker:hover{background:var(--surface2)}
 
-/* MODAL EDITAR PEDIDO */
 .modal-editar-pedido{
     display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;justify-content:center;align-items:center;padding:20px;
 }
@@ -822,7 +821,7 @@ const TIPOS_NEGOCIO = {
         colores: ['yellow', 'purple', 'orange', 'green']
     },
     'tienda': {
-        label: '🛒 Tienda',
+        label: '🛒 Tienda / Supermercado',
         estados: ['Pendiente', 'Preparando pedido', 'En camino', 'Entregado'],
         colores: ['yellow', 'blue', 'orange', 'green']
     },
@@ -870,8 +869,7 @@ function getColorEstadoNegocio(tipo, estado) {
     if (!config) return 'border';
     const index = config.estados.indexOf(estado);
     if (index === -1) return 'border';
-    const color = config.colores[index] || 'border';
-    return color;
+    return config.colores[index] || 'border';
 }
 
 function getSiguienteEstado(tipo, estadoActual) {
@@ -895,17 +893,14 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
     
-    // Si el estado es Cancelado
     if (estado === 'Cancelado') {
         return { columna: 'col-E', contador: 'Cancelado' };
     }
     
-    // Si el estado no está en la lista, usar Pendiente
     if (estadoIndex === -1) {
         return { columna: 'col-P', contador: 'Pendiente' };
     }
     
-    // Mapear según el índice
     switch(estadoIndex) {
         case 0: return { columna: 'col-P', contador: 'Pendiente' };
         case 1: return { columna: 'col-C', contador: 'En Cocina' };
@@ -980,6 +975,46 @@ function toast(msg, type = 'info', dur = 4000, onClick = null) {
 }
 
 // ============================================================
+// FUNCIÓN PARA CARGAR TIENDAS EN EL FILTRO (CORREGIDA)
+// ============================================================
+async function cargarTiendasEnFiltro() {
+    const selector = document.getElementById('filtroTienda');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
+    
+    try {
+        const snap = await db.collection('tiendas').get();
+        
+        if (snap.empty) {
+            console.log('⚠️ No hay tiendas disponibles');
+            return;
+        }
+        
+        snap.forEach(doc => {
+            const t = doc.data();
+            const id = doc.id;
+            const nombre = t.nombre || id;
+            const tipo = t.tipoNegocio || 'restaurante';
+            const icono = TIPOS_NEGOCIO[tipo]?.label?.split(' ')[0] || '🏪';
+            
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${icono} ${nombre}`;
+            selector.appendChild(option);
+        });
+        
+        console.log(`✅ ${snap.size} tiendas cargadas en el filtro`);
+        return snap.size;
+        
+    } catch (error) {
+        console.error('❌ Error al cargar tiendas en el filtro:', error);
+        toast('❌ Error al cargar tiendas', 'error');
+        return 0;
+    }
+}
+
+// ============================================================
 // AUTENTICACIÓN Y ROLES
 // ============================================================
 async function verificarRolUsuario() {
@@ -1028,16 +1063,38 @@ async function inicializarPanel() {
             document.getElementById('tabBtnTiendas').style.display = 'flex';
             document.getElementById('btnCrearNegocioContainer').style.display = 'block';
             cargarPreferenciaSonido();
-            cargarTiendasSuperAdmin();
-            cargarSelectsTiendas();
+            
+            // ===== CARGAR TODAS LAS TIENDAS =====
+            await cargarTiendasSuperAdmin();
+            await cargarSelectsTiendas();
+            await cargarTiendasEnFiltro();
+            
         } else if (rolUsuario === 'admin') {
             rolLabel.textContent = '🏪 Administrador de tienda';
             rolLabel.style.color = 'var(--green)';
             document.getElementById('panelTitulo').textContent = 'Panel de Administración';
             document.getElementById('tabBtnTiendas').style.display = 'none';
             document.getElementById('btnCrearNegocioContainer').style.display = 'none';
-            cargarTiendaUnica(tiendaIdUsuario);
-            cargarSelectsTiendasUnico(tiendaIdUsuario);
+            
+            await cargarTiendaUnica(tiendaIdUsuario);
+            await cargarSelectsTiendasUnico(tiendaIdUsuario);
+            
+            // Cargar solo su tienda en el filtro
+            const selector = document.getElementById('filtroTienda');
+            if (selector && tiendaIdUsuario) {
+                try {
+                    const doc = await db.collection('tiendas').doc(tiendaIdUsuario).get();
+                    if (doc.exists) {
+                        const t = doc.data();
+                        selector.innerHTML = `
+                            <option value="">🌐 Todas las tiendas</option>
+                            <option value="${tiendaIdUsuario}" selected>🏪 ${t.nombre || tiendaIdUsuario}</option>
+                        `;
+                    }
+                } catch(e) {
+                    console.warn('Error cargando tienda del admin:', e);
+                }
+            }
         } else {
             toast('⛔ No tienes permisos de administrador', 'error');
             setTimeout(() => {
@@ -1046,10 +1103,12 @@ async function inicializarPanel() {
             }, 2000);
             return;
         }
+        
         setTimeout(activarAudioAutomatico, 1000);
         iniciarEscuchaGlobal();
         cargarProductosParaEdicion();
         toast('✅ Panel cargado correctamente', 'success', 2000);
+        
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -1383,6 +1442,7 @@ async function guardarTienda() {
         cancelarEdTienda();
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
+        cargarTiendasEnFiltro();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
@@ -1393,6 +1453,7 @@ async function eliminarTienda(id) {
         toast('✅ Tienda eliminada.', 'success');
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
+        cargarTiendasEnFiltro();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
@@ -1437,6 +1498,8 @@ async function cargarTiendasSuperAdmin() {
         });
         lista.innerHTML = html;
         setTimeout(mostrarResumenNotificaciones, 100);
+        // Actualizar también el filtro
+        await cargarTiendasEnFiltro();
     } catch (error) {
         lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar tiendas.</p>';
     }
@@ -1588,6 +1651,7 @@ async function crearNegocioCompleto() {
         cerrarModalCrearNegocio();
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
+        cargarTiendasEnFiltro();
         document.getElementById('nuevoNegocioNombre').value = '';
         document.getElementById('nuevoNegocioWhatsapp').value = '';
         document.getElementById('nuevoNegocioWhatsapp2').value = '';
@@ -2288,7 +2352,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - NUEVA VERSIÓN CON ESTADOS DINÁMICOS
+// PEDIDOS - CON ESTADOS DINÁMICOS
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2314,7 +2378,6 @@ function escucharPedidosDeTienda(tiendaId) {
             const tipoNegocio = tienda.tipoNegocio || 'restaurante';
             const estadosNegocio = getEstadosNegocio(tipoNegocio);
             
-            // Inicializar contadores para todos los estados posibles
             const counts = {};
             estadosNegocio.forEach(e => { counts[e] = 0; });
             counts['Cancelado'] = 0;
@@ -2323,13 +2386,11 @@ function escucharPedidosDeTienda(tiendaId) {
                 renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio); 
             });
             
-            // Actualizar contadores de las columnas
             document.getElementById('cnt-P').textContent = counts[estadosNegocio[0]] || 0;
             document.getElementById('cnt-C').textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
             document.getElementById('cnt-M').textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
             document.getElementById('cnt-E').textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
             
-            // Actualizar estadísticas
             document.getElementById('statP').textContent = counts[estadosNegocio[0]] || 0;
             document.getElementById('statC').textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
             document.getElementById('statM').textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
@@ -2358,10 +2419,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const tipoNegocio = tienda.tipoNegocio || 'restaurante';
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     
-    // Determinar columna y contador
     const { columna, contador } = obtenerColumnaYContador(estado, tipoNegocio);
     
-    // Actualizar contador
     if (counts[estado] !== undefined) {
         counts[estado]++;
     } else if (estado === 'Cancelado') {
@@ -2371,7 +2430,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const colEl = document.getElementById(columna);
     if (!colEl) return;
     
-    // Fecha
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
         try {
@@ -2392,7 +2450,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const estadoPago = p.estadoPago || 'pendiente';
     const totalPedido = p.total || 0;
     
-    // Items
     let itemsHtml = '';
     if (p.items && p.items.length > 0) {
         p.items.forEach(it => {
@@ -2403,7 +2460,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         });
     }
     
-    // Badge pago
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -2413,7 +2469,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // Acciones
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
@@ -2438,7 +2493,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         </button>`;
     }
     
-    // Botón retroceder
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
     if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
@@ -2461,7 +2515,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         }
     }
     
-    // Botones de pago
     let btnPago = '';
     if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
         btnPago = `
@@ -2470,7 +2523,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         `;
     }
     
-    // Color de la tarjeta
     const ringClass = obtenerColorClase(estado, tipoNegocio);
     
     const card = document.createElement('div');
@@ -2499,13 +2551,9 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     colEl.appendChild(card);
 }
 
-// ============================================================
-// MOSTRAR PEDIDOS GLOBALES CON ESTADOS DINÁMICOS
-// ============================================================
 function mostrarPedidosPendientesGlobal() {
     resetKanban();
     
-    // Inicializar contadores
     const counts = {
         'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0
     };
@@ -2527,7 +2575,6 @@ function mostrarPedidosPendientesGlobal() {
                 renderPedidoGlobalEnColumna(pedido.doc, tiendaId, colEl);
             }
             
-            // Actualizar contadores
             if (estado === 'Cancelado') {
                 counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
             } else if (estadosNegocio.indexOf(estado) === 0) {
@@ -2542,13 +2589,11 @@ function mostrarPedidosPendientesGlobal() {
         });
     });
     
-    // Actualizar contadores
     Object.entries({ 'Pendiente':'cnt-P', 'En Cocina':'cnt-C', 'En Camino':'cnt-M', 'Entregado':'cnt-E' }).forEach(([estado, id]) => {
         const el = document.getElementById(id);
         if (el) el.textContent = counts[estado] || 0;
     });
     
-    // Mostrar mensajes de vacío
     ['col-P','col-C','col-M','col-E'].forEach(colId => {
         const el = document.getElementById(colId);
         if (el && el.children.length === 0) {
@@ -2563,7 +2608,6 @@ function mostrarPedidosPendientesGlobal() {
         }
     });
     
-    // Actualizar estadísticas
     document.getElementById('statP').textContent = counts['Pendiente'] || 0;
     document.getElementById('statC').textContent = counts['En Cocina'] || 0;
     document.getElementById('statM').textContent = counts['En Camino'] || 0;
@@ -2580,11 +2624,8 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     
-    const esCancelado = estado === 'Cancelado';
-    const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const ringClass = obtenerColorClase(estado, tipoNegocio);
     
-    // Fecha
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
         try {
@@ -2624,7 +2665,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // Acciones
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
@@ -2835,7 +2875,6 @@ function generarFactura(tiendaId, pedidoId) {
     const metodoPago = pedido.metodoPago || 'efectivo';
     const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : metodoPago === 'daviplata' ? 'Daviplata' : 'Efectivo';
     
-    // Crear una ventana emergente para la factura
     const ventana = window.open('', '_blank', 'width=500,height=600');
     ventana.document.write(`
         <html>
@@ -3209,7 +3248,6 @@ async function cargarEstado() {
                 </div>
             </div>
         `;
-        // Cargar conteos de pedidos
         const snap = await db.collection('tiendas').doc(tid).collection('pedidos').get();
         let counts = {};
         estados.forEach(e => counts[e] = 0);
@@ -3300,11 +3338,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Panel de administración cargado correctamente');
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
-    console.log('📋 Tipos de negocio configurados:');
-    Object.keys(TIPOS_NEGOCIO).forEach(key => {
-        const config = TIPOS_NEGOCIO[key];
-        console.log(`   ${config.label}: ${config.estados.join(' → ')}`);
-    });
 });
 </script>
 </body>
