@@ -232,7 +232,7 @@
         .producto-card.agotado {
             opacity: 0.65;
             border-color: #FF3D00;
-            background: #1a1a1a;
+            background: #fafafa;
         }
         .producto-card.agotado .producto-nombre {
             color: #888;
@@ -1278,16 +1278,17 @@
         const auth = firebase.auth();
 
         // ============================================================
-        // ===== CONFIGURACIÓN =====
+        // ===== CONFIGURACIÓN - TIENDA ID DINÁMICO =====
         // ============================================================
         
-        // ID de tu tienda en Firestore
-        const TIENDA_ID = 'XCkKIiYidzVh0z7Nk4Op';
+        // Obtener el ID de la tienda desde la URL (?tienda=ID)
+        const params = new URLSearchParams(window.location.search);
+        const TIENDA_ID = params.get('tienda') || 'XCkKIiYidzVh0z7Nk4Op';
         
-        // Número de WhatsApp de la tienda (formato internacional: 57 + 3169934516)
-        const WHATSAPP_TIENDA = '573169934516';
+        // Número de WhatsApp de la tienda (se cargará desde Firestore)
+        let WHATSAPP_TIENDA = '573169934516';
         
-        console.log('🏪 Tienda ID:', TIENDA_ID);
+        console.log('🏪 Tienda ID desde URL:', TIENDA_ID);
         console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
 
         // ============================================================
@@ -1473,18 +1474,19 @@
         }
 
         // ============================================================
-        // VERIFICAR ESCANEO ACTIVADO
+        // CARGAR NÚMERO DE WHATSAPP DESDE FIRESTORE
         // ============================================================
-        async function verificarEscaneoActivado() {
-            if (!TIENDA_ID) return false;
+        async function cargarNumeroWhatsApp() {
+            if (!TIENDA_ID) return;
             try {
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
-                if (!doc.exists) return false;
-                const t = doc.data();
-                return t.barcodeScanningEnabled !== false;
-            } catch(e) {
-                console.error('Error al verificar escaneo:', e);
-                return false;
+                if (doc.exists) {
+                    const data = doc.data();
+                    WHATSAPP_TIENDA = data.whatsapp || '573169934516';
+                    console.log('📱 WhatsApp cargado:', WHATSAPP_TIENDA);
+                }
+            } catch (e) {
+                console.error('Error cargando WhatsApp:', e);
             }
         }
 
@@ -1809,11 +1811,28 @@
         function onScanError(err) {}
 
         // ============================================================
+        // VERIFICAR ESCANEO ACTIVADO
+        // ============================================================
+        async function verificarEscaneoActivado() {
+            if (!TIENDA_ID) return false;
+            try {
+                const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
+                if (!doc.exists) return false;
+                const t = doc.data();
+                return t.barcodeScanningEnabled !== false;
+            } catch(e) {
+                console.error('Error al verificar escaneo:', e);
+                return false;
+            }
+        }
+
+        // ============================================================
         // CARGAR TIENDA
         // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) {
                 mostrarToast('⚠️ No se especificó una tienda', 'error');
+                document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                 return;
             }
             try {
@@ -1823,6 +1842,10 @@
                     document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
                     document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
 
+                    // Cargar WhatsApp
+                    WHATSAPP_TIENDA = tiendaData.whatsapp || '573169934516';
+
+                    // Banner
                     const bannerEl = document.getElementById('bannerHeader');
                     const bannerPlaceholder = document.getElementById('bannerPlaceholder');
                     if (tiendaData.banner && tiendaData.banner.trim() !== '') {
@@ -1854,6 +1877,7 @@
                         }
                     }
 
+                    // Logo
                     const logoEl = document.getElementById('logoHeader');
                     const logoPlaceholder = document.getElementById('logoPlaceholder');
                     if (tiendaData.logo && tiendaData.logo.trim() !== '') {
@@ -1894,6 +1918,7 @@
                     
                     console.log('📷 Escaneo activado:', escaneoActivado);
                     console.log('📷 Botón QR:', escaneoActivado ? 'VISIBLE ✅' : 'OCULTO ❌');
+                    console.log('📱 WhatsApp cargado:', WHATSAPP_TIENDA);
                 } else {
                     document.getElementById('nombreTiendaHeader').textContent = 'Tienda no encontrada';
                     mostrarToast('⚠️ Tienda no encontrada. Verifica el ID.', 'error');
@@ -2465,10 +2490,9 @@
         }
 
         // ============================================================
-        // ENVIAR PEDIDO - CON NÚMERO REAL: +57 3169934516
+        // ENVIAR PEDIDO - CON NÚMERO REAL DE LA TIENDA
         // ============================================================
         async function enviarPedido() {
-            // Autenticar
             const user = await autenticarCliente();
             
             if (!user) {
@@ -2617,7 +2641,7 @@
                 console.error('❌ Error al actualizar stock:', error);
             }
 
-            // Guardar pedido con retry
+            // Guardar pedido
             try {
                 let guardado = false;
                 let intentos = 0;
@@ -2664,8 +2688,7 @@
                 return;
             }
 
-            // ===== ENVIAR WHATSAPP AL NÚMERO REAL: +57 3169934516 =====
-            // FORMATO INTERNACIONAL: 573169934516
+            // ===== ENVIAR WHATSAPP AL NÚMERO REAL DE LA TIENDA =====
             const telefonoWhatsApp = WHATSAPP_TIENDA;
             
             const emojiTienda = '🏪';
@@ -2682,7 +2705,9 @@
             const emojiTotal = '💰';
             const emojiPago = '💳';
 
-            let mensajeWhatsApp = `${emojiTienda} *${tiendaData.nombre || 'EYMOTOCOMIDAS'}*\n\n`;
+            const nombreTienda = tiendaData.nombre || 'EYMOTOCOMIDAS';
+
+            let mensajeWhatsApp = `${emojiTienda} *${nombreTienda}*\n\n`;
             mensajeWhatsApp += `${emojiPedido} *NUEVO PEDIDO ${numeroPedido}*\n\n`;
             mensajeWhatsApp += `${emojiFecha} *Fecha:* ${fechaStr}\n`;
             mensajeWhatsApp += `${emojiHora} *Hora:* ${horaStr}\n\n`;
@@ -2707,8 +2732,8 @@
             if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
                 const nombreMetodo = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
                 const numeroPago = metodoPago === 'nequi' 
-                    ? (tiendaData.nequi || '3169934516') 
-                    : (tiendaData.daviplata || '3169934516');
+                    ? (tiendaData.nequi || telefonoWhatsApp) 
+                    : (tiendaData.daviplata || telefonoWhatsApp);
                 
                 mensajeWhatsApp += `\n\n📲 *INSTRUCCIONES DE PAGO*`;
                 mensajeWhatsApp += `\n1. Abre tu app de ${nombreMetodo}`;
@@ -2720,7 +2745,6 @@
                 mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
             }
 
-            // Abrir WhatsApp con tu número real
             const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
             console.log('📱 Abriendo WhatsApp con número:', telefonoWhatsApp);
             window.open(urlWhatsApp, '_blank');
@@ -2915,7 +2939,11 @@
         // INICIALIZAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Iniciando menú digital...');
+            console.log('🏪 Tienda ID:', TIENDA_ID);
+            
             await autenticarCliente();
+            await cargarNumeroWhatsApp();
             await cargarTienda();
             await cargarProductos();
 
@@ -2946,8 +2974,8 @@
 
         console.log('✅ Menú EyMotoComidas cargado correctamente');
         console.log('🏪 Tienda ID:', TIENDA_ID);
-        console.log('📱 WhatsApp tienda (real):', WHATSAPP_TIENDA);
-        console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
+        console.log('📱 WhatsApp tienda (cargado desde Firestore):', WHATSAPP_TIENDA);
+        console.log('⚖️ Soporte para productos por peso activado');
         console.log('🔐 Autenticación por email activada');
     </script>
 </body>
