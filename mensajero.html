@@ -2,20 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Mensajeros - EyMoto</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>EyMoto - Panel Mensajero</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; }
+        body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
             --yellow: #FFD600;
             --yellow-dim: #e6c200;
@@ -26,6 +17,7 @@
             --red: #FF3D00;
             --red-bg: rgba(255,61,0,0.12);
             --orange: #FF6900;
+            --orange-bg: rgba(255,105,0,0.12);
             --surface: #141414;
             --surface2: #1e1e1e;
             --surface3: #252525;
@@ -34,7 +26,7 @@
             --text-muted: #888;
             --radius: 10px;
         }
-        input, select, textarea, button {
+        input, select, button {
             font-family: inherit;
             font-size: 14px;
             border-radius: var(--radius);
@@ -91,10 +83,18 @@
         }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
+        .header-badge {
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 10px;
+            display: none;
+        }
 
         .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
 
-        /* ===== LOGIN ===== */
         #loginBox {
             max-width: 420px;
             margin: 60px auto;
@@ -117,7 +117,6 @@
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* ===== ESTADÍSTICAS ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -135,96 +134,105 @@
         .stat-card.c-yellow .val { color: var(--yellow); }
         .stat-card.c-green .val { color: var(--green); }
         .stat-card.c-blue .val { color: var(--blue); }
+        .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-red .val { color: var(--red); }
 
-        /* ===== FORMULARIO CREAR MENSAJERO ===== */
-        .form-crear {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .form-crear .titulo {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .form-crear .row2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .form-crear .acciones {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        /* ===== LISTA DE MENSAJEROS ===== */
-        .mensajero-card {
+        .pedido-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .pedido-card:hover { border-color: var(--yellow); }
+        .pedido-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            transition: border-color 0.3s;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
         }
-        .mensajero-card:hover { border-color: var(--yellow); }
-        .mensajero-card .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--surface3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
+        .pedido-card .header .numero {
+            font-size: 16px;
+            font-weight: 800;
             color: var(--yellow);
-            flex-shrink: 0;
-            border: 2px solid var(--border);
         }
-        .mensajero-card .info {
-            flex: 1;
-            min-width: 150px;
-        }
-        .mensajero-card .info .nombre {
-            font-size: 15px;
-            font-weight: 700;
-        }
-        .mensajero-card .info .email {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .mensajero-card .info .meta {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .mensajero-card .estado {
+        .pedido-card .header .estado-badge {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
         }
-        .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
-        .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
-        .mensajero-card .acciones {
+        .estado-badge.pendiente { background: var(--yellow-bg); color: var(--yellow); }
+        .estado-badge.en-camino { background: var(--orange-bg); color: var(--orange); }
+        .estado-badge.entregado { background: var(--green-bg); color: var(--green); }
+        .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
+        .estado-badge.cancelado { background: var(--red-bg); color: var(--red); }
+
+        .pedido-card .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .pedido-card .info-grid .label { color: var(--text-muted); }
+        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
+
+        .pedido-card .items-list {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        .pedido-card .items-list .item {
             display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .pedido-card .items-list .item:last-child { border-bottom: none; }
+
+        .pedido-card .total {
+            font-size: 16px;
+            font-weight: 800;
+            text-align: right;
+            color: var(--green);
+            margin-top: 6px;
         }
 
-        /* ===== TOAST ===== */
+        .pedido-card .acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .pedido-card .acciones button {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .filtros select, .filtros input {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filtros button { flex: 0 0 auto; width: auto; }
+
         #toastWrap {
             position: fixed;
             top: 16px;
@@ -264,7 +272,6 @@
             to { opacity: 0; transform: translateX(20px); }
         }
 
-        /* ===== MODAL ===== */
         .modal {
             display: none;
             position: fixed;
@@ -306,7 +313,6 @@
             cursor: pointer;
         }
         .modal .modal-close:hover { color: var(--red); }
-
         .modal .info-row {
             display: flex;
             justify-content: space-between;
@@ -317,27 +323,26 @@
         .modal .info-row .label { color: var(--text-muted); }
         .modal .info-row .value { color: #fff; font-weight: 500; }
 
-        /* ===== FILTROS ===== */
-        .filtros {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        .mapa-simulado {
             background: var(--surface2);
-            padding: 16px;
             border-radius: 12px;
+            padding: 20px;
+            text-align: center;
             border: 1px solid var(--border);
+            margin: 12px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .filtros select, .filtros input {
-            flex: 1;
-            min-width: 150px;
-        }
-        .filtros button { flex: 0 0 auto; width: auto; }
+        .mapa-simulado .icono { font-size: 48px; margin-bottom: 8px; }
+        .mapa-simulado .texto { color: var(--text-muted); font-size: 13px; }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .form-crear .row2 { grid-template-columns: 1fr; }
-            .mensajero-card { flex-direction: column; align-items: stretch; }
+            .pedido-card .info-grid { grid-template-columns: 1fr; }
+            .filtros select, .filtros input { min-width: 100px; }
         }
     </style>
 </head>
@@ -345,109 +350,75 @@
 
 <div id="toastWrap"></div>
 
-<!-- ===== LOGIN ===== -->
 <div id="loginBox">
     <div class="login-logo"><span class="brand">EyMoto</span></div>
-    <h2>Admin Mensajeros</h2>
-    <p class="sub">Gestiona tu equipo de repartidores</p>
-    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="admin@eymoto.com"></div>
+    <h2>Panel de Mensajero</h2>
+    <p class="sub">Gestiona tus entregas en tiempo real</p>
+    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="mensajero@eymoto.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
     <button onclick="iniciarSesion()">Ingresar</button>
     <p id="loginMsg"></p>
 </div>
 
-<!-- ===== PANEL ===== -->
 <div id="panel" class="hidden">
     <header>
         <span class="brand">EyMoto</span>
-        <h1>Administración de Mensajeros</h1>
+        <h1>Panel de Mensajero</h1>
         <span class="spacer"></span>
-        <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span id="nombreMensajero" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span class="header-badge" id="headerBadge">0</span>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
     <div class="wrap">
-        <!-- ESTADÍSTICAS -->
         <div class="stats-grid">
-            <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
-            <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Mensajeros inactivos</div></div>
-            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pedidos pendientes</div></div>
-            <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pendientes</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
+            <div class="stat-card c-orange"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+            <div class="stat-card c-green"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados hoy</div></div>
         </div>
 
-        <!-- FORMULARIO CREAR MENSAJERO -->
-        <div class="form-crear">
-            <div class="titulo">➕ Crear nuevo mensajero</div>
-            <div class="row2">
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label>
-                    <input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label>
-                    <input id="nuevoNombre" placeholder="Carlos Pérez">
-                </div>
-            </div>
-            <div class="row2">
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label>
-                    <input id="nuevoTelefono" placeholder="3169934516">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label>
-                    <input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!">
-                </div>
-            </div>
-            <div class="acciones">
-                <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
-                <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
-                ⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.
-            </div>
-        </div>
-
-        <!-- FILTROS -->
         <div class="filtros">
-            <select id="filtroEstado" onchange="filtrarMensajeros()">
-                <option value="">📋 Todos</option>
-                <option value="activo">🟢 Activos</option>
-                <option value="inactivo">🔴 Inactivos</option>
+            <select id="filtroEstado" onchange="filtrarPedidos()">
+                <option value="">📋 Todos los estados</option>
+                <option value="Pendiente">⏳ Pendiente</option>
+                <option value="Asignado">👤 Asignado</option>
+                <option value="En camino">🛵 En camino</option>
+                <option value="Entregado">✅ Entregado</option>
+                <option value="Cancelado">❌ Cancelado</option>
             </select>
-            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
-            <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
+            <select id="filtroTiendaMensajero" onchange="filtrarPedidos()">
+                <option value="">🏪 Todas las tiendas</option>
+            </select>
+            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar cliente o dirección..." oninput="filtrarPedidos()">
+            <button class="btn-info btn-sm" onclick="recargarPedidos()" style="width:auto;">🔄 Recargar</button>
+            <button class="btn-success btn-sm" onclick="alternarModoGPS()" id="btnGPS" style="width:auto;">📍 GPS: OFF</button>
         </div>
 
-        <!-- LISTA DE MENSAJEROS -->
-        <div id="listaMensajeros">
+        <div id="listaPedidos">
             <div style="text-align:center;padding:30px;color:var(--text-muted);">
                 <div style="font-size:32px;margin-bottom:12px;">🛵</div>
-                Cargando mensajeros...
+                Cargando pedidos...
             </div>
         </div>
     </div>
 </div>
 
-<!-- ===== MODAL DETALLE ===== -->
 <div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h3 id="modalTitulo">Detalle del mensajero</h3>
+            <h3 id="modalTitulo">Detalle del pedido</h3>
             <button class="modal-close" onclick="cerrarModal()">✕</button>
         </div>
         <div id="modalContenido"></div>
     </div>
 </div>
 
-<!-- ===== FIREBASE ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-    // ============================================================
-    // CONFIGURACIÓN FIREBASE
-    // ============================================================
     const firebaseConfig = {
         apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
         authDomain: "eymotocomidas.firebaseapp.com",
@@ -460,57 +431,53 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ============================================================
-    // GLOBALS
-    // ============================================================
-    let todosLosMensajeros = [];
-    let mensajerosFiltrados = [];
-    let listenerMensajeros = null;
-    let esSuperAdmin = false;
+    let mensajeroId = null;
+    let todosLosPedidos = [];
+    let pedidosFiltrados = [];
+    let modoGPS = false;
+    let watchId = null;
+    let ubicacionActual = null;
+    let tiendasCache = {};
+    let listenerPedidos = null;
 
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
+    async function verificarRolMensajero() {
+        const user = auth.currentUser;
+        if (!user) return null;
+        try {
+            const doc = await db.collection('usuarios').doc(user.uid).get();
+            if (!doc.exists) return null;
+            const data = doc.data();
+            if (data.mensajero === true || data.rol === 'mensajero') {
+                return { uid: user.uid, ...data };
+            }
+            return null;
+        } catch (e) { return null; }
+    }
+
     function iniciarSesion() {
         const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('password').value;
         const msg = document.getElementById('loginMsg');
         msg.textContent = '';
-
-        if (!email || !pass) {
-            msg.textContent = '❌ Completa todos los campos.';
-            return;
-        }
-
+        if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
         auth.signInWithEmailAndPassword(email, pass)
             .then(async (userCredential) => {
                 const user = userCredential.user;
                 const doc = await db.collection('usuarios').doc(user.uid).get();
-                if (!doc.exists) {
-                    await auth.signOut();
-                    msg.textContent = '⛔ Usuario no registrado.';
-                    return;
-                }
+                if (!doc.exists) { await auth.signOut(); msg.textContent = '⛔ Usuario no registrado como mensajero.'; return; }
                 const data = doc.data();
-                if (data.admin !== true && data.superAdmin !== true) {
-                    await auth.signOut();
-                    msg.textContent = '⛔ No tienes permisos de administrador.';
-                    return;
-                }
-                esSuperAdmin = true;
+                if (data.mensajero !== true) { await auth.signOut(); msg.textContent = '⛔ No tienes permisos de mensajero.'; return; }
+                if (data.activo === false) { await auth.signOut(); msg.textContent = '⛔ Tu cuenta está desactivada. Contacta al administrador.'; return; }
                 document.getElementById('loginBox').classList.add('hidden');
                 document.getElementById('panel').classList.remove('hidden');
-                document.getElementById('adminUser').textContent = '👑 ' + (data.nombre || email);
                 await inicializarPanel();
             })
-            .catch(e => {
-                msg.textContent = '❌ Credenciales incorrectas.';
-                console.error('Login error:', e);
-            });
+            .catch(e => { msg.textContent = '❌ Credenciales incorrectas.'; console.error(e); });
     }
 
     function logout() {
-        if (listenerMensajeros) listenerMensajeros();
+        if (listenerPedidos) listenerPedidos();
+        if (watchId) navigator.geolocation.clearWatch(watchId);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -525,152 +492,169 @@
         } else {
             document.getElementById('loginBox').classList.remove('hidden');
             document.getElementById('panel').classList.add('hidden');
+            if (watchId) navigator.geolocation.clearWatch(watchId);
         }
     });
 
-    // ============================================================
-    // INICIALIZAR PANEL
-    // ============================================================
     async function inicializarPanel() {
-        await cargarMensajeros();
-        await cargarEstadisticasPedidos();
+        const info = await verificarRolMensajero();
+        if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
+        mensajeroId = info.uid;
+        document.getElementById('nombreMensajero').textContent = '🛵 ' + (info.nombre || 'Mensajero');
+        await cargarTiendas();
+        await cargarSelectTiendas();
+        await escucharPedidos();
+        iniciarGPS();
+        toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
-    // ============================================================
-    // CARGAR MENSAJEROS
-    // ============================================================
-    function cargarMensajeros() {
-        if (listenerMensajeros) listenerMensajeros();
+    async function cargarTiendas() {
+        try {
+            const snap = await db.collection('tiendas').get();
+            snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
+        } catch (e) { console.error(e); }
+    }
 
-        listenerMensajeros = db.collection('usuarios')
-            .where('mensajero', '==', true)
-            .onSnapshot(snap => {
-                todosLosMensajeros = [];
+    async function cargarSelectTiendas() {
+        const sel = document.getElementById('filtroTiendaMensajero');
+        sel.innerHTML = '<option value="">🏪 Todas las tiendas</option>';
+        try {
+            const snap = await db.collection('tiendas').get();
+            snap.forEach(doc => {
+                const t = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.textContent = t.nombre || doc.id;
+                sel.appendChild(opt);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    function escucharPedidos() {
+        if (listenerPedidos) listenerPedidos();
+        const tiendasIds = Object.keys(tiendasCache);
+        if (tiendasIds.length === 0) {
+            document.getElementById('listaPedidos').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🏪</div>No hay tiendas disponibles</div>`;
+            return;
+        }
+        let pedidosAcumulados = {};
+        tiendasIds.forEach(tiendaId => {
+            const unsubscribe = db.collection('tiendas').doc(tiendaId).collection('pedidos').orderBy('fecha', 'desc').onSnapshot(snap => {
+                pedidosAcumulados[tiendaId] = [];
                 snap.forEach(doc => {
                     const data = doc.data();
-                    todosLosMensajeros.push({
-                        uid: doc.id,
-                        ...data
-                    });
+                    pedidosAcumulados[tiendaId].push({ id: doc.id, tiendaId: tiendaId, ...data });
                 });
-                filtrarMensajeros();
+                todosLosPedidos = [];
+                Object.values(pedidosAcumulados).forEach(lista => { todosLosPedidos = todosLosPedidos.concat(lista); });
+                todosLosPedidos.sort((a, b) => {
+                    const fa = a.fecha?.toDate?.() || new Date(a.fecha);
+                    const fb = b.fecha?.toDate?.() || new Date(b.fecha);
+                    return fb - fa;
+                });
+                filtrarPedidos();
                 actualizarEstadisticas();
-            }, err => {
-                console.error('Error cargando mensajeros:', err);
-                toast('❌ Error al cargar mensajeros', 'error');
-            });
+            }, err => { console.error('Error en tienda:', err); });
+            if (!window._listenersMensajero) window._listenersMensajero = [];
+            window._listenersMensajero.push(unsubscribe);
+        });
     }
 
-    // ============================================================
-    // FILTRAR MENSAJEROS
-    // ============================================================
-    function filtrarMensajeros() {
+    function filtrarPedidos() {
         const estado = document.getElementById('filtroEstado').value;
+        const tiendaId = document.getElementById('filtroTiendaMensajero').value;
         const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
-
-        mensajerosFiltrados = todosLosMensajeros.filter(m => {
-            if (estado) {
-                const activo = m.activo !== false;
-                if (estado === 'activo' && !activo) return false;
-                if (estado === 'inactivo' && activo) return false;
-            }
+        pedidosFiltrados = todosLosPedidos.filter(p => {
+            if (estado && p.estado !== estado) return false;
+            if (tiendaId && p.tiendaId !== tiendaId) return false;
             if (busqueda) {
-                const nombre = (m.nombre || '').toLowerCase();
-                const email = (m.email || '').toLowerCase();
-                if (!nombre.includes(busqueda) && !email.includes(busqueda)) return false;
+                const cliente = p.cliente || {};
+                const nombre = (cliente.nombre || '').toLowerCase();
+                const direccion = (cliente.direccion || '').toLowerCase();
+                if (!nombre.includes(busqueda) && !direccion.includes(busqueda)) return false;
             }
             return true;
         });
-
-        renderizarMensajeros();
+        renderizarPedidos();
+        actualizarEstadisticas();
     }
 
-    function recargarMensajeros() {
-        filtrarMensajeros();
-        toast('🔄 Mensajeros recargados', 'info', 1500);
-    }
+    function recargarPedidos() { filtrarPedidos(); toast('🔄 Pedidos recargados', 'info', 1500); }
 
-    // ============================================================
-    // RENDERIZAR MENSAJEROS
-    // ============================================================
-    function renderizarMensajeros() {
-        const container = document.getElementById('listaMensajeros');
-
-        if (mensajerosFiltrados.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center;padding:40px;color:var(--text-muted);">
-                    <div style="font-size:48px;margin-bottom:16px;">📭</div>
-                    <p style="font-size:16px;">No hay mensajeros que coincidan con los filtros</p>
-                </div>
-            `;
+    function renderizarPedidos() {
+        const container = document.getElementById('listaPedidos');
+        if (pedidosFiltrados.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No hay pedidos que coincidan con los filtros</p></div>`;
             return;
         }
-
         let html = '';
-        mensajerosFiltrados.forEach(m => {
-            const activo = m.activo !== false;
-            const iniciales = (m.nombre || m.email || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-
+        pedidosFiltrados.forEach(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const nombreTienda = tienda.nombre || 'Tienda';
+            const cliente = p.cliente || {};
+            const estadoBadge = getEstadoBadge(p.estado);
+            const total = p.total || 0;
+            const fechaStr = formatearFecha(p.fecha);
+            let itemsHtml = '';
+            if (p.items && p.items.length > 0) {
+                p.items.slice(0, 3).forEach(item => {
+                    let nombreItem = item.nombre || 'Producto';
+                    if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+                    itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${(item.total || item.precio * item.cantidad || 0).toLocaleString('es-CO')}</span></div>`;
+                });
+                if (p.items.length > 3) itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
+            }
+            const esMio = p.mensajeroId === mensajeroId;
             html += `
-                <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
-                    <div class="avatar">${iniciales}</div>
-                    <div class="info">
-                        <div class="nombre">${m.nombre || 'Sin nombre'}</div>
-                        <div class="email">📧 ${m.email || 'Sin email'}</div>
-                        <div class="meta">${m.telefono ? '📱 ' + m.telefono : ''} ${m.creadoEn ? ' | 📅 ' + formatearFecha(m.creadoEn) : ''}</div>
+                <div class="pedido-card" style="${esMio ? 'border-color:var(--yellow);border-width:2px;' : ''}">
+                    <div class="header">
+                        <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                        <span class="estado-badge ${p.estado?.toLowerCase() || 'pendiente'}">${p.estado || 'Pendiente'}</span>
                     </div>
-                    <span class="estado ${activo ? 'activo' : 'inactivo'}">${activo ? '🟢 Activo' : '🔴 Inactivo'}</span>
-                    <div class="acciones">
-                        <button class="btn-info btn-sm" onclick="verDetalle('${m.uid}')">📋 Ver</button>
-                        ${activo ? 
-                            `<button class="btn-danger btn-sm" onclick="toggleMensajero('${m.uid}', false)">🔴 Desactivar</button>` :
-                            `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', true)">🟢 Activar</button>`
-                        }
-                        <button class="btn-danger btn-sm" onclick="eliminarMensajero('${m.uid}')">🗑️ Eliminar</button>
+                    <div class="info-grid">
+                        <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
+                        <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
+                        <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                        <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
+                        <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
+                        <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
                     </div>
+                    ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
+                    <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
+                    <div class="acciones">${renderizarAcciones(p)}</div>
                 </div>
             `;
         });
-
         container.innerHTML = html;
+        actualizarHeaderBadge();
     }
 
-    // ============================================================
-    // ESTADÍSTICAS
-    // ============================================================
-    function actualizarEstadisticas() {
-        const activos = todosLosMensajeros.filter(m => m.activo !== false).length;
-        const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
-        document.getElementById('statActivos').textContent = activos;
-        document.getElementById('statInactivos').textContent = inactivos;
-    }
-
-    async function cargarEstadisticasPedidos() {
-        try {
-            // Contar pedidos pendientes y en camino de todas las tiendas
-            let pendientes = 0;
-            let enCamino = 0;
-            
-            const tiendasSnap = await db.collection('tiendas').get();
-            for (const tiendaDoc of tiendasSnap.docs) {
-                const pedidosSnap = await db.collection('tiendas')
-                    .doc(tiendaDoc.id)
-                    .collection('pedidos')
-                    .where('estado', 'in', ['Pendiente', 'En camino'])
-                    .get();
-                
-                pedidosSnap.forEach(doc => {
-                    const data = doc.data();
-                    if (data.estado === 'Pendiente') pendientes++;
-                    if (data.estado === 'En camino') enCamino++;
-                });
-            }
-            
-            document.getElementById('statPendientes').textContent = pendientes;
-            document.getElementById('statEnCamino').textContent = enCamino;
-        } catch (e) {
-            console.error('Error cargando estadísticas de pedidos:', e);
+    function renderizarAcciones(pedido) {
+        const estado = pedido.estado || 'Pendiente';
+        const esMio = pedido.mensajeroId === mensajeroId;
+        let html = '';
+        html += `<button class="btn-info btn-sm" onclick="verDetalle('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>`;
+        if (estado === 'Pendiente' && !pedido.mensajeroId) {
+            html += `<button class="btn-success btn-sm" onclick="asignarPedido('${pedido.id}','${pedido.tiendaId}')">👤 Tomar pedido</button>`;
         }
+        if (esMio && estado === 'Asignado') {
+            html += `<button class="btn-info btn-sm" onclick="iniciarEntrega('${pedido.id}','${pedido.tiendaId}')">🛵 Iniciar entrega</button>`;
+        }
+        if (esMio && estado === 'En camino') {
+            html += `<button class="btn-success btn-sm" onclick="entregarPedido('${pedido.id}','${pedido.tiendaId}')">✅ Entregar</button>`;
+            if (modoGPS) {
+                html += `<button class="btn-info btn-sm" onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')">📍 Enviar ubicación</button>`;
+            }
+        }
+        if (esMio && estado === 'Entregado') {
+            html += `<span style="color:var(--green);font-size:12px;padding:8px;">✅ Entregado</span>`;
+        }
+        return html;
+    }
+
+    function getEstadoBadge(estado) {
+        const map = { 'Pendiente': 'pendiente', 'Asignado': 'asignado', 'En camino': 'en-camino', 'Entregado': 'entregado', 'Cancelado': 'cancelado' };
+        return map[estado] || 'pendiente';
     }
 
     function formatearFecha(fecha) {
@@ -680,140 +664,106 @@
             if (fecha.toDate) d = fecha.toDate();
             else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
             else d = new Date(fecha);
-            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
         } catch (e) { return '--/--/--'; }
     }
 
-    // ============================================================
-    // CREAR MENSAJERO
-    // ============================================================
-    async function crearMensajero() {
-        const email = document.getElementById('nuevoEmail').value.trim();
-        const nombre = document.getElementById('nuevoNombre').value.trim();
-        const telefono = document.getElementById('nuevoTelefono').value.trim();
-        const password = document.getElementById('nuevoPassword').value.trim();
+    function actualizarEstadisticas() {
+        const pendientes = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
+        const asignados = todosLosPedidos.filter(p => p.estado === 'Asignado' && p.mensajeroId === mensajeroId).length;
+        const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' && p.mensajeroId === mensajeroId).length;
+        const entregados = todosLosPedidos.filter(p => p.estado === 'Entregado' && p.mensajeroId === mensajeroId).length;
+        document.getElementById('statPendientes').textContent = pendientes;
+        document.getElementById('statAsignados').textContent = asignados;
+        document.getElementById('statEnCamino').textContent = enCamino;
+        document.getElementById('statEntregados').textContent = entregados;
+        actualizarHeaderBadge();
+    }
 
-        if (!email) { toast('⚠️ Ingresa el Gmail del mensajero', 'error'); return; }
-        if (!nombre) { toast('⚠️ Ingresa el nombre del mensajero', 'error'); return; }
-        if (!password || password.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+    function actualizarHeaderBadge() {
+        const total = todosLosPedidos.filter(p => p.estado === 'Pendiente' && !p.mensajeroId).length;
+        const badge = document.getElementById('headerBadge');
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'inline-block' : 'none';
+    }
 
+    async function asignarPedido(pedidoId, tiendaId) {
         try {
-            toast('⏳ Creando mensajero...', 'info');
-
-            // 1. Crear usuario en Firebase Auth
-            const result = await auth.createUserWithEmailAndPassword(email, password);
-            const uid = result.user.uid;
-
-            // 2. Guardar en Firestore
-            await db.collection('usuarios').doc(uid).set({
-                email: email,
-                nombre: nombre,
-                telefono: telefono || '',
-                mensajero: true,
-                rol: 'mensajero',
-                activo: true,
-                creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                mensajeroId: mensajeroId, estado: 'Asignado', fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            // 3. Enviar email de verificación
-            await result.user.sendEmailVerification();
-
-            toast(`✅ Mensajero "${nombre}" creado exitosamente`, 'success', 5000);
-            limpiarFormulario();
-            filtrarMensajeros();
-            actualizarEstadisticas();
-
-        } catch (error) {
-            console.error('Error al crear mensajero:', error);
-            if (error.code === 'auth/email-already-in-use') {
-                toast('⚠️ Este email ya está registrado. Usa otro Gmail.', 'error');
-            } else {
-                toast('❌ Error: ' + error.message, 'error');
-            }
-        }
+            toast('✅ Pedido asignado correctamente', 'success');
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
     }
 
-    function limpiarFormulario() {
-        document.getElementById('nuevoEmail').value = '';
-        document.getElementById('nuevoNombre').value = '';
-        document.getElementById('nuevoTelefono').value = '';
-        document.getElementById('nuevoPassword').value = 'Mensajero2026!';
-    }
-
-    // ============================================================
-    // GESTIÓN DE MENSAJEROS
-    // ============================================================
-    async function toggleMensajero(uid, activo) {
-        const estado = activo ? 'activar' : 'desactivar';
-        if (!confirm(`¿${estado === 'activar' ? 'Activar' : 'Desactivar'} este mensajero?`)) return;
-
+    async function iniciarEntrega(pedidoId, tiendaId) {
         try {
-            await db.collection('usuarios').doc(uid).update({
-                activo: activo,
-                [`${activo ? 'activado' : 'desactivado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
+            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                estado: 'En camino', fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
             });
-            toast(`✅ Mensajero ${activo ? 'activado' : 'desactivado'}`, 'success');
-            filtrarMensajeros();
-            actualizarEstadisticas();
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
+            toast('🛵 Pedido en camino', 'success');
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
     }
 
-    async function eliminarMensajero(uid) {
-        if (!confirm('⚠️ ¿Eliminar este mensajero permanentemente? Esta acción no se puede deshacer.')) return;
-        if (!confirm('¿Estás seguro? Se eliminará de Autenticación y Firestore.')) return;
-
+    async function entregarPedido(pedidoId, tiendaId) {
         try {
-            // Eliminar de Firestore
-            await db.collection('usuarios').doc(uid).delete();
-            
-            // Eliminar de Authentication
-            const user = auth.currentUser;
-            if (user && user.uid !== uid) {
-                // Nota: Para eliminar otro usuario necesitas permisos de admin
-                // En Firebase, solo se puede eliminar el usuario actual
-                // Se recomienda hacerlo desde Firebase Console
-                toast('⚠️ Elimina el usuario de Authentication desde Firebase Console', 'warn', 5000);
-            }
-            
-            toast('✅ Mensajero eliminado de Firestore', 'success');
-            filtrarMensajeros();
-            actualizarEstadisticas();
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
+            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                estado: 'Entregado', fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('✅ Pedido entregado correctamente', 'success');
+            if (modoGPS) toast('📍 Ubicación de entrega registrada', 'info', 2000);
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
     }
 
-    // ============================================================
-    // DETALLE DEL MENSAJERO (MODAL)
-    // ============================================================
-    function verDetalle(uid) {
-        const mensajero = todosLosMensajeros.find(m => m.uid === uid);
-        if (!mensajero) {
-            toast('⚠️ Mensajero no encontrado', 'error');
-            return;
-        }
+    async function enviarUbicacion(pedidoId, tiendaId) {
+        if (!ubicacionActual) { toast('📍 Esperando ubicación...', 'warn', 2000); return; }
+        try {
+            await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                ubicacionMensajero: ubicacionActual, ultimaUbicacion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('📍 Ubicación enviada al cliente', 'success');
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+    }
 
-        const activo = mensajero.activo !== false;
-
+    function verDetalle(pedidoId, tiendaId) {
+        const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+        if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        const tienda = tiendasCache[pedido.tiendaId] || {};
+        const cliente = pedido.cliente || {};
         let html = `
-            <div class="info-row"><span class="label">👤 Nombre</span><span class="value">${mensajero.nombre || 'Sin nombre'}</span></div>
-            <div class="info-row"><span class="label">📧 Email</span><span class="value">${mensajero.email || 'Sin email'}</span></div>
-            <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${mensajero.telefono || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? 'var(--green)' : 'var(--red)'}">${activo ? '🟢 Activo' : '🔴 Inactivo'}</span></div>
-            <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
-            <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
+            <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'Tienda'}</span></div>
+            <div class="info-row"><span class="label">🧾 Pedido</span><span class="value">${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</span></div>
+            <div class="info-row"><span class="label">📅 Fecha</span><span class="value">${formatearFecha(pedido.fecha)}</span></div>
+            <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:var(--yellow);">${pedido.estado || 'Pendiente'}</span></div>
+            <div class="info-row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${cliente.telefono || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">🏘️ Barrio</span><span class="value">${cliente.barrio || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+            <div class="info-row"><span class="label">📝 Observaciones</span><span class="value">${cliente.observaciones || 'Ninguna'}</span></div>
         `;
-
-        if (mensajero.activadoEn) {
-            html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
+        if (pedido.items && pedido.items.length > 0) {
+            html += `<div style="margin-top:12px;"><strong>🧾 Productos</strong>`;
+            pedido.items.forEach(item => {
+                let nombreItem = item.nombre || 'Producto';
+                if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+                const subtotal = item.total || (item.precio * item.cantidad) || 0;
+                html += `<div class="info-row"><span class="value">${nombreItem} x${item.cantidad || 1}</span><span class="value" style="color:var(--green);">$${subtotal.toLocaleString('es-CO')}</span></div>`;
+            });
+            html += `</div>`;
         }
-        if (mensajero.desactivadoEn) {
-            html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
-        }
-
-        document.getElementById('modalTitulo').textContent = `📋 ${mensajero.nombre || 'Mensajero'}`;
+        html += `
+            <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--yellow);">
+                <div class="info-row"><span style="font-weight:700;">💰 TOTAL</span><span style="font-weight:800;color:var(--green);font-size:18px;">$${(pedido.total || 0).toLocaleString('es-CO')}</span></div>
+            </div>
+            <div class="mapa-simulado">
+                <div class="icono">📍</div>
+                <div class="texto">${cliente.direccion || 'Dirección no especificada'}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${pedido.estado === 'En camino' ? '🛵 Mensajero en camino' : pedido.estado === 'Entregado' ? '✅ Pedido entregado' : '⏳ Esperando asignación'}</div>
+                ${pedido.mensajeroId === mensajeroId && pedido.estado === 'En camino' ? `<button onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')" class="btn-info btn-sm" style="margin-top:8px;width:auto;">📍 Enviar mi ubicación</button>` : ''}
+            </div>
+        `;
+        document.getElementById('modalTitulo').textContent = `📋 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
         document.getElementById('modalContenido').innerHTML = html;
         document.getElementById('modalDetalle').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -825,9 +775,43 @@
         document.body.style.overflow = '';
     }
 
-    // ============================================================
-    // TOAST
-    // ============================================================
+    function iniciarGPS() {
+        if (!navigator.geolocation) {
+            document.getElementById('btnGPS').textContent = '📍 GPS: No soportado';
+            document.getElementById('btnGPS').style.opacity = '0.5';
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(pos => {
+            ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            console.log('📍 Ubicación obtenida:', ubicacionActual);
+        }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    function alternarModoGPS() {
+        modoGPS = !modoGPS;
+        const btn = document.getElementById('btnGPS');
+        if (modoGPS) {
+            btn.textContent = '📍 GPS: ON';
+            btn.style.background = 'var(--green)';
+            btn.style.color = '#fff';
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(pos => {
+                ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                if (modoGPS) {
+                    const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'En camino');
+                    misPedidos.forEach(p => enviarUbicacion(p.id, p.tiendaId));
+                }
+            }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 5000 });
+            toast('📍 GPS activado - Ubicación compartida automáticamente', 'success', 3000);
+        } else {
+            btn.textContent = '📍 GPS: OFF';
+            btn.style.background = '';
+            btn.style.color = '';
+            if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+            toast('📍 GPS desactivado', 'info', 2000);
+        }
+    }
+
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
@@ -835,29 +819,22 @@
         el.className = `toast t-${type}`;
         el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
         wrap.appendChild(el);
-        setTimeout(() => {
-            el.classList.add('toast-fade');
-            setTimeout(() => el.remove(), 350);
-        }, dur);
+        setTimeout(() => { el.classList.add('toast-fade'); setTimeout(() => el.remove(), 350); }, dur);
         return el;
     }
 
-    // ============================================================
-    // EXPONER FUNCIONES
-    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
-    window.crearMensajero = crearMensajero;
-    window.limpiarFormulario = limpiarFormulario;
-    window.filtrarMensajeros = filtrarMensajeros;
-    window.recargarMensajeros = recargarMensajeros;
-    window.toggleMensajero = toggleMensajero;
-    window.eliminarMensajero = eliminarMensajero;
+    window.filtrarPedidos = filtrarPedidos;
+    window.recargarPedidos = recargarPedidos;
+    window.asignarPedido = asignarPedido;
+    window.iniciarEntrega = iniciarEntrega;
+    window.entregarPedido = entregarPedido;
+    window.enviarUbicacion = enviarUbicacion;
     window.verDetalle = verDetalle;
     window.cerrarModal = cerrarModal;
+    window.alternarModoGPS = alternarModoGPS;
     window.toast = toast;
-
-    console.log('👑 Admin de Mensajeros cargado correctamente');
 </script>
 </body>
 </html>
