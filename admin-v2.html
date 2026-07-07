@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1019,7 +1019,6 @@ function generarFactura(tiendaId, pedidoId) {
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const whatsapp = tienda.whatsapp || '';
-    const logo = tienda.logo || '';
     
     let total = 0;
     let itemsHtml = '';
@@ -1060,6 +1059,10 @@ function generarFactura(tiendaId, pedidoId) {
     const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : metodoPago === 'daviplata' ? 'Daviplata' : 'Efectivo';
     
     const ventana = window.open('', '_blank', 'width=500,height=600');
+    if (!ventana) {
+        toast('⚠️ Permite ventanas emergentes para ver la factura', 'warn');
+        return;
+    }
     ventana.document.write(`
         <html>
         <head><title>Factura ${numeroFactura}</title>
@@ -2521,7 +2524,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - CON ESTADOS DINÁMICOS (CORREGIDO)
+// PEDIDOS - ADMIN SOLO PUEDE AVANZAR Y CANCELAR (NO TOMAR)
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2646,13 +2649,13 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES CORREGIDAS - ADMIN SIEMPRE PUEDE AVANZAR =====
+    // ===== ACCIONES - ADMIN SOLO PUEDE AVANZAR Y CANCELAR =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     
-    // BOTÓN PARA AVANZAR (SIEMPRE DISPONIBLE PARA ADMIN)
+    // 1. ADMIN PUEDE AVANZAR (SIEMPRE, excepto si ya está en el último estado)
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2660,37 +2663,24 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         else if (labelLower.includes('camino')) iconoSiguiente = '🛵';
         else if (labelLower.includes('despacho')) iconoSiguiente = '📦';
         else if (labelLower.includes('preparando')) iconoSiguiente = '⏳';
-        else if (labelLower.includes('asignado')) iconoSiguiente = '👤';
-        else if (labelLower.includes('recogido')) iconoSiguiente = '📦';
-        else if (labelLower.includes('cortando')) iconoSiguiente = '🔪';
-        else if (labelLower.includes('horneando')) iconoSiguiente = '🔥';
-        else if (labelLower.includes('arreglando')) iconoSiguiente = '🌸';
         else iconoSiguiente = '✅';
         
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
+        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
             ${iconoSiguiente} ${siguienteEstado}
         </button>`;
     }
     
-    // BOTÓN RETROCEDER (SIEMPRE DISPONIBLE PARA ADMIN)
-    const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
-            ↩️ ${estadoAnterior}
-        </button>`;
-    }
-    
-    // BOTÓN CANCELAR (SIEMPRE DISPONIBLE PARA ADMIN)
+    // 2. ADMIN PUEDE CANCELAR (SIEMPRE)
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
-        acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // BOTÓN EDITAR (SOLO SI NO TIENE MENSAJERO)
+    // 3. ADMIN PUEDE EDITAR (SOLO SI NO TIENE MENSAJERO)
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && !tieneMensajero) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
-    // BOTONES FINALES
+    // 4. ADMIN PUEDE VER FACTURA (SOLO SI ESTÁ ENTREGADO O CANCELADO)
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2698,21 +2688,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         }
     }
     
-    let btnPago = '';
-    if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente') {
-        btnPago = `
-            <button class="btn-pago-confirmar" onclick="window.confirmarPago('${tiendaId}','${pid}')">✅ Confirmar pago</button>
-            <button class="btn-pago-rechazar" onclick="window.rechazarPago('${tiendaId}','${pid}')">✕ Rechazar pago</button>
-        `;
-    }
-    
-    const ringClass = obtenerColorClase(estado, tipoNegocio);
-    
+    // ===== MOSTRAR INFORMACIÓN DEL MENSAJERO (SOLO LECTURA) =====
     let mensajeroInfo = '';
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
     }
+    
+    const ringClass = obtenerColorClase(estado, tipoNegocio);
     
     const card = document.createElement('div');
     card.className = `pedido-card ${ringClass}`;
@@ -2757,7 +2740,6 @@ function mostrarPedidosPendientesGlobal() {
         pedidos.forEach(pedido => {
             const data = pedido.data;
             const estado = data.estado || estadosNegocio[0] || 'Pendiente';
-            const tieneMensajero = data.mensajeroId ? true : false;
             
             if (estado === 'Entregado' || estado === 'Cancelado') {
                 detenerAlarmaGlobal(pedido.id);
@@ -2876,13 +2858,13 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         else if (labelLower.includes('despacho')) iconoSiguiente = '📦';
         else iconoSiguiente = '✅';
         
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
+        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
             ${iconoSiguiente} ${siguienteEstado}
         </button>`;
     }
     
     if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado') {
-        acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
     if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && !tieneMensajero) {
@@ -2936,9 +2918,9 @@ function resetKanban() {
 }
 
 // ============================================================
-// ACCIONES DE PEDIDOS (SOLO ADMIN)
+// ADMIN CAMBIA ESTADO (SOLO ADMIN - NO INTERFIERE CON MENSAJERO)
 // ============================================================
-async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
+async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
         detenerAlarmaGlobal(pedidoId);
         
@@ -2957,6 +2939,8 @@ async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
+        // ADMIN PUEDE CAMBIAR EL ESTADO (incluso si tiene mensajero)
+        // Solo se bloquea la edición, no el avance
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({ 
@@ -3064,6 +3048,7 @@ function iniciarEscuchaGlobal() {
                             const data = change.doc.data();
                             const pedidoId = change.doc.id;
                             
+                            // Si el pedido fue tomado por un mensajero, detener alarma
                             if (data.mensajeroId || data.estado === 'Asignado') {
                                 detenerAlarmaGlobal(pedidoId);
                             }
@@ -3150,7 +3135,6 @@ async function cargarEstado() {
 
 // ============================================================
 // FUNCIONES DE EDICIÓN DE PEDIDOS
-// (Mantener igual que en tu código original)
 // ============================================================
 function abrirEditarPedido(tiendaId, pedidoId) {
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
@@ -3414,7 +3398,7 @@ window.logout = logout;
 window.iniciarSesion = iniciarSesion;
 window.switchTab = switchTab;
 window.cambiarTiendaSeleccionada = cambiarTiendaSeleccionada;
-window.cambiarEstado = cambiarEstado;
+window.cambiarEstadoAdmin = cambiarEstadoAdmin;
 window.confirmarPago = confirmarPago;
 window.rechazarPago = rechazarPago;
 window.eliminarPedido = eliminarPedido;
