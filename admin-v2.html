@@ -50,6 +50,9 @@ button:active{transform:scale(.98)}
 .btn-peso{background:var(--surface3);color:var(--text-muted);border:2px solid var(--border2);padding:10px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;flex:1;text-align:center}
 .btn-peso.active{background:var(--yellow);color:#1a1a2e;border-color:var(--yellow)}
 .btn-peso:hover:not(.active){border-color:var(--yellow);color:#fff}
+.btn-alarma{background:var(--red-bg);color:var(--red);border:1px solid var(--red);width:auto;padding:6px 12px;font-size:12px;border-radius:8px;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-alarma:hover{background:var(--red);color:#fff;}
+.btn-alarma:active{transform:scale(0.95);}
 .hidden{display:none!important}
 label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
 .form-group{margin-bottom:14px}
@@ -503,6 +506,10 @@ header .spacer{flex:1}
     <button id="btnSonidoGlobal" class="btn-speaker btn-sm" onclick="window.toggleSonidoGlobal()" style="width:auto;padding:6px 12px;font-size:12px;border-radius:8px;">
       🔊 Sonido ON
     </button>
+    <!-- ===== BOTÓN SILENCIAR ALARMA ===== -->
+    <button class="btn-alarma" id="btnSilenciarAlarma" onclick="window.detenerAlarmaContinua()" style="display:none;">
+      🔕 Silenciar Alarma
+    </button>
     <span class="header-badge" id="headerBadge">0</span>
     <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
   </header>
@@ -878,7 +885,6 @@ const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.i
 // GLOBALS
 // ============================================================
 let pedidosUnsub = null;
-let alarmInterval = null;
 let audioCtx = null;
 let esInicial = true;
 let pedidosPendientes = new Set();
@@ -892,6 +898,14 @@ let inventarioTiendaActual = '';
 let rolUsuario = null;
 let tiendaIdUsuario = null;
 let sonidoGlobal = true;
+
+// ============================================================
+// VARIABLES PARA ALARMA CONTINUA
+// ============================================================
+let alarmInterval = null;
+let vozActiva = false;
+let pedidosNotificados = new Set();
+let alarmaActiva = false;
 
 // ============================================================
 // VARIABLES DEL SCANNER ADMIN
@@ -1021,7 +1035,6 @@ function iniciarSesion() {
     .then(async (userCredential) => {
       const user = userCredential.user;
       
-      // Verificar que el usuario existe en la colección "usuarios"
       try {
         const doc = await db.collection('usuarios').doc(user.uid).get();
         if (!doc.exists) {
@@ -1049,7 +1062,7 @@ function iniciarSesion() {
 }
 
 function logout() {
-  stopAlarm();
+  detenerAlarmaContinua();
   if (pedidosUnsub) pedidosUnsub();
   Object.keys(listenersTiendas).forEach(key => { if (listenersTiendas[key]) listenersTiendas[key](); });
   listenersTiendas = {};
@@ -1068,9 +1081,105 @@ auth.onAuthStateChanged(user => {
   } else {
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
-    stopAlarm();
+    detenerAlarmaContinua();
   }
 });
+
+// ============================================================
+// ===== ALARMA CONTINUA CON VOZ =====
+// ============================================================
+
+function iniciarAlarmaContinua(nombreTienda, pedidoId) {
+    detenerAlarmaContinua();
+    
+    console.log(`🔔 Alarma activada para: ${nombreTienda} - ${pedidoId}`);
+    alarmaActiva = true;
+    
+    // Mostrar botón de silenciar
+    document.getElementById('btnSilenciarAlarma').style.display = 'inline-block';
+    
+    alarmInterval = setInterval(() => {
+        // Sonido de alerta
+        reproducirSonidoAlarma();
+        
+        // Voz
+        if ('speechSynthesis' in window) {
+            try {
+                window.speechSynthesis.cancel();
+                
+                const mensaje = `Nuevo pedido en ${nombreTienda}`;
+                const utterance = new SpeechSynthesisUtterance(mensaje);
+                utterance.lang = 'es-ES';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                utterance.volume = 1;
+                
+                const voces = window.speechSynthesis.getVoices();
+                const vozEspañol = voces.find(v => v.lang.startsWith('es'));
+                if (vozEspañol) {
+                    utterance.voice = vozEspañol;
+                }
+                
+                window.speechSynthesis.speak(utterance);
+                vozActiva = true;
+            } catch(e) {
+                console.log('🔇 Error con voz:', e);
+            }
+        }
+    }, 3000);
+}
+
+function detenerAlarmaContinua() {
+    if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+        console.log('🔕 Alarma detenida');
+    }
+    
+    if ('speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch(e) {}
+    }
+    vozActiva = false;
+    alarmaActiva = false;
+    
+    document.getElementById('btnSilenciarAlarma').style.display = 'none';
+}
+
+function reproducirSonidoAlarma() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        const frecuencias = [600, 800, 1000];
+        const duracion = 0.12;
+        const pausa = 0.05;
+        
+        frecuencias.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'square';
+            
+            const tiempoInicio = i * (duracion + pausa);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime + tiempoInicio);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + tiempoInicio + duracion);
+            
+            osc.start(ctx.currentTime + tiempoInicio);
+            osc.stop(ctx.currentTime + tiempoInicio + duracion + 0.05);
+        });
+    } catch(e) {
+        console.log('🔇 Error al reproducir sonido:', e);
+    }
+}
+
+function stopAlarm() {
+    detenerAlarmaContinua();
+    toast('🔕 Alarma silenciada', 'info');
+}
 
 // ============================================================
 // VERIFICAR CORREO - MOSTRAR/OCULTAR CONTRASEÑA
@@ -1349,17 +1458,26 @@ function mostrarResumenNotificaciones() {
 }
 
 // ============================================================
-// NOTIFICAR NUEVO PEDIDO
+// NOTIFICAR NUEVO PEDIDO CON ALARMA CONTINUA
 // ============================================================
-function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId) {
+function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId) {
     const tienda = tiendasCache[tiendaId];
     const superAdminActivo = tienda && tienda.notificacionesSuperAdmin !== false;
+    
+    if (pedidosNotificados.has(pedidoId)) {
+        return;
+    }
+    
+    pedidosNotificados.add(pedidoId);
     
     if (superAdminActivo) {
         toast(
             `🛵 Nuevo pedido en ${nombreTienda} de ${cliente} - $${total.toLocaleString('es-CO')}`,
-            'new', 5000
+            'new', 8000
         );
+        
+        // ===== INICIAR ALARMA CONTINUA =====
+        iniciarAlarmaContinua(nombreTienda, pedidoId);
         
         if (sonidoGlobal) {
             reproducirSonidoNotificacion();
@@ -1368,7 +1486,7 @@ function notificarNuevoPedido(nombreTienda, cliente, total, tiendaId) {
 }
 
 // ============================================================
-// SONIDO
+// SONIDO INICIAL (TOAST)
 // ============================================================
 function reproducirSonidoNotificacion() {
     try {
@@ -1764,7 +1882,7 @@ function calcularPrecioPorPeso(producto, gramos) {
 }
 
 // ============================================================
-// ===== ESCÁNER ADMIN - MEJORADO =====
+// ===== ESCÁNER ADMIN =====
 // ============================================================
 function abrirScannerAdmin() {
     const tid = document.getElementById('tiendaProducto').value;
@@ -2113,7 +2231,7 @@ async function buscarInformacionProducto() {
 }
 
 // ============================================================
-// ===== BUSCADOR DE PRODUCTOS - POR NOMBRE O CATEGORÍA =====
+// ===== BUSCADOR DE PRODUCTOS =====
 // ============================================================
 
 function filtrarProductos() {
@@ -2555,12 +2673,6 @@ function probarAltavoz() {
     toast('🔊 Altavoz probado', 'success');
 }
 
-function stopAlarm() {
-    if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
-    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e) {}
-    toast('🔕 Alarma silenciada', 'info');
-}
-
 // ============================================================
 // PEDIDOS
 // ============================================================
@@ -2575,7 +2687,10 @@ function cambiarTiendaSeleccionada() {
 function escucharPedidosDeTienda(tiendaId) {
     if (!tiendaId) return;
     if (pedidosUnsub) { pedidosUnsub(); pedidosUnsub = null; }
-    stopAlarm(); resetKanban(); pedidosPendientes.clear(); esInicial = true;
+    detenerAlarmaContinua(); 
+    resetKanban(); 
+    pedidosPendientes.clear(); 
+    esInicial = true;
     pedidosUnsub = db.collection('tiendas').doc(tiendaId)
         .collection('pedidos')
         .orderBy('fecha', 'desc')
@@ -2596,7 +2711,10 @@ function escucharPedidosDeTienda(tiendaId) {
             const hb = document.getElementById('headerBadge');
             hb.textContent = pend;
             hb.style.display = pend > 0 ? 'inline-block' : 'none';
-            if (counts['Pendiente'] === 0) { stopAlarm(); pedidosPendientes.clear(); }
+            if (counts['Pendiente'] === 0) { 
+                detenerAlarmaContinua(); 
+                pedidosPendientes.clear(); 
+            }
             esInicial = false;
         }, err => { console.error('Firestore error:', err); toast('Error al escuchar pedidos.', 'error'); });
 }
@@ -2696,7 +2814,8 @@ function renderPedido(doc, tiendaId, counts) {
 
 async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
     try {
-        stopAlarm();
+        detenerAlarmaContinua();
+        pedidosNotificados.delete(pedidoId);
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
         toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
@@ -2729,7 +2848,8 @@ async function rechazarPago(tiendaId, pedidoId) {
 async function eliminarPedido(tiendaId, pedidoId) {
     if (!confirm('¿Remover este pedido?')) return;
     try {
-        stopAlarm();
+        detenerAlarmaContinua();
+        pedidosNotificados.delete(pedidoId);
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
         toast('Pedido removido.', 'info');
     } catch(e) { toast('Error: ' + e.message, 'error'); }
@@ -2766,7 +2886,8 @@ function iniciarEscuchaGlobal() {
                                 const cliente = data.cliente?.nombre || 'Cliente';
                                 const total = data.total || 0;
                                 
-                                notificarNuevoPedido(nombreTienda, cliente, total, tiendaId);
+                                // Notificar con alarma continua
+                                notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId);
                             }
                         }
                     });
@@ -2881,7 +3002,7 @@ function renderPedidoGlobal(pedidoDoc, tiendaId, counts) {
 }
 
 // ============================================================
-// ===== SISTEMA DE FACTURACIÓN - CON COLORES CORREGIDOS =====
+// ===== SISTEMA DE FACTURACIÓN =====
 // ============================================================
 
 function obtenerPedidoDeCache(tiendaId, pedidoId) {
@@ -2964,14 +3085,12 @@ function mostrarModalFactura(tiendaId, pedido) {
                     </div>
                 </div>
                 <div id="facturaContenido" style="padding:24px 20px;color:#1a1a2e;">
-                    <!-- HEADER -->
                     <div style="text-align:center;margin-bottom:20px;border-bottom:2px solid #FFD600;padding-bottom:16px;">
                         ${logo ? `<img src="${logo}" alt="${nombreTienda}" style="max-height:60px;margin-bottom:8px;">` : ''}
                         <h2 style="font-size:22px;font-weight:900;color:#1a1a2e;margin:0;">${nombreTienda}</h2>
                         ${whatsapp ? `<p style="font-size:13px;color:#555;margin:2px 0;">📱 ${whatsapp}</p>` : ''}
                     </div>
                     
-                    <!-- INFO PEDIDO -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;color:#1a1a2e;">
                         <div style="color:#1a1a2e;"><strong>🧾 Factura:</strong> ${numeroFactura}</div>
                         <div style="text-align:right;color:#1a1a2e;"><strong>📅 Fecha:</strong> ${fechaStr}</div>
@@ -2979,7 +3098,6 @@ function mostrarModalFactura(tiendaId, pedido) {
                         <div style="text-align:right;color:#1a1a2e;"><strong>🏪 Pedido:</strong> ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</div>
                     </div>
                     
-                    <!-- CLIENTE -->
                     <div style="margin-bottom:16px;font-size:13px;background:#f5f5f5;padding:12px;border-radius:8px;color:#1a1a2e;">
                         <div style="color:#1a1a2e;"><strong>👤 Cliente:</strong> ${nombreCliente}</div>
                         ${telefonoCliente ? `<div style="color:#1a1a2e;"><strong>📱 Teléfono:</strong> ${telefonoCliente}</div>` : ''}
@@ -2989,7 +3107,6 @@ function mostrarModalFactura(tiendaId, pedido) {
                         <div style="color:#1a1a2e;"><strong>💳 Pago:</strong> ${pagoTexto} - ${pagoEstado}</div>
                     </div>
                     
-                    <!-- PRODUCTOS -->
                     <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;color:#1a1a2e;">
                         <thead>
                             <tr style="background:#1a1a2e;color:#ffffff;">
@@ -3010,7 +3127,6 @@ function mostrarModalFactura(tiendaId, pedido) {
                         </tfoot>
                     </table>
                     
-                    <!-- FOOTER -->
                     <div style="text-align:center;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:12px;margin-top:8px;">
                         <p style="color:#555;">¡Gracias por tu compra! 🎉</p>
                         <p style="font-size:10px;color:#999;">Este documento es un comprobante de pago.</p>
@@ -3262,6 +3378,9 @@ window.mostrarModalFactura = mostrarModalFactura;
 window.cargarEstado = cargarEstado;
 window.toggleEstado = toggleEstado;
 window.toggleEscaneoBoton = toggleEscaneoBoton;
+window.detenerAlarmaContinua = detenerAlarmaContinua;
+window.iniciarAlarmaContinua = iniciarAlarmaContinua;
+window.reproducirSonidoAlarma = reproducirSonidoAlarma;
 
 // ============================================================
 // INICIALIZAR
@@ -3280,7 +3399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('⚖️ Soporte para productos por peso con input desde 1g activado');
     console.log('🔍 Búsqueda automática en Open Food Facts para códigos EAN/UPC');
     console.log('🔎 Buscador de productos por nombre o categoría activado');
-    console.log('🧾 Sistema de facturación activado (con colores corregidos)');
+    console.log('🧾 Sistema de facturación activado (colores corregidos)');
+    console.log('🔔 Alarma continua con voz para nuevos pedidos activada');
     console.log('🔐 Autenticación corregida con verificación de usuario');
 });
 </script>
