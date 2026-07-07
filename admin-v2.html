@@ -975,7 +975,38 @@ function toast(msg, type = 'info', dur = 4000, onClick = null) {
 }
 
 // ============================================================
-// FUNCIÓN PARA CARGAR TIENDAS EN EL FILTRO (CORREGIDA)
+// FUNCIÓN PARA DETENER LA ALARMA GLOBALMENTE (CORREGIDO)
+// ============================================================
+function detenerAlarmaGlobal(pedidoId) {
+    // Eliminar el pedido de los notificados
+    if (pedidoId) {
+        pedidosNotificados.delete(pedidoId);
+        notificacionesMostradas.delete(pedidoId);
+    }
+    
+    // Detener el intervalo de sonido
+    if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+    }
+    
+    // Detener voz
+    if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
+    
+    // Desactivar banderas
+    alarmaActiva = false;
+    vozActiva = false;
+    
+    // Ocultar botón de silenciar
+    document.getElementById('btnSilenciarAlarma').style.display = 'none';
+    
+    console.log('🔕 Alarma detenida globalmente', pedidoId ? 'para pedido: ' + pedidoId : '');
+}
+
+// ============================================================
+// FUNCIÓN PARA CARGAR TIENDAS EN EL FILTRO
 // ============================================================
 async function cargarTiendasEnFiltro() {
     const selector = document.getElementById('filtroTienda');
@@ -1028,7 +1059,7 @@ async function verificarRolUsuario() {
         }
         const data = doc.data();
         console.log('📌 Datos del usuario:', data);
-        if (data.admin === true) {
+        if (data.admin === true || data.superAdmin === true) {
             console.log('👑 SUPER ADMIN');
             return { rol: 'superadmin', tiendaId: null };
         }
@@ -1064,7 +1095,6 @@ async function inicializarPanel() {
             document.getElementById('btnCrearNegocioContainer').style.display = 'block';
             cargarPreferenciaSonido();
             
-            // ===== CARGAR TODAS LAS TIENDAS =====
             await cargarTiendasSuperAdmin();
             await cargarSelectsTiendas();
             await cargarTiendasEnFiltro();
@@ -1079,7 +1109,6 @@ async function inicializarPanel() {
             await cargarTiendaUnica(tiendaIdUsuario);
             await cargarSelectsTiendasUnico(tiendaIdUsuario);
             
-            // Cargar solo su tienda en el filtro
             const selector = document.getElementById('filtroTienda');
             if (selector && tiendaIdUsuario) {
                 try {
@@ -1143,7 +1172,8 @@ function iniciarSesion() {
         if (!doc.exists) {
           await db.collection('usuarios').doc(user.uid).set({
             email: email,
-            admin: email === 'eymoto2026@gmail.com',
+            admin: true,
+            superAdmin: true,
             activo: true,
             creadoEn: firebase.firestore.FieldValue.serverTimestamp()
           });
@@ -1165,7 +1195,7 @@ function iniciarSesion() {
 }
 
 function logout() {
-  detenerAlarmaContinua();
+  detenerAlarmaGlobal();
   if (pedidosUnsub) pedidosUnsub();
   Object.keys(listenersTiendas).forEach(key => { if (listenersTiendas[key]) listenersTiendas[key](); });
   listenersTiendas = {};
@@ -1184,20 +1214,25 @@ auth.onAuthStateChanged(user => {
   } else {
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
-    detenerAlarmaContinua();
+    detenerAlarmaGlobal();
   }
 });
 
 // ============================================================
-// ALARMA CONTINUA CON VOZ
+// ALARMA CONTINUA CON VOZ (MODIFICADA PARA DETENERSE)
 // ============================================================
 function iniciarAlarmaContinua(nombreTienda, pedidoId) {
-    detenerAlarmaContinua();
+    detenerAlarmaGlobal();
     console.log(`🔔 Alarma activada para: ${nombreTienda} - ${pedidoId}`);
     alarmaActiva = true;
     document.getElementById('btnSilenciarAlarma').style.display = 'inline-block';
     
     alarmInterval = setInterval(() => {
+        if (!alarmaActiva) {
+            clearInterval(alarmInterval);
+            alarmInterval = null;
+            return;
+        }
         reproducirSonidoAlarma();
         if ('speechSynthesis' in window) {
             try {
@@ -1219,16 +1254,12 @@ function iniciarAlarmaContinua(nombreTienda, pedidoId) {
 }
 
 function detenerAlarmaContinua() {
-    if (alarmInterval) {
-        clearInterval(alarmInterval);
-        alarmInterval = null;
-    }
-    if ('speechSynthesis' in window) {
-        try { window.speechSynthesis.cancel(); } catch(e) {}
-    }
-    vozActiva = false;
-    alarmaActiva = false;
-    document.getElementById('btnSilenciarAlarma').style.display = 'none';
+    detenerAlarmaGlobal();
+}
+
+function stopAlarm() {
+    detenerAlarmaGlobal();
+    toast('🔕 Alarma silenciada', 'info');
 }
 
 function reproducirSonidoAlarma() {
@@ -1252,11 +1283,6 @@ function reproducirSonidoAlarma() {
             osc.stop(ctx.currentTime + tiempoInicio + duracion + 0.05);
         });
     } catch(e) {}
-}
-
-function stopAlarm() {
-    detenerAlarmaContinua();
-    toast('🔕 Alarma silenciada', 'info');
 }
 
 // ============================================================
@@ -1498,7 +1524,6 @@ async function cargarTiendasSuperAdmin() {
         });
         lista.innerHTML = html;
         setTimeout(mostrarResumenNotificaciones, 100);
-        // Actualizar también el filtro
         await cargarTiendasEnFiltro();
     } catch (error) {
         lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar tiendas.</p>';
@@ -2365,7 +2390,7 @@ function cambiarTiendaSeleccionada() {
 function escucharPedidosDeTienda(tiendaId) {
     if (!tiendaId) return;
     if (pedidosUnsub) { pedidosUnsub(); pedidosUnsub = null; }
-    detenerAlarmaContinua(); 
+    detenerAlarmaGlobal();
     resetKanban(); 
     pedidosPendientes.clear(); 
     esInicial = true;
@@ -2381,6 +2406,7 @@ function escucharPedidosDeTienda(tiendaId) {
             const counts = {};
             estadosNegocio.forEach(e => { counts[e] = 0; });
             counts['Cancelado'] = 0;
+            counts['Asignado'] = 0;
             
             snap.forEach(doc => { 
                 renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio); 
@@ -2402,8 +2428,9 @@ function escucharPedidosDeTienda(tiendaId) {
             hb.textContent = pend;
             hb.style.display = pend > 0 ? 'inline-block' : 'none';
             
+            // Si no hay pendientes, detener alarma
             if (counts[estadosNegocio[0]] === 0) { 
-                detenerAlarmaContinua(); 
+                detenerAlarmaGlobal();
                 pedidosPendientes.clear(); 
             }
             esInicial = false;
@@ -2419,12 +2446,19 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const tipoNegocio = tienda.tipoNegocio || 'restaurante';
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     
+    // Si el pedido fue entregado, detener alarma
+    if (estado === 'Entregado' || estado === 'Cancelado') {
+        detenerAlarmaGlobal(pid);
+    }
+    
     const { columna, contador } = obtenerColumnaYContador(estado, tipoNegocio);
     
     if (counts[estado] !== undefined) {
         counts[estado]++;
     } else if (estado === 'Cancelado') {
         counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
+    } else if (estado === 'Asignado') {
+        counts['Asignado'] = (counts['Asignado'] || 0) + 1;
     }
     
     const colEl = document.getElementById(columna);
@@ -2474,7 +2508,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     
-    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado') {
+    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Asignado') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2494,20 +2528,23 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     }
     
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado') {
+    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Asignado') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstado('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
             ↩️ ${estadoAnterior}
         </button>`;
     }
     
-    if (!esUltimoEstado && estado !== 'Cancelado') {
+    // Botón de cancelar (solo admin puede cancelar)
+    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
+    // Botón de editar (solo admin puede editar)
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
+    // Botones para estados finales
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2525,6 +2562,13 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
     
+    // Mostrar quién es el mensajero si está asignado
+    let mensajeroInfo = '';
+    if (p.mensajeroId) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero';
+        mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
+    }
+    
     const card = document.createElement('div');
     card.className = `pedido-card ${ringClass}`;
     card.innerHTML = `
@@ -2532,6 +2576,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio) 
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         <div style="font-size:12px;color:var(--yellow);margin-bottom:6px;">📌 ${estado}</div>
+        ${mensajeroInfo}
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -2555,7 +2600,7 @@ function mostrarPedidosPendientesGlobal() {
     resetKanban();
     
     const counts = {
-        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0
+        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0
     };
     
     Object.keys(todosLosPedidos).forEach(tiendaId => {
@@ -2568,6 +2613,11 @@ function mostrarPedidosPendientesGlobal() {
             const data = pedido.data;
             const estado = data.estado || estadosNegocio[0] || 'Pendiente';
             
+            // Si el pedido fue entregado, detener alarma
+            if (estado === 'Entregado' || estado === 'Cancelado') {
+                detenerAlarmaGlobal(pedido.id);
+            }
+            
             const { columna, contador } = obtenerColumnaYContador(estado, tipoNegocio);
             
             const colEl = document.getElementById(columna);
@@ -2577,6 +2627,8 @@ function mostrarPedidosPendientesGlobal() {
             
             if (estado === 'Cancelado') {
                 counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
+            } else if (estado === 'Asignado') {
+                counts['Asignado'] = (counts['Asignado'] || 0) + 1;
             } else if (estadosNegocio.indexOf(estado) === 0) {
                 counts['Pendiente']++;
             } else if (estadosNegocio.indexOf(estado) === 1) {
@@ -2669,7 +2721,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     
-    if (siguienteEstado && !esUltimo && estado !== 'Cancelado') {
+    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Asignado') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2682,7 +2734,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         </button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado') {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstado('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
@@ -2697,6 +2749,12 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         }
     }
     
+    let mensajeroInfo = '';
+    if (p.mensajeroId) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero';
+        mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
+    }
+    
     const card = document.createElement('div');
     card.className = `pedido-card ${ringClass}`;
     card.innerHTML = `
@@ -2704,6 +2762,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl) {
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
         <div style="font-size:12px;color:var(--yellow);margin-bottom:6px;">📌 ${estado}</div>
+        ${mensajeroInfo}
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -2730,21 +2789,67 @@ function resetKanban() {
 }
 
 // ============================================================
-// ACCIONES DE PEDIDOS
+// ACCIONES DE PEDIDOS (SOLO ADMIN - NO INTERFIERE CON MENSAJERO)
 // ============================================================
 async function cambiarEstado(tiendaId, pedidoId, nuevoEstado) {
     try {
-        detenerAlarmaContinua();
-        pedidosNotificados.delete(pedidoId);
-        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estado: nuevoEstado });
+        // Detener alarma antes de cambiar
+        detenerAlarmaGlobal(pedidoId);
+        
+        // Verificar que el pedido no esté en un estado que impida cambios
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        
+        // Si el pedido ya está entregado o cancelado, no permitir cambios
+        if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
+            toast('⚠️ Este pedido ya está finalizado', 'warn');
+            return;
+        }
+        
+        // Si el pedido está asignado a un mensajero, solo permitir cancelar
+        if (data.mensajeroId && nuevoEstado !== 'Cancelado') {
+            toast('⚠️ Este pedido está asignado a un mensajero. Solo puedes cancelarlo.', 'warn');
+            return;
+        }
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ 
+                estado: nuevoEstado,
+                editadoPor: auth.currentUser?.email || 'Admin',
+                fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        
         toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
-    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+        
+        // Si el estado es final, eliminar de notificaciones
+        if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
+            pedidosNotificados.delete(pedidoId);
+            notificacionesMostradas.delete(pedidoId);
+        }
+        
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+        
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
+    }
 }
 
 async function confirmarPago(tiendaId, pedidoId) {
     if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
     try {
-        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estadoPago: 'pagado', fechaPago: firebase.firestore.FieldValue.serverTimestamp() });
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ estadoPago: 'pagado', fechaPago: firebase.firestore.FieldValue.serverTimestamp() });
         toast('✅ Pago confirmado. El pedido está listo para preparar.', 'success');
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
@@ -2754,8 +2859,11 @@ async function confirmarPago(tiendaId, pedidoId) {
 async function rechazarPago(tiendaId, pedidoId) {
     if (!confirm('¿Rechazar el pago de este pedido?')) return;
     try {
-        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({ estadoPago: 'rechazado', estado: 'Cancelado' });
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ estadoPago: 'rechazado', estado: 'Cancelado' });
         toast('⛔ Pago rechazado. El pedido fue cancelado.', 'error');
+        detenerAlarmaGlobal(pedidoId);
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
     } catch(e) { toast('Error: ' + e.message, 'error'); }
@@ -2764,10 +2872,12 @@ async function rechazarPago(tiendaId, pedidoId) {
 async function eliminarPedido(tiendaId, pedidoId) {
     if (!confirm('¿Remover este pedido?')) return;
     try {
-        detenerAlarmaContinua();
+        detenerAlarmaGlobal(pedidoId);
         pedidosNotificados.delete(pedidoId);
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
         toast('Pedido removido.', 'info');
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
     } catch(e) { toast('Error: ' + e.message, 'error'); }
 }
 
@@ -2790,7 +2900,14 @@ function iniciarEscuchaGlobal() {
                 .orderBy('fecha', 'desc')
                 .onSnapshot(snapPedidos => {
                     const pedidos = [];
-                    snapPedidos.forEach(pedidoDoc => { pedidos.push({ doc: pedidoDoc, data: pedidoDoc.data() }); });
+                    snapPedidos.forEach(pedidoDoc => { 
+                        const data = pedidoDoc.data();
+                        // Verificar si el pedido cambió a estado final para detener alarma
+                        if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
+                            detenerAlarmaGlobal(pedidoDoc.id);
+                        }
+                        pedidos.push({ doc: pedidoDoc, data: data });
+                    });
                     todosLosPedidos[tiendaId] = pedidos;
                     
                     snapPedidos.docChanges().forEach(change => {
@@ -2800,7 +2917,8 @@ function iniciarEscuchaGlobal() {
                             const estadosNegocio = getEstadosNegocio(tiendaData.tipoNegocio || 'restaurante');
                             const estadoPendiente = estadosNegocio[0] || 'Pendiente';
                             
-                            if (data.estado === estadoPendiente && !notificacionesMostradas.has(pedidoId)) {
+                            // Solo notificar si está pendiente y no tiene mensajero
+                            if (data.estado === estadoPendiente && !data.mensajeroId && !notificacionesMostradas.has(pedidoId)) {
                                 notificacionesMostradas.add(pedidoId);
                                 const cliente = data.cliente?.nombre || 'Cliente';
                                 const total = data.total || 0;
@@ -2947,11 +3065,17 @@ async function cargarProductosParaEdicion() {
 }
 
 // ============================================================
-// EDITAR PEDIDO
+// EDITAR PEDIDO (SOLO ADMIN)
 // ============================================================
 function abrirEditarPedido(tiendaId, pedidoId) {
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
     if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); return; }
+    
+    // Verificar que el pedido no esté asignado a un mensajero
+    if (pedido.mensajeroId && pedido.estado !== 'Pendiente') {
+        toast('⚠️ Este pedido está en proceso con un mensajero. No se puede editar.', 'warn');
+        return;
+    }
     
     pedidoEditando = { ...pedido, id: pedidoId };
     tiendaEditando = tiendaId;
@@ -3067,6 +3191,7 @@ function renderizarEditarPedido() {
             <div class="row"><span class="label">📱 Teléfono:</span><span>${telefonoCliente}</span></div>
             <div class="row"><span class="label">📍 Dirección:</span><span>${direccionCliente}</span></div>
             <div class="row"><span class="label">📝 Observaciones:</span><span>${observacionesCliente}</span></div>
+            ${p.mensajeroId ? `<div class="row"><span class="label">🛵 Mensajero:</span><span>${p.nombreMensajero || 'Asignado'}</span></div>` : ''}
         </div>
         <div class="productos-lista">${itemsHtml}</div>
         <div class="agregar-producto-area">
@@ -3252,11 +3377,13 @@ async function cargarEstado() {
         let counts = {};
         estados.forEach(e => counts[e] = 0);
         counts['Cancelado'] = 0;
+        counts['Asignado'] = 0;
         snap.forEach(doc => {
             const p = doc.data();
             const estado = p.estado || estados[0] || 'Pendiente';
             if (counts[estado] !== undefined) counts[estado]++;
             else if (estado === 'Cancelado') counts['Cancelado']++;
+            else if (estado === 'Asignado') counts['Asignado']++;
         });
         document.getElementById('resPendiente').textContent = counts[estados[0]] || 0;
         document.getElementById('resCocina').textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
@@ -3282,6 +3409,7 @@ window.probarAltavoz = probarAltavoz;
 window.stopAlarm = stopAlarm;
 window.toggleSonidoGlobal = toggleSonidoGlobal;
 window.detenerAlarmaContinua = detenerAlarmaContinua;
+window.detenerAlarmaGlobal = detenerAlarmaGlobal;
 window.abrirEditarPedido = abrirEditarPedido;
 window.cerrarEditarPedido = cerrarEditarPedido;
 window.cambiarCantidadItem = cambiarCantidadItem;
