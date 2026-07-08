@@ -84,6 +84,59 @@
         .btn-tomar:hover { background: #00b748; transform: scale(1.02); }
         .btn-tomar:active { transform: scale(0.97); }
         .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        /* Botón Conectar/Desconectar */
+        .btn-conectar {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-conectar.conectado {
+            background: var(--green);
+            color: #fff;
+        }
+        .btn-conectar.conectado:hover {
+            background: #00b748;
+            transform: scale(1.02);
+        }
+        .btn-conectar.desconectado {
+            background: var(--red);
+            color: #fff;
+        }
+        .btn-conectar.desconectado:hover {
+            background: #c0392b;
+            transform: scale(1.02);
+        }
+        .btn-conectar:active { transform: scale(0.95); }
+        .btn-conectar .estado-indicador {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        .btn-conectar.conectado .estado-indicador {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+        .btn-conectar.desconectado .estado-indicador {
+            background: #ff4444;
+            box-shadow: 0 0 10px #ff4444;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
         .hidden { display: none !important; }
 
         header {
@@ -96,6 +149,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            flex-wrap: wrap;
         }
         header .brand {
             background: var(--yellow);
@@ -140,6 +194,54 @@
         #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
+
+        /* Mensaje de recordatorio al iniciar sesión */
+        .recordatorio {
+            background: var(--yellow-bg);
+            border: 2px solid var(--yellow);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideDown 0.5s ease;
+        }
+        .recordatorio .icono { font-size: 28px; }
+        .recordatorio .contenido { flex: 1; }
+        .recordatorio .contenido h3 { color: var(--yellow); font-size: 15px; margin-bottom: 4px; }
+        .recordatorio .contenido p { color: #ddd; font-size: 13px; line-height: 1.5; }
+        .recordatorio .contenido .btn-recordatorio {
+            background: var(--yellow);
+            color: #1a1a2e;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            width: auto;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .recordatorio .contenido .btn-recordatorio:hover {
+            background: var(--yellow-dim);
+            transform: scale(1.02);
+        }
+        .recordatorio .cerrar-recordatorio {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            width: auto;
+        }
+        .recordatorio .cerrar-recordatorio:hover { color: #fff; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .stats-grid {
             display: grid;
@@ -391,6 +493,8 @@
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .kanban { grid-template-columns: 1fr; }
+            header { padding: 10px 12px; }
+            .btn-conectar { font-size: 11px; padding: 6px 14px; }
         }
     </style>
 </head>
@@ -414,11 +518,26 @@
         <h1>Panel de Mensajero</h1>
         <span class="spacer"></span>
         <span id="nombreMensajero" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <button class="btn-conectar desconectado" id="btnConectar" onclick="window.toggleConexion()">
+            <span class="estado-indicador"></span>
+            <span id="btnConectarTexto">Desconectado</span>
+        </button>
         <span class="header-badge" id="headerBadge">0</span>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
     <div class="wrap">
+        <!-- RECORDATORIO AL INICIAR SESIÓN -->
+        <div class="recordatorio" id="recordatorioBienvenida">
+            <div class="icono">🛵</div>
+            <div class="contenido">
+                <h3>¡Bienvenido, <span id="recordatorioNombre">Mensajero</span>!</h3>
+                <p>Para empezar a recibir pedidos, <strong>activa tu conexión</strong> haciendo clic en el botón <strong>"Conectar"</strong> que está en la parte superior.</p>
+                <button class="btn-recordatorio" onclick="window.activarConexionDesdeRecordatorio()">🔌 Conectar ahora</button>
+            </div>
+            <button class="cerrar-recordatorio" onclick="this.parentElement.style.display='none'">✕</button>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card c-yellow"><div class="val" id="statDisponibles">0</div><div class="lbl">Disponibles</div></div>
             <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
@@ -496,6 +615,8 @@
     let modoGPS = false;
     let watchId = null;
     let ubicacionActual = null;
+    let mensajeroConectado = false;
+    let recordatorioMostrado = false;
 
     // ============================================================
     // AUTENTICACIÓN
@@ -565,10 +686,107 @@
         mensajeroId = info.uid;
         nombreMensajero = info.nombre || 'Mensajero';
         document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
+        document.getElementById('recordatorioNombre').textContent = nombreMensajero;
+        
+        // Cargar estado de conexión
+        await cargarEstadoConexion();
+        
         await cargarTiendas();
         escucharPedidosMensajero();
         iniciarGPS();
+        
+        // Mostrar recordatorio si está desconectado (solo una vez)
+        if (!mensajeroConectado && !recordatorioMostrado) {
+            document.getElementById('recordatorioBienvenida').style.display = 'flex';
+            recordatorioMostrado = true;
+            toast('🛵 Recuerda conectarte para recibir pedidos', 'warn', 5000);
+        } else {
+            document.getElementById('recordatorioBienvenida').style.display = 'none';
+        }
+        
         toast('✅ Panel de mensajero cargado', 'success', 2000);
+    }
+
+    // ============================================================
+    // CARGAR ESTADO DE CONEXIÓN DESDE FIRESTORE
+    // ============================================================
+    async function cargarEstadoConexion() {
+        if (!mensajeroId) return;
+        try {
+            const doc = await db.collection('usuarios').doc(mensajeroId).get();
+            if (doc.exists) {
+                const data = doc.data();
+                mensajeroConectado = data.conectado !== false; // Por defecto true
+                actualizarBotonConexion();
+                console.log('📡 Estado de conexión:', mensajeroConectado ? 'Conectado' : 'Desconectado');
+            }
+        } catch (e) {
+            console.error('Error cargando estado de conexión:', e);
+        }
+    }
+
+    // ============================================================
+    // ACTUALIZAR BOTÓN DE CONEXIÓN
+    // ============================================================
+    function actualizarBotonConexion() {
+        const btn = document.getElementById('btnConectar');
+        const texto = document.getElementById('btnConectarTexto');
+        if (mensajeroConectado) {
+            btn.className = 'btn-conectar conectado';
+            texto.textContent = 'Conectado';
+        } else {
+            btn.className = 'btn-conectar desconectado';
+            texto.textContent = 'Desconectado';
+        }
+        // Actualizar visibilidad de pedidos disponibles
+        renderizarDisponibles();
+    }
+
+    // ============================================================
+    // TOGGLE CONEXIÓN
+    // ============================================================
+    async function toggleConexion() {
+        if (!mensajeroId) {
+            toast('⚠️ No estás autenticado', 'error');
+            return;
+        }
+        
+        const nuevoEstado = !mensajeroConectado;
+        
+        try {
+            toast(nuevoEstado ? '⏳ Conectando...' : '⏳ Desconectando...', 'info', 1500);
+            
+            await db.collection('usuarios').doc(mensajeroId).update({
+                conectado: nuevoEstado,
+                ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            mensajeroConectado = nuevoEstado;
+            actualizarBotonConexion();
+            
+            if (nuevoEstado) {
+                toast('✅ ¡Conectado! Ahora recibirás pedidos', 'success', 4000);
+                document.getElementById('recordatorioBienvenida').style.display = 'none';
+                // Recargar pedidos disponibles
+                escucharPedidosMensajero();
+            } else {
+                toast('🔴 Desconectado. Ya no recibirás pedidos.', 'info', 4000);
+                // Limpiar pedidos disponibles
+                todosDisponibles = [];
+                renderizarDisponibles();
+            }
+            
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    function activarConexionDesdeRecordatorio() {
+        if (!mensajeroConectado) {
+            toggleConexion();
+        } else {
+            document.getElementById('recordatorioBienvenida').style.display = 'none';
+        }
     }
 
     // ============================================================
@@ -582,7 +800,7 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS DEL MENSAJERO
+    // ESCUCHAR PEDIDOS DEL MENSAJERO (SOLO SI ESTÁ CONECTADO)
     // ============================================================
     function escucharPedidosMensajero() {
         if (miUnsubscribe) miUnsubscribe();
@@ -597,14 +815,15 @@
                     const tiendaId = doc.ref.parent.parent.id;
                     disponibles.push({ id: doc.id, tiendaId, ...data });
                 });
-                todosDisponibles = disponibles;
+                // SOLO mostrar disponibles si el mensajero está conectado
+                todosDisponibles = mensajeroConectado ? disponibles : [];
                 renderizarDisponibles();
                 actualizarEstadisticas();
             }, err => {
                 console.error('Error escuchando disponibles:', err);
             });
 
-        // 2. Escuchar los pedidos ASIGNADOS a este mensajero
+        // 2. Escuchar los pedidos ASIGNADOS a este mensajero (siempre, conectado o no)
         if (!mensajeroId) return;
         const unsubscribeMios = db.collectionGroup('pedidos')
             .where('mensajeroId', '==', mensajeroId)
@@ -630,11 +849,17 @@
     }
 
     // ============================================================
-    // TOMAR PEDIDO
+    // TOMAR PEDIDO (SOLO SI ESTÁ CONECTADO)
     // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado como mensajero', 'error');
+            return;
+        }
+        
+        if (!mensajeroConectado) {
+            toast('⚠️ Debes estar CONECTADO para tomar pedidos', 'warn');
+            document.getElementById('recordatorioBienvenida').style.display = 'flex';
             return;
         }
 
@@ -672,11 +897,25 @@
     }
 
     // ============================================================
-    // RENDERIZAR DISPONIBLES
+    // RENDERIZAR DISPONIBLES (Solo se muestran si está conectado)
     // ============================================================
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
+        
+        // Si está desconectado, mostrar mensaje especial
+        if (!mensajeroConectado) {
+            contador.textContent = '0';
+            container.innerHTML = `
+                <div class="empty-col">
+                    <span class="ico">🔌</span>
+                    Estás <strong style="color:var(--red);">DESCONECTADO</strong><br>
+                    <span style="font-size:11px;color:var(--text-muted);">Activa tu conexión para recibir pedidos</span>
+                </div>
+            `;
+            return;
+        }
+        
         contador.textContent = todosDisponibles.length;
 
         if (todosDisponibles.length === 0) {
@@ -690,11 +929,13 @@
             const nombreTienda = tienda.nombre || 'Tienda';
             const cliente = p.cliente || {};
             const total = p.total || 0;
+            const direccionTienda = tienda.direccion || 'Dirección no especificada';
 
             html += `
                 <div class="pedido-card" style="border-color:var(--green);">
                     <div class="pedido-tienda">🏪 ${nombreTienda}</div>
                     <div class="pedido-titulo">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</div>
+                    <div style="font-size:10px;color:var(--blue);margin-bottom:4px;">📍 Local: ${direccionTienda}</div>
                     <div class="pedido-cliente">
                         <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
                         <div><span class="label">📍 Dirección:</span> ${cliente.direccion || 'N/A'}</div>
@@ -727,6 +968,7 @@
             const nombreTienda = tienda.nombre || 'Tienda';
             const cliente = p.cliente || {};
             const total = p.total || 0;
+            const direccionTienda = tienda.direccion || 'Dirección no especificada';
             
             let estadoBadge = 'asignado';
             let estadoLabel = 'Asignado';
@@ -737,6 +979,7 @@
             html += `
                 <div class="pedido-card">
                     <div class="pedido-tienda">🏪 ${nombreTienda}</div>
+                    <div style="font-size:10px;color:var(--blue);margin-bottom:4px;">📍 Local: ${direccionTienda}</div>
                     <div class="pedido-titulo">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</div>
                     <div class="pedido-cliente">
                         <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -881,7 +1124,8 @@
     // ESTADÍSTICAS
     // ============================================================
     function actualizarEstadisticas() {
-        document.getElementById('statDisponibles').textContent = todosDisponibles.length;
+        const disponiblesMostrados = mensajeroConectado ? todosDisponibles.length : 0;
+        document.getElementById('statDisponibles').textContent = disponiblesMostrados;
         const asignados = todosMisPedidos.filter(p => p.estado === 'Asignado').length;
         const enCamino = todosMisPedidos.filter(p => p.estado === 'En camino').length;
         const entregados = todosMisPedidos.filter(p => p.estado === 'Entregado').length;
@@ -891,7 +1135,7 @@
     }
 
     function actualizarHeaderBadge() {
-        const disponibles = todosDisponibles.length;
+        const disponibles = mensajeroConectado ? todosDisponibles.length : 0;
         const badge = document.getElementById('headerBadge');
         badge.textContent = disponibles;
         badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
@@ -936,10 +1180,14 @@
     window.verDetallePedido = verDetallePedido;
     window.cerrarModal = cerrarModal;
     window.toast = toast;
+    window.toggleConexion = toggleConexion;
+    window.activarConexionDesdeRecordatorio = activarConexionDesdeRecordatorio;
+    window.actualizarBotonConexion = actualizarBotonConexion;
 
     console.log('✅ Panel de mensajero cargado correctamente');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
     console.log('📍 Dirección de locales visible en detalles');
+    console.log('🔌 Control de conexión activado');
 </script>
 </body>
 </html>
