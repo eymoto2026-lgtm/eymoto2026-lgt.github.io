@@ -609,7 +609,7 @@
     let mensajeroId = null;
     let nombreMensajero = '';
     let tiendasCache = {};
-    let miUnsubscribe = null;
+    let tiendasIds = [];
     let todosDisponibles = [];
     let todosMisPedidos = [];
     let modoGPS = false;
@@ -617,6 +617,8 @@
     let ubicacionActual = null;
     let mensajeroConectado = false;
     let recordatorioMostrado = false;
+    let listenersActivos = [];
+    let cargandoPedidos = false;
 
     // ============================================================
     // AUTENTICACIÓN
@@ -657,7 +659,9 @@
     }
 
     function logout() {
-        if (miUnsubscribe) miUnsubscribe();
+        // Limpiar todos los listeners
+        listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
+        listenersActivos = [];
         if (watchId) navigator.geolocation.clearWatch(watchId);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
@@ -724,7 +728,7 @@
             const doc = await db.collection('usuarios').doc(mensajeroId).get();
             if (doc.exists) {
                 const data = doc.data();
-                mensajeroConectado = data.conectado !== false; // Por defecto true
+                mensajeroConectado = data.conectado !== false;
                 actualizarBotonConexion();
                 console.log('📡 Estado de conexión:', mensajeroConectado ? 'Conectado' : 'Desconectado');
             }
@@ -746,7 +750,6 @@
             btn.className = 'btn-conectar desconectado';
             texto.textContent = 'Desconectado';
         }
-        // Actualizar visibilidad de pedidos disponibles
         renderizarDisponibles();
     }
 
@@ -774,13 +777,11 @@
             
             if (nuevoEstado) {
                 toast('✅ ¡Conectado! Ahora recibirás pedidos', 'success', 4000);
-                // Ocultar recordatorio SOLO si el usuario se conecta
                 document.getElementById('recordatorioBienvenida').style.display = 'none';
                 // Recargar pedidos disponibles
                 escucharPedidosMensajero();
             } else {
                 toast('🔴 Desconectado. Ya no recibirás pedidos.', 'info', 4000);
-                // Limpiar pedidos disponibles
                 todosDisponibles = [];
                 renderizarDisponibles();
             }
@@ -804,61 +805,92 @@
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
-            snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
+            tiendasIds = [];
+            snap.forEach(doc => {
+                tiendasCache[doc.id] = doc.data();
+                tiendasIds.push(doc.id);
+            });
+            console.log('🏪 Tiendas cargadas:', tiendasIds.length);
         } catch (e) { console.error(e); }
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS DEL MENSAJERO (SOLO SI ESTÁ CONECTADO)
+    // ESCUCHAR PEDIDOS DEL MENSAJERO (SIN COLLECTION GROUP)
     // ============================================================
     function escucharPedidosMensajero() {
-        if (miUnsubscribe) miUnsubscribe();
+        // Limpiar listeners anteriores
+        listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
+        listenersActivos = [];
+        
+        if (tiendasIds.length === 0) {
+            console.warn('⚠️ No hay tiendas para escuchar');
+            return;
+        }
 
-        // 1. Escuchar TODOS los pedidos que estén "Listo para asignar"
-        const unsubscribeDisponibles = db.collectionGroup('pedidos')
-            .where('estado', '==', 'Listo para asignar')
-            .onSnapshot(snap => {
-                const disponibles = [];
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const tiendaId = doc.ref.parent.parent.id;
-                    disponibles.push({ id: doc.id, tiendaId, ...data });
+        // Variables para acumular pedidos
+        let pedidosDisponiblesTemp = [];
+        let pedidosMiosTemp = [];
+        let tiendasCompletadas = 0;
+
+        // Escuchar cada tienda individualmente
+        tiendasIds.forEach(tiendaId => {
+            // 1. Escuchar pedidos "Listo para asignar" en esta tienda
+            const unsubDisponibles = db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .where('estado', '==', 'Listo para asignar')
+                .onSnapshot(snap => {
+                    const disponibles = [];
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                    });
+                    
+                    // Actualizar la lista global de disponibles
+                    // Reconstruir desde cero para evitar duplicados
+                    const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
+                    todosDisponibles = [...otrosDisponibles, ...disponibles];
+                    
+                    // Si está conectado, mostrar, si no, ocultar
+                    renderizarDisponibles();
+                    actualizarEstadisticas();
+                    actualizarHeaderBadge();
+                }, err => {
+                    console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
-                // SOLO mostrar disponibles si el mensajero está conectado
-                todosDisponibles = mensajeroConectado ? disponibles : [];
-                renderizarDisponibles();
-                actualizarEstadisticas();
-            }, err => {
-                console.error('Error escuchando disponibles:', err);
-            });
 
-        // 2. Escuchar los pedidos ASIGNADOS a este mensajero (siempre, conectado o no)
-        if (!mensajeroId) return;
-        const unsubscribeMios = db.collectionGroup('pedidos')
-            .where('mensajeroId', '==', mensajeroId)
-            .onSnapshot(snap => {
-                const misPedidos = [];
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const tiendaId = doc.ref.parent.parent.id;
-                    misPedidos.push({ id: doc.id, tiendaId, ...data });
+            // 2. Escuchar pedidos ASIGNADOS a este mensajero en esta tienda
+            const unsubMios = db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .where('mensajeroId', '==', mensajeroId)
+                .onSnapshot(snap => {
+                    const misPedidos = [];
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        misPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                    });
+                    
+                    // Actualizar la lista global de mis pedidos
+                    const otrosMios = todosMisPedidos.filter(p => p.tiendaId !== tiendaId);
+                    todosMisPedidos = [...otrosMios, ...misPedidos];
+                    
+                    renderizarMisPedidos();
+                    actualizarEstadisticas();
+                    actualizarHeaderBadge();
+                }, err => {
+                    console.error(`Error escuchando mis pedidos en tienda ${tiendaId}:`, err);
                 });
-                todosMisPedidos = misPedidos;
-                renderizarMisPedidos();
-                actualizarEstadisticas();
-                actualizarHeaderBadge();
-            }, err => {
-                console.error('Error escuchando mis pedidos:', err);
-            });
 
-        miUnsubscribe = () => {
-            unsubscribeDisponibles();
-            unsubscribeMios();
-        };
+            listenersActivos.push(unsubDisponibles);
+            listenersActivos.push(unsubMios);
+        });
+
+        console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
     }
 
     // ============================================================
-    // TOMAR PEDIDO (SOLO SI ESTÁ CONECTADO)
+    // TOMAR PEDIDO
     // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroId) {
@@ -873,7 +905,6 @@
         }
 
         try {
-            // 1. Verificar que el pedido aún esté disponible
             const docRef = db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
@@ -889,7 +920,6 @@
                 return;
             }
 
-            // 2. Asignar el pedido al mensajero actual
             await docRef.update({
                 mensajeroId: mensajeroId,
                 nombreMensajero: nombreMensajero,
@@ -898,7 +928,6 @@
             });
 
             toast('✅ Pedido tomado con éxito', 'success');
-            // La actualización en tiempo real se encargará del resto
 
         } catch (error) {
             toast('❌ Error al tomar el pedido: ' + error.message, 'error');
@@ -906,15 +935,18 @@
     }
 
     // ============================================================
-    // RENDERIZAR DISPONIBLES (Solo se muestran si está conectado)
+    // RENDERIZAR DISPONIBLES
     // ============================================================
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
         
-        // Si está desconectado, mostrar mensaje especial
+        // Solo mostrar disponibles si está conectado
+        const disponiblesMostrar = mensajeroConectado ? todosDisponibles : [];
+        
+        contador.textContent = disponiblesMostrar.length;
+
         if (!mensajeroConectado) {
-            contador.textContent = '0';
             container.innerHTML = `
                 <div class="empty-col">
                     <span class="ico">🔌</span>
@@ -924,16 +956,14 @@
             `;
             return;
         }
-        
-        contador.textContent = todosDisponibles.length;
 
-        if (todosDisponibles.length === 0) {
+        if (disponiblesMostrar.length === 0) {
             container.innerHTML = `<div class="empty-col"><span class="ico">🎉</span>No hay pedidos disponibles</div>`;
             return;
         }
 
         let html = '';
-        todosDisponibles.forEach(p => {
+        disponiblesMostrar.forEach(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const nombreTienda = tienda.nombre || 'Tienda';
             const cliente = p.cliente || {};
@@ -964,15 +994,22 @@
     function renderizarMisPedidos() {
         const container = document.getElementById('colMios');
         const contador = document.getElementById('cntMios');
-        contador.textContent = todosMisPedidos.length;
+        
+        // Ordenar mis pedidos: primero los activos (Asignado, En camino)
+        const pedidosOrdenados = [...todosMisPedidos].sort((a, b) => {
+            const orden = { 'Asignado': 0, 'En camino': 1, 'Entregado': 2, 'Cancelado': 3 };
+            return (orden[a.estado] || 4) - (orden[b.estado] || 4);
+        });
+        
+        contador.textContent = pedidosOrdenados.length;
 
-        if (todosMisPedidos.length === 0) {
+        if (pedidosOrdenados.length === 0) {
             container.innerHTML = `<div class="empty-col"><span class="ico">📭</span>No tienes pedidos asignados</div>`;
             return;
         }
 
         let html = '';
-        todosMisPedidos.forEach(p => {
+        pedidosOrdenados.forEach(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const nombreTienda = tienda.nombre || 'Tienda';
             const cliente = p.cliente || {};
@@ -1170,6 +1207,7 @@
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
+        if (!wrap) { console.log(msg); return; }
         const el = document.createElement('div');
         el.className = `toast t-${type}`;
         el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
@@ -1195,7 +1233,7 @@
     window.cerrarRecordatorio = cerrarRecordatorio;
 
     console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('📢 Escuchando pedidos disponibles en tiempo real');
+    console.log('📢 Escuchando pedidos disponibles en tiempo real (sin collectionGroup)');
     console.log('📍 Dirección de locales visible en detalles');
     console.log('🔌 Control de conexión activado');
     console.log('📌 Recordatorio solo se cierra con acción del usuario');
