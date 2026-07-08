@@ -236,6 +236,7 @@ header .spacer{flex:1}
 .tienda-info{flex:1;min-width:0}
 .tienda-info h4{font-size:15px;font-weight:700;margin-bottom:3px}
 .tienda-info .meta{font-size:12px;color:var(--text-muted)}
+.tienda-info .direccion{font-size:12px;color:var(--blue);margin-top:2px;display:flex;align-items:center;gap:4px;}
 .tienda-info .link{color:var(--blue);font-size:12px;text-decoration:none;display:inline-block;margin-top:4px}
 .tienda-info .link:hover{text-decoration:underline}
 .tienda-info .tipo-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;margin-top:4px;background:var(--surface3);color:var(--text-muted);}
@@ -469,7 +470,7 @@ header .spacer{flex:1}
         </button>
       </div>
 
-      <!-- MODAL CREAR NEGOCIO -->
+      <!-- MODAL CREAR NEGOCIO (ACTUALIZADO CON DIRECCIÓN) -->
       <div id="modalCrearNegocio" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;justify-content:center;align-items:center;padding:20px;">
         <div style="background:#1e1e1e;border-radius:20px;max-width:550px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -480,6 +481,7 @@ header .spacer{flex:1}
           <div style="background:var(--surface3);border-radius:10px;padding:16px;margin-bottom:12px;">
             <p style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏪 Datos de la tienda</p>
             <div class="form-group"><label>Nombre del negocio *</label><input id="nuevoNegocioNombre" placeholder="Ej: TuMandadoVallenato"></div>
+            <div class="form-group"><label>📍 Dirección del local *</label><input id="nuevoNegocioDireccion" placeholder="Calle 123 #45-67, Barrio Centro"></div>
             <div class="form-group"><label>WhatsApp principal *</label><input id="nuevoNegocioWhatsapp" placeholder="573000000000"></div>
             <div class="form-group"><label>WhatsApp secundario (opcional)</label><input id="nuevoNegocioWhatsapp2" placeholder="573000000001"><small style="color:var(--text-muted);font-size:11px;">Los pedidos llegarán a ambos números.</small></div>
             <div class="form-group"><label>URL del logo</label><input id="nuevoNegocioLogo" placeholder="https://..."></div>
@@ -540,7 +542,7 @@ header .spacer{flex:1}
         </div>
       </div>
 
-      <!-- FORMULARIO DE EDICIÓN -->
+      <!-- FORMULARIO DE EDICIÓN (ACTUALIZADO CON DIRECCIÓN) -->
       <div id="formEditarTienda" style="display:none;background:var(--surface2);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--yellow);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h4 style="color:var(--yellow);">✏️ Editar tienda</h4>
@@ -548,6 +550,7 @@ header .spacer{flex:1}
         </div>
         <input type="hidden" id="editTiendaId">
         <div class="form-group"><label>Nombre comercial</label><input id="nombreTienda" placeholder="Ej: Burger House"></div>
+        <div class="form-group"><label>📍 Dirección del local</label><input id="direccionTienda" placeholder="Calle 123 #45-67, Barrio Centro"></div>
         <div class="form-group"><label>WhatsApp principal</label><input id="whatsapp" placeholder="573000000000"></div>
         <div class="form-group"><label>WhatsApp secundario</label><input id="whatsapp2" placeholder="573000000001"></div>
         <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
@@ -884,14 +887,6 @@ function getEstadoPreparacion(tipo) {
     return 'En cocina';
 }
 
-function getColorEstadoNegocio(tipo, estado) {
-    const config = TIPOS_NEGOCIO[tipo];
-    if (!config) return 'border';
-    const index = config.estados.indexOf(estado);
-    if (index === -1) return 'border';
-    return config.colores[index] || 'border';
-}
-
 function getSiguienteEstado(tipo, estadoActual) {
     const estados = getEstadosNegocio(tipo);
     const index = estados.indexOf(estadoActual);
@@ -1044,6 +1039,7 @@ function generarFactura(tiendaId, pedidoId) {
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const whatsapp = tienda.whatsapp || '';
+    const direccionTienda = tienda.direccion || 'Dirección no especificada';
     
     let total = 0;
     let itemsHtml = '';
@@ -1096,6 +1092,7 @@ function generarFactura(tiendaId, pedidoId) {
             .header { text-align: center; padding: 10px 0; border-bottom: 2px solid #FFD600; }
             .logo { font-size: 24px; font-weight: 900; color: #FFD600; }
             .tienda { font-size: 18px; font-weight: 700; }
+            .direccion { font-size: 12px; color: #555; margin-top: 2px; }
             .factura-info { display: flex; justify-content: space-between; margin: 15px 0; font-size: 13px; }
             .factura-info .label { color: #888; }
             .cliente-info { background: #f5f5f5; padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
@@ -1111,6 +1108,7 @@ function generarFactura(tiendaId, pedidoId) {
             <div class="header">
                 <div class="logo">EyMoto</div>
                 <div class="tienda">${nombreTienda}</div>
+                <div class="direccion">📍 ${direccionTienda}</div>
                 <div style="font-size:12px;color:#888;">${whatsapp}</div>
             </div>
             <div class="factura-info">
@@ -1121,7 +1119,7 @@ function generarFactura(tiendaId, pedidoId) {
             <div class="cliente-info">
                 <div><span class="label">Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
                 ${cliente.telefono ? `<div><span class="label">Teléfono:</span> ${cliente.telefono}</div>` : ''}
-                ${cliente.direccion ? `<div><span class="label">Dirección:</span> ${cliente.direccion}</div>` : ''}
+                ${cliente.direccion ? `<div><span class="label">Dirección de entrega:</span> ${cliente.direccion}</div>` : ''}
                 ${cliente.barrio ? `<div><span class="label">Barrio:</span> ${cliente.barrio}</div>` : ''}
                 ${cliente.observaciones ? `<div><span class="label">Observaciones:</span> ${cliente.observaciones}</div>` : ''}
             </div>
@@ -1584,7 +1582,7 @@ function mostrarResumenNotificaciones() {
 }
 
 // ============================================================
-// EDITAR TIENDA
+// EDITAR TIENDA (ACTUALIZADO CON DIRECCIÓN)
 // ============================================================
 async function editarTienda(id) {
     try {
@@ -1594,6 +1592,7 @@ async function editarTienda(id) {
         document.getElementById('formEditarTienda').style.display = 'block';
         document.getElementById('editTiendaId').value = id;
         document.getElementById('nombreTienda').value = t.nombre || '';
+        document.getElementById('direccionTienda').value = t.direccion || '';
         document.getElementById('whatsapp').value = t.whatsapp || '';
         document.getElementById('whatsapp2').value = t.whatsapp2 || '';
         document.getElementById('logoTienda').value = t.logo || '';
@@ -1610,6 +1609,7 @@ async function editarTienda(id) {
 function cancelarEdTienda() {
     document.getElementById('editTiendaId').value = '';
     document.getElementById('nombreTienda').value = '';
+    document.getElementById('direccionTienda').value = '';
     document.getElementById('whatsapp').value = '';
     document.getElementById('whatsapp2').value = '';
     document.getElementById('logoTienda').value = '';
@@ -1624,6 +1624,7 @@ function cancelarEdTienda() {
 async function guardarTienda() {
     const id = document.getElementById('editTiendaId').value;
     const nombre = document.getElementById('nombreTienda').value.trim();
+    const direccion = document.getElementById('direccionTienda').value.trim();
     const wa = document.getElementById('whatsapp').value.trim();
     const wa2 = document.getElementById('whatsapp2').value.trim();
     const logo = document.getElementById('logoTienda').value.trim();
@@ -1633,7 +1634,18 @@ async function guardarTienda() {
     const daviplata = document.getElementById('daviplata').value.trim();
     const categoriasAgotadas = document.getElementById('categoriasAgotadas').value.split(',').map(c => c.trim()).filter(c => c !== '');
     if (!nombre || !wa) { toast('Completa el nombre y el WhatsApp.', 'error'); return; }
-    const datos = { nombre, whatsapp: wa, whatsapp2: wa2 || '', logo, banner, tipoNegocio, nequi, daviplata, categoriasAgotadas };
+    const datos = { 
+        nombre, 
+        direccion: direccion || '',
+        whatsapp: wa, 
+        whatsapp2: wa2 || '', 
+        logo, 
+        banner, 
+        tipoNegocio, 
+        nequi, 
+        daviplata, 
+        categoriasAgotadas 
+    };
     try {
         if (id) { await db.collection('tiendas').doc(id).update(datos); toast('✅ Tienda actualizada.', 'success'); }
         else { await db.collection('tiendas').add({ ...datos, abierta: true, barcodeScanningEnabled: true, notificacionesSuperAdmin: true }); toast('✅ Tienda registrada.', 'success'); }
@@ -1656,7 +1668,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// CARGAR TIENDAS
+// CARGAR TIENDAS (ACTUALIZADO CON DIRECCIÓN)
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
@@ -1674,11 +1686,13 @@ async function cargarTiendasSuperAdmin() {
             const tipoNegocio = t.tipoNegocio || 'restaurante';
             const tipoLabel = TIPOS_NEGOCIO[tipoNegocio]?.label || '📦 Otro';
             const estadoPrep = getEstadoPreparacion(tipoNegocio);
+            const direccion = t.direccion || 'Dirección no especificada';
             html += `
                 <div class="tienda-item" id="tienda-${id}">
                     <div class="tienda-logo">${t.logo ? `<img src="${t.logo}" alt="${t.nombre||''}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}</div>
                     <div class="tienda-info">
                         <h4>${t.nombre || 'Sin nombre'}</h4>
+                        <div class="direccion">📍 ${direccion}</div>
                         <p class="meta">📱 ${t.whatsapp || '-'}</p>
                         <span class="tipo-badge">${tipoLabel} → ${estadoPrep}</span>
                         <span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? '🟢 Abierta' : '🔴 Cerrada'}</span>
@@ -1714,11 +1728,13 @@ async function cargarTiendaUnica(tiendaId) {
         const tipoNegocio = t.tipoNegocio || 'restaurante';
         const tipoLabel = TIPOS_NEGOCIO[tipoNegocio]?.label || '📦 Otro';
         const estadoPrep = getEstadoPreparacion(tipoNegocio);
+        const direccion = t.direccion || 'Dirección no especificada';
         lista.innerHTML = `
             <div class="tienda-item" style="border:2px solid var(--yellow);">
                 <div class="tienda-logo">${t.logo ? `<img src="${t.logo}" alt="${t.nombre||''}" onerror="this.parentElement.innerHTML='🏪'">` : '🏪'}</div>
                 <div class="tienda-info">
                     <h4>🏪 ${t.nombre || 'Sin nombre'}</h4>
+                    <div class="direccion">📍 ${direccion}</div>
                     <p class="meta">📱 ${t.whatsapp || '-'}</p>
                     <span class="tipo-badge">${tipoLabel} → ${estadoPrep}</span>
                     <span class="${abierta ? 'badge-open' : 'badge-closed'}">${abierta ? '🟢 Abierta' : '🔴 Cerrada'}</span>
@@ -1794,6 +1810,7 @@ function verificarCorreoAdmin(email) {
 
 async function crearNegocioCompleto() {
     const nombre = document.getElementById('nuevoNegocioNombre').value.trim();
+    const direccion = document.getElementById('nuevoNegocioDireccion').value.trim();
     const whatsapp = document.getElementById('nuevoNegocioWhatsapp').value.trim();
     const whatsapp2 = document.getElementById('nuevoNegocioWhatsapp2').value.trim();
     const logo = document.getElementById('nuevoNegocioLogo').value.trim();
@@ -1803,16 +1820,28 @@ async function crearNegocioCompleto() {
     const adminPassword = document.getElementById('nuevoNegocioAdminPassword').value.trim();
     const nequi = document.getElementById('nuevoNegocioNequi').value.trim();
     const daviplata = document.getElementById('nuevoNegocioDaviplata').value.trim();
-    if (!nombre || !whatsapp || !adminEmail) { toast('⚠️ Completa todos los campos obligatorios (*)', 'error'); return; }
+    if (!nombre || !direccion || !whatsapp || !adminEmail) { 
+        toast('⚠️ Completa todos los campos obligatorios (*) - Nombre, Dirección, WhatsApp y Correo', 'error'); 
+        return; 
+    }
     const esSuperAdmin = (adminEmail === 'eymoto2026@gmail.com');
     if (!esSuperAdmin && (!adminPassword || adminPassword.length < 6)) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
     try {
         toast('⏳ Creando negocio...', 'info');
         const tiendaRef = await db.collection('tiendas').add({
-            nombre, whatsapp, whatsapp2: whatsapp2 || '', logo, banner,
-            tipoNegocio, nequi, daviplata,
-            abierta: true, barcodeScanningEnabled: true,
-            categoriasAgotadas: [], notificacionesSuperAdmin: true,
+            nombre, 
+            direccion: direccion,
+            whatsapp, 
+            whatsapp2: whatsapp2 || '', 
+            logo, 
+            banner,
+            tipoNegocio, 
+            nequi, 
+            daviplata,
+            abierta: true, 
+            barcodeScanningEnabled: true,
+            categoriasAgotadas: [], 
+            notificacionesSuperAdmin: true,
             creadoEn: firebase.firestore.FieldValue.serverTimestamp()
         });
         const tiendaId = tiendaRef.id;
@@ -1852,6 +1881,7 @@ async function crearNegocioCompleto() {
         cargarSelectsTiendas();
         cargarTiendasEnFiltro();
         document.getElementById('nuevoNegocioNombre').value = '';
+        document.getElementById('nuevoNegocioDireccion').value = '';
         document.getElementById('nuevoNegocioWhatsapp').value = '';
         document.getElementById('nuevoNegocioWhatsapp2').value = '';
         document.getElementById('nuevoNegocioLogo').value = '';
@@ -1982,7 +2012,6 @@ function filtrarProductos() {
     const resultados = document.getElementById('resultadosBusqueda');
     
     if (!busqueda) {
-        // Mostrar todos los productos
         productosFiltrados = productosOriginales;
         filtroActivo = false;
         resultados.textContent = 'Mostrando todos los productos';
@@ -3407,6 +3436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Panel de administración cargado correctamente');
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
+    console.log('📍 Dirección de locales agregada');
 });
 </script>
 </body>
