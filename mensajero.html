@@ -2,11 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EyMoto - Panel Mensajero</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; }
-        body { background: #0a0a0a; color: #fff; min-height: 100vh; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
         :root {
             --yellow: #FFD600;
             --yellow-dim: #e6c200;
@@ -60,6 +69,21 @@
         .btn-info:hover { background: #0277bd; }
         .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
+        .btn-tomar {
+            background: var(--green);
+            color: #fff;
+            font-weight: 800;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 6px;
+        }
+        .btn-tomar:hover { background: #00b748; transform: scale(1.02); }
+        .btn-tomar:active { transform: scale(0.97); }
+        .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .hidden { display: none !important; }
 
         header {
@@ -137,100 +161,126 @@
         .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-red .val { color: var(--red); }
 
+        .kanban-wrap { overflow-x: auto; padding-bottom: 6px; }
+        .kanban {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            min-height: 340px;
+        }
+        .kanban-col {
+            background: var(--surface2);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 200px;
+        }
+        .kanban-col-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .kanban-col-header h4 { font-size: 13px; font-weight: 700; flex: 1; }
+        .col-count {
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--surface3);
+            color: var(--text-muted);
+            padding: 2px 7px;
+            border-radius: 8px;
+        }
+        .dot-yellow { background: var(--yellow); }
+        .dot-blue { background: var(--blue); }
+        .dot-green { background: var(--green); }
+        .dot-orange { background: var(--orange); }
+        .empty-col {
+            text-align: center;
+            padding: 30px 10px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .empty-col .ico { font-size: 28px; display: block; margin-bottom: 8px; opacity: .4; }
+
         .pedido-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            animation: slideIn .22s ease;
             transition: all 0.3s ease;
         }
         .pedido-card:hover { border-color: var(--yellow); }
-        .pedido-card .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pedido-card .pedido-tienda {
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--yellow);
+            margin-bottom: 4px;
+        }
+        .pedido-card .pedido-titulo {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
             border-bottom: 1px solid var(--border);
         }
-        .pedido-card .header .numero {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--yellow);
+        .pedido-card .pedido-cliente {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 4px 0;
+            font-size: 12px;
+            line-height: 1.8;
         }
-        .pedido-card .header .estado-badge {
-            padding: 4px 12px;
+        .pedido-card .pedido-cliente .label {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .pedido-card .pedido-total {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--green);
+            text-align: right;
+            margin: 6px 0 4px 0;
+        }
+        .pedido-card .estado-badge {
+            display: inline-block;
+            padding: 3px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
+            margin-top: 4px;
         }
         .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
         .estado-badge.en-camino { background: var(--orange-bg); color: var(--orange); }
         .estado-badge.entregado { background: var(--green-bg); color: var(--green); }
         .estado-badge.cancelado { background: var(--red-bg); color: var(--red); }
-
-        .pedido-card .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 16px;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-        .pedido-card .info-grid .label { color: var(--text-muted); }
-        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
-
-        .pedido-card .items-list {
-            background: var(--surface2);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 8px 0;
+        .pedido-card .btn-detalle {
+            background: var(--surface3);
+            color: var(--text-muted);
+            border: 1px solid var(--border2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
             font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 4px;
         }
-        .pedido-card .items-list .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .pedido-card .items-list .item:last-child { border-bottom: none; }
-
-        .pedido-card .total {
-            font-size: 16px;
-            font-weight: 800;
-            text-align: right;
-            color: var(--green);
-            margin-top: 6px;
-        }
-
-        .pedido-card .acciones {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .pedido-card .acciones button {
-            flex: 1;
-            min-width: 100px;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .filtros {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        .pedido-card .btn-detalle:hover {
             background: var(--surface2);
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            border-color: var(--yellow);
+            color: #fff;
         }
-        .filtros select, .filtros input {
-            flex: 1;
-            min-width: 150px;
-        }
-        .filtros button { flex: 0 0 auto; width: auto; }
 
         #toastWrap {
             position: fixed;
@@ -329,19 +379,18 @@
             text-align: center;
             border: 1px solid var(--border);
             margin: 12px 0;
-            min-height: 150px;
+            min-height: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-        .mapa-simulado .icono { font-size: 48px; margin-bottom: 8px; }
+        .mapa-simulado .icono { font-size: 36px; margin-bottom: 4px; }
         .mapa-simulado .texto { color: var(--text-muted); font-size: 13px; }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .pedido-card .info-grid { grid-template-columns: 1fr; }
-            .filtros select, .filtros input { min-width: 100px; }
+            .kanban { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -371,37 +420,43 @@
 
     <div class="wrap">
         <div class="stats-grid">
+            <div class="stat-card c-yellow"><div class="val" id="statDisponibles">0</div><div class="lbl">Disponibles</div></div>
             <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
             <div class="stat-card c-orange"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
             <div class="stat-card c-green"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados hoy</div></div>
-            <div class="stat-card c-yellow"><div class="val" id="statTotal">0</div><div class="lbl">Total pedidos</div></div>
         </div>
 
-        <div class="filtros">
-            <select id="filtroEstado" onchange="filtrarPedidos()">
-                <option value="">📋 Todos los estados</option>
-                <option value="Asignado">👤 Asignado</option>
-                <option value="En camino">🛵 En camino</option>
-                <option value="Entregado">✅ Entregado</option>
-                <option value="Cancelado">❌ Cancelado</option>
-            </select>
-            <select id="filtroTiendaMensajero" onchange="filtrarPedidos()">
-                <option value="">🏪 Todas las tiendas</option>
-            </select>
-            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar cliente o dirección..." oninput="filtrarPedidos()">
-            <button class="btn-info btn-sm" onclick="recargarPedidos()" style="width:auto;">🔄 Recargar</button>
-            <button class="btn-success btn-sm" onclick="alternarModoGPS()" id="btnGPS" style="width:auto;">📍 GPS: OFF</button>
-        </div>
+        <div class="kanban-wrap">
+            <div class="kanban">
+                <!-- COLUMNA 1: PEDIDOS DISPONIBLES -->
+                <div class="kanban-col">
+                    <div class="kanban-col-header">
+                        <div class="col-dot dot-yellow"></div>
+                        <h4>📢 Pedidos Disponibles</h4>
+                        <span class="col-count" id="cntDisponibles">0</span>
+                    </div>
+                    <div id="colDisponibles">
+                        <div class="empty-col"><span class="ico">🎉</span>No hay pedidos disponibles</div>
+                    </div>
+                </div>
 
-        <div id="listaPedidos">
-            <div style="text-align:center;padding:30px;color:var(--text-muted);">
-                <div style="font-size:32px;margin-bottom:12px;">🛵</div>
-                Cargando pedidos...
+                <!-- COLUMNA 2: MIS PEDIDOS -->
+                <div class="kanban-col">
+                    <div class="kanban-col-header">
+                        <div class="col-dot dot-blue"></div>
+                        <h4>🛵 Mis Pedidos</h4>
+                        <span class="col-count" id="cntMios">0</span>
+                    </div>
+                    <div id="colMios">
+                        <div class="empty-col"><span class="ico">📭</span>No tienes pedidos asignados</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- MODAL DETALLE -->
 <div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -429,16 +484,22 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ============================================================
+    // GLOBALS
+    // ============================================================
     let mensajeroId = null;
     let nombreMensajero = '';
-    let todosLosPedidos = [];
-    let pedidosFiltrados = [];
+    let tiendasCache = {};
+    let miUnsubscribe = null;
+    let todosDisponibles = [];
+    let todosMisPedidos = [];
     let modoGPS = false;
     let watchId = null;
     let ubicacionActual = null;
-    let tiendasCache = {};
-    let listenerPedidos = null;
 
+    // ============================================================
+    // AUTENTICACIÓN
+    // ============================================================
     async function verificarRolMensajero() {
         const user = auth.currentUser;
         if (!user) return null;
@@ -475,7 +536,7 @@
     }
 
     function logout() {
-        if (listenerPedidos) listenerPedidos();
+        if (miUnsubscribe) miUnsubscribe();
         if (watchId) navigator.geolocation.clearWatch(watchId);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
@@ -495,6 +556,9 @@
         }
     });
 
+    // ============================================================
+    // INICIALIZAR PANEL
+    // ============================================================
     async function inicializarPanel() {
         const info = await verificarRolMensajero();
         if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
@@ -502,12 +566,14 @@
         nombreMensajero = info.nombre || 'Mensajero';
         document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
         await cargarTiendas();
-        await cargarSelectTiendas();
-        await escucharPedidos();
+        escucharPedidosMensajero();
         iniciarGPS();
         toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
+    // ============================================================
+    // CARGAR TIENDAS
+    // ============================================================
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
@@ -515,269 +581,239 @@
         } catch (e) { console.error(e); }
     }
 
-    async function cargarSelectTiendas() {
-        const sel = document.getElementById('filtroTiendaMensajero');
-        sel.innerHTML = '<option value="">🏪 Todas las tiendas</option>';
-        try {
-            const snap = await db.collection('tiendas').get();
-            snap.forEach(doc => {
-                const t = doc.data();
-                const opt = document.createElement('option');
-                opt.value = doc.id;
-                opt.textContent = t.nombre || doc.id;
-                sel.appendChild(opt);
-            });
-        } catch (e) { console.error(e); }
-    }
+    // ============================================================
+    // ESCUCHAR PEDIDOS DEL MENSAJERO
+    // ============================================================
+    function escucharPedidosMensajero() {
+        if (miUnsubscribe) miUnsubscribe();
 
-    function escucharPedidos() {
-        if (listenerPedidos) listenerPedidos();
-        const tiendasIds = Object.keys(tiendasCache);
-        if (tiendasIds.length === 0) {
-            document.getElementById('listaPedidos').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🏪</div>No hay tiendas disponibles</div>`;
-            return;
-        }
-        let pedidosAcumulados = {};
-        tiendasIds.forEach(tiendaId => {
-            const unsubscribe = db.collection('tiendas').doc(tiendaId).collection('pedidos').orderBy('fecha', 'desc').onSnapshot(snap => {
-                pedidosAcumulados[tiendaId] = [];
+        // 1. Escuchar TODOS los pedidos que estén "Listo para asignar"
+        const unsubscribeDisponibles = db.collectionGroup('pedidos')
+            .where('estado', '==', 'Listo para asignar')
+            .onSnapshot(snap => {
+                const disponibles = [];
                 snap.forEach(doc => {
                     const data = doc.data();
-                    pedidosAcumulados[tiendaId].push({ id: doc.id, tiendaId: tiendaId, ...data });
+                    const tiendaId = doc.ref.parent.parent.id;
+                    disponibles.push({ id: doc.id, tiendaId, ...data });
                 });
-                todosLosPedidos = [];
-                Object.values(pedidosAcumulados).forEach(lista => { todosLosPedidos = todosLosPedidos.concat(lista); });
-                todosLosPedidos.sort((a, b) => {
-                    const fa = a.fecha?.toDate?.() || new Date(a.fecha);
-                    const fb = b.fecha?.toDate?.() || new Date(b.fecha);
-                    return fb - fa;
-                });
-                filtrarPedidos();
+                todosDisponibles = disponibles;
+                renderizarDisponibles();
                 actualizarEstadisticas();
-            }, err => { console.error('Error en tienda:', err); });
-            if (!window._listenersMensajero) window._listenersMensajero = [];
-            window._listenersMensajero.push(unsubscribe);
-        });
+            }, err => {
+                console.error('Error escuchando disponibles:', err);
+            });
+
+        // 2. Escuchar los pedidos ASIGNADOS a este mensajero
+        if (!mensajeroId) return;
+        const unsubscribeMios = db.collectionGroup('pedidos')
+            .where('mensajeroId', '==', mensajeroId)
+            .onSnapshot(snap => {
+                const misPedidos = [];
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const tiendaId = doc.ref.parent.parent.id;
+                    misPedidos.push({ id: doc.id, tiendaId, ...data });
+                });
+                todosMisPedidos = misPedidos;
+                renderizarMisPedidos();
+                actualizarEstadisticas();
+                actualizarHeaderBadge();
+            }, err => {
+                console.error('Error escuchando mis pedidos:', err);
+            });
+
+        miUnsubscribe = () => {
+            unsubscribeDisponibles();
+            unsubscribeMios();
+        };
     }
 
-    function filtrarPedidos() {
-        const estado = document.getElementById('filtroEstado').value;
-        const tiendaId = document.getElementById('filtroTiendaMensajero').value;
-        const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
-        
-        // SOLO mostrar pedidos del mensajero actual
-        pedidosFiltrados = todosLosPedidos.filter(p => {
-            if (p.mensajeroId !== mensajeroId) return false;
-            if (estado && p.estado !== estado) return false;
-            if (tiendaId && p.tiendaId !== tiendaId) return false;
-            if (busqueda) {
-                const cliente = p.cliente || {};
-                const nombre = (cliente.nombre || '').toLowerCase();
-                const direccion = (cliente.direccion || '').toLowerCase();
-                if (!nombre.includes(busqueda) && !direccion.includes(busqueda)) return false;
-            }
-            return true;
-        });
-        renderizarPedidos();
-        actualizarEstadisticas();
-    }
-
-    function recargarPedidos() { filtrarPedidos(); toast('🔄 Pedidos recargados', 'info', 1500); }
-
-    function renderizarPedidos() {
-        const container = document.getElementById('listaPedidos');
-        if (pedidosFiltrados.length === 0) {
-            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No tienes pedidos asignados</p></div>`;
+    // ============================================================
+    // TOMAR PEDIDO
+    // ============================================================
+    async function tomarPedido(pedidoId, tiendaId) {
+        if (!mensajeroId) {
+            toast('⚠️ No estás autenticado como mensajero', 'error');
             return;
         }
+
+        try {
+            // 1. Verificar que el pedido aún esté disponible
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                toast('⚠️ El pedido ya no existe', 'error');
+                return;
+            }
+
+            const data = doc.data();
+            if (data.estado !== 'Listo para asignar' || data.mensajeroId) {
+                toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
+                return;
+            }
+
+            // 2. Asignar el pedido al mensajero actual
+            await docRef.update({
+                mensajeroId: mensajeroId,
+                nombreMensajero: nombreMensajero,
+                estado: 'Asignado',
+                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            toast('✅ Pedido tomado con éxito', 'success');
+            // La actualización en tiempo real se encargará del resto
+
+        } catch (error) {
+            toast('❌ Error al tomar el pedido: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================================
+    // RENDERIZAR DISPONIBLES
+    // ============================================================
+    function renderizarDisponibles() {
+        const container = document.getElementById('colDisponibles');
+        const contador = document.getElementById('cntDisponibles');
+        contador.textContent = todosDisponibles.length;
+
+        if (todosDisponibles.length === 0) {
+            container.innerHTML = `<div class="empty-col"><span class="ico">🎉</span>No hay pedidos disponibles</div>`;
+            return;
+        }
+
         let html = '';
-        pedidosFiltrados.forEach(p => {
+        todosDisponibles.forEach(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const nombreTienda = tienda.nombre || 'Tienda';
             const cliente = p.cliente || {};
-            const estadoBadge = getEstadoBadge(p.estado);
             const total = p.total || 0;
-            const fechaStr = formatearFecha(p.fecha);
-            let itemsHtml = '';
-            if (p.items && p.items.length > 0) {
-                p.items.slice(0, 3).forEach(item => {
-                    let nombreItem = item.nombre || 'Producto';
-                    if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
-                    itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${(item.total || item.precio * item.cantidad || 0).toLocaleString('es-CO')}</span></div>`;
-                });
-                if (p.items.length > 3) itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
-            }
+
             html += `
-                <div class="pedido-card">
-                    <div class="header">
-                        <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
-                        <span class="estado-badge ${p.estado?.toLowerCase() || 'pendiente'}">${p.estado || 'Pendiente'}</span>
+                <div class="pedido-card" style="border-color:var(--green);">
+                    <div class="pedido-tienda">🏪 ${nombreTienda}</div>
+                    <div class="pedido-titulo">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</div>
+                    <div class="pedido-cliente">
+                        <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
+                        <div><span class="label">📍 Dirección:</span> ${cliente.direccion || 'N/A'}</div>
+                        <div><span class="label">📱 Teléfono:</span> ${cliente.telefono || 'N/A'}</div>
                     </div>
-                    <div class="info-grid">
-                        <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
-                        <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
-                        <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                        <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
-                        <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
-                        <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
-                    </div>
-                    ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
-                    <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                    <div class="acciones">${renderizarAcciones(p)}</div>
+                    <div class="pedido-total">💰 $${total.toLocaleString('es-CO')}</div>
+                    <button class="btn-tomar" onclick="window.tomarPedido('${p.id}','${p.tiendaId}')">👤 Tomar Pedido</button>
                 </div>
             `;
         });
         container.innerHTML = html;
-        actualizarHeaderBadge();
     }
 
     // ============================================================
-    // RENDERIZAR ACCIONES - SOLO MENSAJERO (SIN "TOMAR PEDIDO")
+    // RENDERIZAR MIS PEDIDOS
     // ============================================================
-    function renderizarAcciones(pedido) {
-        const estado = pedido.estado || 'Pendiente';
-        const esMio = pedido.mensajeroId === mensajeroId;
-        let html = '';
-        
-        // VER DETALLE (SIEMPRE)
-        html += `<button class="btn-info btn-sm" onclick="verDetalle('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>`;
-        
-        // ===== 1. INICIAR ENTREGA (SOLO SI ES MÍO Y ESTÁ ASIGNADO) =====
-        if (esMio && estado === 'Asignado') {
-            html += `<button class="btn-info btn-sm" onclick="iniciarEntrega('${pedido.id}','${pedido.tiendaId}')">🛵 Iniciar entrega</button>`;
-        }
-        
-        // ===== 2. ENTREGAR (SOLO SI ES MÍO Y ESTÁ EN CAMINO) =====
-        if (esMio && estado === 'En camino') {
-            html += `<button class="btn-success btn-sm" onclick="entregarPedido('${pedido.id}','${pedido.tiendaId}')">✅ Entregar</button>`;
-            if (modoGPS) {
-                html += `<button class="btn-info btn-sm" onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')">📍 Enviar ubicación</button>`;
-            }
-        }
-        
-        // ===== 3. MOSTRAR SI YA ESTÁ ENTREGADO =====
-        if (esMio && estado === 'Entregado') {
-            html += `<span style="color:var(--green);font-size:12px;padding:8px;">✅ Entregado</span>`;
-        }
-        
-        return html;
-    }
+    function renderizarMisPedidos() {
+        const container = document.getElementById('colMios');
+        const contador = document.getElementById('cntMios');
+        contador.textContent = todosMisPedidos.length;
 
-    function getEstadoBadge(estado) {
-        const map = { 'Asignado': 'asignado', 'En camino': 'en-camino', 'Entregado': 'entregado', 'Cancelado': 'cancelado' };
-        return map[estado] || 'pendiente';
-    }
-
-    function formatearFecha(fecha) {
-        if (!fecha) return '--/--/--';
-        try {
-            let d;
-            if (fecha.toDate) d = fecha.toDate();
-            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
-            else d = new Date(fecha);
-            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-        } catch (e) { return '--/--/--'; }
-    }
-
-    function actualizarEstadisticas() {
-        const asignados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Asignado').length;
-        const enCamino = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'En camino').length;
-        const entregados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Entregado').length;
-        const total = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId).length;
-        document.getElementById('statAsignados').textContent = asignados;
-        document.getElementById('statEnCamino').textContent = enCamino;
-        document.getElementById('statEntregados').textContent = entregados;
-        document.getElementById('statTotal').textContent = total;
-        actualizarHeaderBadge();
-    }
-
-    function actualizarHeaderBadge() {
-        const asignados = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'Asignado').length;
-        const badge = document.getElementById('headerBadge');
-        badge.textContent = asignados;
-        badge.style.display = asignados > 0 ? 'inline-block' : 'none';
-    }
-
-    // ============================================================
-    // ACCIONES DEL MENSAJERO (SOLO MENSAJERO)
-    // ============================================================
-    async function iniciarEntrega(pedidoId, tiendaId) {
-        try {
-            const doc = await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId).get();
-            
-            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-            const data = doc.data();
-            
-            if (data.mensajeroId !== mensajeroId) {
-                toast('⚠️ Este pedido no te pertenece', 'error');
-                return;
-            }
-            
-            toast('⏳ Iniciando entrega...', 'info');
-            await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId)
-                .update({
-                    estado: 'En camino',
-                    fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            toast('🛵 Pedido en camino', 'success');
-            filtrarPedidos();
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
-    async function entregarPedido(pedidoId, tiendaId) {
-        try {
-            const doc = await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId).get();
-            
-            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-            const data = doc.data();
-            
-            if (data.mensajeroId !== mensajeroId) {
-                toast('⚠️ Este pedido no te pertenece', 'error');
-                return;
-            }
-            
-            toast('⏳ Confirmando entrega...', 'info');
-            await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId)
-                .update({
-                    estado: 'Entregado',
-                    fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            toast('✅ Pedido entregado correctamente', 'success');
-            filtrarPedidos();
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
-    async function enviarUbicacion(pedidoId, tiendaId) {
-        if (!ubicacionActual) {
-            toast('📍 Esperando ubicación...', 'warn', 2000);
+        if (todosMisPedidos.length === 0) {
+            container.innerHTML = `<div class="empty-col"><span class="ico">📭</span>No tienes pedidos asignados</div>`;
             return;
         }
+
+        let html = '';
+        todosMisPedidos.forEach(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const nombreTienda = tienda.nombre || 'Tienda';
+            const cliente = p.cliente || {};
+            const total = p.total || 0;
+            
+            let estadoBadge = 'asignado';
+            let estadoLabel = 'Asignado';
+            if (p.estado === 'En camino') { estadoBadge = 'en-camino'; estadoLabel = 'En camino'; }
+            else if (p.estado === 'Entregado') { estadoBadge = 'entregado'; estadoLabel = 'Entregado'; }
+            else if (p.estado === 'Cancelado') { estadoBadge = 'cancelado'; estadoLabel = 'Cancelado'; }
+
+            html += `
+                <div class="pedido-card">
+                    <div class="pedido-tienda">🏪 ${nombreTienda}</div>
+                    <div class="pedido-titulo">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</div>
+                    <div class="pedido-cliente">
+                        <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
+                        <div><span class="label">📍 Dirección:</span> ${cliente.direccion || 'N/A'}</div>
+                    </div>
+                    <div class="pedido-total">💰 $${total.toLocaleString('es-CO')}</div>
+                    <span class="estado-badge ${estadoBadge}">${estadoLabel}</span>
+                    <button class="btn-detalle" onclick="window.verDetallePedido('${p.id}','${p.tiendaId}')">📋 Ver Detalle</button>
+                    ${p.estado === 'Asignado' ? `<button class="btn-tomar" onclick="window.iniciarEntregaMensajero('${p.id}','${p.tiendaId}')" style="background:var(--orange);">🛵 Iniciar Entrega</button>` : ''}
+                    ${p.estado === 'En camino' ? `<button class="btn-tomar" onclick="window.entregarPedidoMensajero('${p.id}','${p.tiendaId}')" style="background:var(--green);">✅ Entregar</button>` : ''}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ============================================================
+    // ACCIONES DEL MENSAJERO SOBRE SUS PEDIDOS
+    // ============================================================
+    async function iniciarEntregaMensajero(pedidoId, tiendaId) {
         try {
-            await db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId)
-                .update({
-                    ubicacionMensajero: ubicacionActual,
-                    ultimaUbicacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            toast('📍 Ubicación enviada al cliente', 'success');
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            
+            await docRef.update({
+                estado: 'En camino',
+                fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('🛵 Pedido en camino', 'success');
         } catch (e) {
             toast('❌ Error: ' + e.message, 'error');
         }
     }
 
-    function verDetalle(pedidoId, tiendaId) {
-        const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    async function entregarPedidoMensajero(pedidoId, tiendaId) {
+        try {
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            
+            await docRef.update({
+                estado: 'Entregado',
+                fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('✅ Pedido entregado correctamente', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ============================================================
+    // VER DETALLE DEL PEDIDO
+    // ============================================================
+    function verDetallePedido(pedidoId, tiendaId) {
+        const pedido = [...todosDisponibles, ...todosMisPedidos].find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const cliente = pedido.cliente || {};
+        
         let html = `
             <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'Tienda'}</span></div>
             <div class="info-row"><span class="label">🧾 Pedido</span><span class="value">${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</span></div>
@@ -790,6 +826,7 @@
             <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
             <div class="info-row"><span class="label">📝 Observaciones</span><span class="value">${cliente.observaciones || 'Ninguna'}</span></div>
         `;
+        
         if (pedido.items && pedido.items.length > 0) {
             html += `<div style="margin-top:12px;"><strong>🧾 Productos</strong>`;
             pedido.items.forEach(item => {
@@ -800,6 +837,7 @@
             });
             html += `</div>`;
         }
+        
         html += `
             <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--yellow);">
                 <div class="info-row"><span style="font-weight:700;">💰 TOTAL</span><span style="font-weight:800;color:var(--green);font-size:18px;">$${(pedido.total || 0).toLocaleString('es-CO')}</span></div>
@@ -808,9 +846,9 @@
                 <div class="icono">📍</div>
                 <div class="texto">${cliente.direccion || 'Dirección no especificada'}</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${pedido.estado === 'En camino' ? '🛵 Mensajero en camino' : pedido.estado === 'Entregado' ? '✅ Pedido entregado' : '⏳ Esperando asignación'}</div>
-                ${pedido.mensajeroId === mensajeroId && pedido.estado === 'En camino' ? `<button onclick="enviarUbicacion('${pedido.id}','${pedido.tiendaId}')" class="btn-info btn-sm" style="margin-top:8px;width:auto;">📍 Enviar mi ubicación</button>` : ''}
             </div>
         `;
+        
         document.getElementById('modalTitulo').textContent = `📋 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
         document.getElementById('modalContenido').innerHTML = html;
         document.getElementById('modalDetalle').classList.add('active');
@@ -823,10 +861,12 @@
         document.body.style.overflow = '';
     }
 
+    // ============================================================
+    // GPS
+    // ============================================================
     function iniciarGPS() {
         if (!navigator.geolocation) {
-            document.getElementById('btnGPS').textContent = '📍 GPS: No soportado';
-            document.getElementById('btnGPS').style.opacity = '0.5';
+            toast('📍 GPS no soportado en este dispositivo', 'warn');
             return;
         }
         navigator.geolocation.getCurrentPosition(pos => {
@@ -835,31 +875,43 @@
         }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 10000 });
     }
 
-    function alternarModoGPS() {
-        modoGPS = !modoGPS;
-        const btn = document.getElementById('btnGPS');
-        if (modoGPS) {
-            btn.textContent = '📍 GPS: ON';
-            btn.style.background = 'var(--green)';
-            btn.style.color = '#fff';
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            watchId = navigator.geolocation.watchPosition(pos => {
-                ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                if (modoGPS) {
-                    const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroId && p.estado === 'En camino');
-                    misPedidos.forEach(p => enviarUbicacion(p.id, p.tiendaId));
-                }
-            }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 5000 });
-            toast('📍 GPS activado - Ubicación compartida automáticamente', 'success', 3000);
-        } else {
-            btn.textContent = '📍 GPS: OFF';
-            btn.style.background = '';
-            btn.style.color = '';
-            if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-            toast('📍 GPS desactivado', 'info', 2000);
-        }
+    // ============================================================
+    // ESTADÍSTICAS
+    // ============================================================
+    function actualizarEstadisticas() {
+        document.getElementById('statDisponibles').textContent = todosDisponibles.length;
+        const asignados = todosMisPedidos.filter(p => p.estado === 'Asignado').length;
+        const enCamino = todosMisPedidos.filter(p => p.estado === 'En camino').length;
+        const entregados = todosMisPedidos.filter(p => p.estado === 'Entregado').length;
+        document.getElementById('statAsignados').textContent = asignados;
+        document.getElementById('statEnCamino').textContent = enCamino;
+        document.getElementById('statEntregados').textContent = entregados;
     }
 
+    function actualizarHeaderBadge() {
+        const disponibles = todosDisponibles.length;
+        const badge = document.getElementById('headerBadge');
+        badge.textContent = disponibles;
+        badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
+    }
+
+    // ============================================================
+    // FORMATEAR FECHA
+    // ============================================================
+    function formatearFecha(fecha) {
+        if (!fecha) return '--/--/--';
+        try {
+            let d;
+            if (fecha.toDate) d = fecha.toDate();
+            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
+            else d = new Date(fecha);
+            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return '--/--/--'; }
+    }
+
+    // ============================================================
+    // TOAST
+    // ============================================================
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
@@ -871,17 +923,20 @@
         return el;
     }
 
+    // ============================================================
+    // EXPONER FUNCIONES
+    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
-    window.filtrarPedidos = filtrarPedidos;
-    window.recargarPedidos = recargarPedidos;
-    window.iniciarEntrega = iniciarEntrega;
-    window.entregarPedido = entregarPedido;
-    window.enviarUbicacion = enviarUbicacion;
-    window.verDetalle = verDetalle;
+    window.tomarPedido = tomarPedido;
+    window.iniciarEntregaMensajero = iniciarEntregaMensajero;
+    window.entregarPedidoMensajero = entregarPedidoMensajero;
+    window.verDetallePedido = verDetallePedido;
     window.cerrarModal = cerrarModal;
-    window.alternarModoGPS = alternarModoGPS;
     window.toast = toast;
+
+    console.log('✅ Panel de mensajero cargado correctamente');
+    console.log('📢 Escuchando pedidos disponibles en tiempo real');
 </script>
 </body>
 </html>
