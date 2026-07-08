@@ -195,7 +195,7 @@
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* Mensaje de recordatorio al iniciar sesión */
+        /* Mensaje de recordatorio al iniciar sesión - NO SE CIERRA AUTOMÁTICAMENTE */
         .recordatorio {
             background: var(--yellow-bg);
             border: 2px solid var(--yellow);
@@ -527,7 +527,7 @@
     </header>
 
     <div class="wrap">
-        <!-- RECORDATORIO AL INICIAR SESIÓN -->
+        <!-- RECORDATORIO AL INICIAR SESIÓN - SOLO SE CIERRA CON BOTÓN O "X" -->
         <div class="recordatorio" id="recordatorioBienvenida">
             <div class="icono">🛵</div>
             <div class="contenido">
@@ -535,7 +535,7 @@
                 <p>Para empezar a recibir pedidos, <strong>activa tu conexión</strong> haciendo clic en el botón <strong>"Conectar"</strong> que está en la parte superior.</p>
                 <button class="btn-recordatorio" onclick="window.activarConexionDesdeRecordatorio()">🔌 Conectar ahora</button>
             </div>
-            <button class="cerrar-recordatorio" onclick="this.parentElement.style.display='none'">✕</button>
+            <button class="cerrar-recordatorio" onclick="window.cerrarRecordatorio()">✕</button>
         </div>
 
         <div class="stats-grid">
@@ -695,16 +695,24 @@
         escucharPedidosMensajero();
         iniciarGPS();
         
-        // Mostrar recordatorio si está desconectado (solo una vez)
+        // Mostrar recordatorio si está desconectado (NO se cierra automáticamente)
         if (!mensajeroConectado && !recordatorioMostrado) {
             document.getElementById('recordatorioBienvenida').style.display = 'flex';
             recordatorioMostrado = true;
             toast('🛵 Recuerda conectarte para recibir pedidos', 'warn', 5000);
-        } else {
+        } else if (mensajeroConectado) {
             document.getElementById('recordatorioBienvenida').style.display = 'none';
         }
         
         toast('✅ Panel de mensajero cargado', 'success', 2000);
+    }
+
+    // ============================================================
+    // CERRAR RECORDATORIO (SOLO POR ACCIÓN DEL USUARIO)
+    // ============================================================
+    function cerrarRecordatorio() {
+        document.getElementById('recordatorioBienvenida').style.display = 'none';
+        toast('Recordatorio cerrado', 'info', 1500);
     }
 
     // ============================================================
@@ -766,6 +774,7 @@
             
             if (nuevoEstado) {
                 toast('✅ ¡Conectado! Ahora recibirás pedidos', 'success', 4000);
+                // Ocultar recordatorio SOLO si el usuario se conecta
                 document.getElementById('recordatorioBienvenida').style.display = 'none';
                 // Recargar pedidos disponibles
                 escucharPedidosMensajero();
@@ -1183,11 +1192,13 @@
     window.toggleConexion = toggleConexion;
     window.activarConexionDesdeRecordatorio = activarConexionDesdeRecordatorio;
     window.actualizarBotonConexion = actualizarBotonConexion;
+    window.cerrarRecordatorio = cerrarRecordatorio;
 
     console.log('✅ Panel de mensajero cargado correctamente');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
     console.log('📍 Dirección de locales visible en detalles');
     console.log('🔌 Control de conexión activado');
+    console.log('📌 Recordatorio solo se cierra con acción del usuario');
 </script>
 </body>
 </html>
