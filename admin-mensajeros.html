@@ -152,7 +152,7 @@
         .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-purple .val { color: var(--purple); }
 
-        /* ===== PEDIDOS PENDIENTES DE ASIGNAR ===== */
+        /* ===== PEDIDOS PARA ASIGNAR ===== */
         .pedido-asignar {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -225,6 +225,15 @@
         .pedido-asignar .asignar-area button {
             flex: 1;
             min-width: 100px;
+        }
+        .pedido-asignar .estado-preparacion {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            background: var(--blue-bg);
+            color: var(--blue);
         }
 
         /* ===== FORMULARIO CREAR MENSAJERO ===== */
@@ -443,6 +452,20 @@
             padding: 2px 8px;
             border-radius: 10px;
         }
+        .pedido-asignar .preparacion-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .preparacion-badge.cocina { background: var(--blue-bg); color: var(--blue); }
+        .preparacion-badge.despacho { background: var(--purple-bg); color: var(--purple); }
+        .preparacion-badge.preparando { background: var(--cyan-bg); color: var(--cyan); }
+        .preparacion-badge.cortando { background: var(--red-bg); color: var(--red); }
+        .preparacion-badge.horneando { background: var(--orange-bg); color: var(--orange); }
+        .preparacion-badge.arreglando { background: var(--pink-bg); color: var(--pink); }
+        .preparacion-badge.proceso { background: var(--blue-bg); color: var(--blue); }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
@@ -485,7 +508,7 @@
             <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
             <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
             <div class="stat-card c-orange"><div class="val" id="statOcupados">0</div><div class="lbl">Ocupados</div></div>
-            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Pedidos por asignar</div></div>
+            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Por asignar</div></div>
             <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
         </div>
 
@@ -544,7 +567,7 @@
         <!-- PEDIDOS PENDIENTES DE ASIGNAR -->
         <div class="seccion-pedidos" id="seccionPedidos">
             <div class="titulo-seccion">
-                📦 Pedidos en cocina (pendientes de asignar)
+                📦 Pedidos en preparación (pendientes de asignar)
                 <span class="badge" id="badgePedidos">0</span>
             </div>
             <div id="listaPedidosAsignar">
@@ -583,6 +606,96 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+
+    // ============================================================
+    // TIPOS DE NEGOCIO Y ESTADOS
+    // ============================================================
+    const TIPOS_NEGOCIO = {
+        'restaurante': {
+            label: '🍔 Restaurante',
+            estados: ['Pendiente', 'En cocina', 'En camino', 'Entregado'],
+            colores: ['yellow', 'blue', 'orange', 'green'],
+            estadoPreparacion: 'En cocina',
+            badgeClass: 'cocina'
+        },
+        'heladeria': {
+            label: '🍦 Heladería',
+            estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'],
+            colores: ['yellow', 'cyan', 'orange', 'green'],
+            estadoPreparacion: 'Preparando',
+            badgeClass: 'preparando'
+        },
+        'licoreria': {
+            label: '🍺 Licorería',
+            estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'],
+            colores: ['yellow', 'purple', 'orange', 'green'],
+            estadoPreparacion: 'En despacho',
+            badgeClass: 'despacho'
+        },
+        'tienda': {
+            label: '🛒 Tienda / Supermercado',
+            estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'],
+            colores: ['yellow', 'purple', 'orange', 'green'],
+            estadoPreparacion: 'En despacho',
+            badgeClass: 'despacho'
+        },
+        'domicilios': {
+            label: '🚗 Domicilios',
+            estados: ['Pendiente', 'Asignado', 'Recogido', 'Entregado'],
+            colores: ['yellow', 'blue', 'purple', 'green'],
+            estadoPreparacion: 'Asignado',
+            badgeClass: 'proceso'
+        },
+        'carniceria': {
+            label: '🥩 Carnicería',
+            estados: ['Pendiente', 'Cortando', 'Empacando', 'Entregado'],
+            colores: ['yellow', 'red', 'orange', 'green'],
+            estadoPreparacion: 'Cortando',
+            badgeClass: 'cortando'
+        },
+        'panaderia': {
+            label: '🥖 Panadería',
+            estados: ['Pendiente', 'Horneando', 'Empacando', 'Entregado'],
+            colores: ['yellow', 'orange', 'blue', 'green'],
+            estadoPreparacion: 'Horneando',
+            badgeClass: 'horneando'
+        },
+        'floristeria': {
+            label: '🌸 Floristería',
+            estados: ['Pendiente', 'Arreglando', 'En camino', 'Entregado'],
+            colores: ['yellow', 'pink', 'orange', 'green'],
+            estadoPreparacion: 'Arreglando',
+            badgeClass: 'arreglando'
+        },
+        'farmacia': {
+            label: '💊 Farmacia',
+            estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'],
+            colores: ['yellow', 'blue', 'orange', 'green'],
+            estadoPreparacion: 'Preparando',
+            badgeClass: 'preparando'
+        },
+        'otro': {
+            label: '📦 Otro',
+            estados: ['Pendiente', 'En proceso', 'En camino', 'Entregado'],
+            colores: ['yellow', 'blue', 'orange', 'green'],
+            estadoPreparacion: 'En proceso',
+            badgeClass: 'proceso'
+        }
+    };
+
+    function getEstadoPreparacion(tipo) {
+        if (TIPOS_NEGOCIO[tipo]) {
+            return TIPOS_NEGOCIO[tipo].estadoPreparacion || 'En cocina';
+        }
+        return 'En cocina';
+    }
+
+    function getBadgeClass(tipo) {
+        if (TIPOS_NEGOCIO[tipo]) {
+            return TIPOS_NEGOCIO[tipo].badgeClass || 'cocina';
+        }
+        return 'cocina';
+    }
 
     let todosLosMensajeros = [];
     let mensajerosFiltrados = [];
@@ -671,7 +784,6 @@
                 todosLosMensajeros = [];
                 snap.forEach(doc => {
                     const data = doc.data();
-                    // Verificar si el mensajero tiene pedidos activos
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === doc.id && 
                         (p.estado === 'Asignado' || p.estado === 'En camino')
@@ -693,19 +805,21 @@
     function escucharPedidosParaAsignar() {
         if (listenerPedidosAsignar) listenerPedidosAsignar();
         
-        // Escuchar todas las tiendas
         db.collection('tiendas').get().then(snap => {
             snap.forEach(doc => {
                 const tiendaId = doc.id;
+                const tiendaData = doc.data();
+                const tipoNegocio = tiendaData.tipoNegocio || 'restaurante';
+                const estadoPrep = getEstadoPreparacion(tipoNegocio);
+                
                 const unsubscribe = db.collection('tiendas').doc(tiendaId)
                     .collection('pedidos')
-                    .where('estado', 'in', ['En cocina', 'Preparando', 'Preparando pedido'])
+                    .where('estado', '==', estadoPrep)
                     .onSnapshot(snapPedidos => {
                         snapPedidos.docChanges().forEach(change => {
                             if (change.type === 'added' || change.type === 'modified') {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
-                                // Actualizar lista de pedidos
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 if (index !== -1) {
                                     todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
@@ -801,11 +915,14 @@
         const container = document.getElementById('listaPedidosAsignar');
         const badge = document.getElementById('badgePedidos');
         
-        // Filtrar pedidos en "En cocina" o "Preparando" sin mensajero asignado
-        const pedidosPendientes = todosLosPedidos.filter(p => 
-            (p.estado === 'En cocina' || p.estado === 'Preparando' || p.estado === 'Preparando pedido') && 
-            !p.mensajeroId
-        );
+        // Filtrar pedidos en estado de preparación sin mensajero asignado
+        const pedidosPendientes = todosLosPedidos.filter(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+            const estadoPrep = getEstadoPreparacion(tipoNegocio);
+            const badgeClass = getBadgeClass(tipoNegocio);
+            return p.estado === estadoPrep && !p.mensajeroId;
+        });
         
         badge.textContent = pedidosPendientes.length;
         
@@ -819,13 +936,15 @@
             return;
         }
         
-        // Obtener mensajeros activos
         const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado);
         
         let html = '';
         pedidosPendientes.forEach(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const nombreTienda = tienda.nombre || 'Tienda';
+            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+            const estadoPrep = getEstadoPreparacion(tipoNegocio);
+            const badgeClass = getBadgeClass(tipoNegocio);
             const cliente = p.cliente || {};
             const total = p.total || 0;
             const fechaStr = formatearFecha(p.fecha);
@@ -848,7 +967,6 @@
                 }
             }
             
-            // Opciones de mensajeros
             let opcionesMensajeros = `<option value="">Seleccionar mensajero...</option>`;
             mensajerosActivos.forEach(m => {
                 opcionesMensajeros += `<option value="${m.uid}">${m.nombre || 'Mensajero'}</option>`;
@@ -858,11 +976,22 @@
                 opcionesMensajeros = `<option value="">⚠️ No hay mensajeros disponibles</option>`;
             }
             
+            const badgeLabels = {
+                'cocina': { label: '👨‍🍳 En cocina', class: 'cocina' },
+                'despacho': { label: '📦 En despacho', class: 'despacho' },
+                'preparando': { label: '⏳ Preparando', class: 'preparando' },
+                'cortando': { label: '🔪 Cortando', class: 'cortando' },
+                'horneando': { label: '🔥 Horneando', class: 'horneando' },
+                'arreglando': { label: '🌸 Arreglando', class: 'arreglando' },
+                'proceso': { label: '⚙️ En proceso', class: 'proceso' }
+            };
+            const badgeInfo = badgeLabels[badgeClass] || badgeLabels['cocina'];
+            
             html += `
                 <div class="pedido-asignar" id="pedido-${p.id}">
                     <div class="header">
                         <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
-                        <span class="estado-badge">${p.estado || 'En cocina'}</span>
+                        <span class="preparacion-badge ${badgeInfo.class}">${badgeInfo.label}</span>
                     </div>
                     <div class="info-grid">
                         <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -902,14 +1031,12 @@
             return;
         }
         
-        // Obtener nombre del mensajero
         const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
         const nombreMensajero = mensajero?.nombre || 'Mensajero';
         
         try {
             toast('⏳ Asignando pedido...', 'info');
             
-            // Actualizar el pedido con el mensajero
             await db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
                 .update({
@@ -922,7 +1049,6 @@
             
             toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
             
-            // Recargar listas
             await cargarMensajeros();
             renderizarPedidosAsignar();
             actualizarEstadisticas();
@@ -939,10 +1065,15 @@
         const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado).length;
         const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
         const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
-        const pendientes = todosLosPedidos.filter(p => 
-            (p.estado === 'En cocina' || p.estado === 'Preparando' || p.estado === 'Preparando pedido') && 
-            !p.mensajeroId
-        ).length;
+        
+        // Pedidos pendientes de asignar (en estado de preparación sin mensajero)
+        const pendientes = todosLosPedidos.filter(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+            const estadoPrep = getEstadoPreparacion(tipoNegocio);
+            return p.estado === estadoPrep && !p.mensajeroId;
+        }).length;
+        
         const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino').length;
         
         document.getElementById('statActivos').textContent = activos;
@@ -955,10 +1086,12 @@
     }
 
     function actualizarHeaderBadge() {
-        const pendientes = todosLosPedidos.filter(p => 
-            (p.estado === 'En cocina' || p.estado === 'Preparando' || p.estado === 'Preparando pedido') && 
-            !p.mensajeroId
-        ).length;
+        const pendientes = todosLosPedidos.filter(p => {
+            const tienda = tiendasCache[p.tiendaId] || {};
+            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+            const estadoPrep = getEstadoPreparacion(tipoNegocio);
+            return p.estado === estadoPrep && !p.mensajeroId;
+        }).length;
         const badge = document.getElementById('headerBadge');
         badge.textContent = pendientes;
         badge.style.display = pendientes > 0 ? 'inline-block' : 'none';
