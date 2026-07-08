@@ -3426,6 +3426,71 @@ window.actualizarTodosStock = actualizarTodosStock;
 window.cargarEstado = cargarEstado;
 
 // ============================================================
+// FUNCIÓN PARA ACTUALIZAR ESTADÍSTICAS DE MENSAJEROS - CORREGIDA
+// ============================================================
+async function actualizarEstadisticasMensajeros() {
+    try {
+        // Obtener todos los mensajeros
+        const snap = await db.collection('usuarios')
+            .where('mensajero', '==', true)
+            .get();
+        
+        // Obtener todos los pedidos en proceso (Asignado o En camino)
+        const pedidosSnap = await db.collectionGroup('pedidos')
+            .where('estado', 'in', ['Asignado', 'En camino'])
+            .get();
+        
+        // Crear Set de mensajeros ocupados
+        const mensajerosOcupados = new Set();
+        pedidosSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.mensajeroId) {
+                mensajerosOcupados.add(data.mensajeroId);
+            }
+        });
+        
+        let activos = 0;      // Conectados + Sin pedidos en proceso
+        let inactivos = 0;    // Desconectados O cuenta desactivada
+        let ocupados = 0;     // Conectados + CON pedido en proceso
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const cuentaActiva = data.activo !== false;
+            const conectado = data.conectado !== false;
+            const tienePedidoActivo = mensajerosOcupados.has(doc.id);
+            
+            if (!cuentaActiva) {
+                inactivos++;
+                return;
+            }
+            
+            if (conectado) {
+                if (tienePedidoActivo) {
+                    ocupados++;
+                } else {
+                    activos++;
+                }
+            } else {
+                inactivos++;
+            }
+        });
+        
+        // Actualizar la interfaz
+        document.getElementById('statActivos').textContent = activos;
+        document.getElementById('statInactivos').textContent = inactivos;
+        document.getElementById('statOcupados').textContent = ocupados;
+        
+        console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
+        
+        return { activos, inactivos, ocupados };
+        
+    } catch (error) {
+        console.error('❌ Error al actualizar estadísticas:', error);
+        return { activos: 0, inactivos: 0, ocupados: 0 };
+    }
+}
+
+// ============================================================
 // INICIALIZAR
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -3440,66 +3505,45 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('📍 Dirección de locales agregada');
+    
+    // Actualizar estadísticas de mensajeros al cargar
+    setTimeout(() => {
+        actualizarEstadisticasMensajeros();
+    }, 2000);
 });
 
 // ============================================================
-// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
+// ACTUALIZAR OCUPADOS EN TIEMPO REAL
 // ============================================================
-// Esta función se ejecuta cuando se cargan los mensajeros en el panel
-async function cargarMensajerosAdmin() {
-    try {
-        const snap = await db.collection('usuarios')
-            .where('mensajero', '==', true)
-            .get();
-        
-        let activos = 0; // Conectados
-        let inactivos = 0; // Desconectados o cuenta inactiva
-        let ocupados = 0; // Conectados y con pedido en proceso
-        
-        snap.forEach(doc => {
-            const data = doc.data();
-            const cuentaActiva = data.activo !== false;
-            const conectado = data.conectado !== false;
-            
-            // Verificar si tiene pedidos en proceso (Asignado o En camino)
-            let tienePedidoActivo = false;
-            // Esto se verifica en tiempo real en el listener
-            
-            if (!cuentaActiva) {
-                inactivos++;
-            } else if (conectado) {
-                activos++;
-            } else {
-                inactivos++;
-            }
-        });
-        
-        document.getElementById('statActivos').textContent = activos;
-        document.getElementById('statInactivos').textContent = inactivos;
-        
-        // Los ocupados se actualizan en el listener de pedidos
-        actualizarOcupados();
-        
-    } catch(e) {
-        console.error('Error cargando mensajeros:', e);
-    }
-}
-
-function actualizarOcupados() {
-    // Esta función se llama desde el listener de pedidos
-    let ocupados = 0;
-    // Recorrer todos los pedidos y contar mensajeros únicos con estado Asignado o En camino
+function actualizarOcupadosEnTiempoReal() {
     const mensajerosOcupados = new Set();
+    
     Object.keys(todosLosPedidos).forEach(tiendaId => {
         const pedidos = todosLosPedidos[tiendaId] || [];
         pedidos.forEach(p => {
-            if (p.data.mensajeroId && (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
+            if (p.data.mensajeroId && 
+                (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
                 mensajerosOcupados.add(p.data.mensajeroId);
             }
         });
     });
+    
+    // Actualizar solo el contador de ocupados
     document.getElementById('statOcupados').textContent = mensajerosOcupados.size;
+    
+    // También actualizar activos e inactivos
+    actualizarEstadisticasMensajeros();
 }
+
+// Sobrescribir la función existente de actualización de estadísticas
+// para que incluya la nueva lógica
+const originalActualizarEstadisticas = window.actualizarEstadisticas;
+window.actualizarEstadisticas = function() {
+    if (originalActualizarEstadisticas) {
+        originalActualizarEstadisticas();
+    }
+    actualizarOcupadosEnTiempoReal();
+};
 </script>
 </body>
 </html>
