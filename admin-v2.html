@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -6,7 +6,6 @@
 <title>Admin EyMoto — Panel General</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-/* ===== TODOS TUS ESTILOS EXISTENTES ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
 :root{
@@ -1149,7 +1148,8 @@ let pedidoEditando = null;
 let tiendaEditando = null;
 let productosDisponibles = [];
 let itemsEditando = [];
-let pedidoAsignacion = null; // Para el modal de asignación
+let pedidoAsignacion = null;
+let todosLosMensajeros = [];
 
 // ============================================================
 // TOAST
@@ -1157,6 +1157,7 @@ let pedidoAsignacion = null; // Para el modal de asignación
 function toast(msg, type = 'info', dur = 4000, onClick = null) {
   const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️', new:'🛵' };
   const wrap = document.getElementById('toastWrap');
+  if (!wrap) { console.log(msg); return; }
   const el = document.createElement('div');
   el.className = `toast t-${type}`;
   el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
@@ -1186,7 +1187,8 @@ function detenerAlarmaGlobal(pedidoId) {
     
     alarmaActiva = false;
     vozActiva = false;
-    document.getElementById('btnSilenciarAlarma').style.display = 'none';
+    const btn = document.getElementById('btnSilenciarAlarma');
+    if (btn) btn.style.display = 'none';
     console.log('🔕 Alarma detenida' + (pedidoId ? ' para pedido: ' + pedidoId : ''));
 }
 
@@ -1414,8 +1416,10 @@ async function inicializarPanel() {
         
         const rolLabel = document.getElementById('rolUsuario');
         if (rolUsuario === 'superadmin') {
-            rolLabel.textContent = '👑 Super Administrador';
-            rolLabel.style.color = 'var(--yellow)';
+            if (rolLabel) {
+                rolLabel.textContent = '👑 Super Administrador';
+                rolLabel.style.color = 'var(--yellow)';
+            }
             document.getElementById('panelTitulo').textContent = 'Panel de Super Administración';
             document.getElementById('tabBtnTiendas').style.display = 'flex';
             document.getElementById('btnCrearNegocioContainer').style.display = 'block';
@@ -1427,8 +1431,10 @@ async function inicializarPanel() {
             await cargarProductosParaEdicion();
             
         } else if (rolUsuario === 'admin') {
-            rolLabel.textContent = '🏪 Administrador de tienda';
-            rolLabel.style.color = 'var(--green)';
+            if (rolLabel) {
+                rolLabel.textContent = '🏪 Administrador de tienda';
+                rolLabel.style.color = 'var(--green)';
+            }
             document.getElementById('panelTitulo').textContent = 'Panel de Administración';
             document.getElementById('tabBtnTiendas').style.display = 'none';
             document.getElementById('btnCrearNegocioContainer').style.display = 'none';
@@ -1464,6 +1470,11 @@ async function inicializarPanel() {
         iniciarEscuchaGlobal();
         toast('✅ Panel cargado correctamente', 'success', 2000);
         
+        // Cargar mensajeros después de un momento
+        setTimeout(() => {
+            cargarMensajerosAdmin();
+        }, 3000);
+        
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -1482,10 +1493,10 @@ function iniciarSesion() {
   const email = document.getElementById('email').value.trim();
   const pass = document.getElementById('password').value;
   const msg = document.getElementById('loginMsg');
-  msg.textContent = '';
+  if (msg) msg.textContent = '';
   
   if (!email || !pass) {
-      msg.textContent = '❌ Completa todos los campos.';
+      if (msg) msg.textContent = '❌ Completa todos los campos.';
       return;
   }
   
@@ -1515,7 +1526,7 @@ function iniciarSesion() {
       await inicializarPanel();
     })
     .catch(e => { 
-      msg.textContent = '❌ Credenciales incorrectas.';
+      if (msg) msg.textContent = '❌ Credenciales incorrectas.';
       console.error('Login error:', e); 
     });
 }
@@ -1551,7 +1562,8 @@ function iniciarAlarmaContinua(nombreTienda, pedidoId) {
     detenerAlarmaGlobal();
     console.log(`🔔 Alarma activada para: ${nombreTienda} - ${pedidoId}`);
     alarmaActiva = true;
-    document.getElementById('btnSilenciarAlarma').style.display = 'inline-block';
+    const btn = document.getElementById('btnSilenciarAlarma');
+    if (btn) btn.style.display = 'inline-block';
     
     alarmInterval = setInterval(() => {
         if (!alarmaActiva) {
@@ -1671,14 +1683,16 @@ function toggleSonidoGlobal() {
     sonidoGlobal = !sonidoGlobal;
     localStorage.setItem('sonidoGlobal', sonidoGlobal ? 'true' : 'false');
     const btn = document.getElementById('btnSonidoGlobal');
-    if (sonidoGlobal) {
-        btn.textContent = '🔊 Sonido ON';
-        btn.style.color = 'var(--green)';
-        toast('🔊 Sonido de notificaciones ACTIVADO', 'success');
-    } else {
-        btn.textContent = '🔇 Sonido OFF';
-        btn.style.color = 'var(--red)';
-        toast('🔇 Sonido de notificaciones DESACTIVADO', 'warn');
+    if (btn) {
+        if (sonidoGlobal) {
+            btn.textContent = '🔊 Sonido ON';
+            btn.style.color = 'var(--green)';
+            toast('🔊 Sonido de notificaciones ACTIVADO', 'success');
+        } else {
+            btn.textContent = '🔇 Sonido OFF';
+            btn.style.color = 'var(--red)';
+            toast('🔇 Sonido de notificaciones DESACTIVADO', 'warn');
+        }
     }
 }
 
@@ -1748,8 +1762,10 @@ function mostrarResumenNotificaciones() {
             else inactivas++;
         }
     });
-    document.getElementById('notifActivas').textContent = activas;
-    document.getElementById('notifInactivas').textContent = inactivas;
+    const notifActivas = document.getElementById('notifActivas');
+    const notifInactivas = document.getElementById('notifInactivas');
+    if (notifActivas) notifActivas.textContent = activas;
+    if (notifInactivas) notifInactivas.textContent = inactivas;
     toast(`📊 ${activas} tiendas te notifican, ${inactivas} no.`, 'info', 3000);
 }
 
@@ -1761,7 +1777,8 @@ async function editarTienda(id) {
         const doc = await db.collection('tiendas').doc(id).get();
         if (!doc.exists) { toast('❌ Tienda no encontrada', 'error'); return; }
         const t = doc.data();
-        document.getElementById('formEditarTienda').style.display = 'block';
+        const form = document.getElementById('formEditarTienda');
+        if (form) form.style.display = 'block';
         document.getElementById('editTiendaId').value = id;
         document.getElementById('nombreTienda').value = t.nombre || '';
         document.getElementById('direccionTienda').value = t.direccion || '';
@@ -1773,7 +1790,7 @@ async function editarTienda(id) {
         document.getElementById('nequi').value = t.nequi || '';
         document.getElementById('daviplata').value = t.daviplata || '';
         document.getElementById('categoriasAgotadas').value = (t.categoriasAgotadas || []).join(', ');
-        document.getElementById('formEditarTienda').scrollIntoView({ behavior: 'smooth' });
+        if (form) form.scrollIntoView({ behavior: 'smooth' });
         toast('📝 Editando: ' + (t.nombre || id), 'info');
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
@@ -1790,7 +1807,8 @@ function cancelarEdTienda() {
     document.getElementById('nequi').value = '';
     document.getElementById('daviplata').value = '';
     document.getElementById('categoriasAgotadas').value = '';
-    document.getElementById('formEditarTienda').style.display = 'none';
+    const form = document.getElementById('formEditarTienda');
+    if (form) form.style.display = 'none';
 }
 
 async function guardarTienda() {
@@ -1844,6 +1862,7 @@ async function eliminarTienda(id) {
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
+    if (!lista) return;
     lista.innerHTML = '<p style="color:var(--text-muted);">Cargando tiendas...</p>';
     try {
         const snap = await db.collection('tiendas').get();
@@ -1891,6 +1910,7 @@ async function cargarTiendasSuperAdmin() {
 
 async function cargarTiendaUnica(tiendaId) {
     const lista = document.getElementById('listaTiendas');
+    if (!lista) return;
     lista.innerHTML = '<p style="color:var(--text-muted);">Cargando tu tienda...</p>';
     try {
         const doc = await db.collection('tiendas').doc(tiendaId).get();
@@ -1923,14 +1943,20 @@ async function cargarTiendaUnica(tiendaId) {
 
 async function cargarSelectsTiendas() {
     const selects = ['tiendaProducto', 'tiendaEstado', 'inventarioTienda'];
-    for (const id of selects) { const sel = document.getElementById(id); if (sel) sel.innerHTML = '<option value="">Seleccionar...</option>'; }
+    for (const id of selects) { 
+        const sel = document.getElementById(id); 
+        if (sel) sel.innerHTML = '<option value="">Seleccionar...</option>'; 
+    }
     try {
         const snap = await db.collection('tiendas').get();
         snap.forEach(doc => {
             const t = doc.data();
             const id = doc.id;
             const opt = `<option value="${id}">${t.nombre || id}</option>`;
-            for (const selId of selects) { const sel = document.getElementById(selId); if (sel) sel.innerHTML += opt; }
+            for (const selId of selects) { 
+                const sel = document.getElementById(selId); 
+                if (sel) sel.innerHTML += opt; 
+            }
         });
     } catch(e) { console.error('❌ Error al cargar selects:', e); }
 }
@@ -1967,16 +1993,18 @@ function verificarCorreoAdmin(email) {
     const passwordInput = document.getElementById('nuevoNegocioAdminPassword');
     const ayudaPassword = document.getElementById('passwordAyuda');
     if (email === 'eymoto2026@gmail.com') {
-        campoContraseña.style.display = 'none';
-        avisoSuperAdmin.style.display = 'block';
-        passwordInput.value = '';
-        passwordInput.removeAttribute('required');
-        ayudaPassword.textContent = '🔓 No necesitas contraseña. Eres Super Admin.';
+        if (campoContraseña) campoContraseña.style.display = 'none';
+        if (avisoSuperAdmin) avisoSuperAdmin.style.display = 'block';
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.removeAttribute('required');
+        }
+        if (ayudaPassword) ayudaPassword.textContent = '🔓 No necesitas contraseña. Eres Super Admin.';
     } else {
-        campoContraseña.style.display = 'block';
-        avisoSuperAdmin.style.display = 'none';
-        passwordInput.setAttribute('required', 'required');
-        ayudaPassword.textContent = '🔑 Obligatorio para nuevos administradores.';
+        if (campoContraseña) campoContraseña.style.display = 'block';
+        if (avisoSuperAdmin) avisoSuperAdmin.style.display = 'none';
+        if (passwordInput) passwordInput.setAttribute('required', 'required');
+        if (ayudaPassword) ayudaPassword.textContent = '🔑 Obligatorio para nuevos administradores.';
     }
 }
 
@@ -2062,8 +2090,8 @@ async function crearNegocioCompleto() {
         document.getElementById('nuevoNegocioAdminPassword').value = '';
         document.getElementById('nuevoNegocioNequi').value = '';
         document.getElementById('nuevoNegocioDaviplata').value = '';
-        document.getElementById('campoContraseña').style.display = 'block';
-        document.getElementById('avisoSuperAdmin').style.display = 'none';
+        if (document.getElementById('campoContraseña')) document.getElementById('campoContraseña').style.display = 'block';
+        if (document.getElementById('avisoSuperAdmin')) document.getElementById('avisoSuperAdmin').style.display = 'none';
     } catch(error) {
         toast('❌ Error: ' + error.message, 'error');
     }
@@ -2076,7 +2104,8 @@ function seleccionarTipoProducto(tipo) {
     document.getElementById('nuevoTipoProducto').value = tipo;
     document.getElementById('btnTipoUnidad').classList.toggle('active', tipo === 'unidad');
     document.getElementById('btnTipoPeso').classList.toggle('active', tipo === 'peso');
-    document.getElementById('camposPeso').classList.toggle('visible', tipo === 'peso');
+    const camposPeso = document.getElementById('camposPeso');
+    if (camposPeso) camposPeso.classList.toggle('visible', tipo === 'peso');
     document.getElementById('labelPrecio').textContent = tipo === 'peso' ? '⚖️ Precio por gramo (COP)' : 'Precio *';
     if (tipo === 'peso') {
         actualizarPreciosPeso();
@@ -2085,8 +2114,10 @@ function seleccionarTipoProducto(tipo) {
 
 function cambiarModoPeso() {
     const modo = document.getElementById('nuevoModoPeso').value;
-    document.getElementById('modoPorGramo').style.display = modo === 'por_gramo' ? 'block' : 'none';
-    document.getElementById('modoPorBase').style.display = modo === 'por_base' ? 'block' : 'none';
+    const modoPorGramo = document.getElementById('modoPorGramo');
+    const modoPorBase = document.getElementById('modoPorBase');
+    if (modoPorGramo) modoPorGramo.style.display = modo === 'por_gramo' ? 'block' : 'none';
+    if (modoPorBase) modoPorBase.style.display = modo === 'por_base' ? 'block' : 'none';
     actualizarPreciosPeso();
 }
 
@@ -2095,16 +2126,20 @@ function actualizarPreciosPeso() {
     if (modo === 'por_gramo') {
         const precioGramo = parseFloat(document.getElementById('nuevoPrecioPorGramo').value) || 0;
         const pesoMinimo = parseFloat(document.getElementById('nuevoPesoMinimo').value) || 250;
-        document.getElementById('precioPorKiloDisplay').textContent = '$' + (precioGramo * 1000).toLocaleString('es-CO');
-        document.getElementById('precioMinimoDisplay').textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
+        const precioPorKiloDisplay = document.getElementById('precioPorKiloDisplay');
+        const precioMinimoDisplay = document.getElementById('precioMinimoDisplay');
+        if (precioPorKiloDisplay) precioPorKiloDisplay.textContent = '$' + (precioGramo * 1000).toLocaleString('es-CO');
+        if (precioMinimoDisplay) precioMinimoDisplay.textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
         document.getElementById('nuevoPrecio').value = precioGramo;
     } else if (modo === 'por_base') {
         const precioBase = parseFloat(document.getElementById('nuevoPrecioBase').value) || 0;
         const pesoBase = parseFloat(document.getElementById('nuevoPesoBase').value) || 500;
         const pesoMinimo = parseFloat(document.getElementById('nuevoPesoMinimoBase').value) || 250;
         const precioGramo = pesoBase > 0 ? precioBase / pesoBase : 0;
-        document.getElementById('precioGramoDisplay').textContent = '$' + precioGramo.toLocaleString('es-CO');
-        document.getElementById('precioMinimoBaseDisplay').textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
+        const precioGramoDisplay = document.getElementById('precioGramoDisplay');
+        const precioMinimoBaseDisplay = document.getElementById('precioMinimoBaseDisplay');
+        if (precioGramoDisplay) precioGramoDisplay.textContent = '$' + precioGramo.toLocaleString('es-CO');
+        if (precioMinimoBaseDisplay) precioMinimoBaseDisplay.textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
         document.getElementById('nuevoPrecio').value = precioGramo;
     }
 }
@@ -2114,17 +2149,20 @@ function actualizarPreciosPeso() {
 // ============================================================
 function abrirScannerAdmin() {
     const modal = document.getElementById('modalScannerAdmin');
-    modal.classList.add('active');
+    if (modal) modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     const mensaje = document.getElementById('scannerAdminMensaje');
-    mensaje.textContent = '📷 Acerca la cámara al código QR o código de barras';
-    mensaje.className = 'scanner-mensaje';
+    if (mensaje) {
+        mensaje.textContent = '📷 Acerca la cámara al código QR o código de barras';
+        mensaje.className = 'scanner-mensaje';
+    }
     iniciarScannerAdmin();
 }
 
 function cerrarScannerAdmin() {
     detenerScannerAdmin();
-    document.getElementById('modalScannerAdmin').classList.remove('active');
+    const modal = document.getElementById('modalScannerAdmin');
+    if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
 }
 
@@ -2132,9 +2170,11 @@ function iniciarScannerAdmin() {
     if (scannerAdminActivo) return;
     scannerAdminActivo = true;
     const container = document.getElementById('scannerAdmin');
+    if (!container) return;
     container.innerHTML = '';
     if (typeof Html5Qrcode === 'undefined') {
-        document.getElementById('scannerAdminMensaje').textContent = '❌ La librería QR no se cargó correctamente.';
+        const mensaje = document.getElementById('scannerAdminMensaje');
+        if (mensaje) mensaje.textContent = '❌ La librería QR no se cargó correctamente.';
         scannerAdminActivo = false;
         return;
     }
@@ -2146,7 +2186,8 @@ function iniciarScannerAdmin() {
         onScannerAdminSuccess,
         onScannerAdminError
     ).catch(err => {
-        document.getElementById('scannerAdminMensaje').textContent = '⚠️ No se pudo acceder a la cámara.';
+        const mensaje = document.getElementById('scannerAdminMensaje');
+        if (mensaje) mensaje.textContent = '⚠️ No se pudo acceder a la cámara.';
         scannerAdminActivo = false;
     });
 }
@@ -2165,8 +2206,10 @@ function detenerScannerAdmin() {
 
 function onScannerAdminSuccess(decodedText) {
     const mensaje = document.getElementById('scannerAdminMensaje');
-    mensaje.textContent = `✅ Código escaneado: ${decodedText}`;
-    mensaje.className = 'scanner-mensaje success';
+    if (mensaje) {
+        mensaje.textContent = `✅ Código escaneado: ${decodedText}`;
+        mensaje.className = 'scanner-mensaje success';
+    }
     document.getElementById('nuevoCodigoQR').value = decodedText;
     detenerScannerAdmin();
     setTimeout(() => cerrarScannerAdmin(), 1500);
@@ -2186,7 +2229,7 @@ function filtrarProductos() {
     if (!busqueda) {
         productosFiltrados = productosOriginales;
         filtroActivo = false;
-        resultados.textContent = 'Mostrando todos los productos';
+        if (resultados) resultados.textContent = 'Mostrando todos los productos';
     } else {
         productosFiltrados = productosOriginales.filter(p => {
             const nombre = (p.name || '').toLowerCase();
@@ -2195,7 +2238,7 @@ function filtrarProductos() {
             return nombre.includes(busqueda) || categoria.includes(busqueda) || descripcion.includes(busqueda);
         });
         filtroActivo = true;
-        resultados.textContent = `🔍 ${productosFiltrados.length} productos encontrados`;
+        if (resultados) resultados.textContent = `🔍 ${productosFiltrados.length} productos encontrados`;
     }
     mostrarProductos(productosFiltrados);
 }
@@ -2207,6 +2250,7 @@ function limpiarBuscador() {
 
 function mostrarProductos(lista) {
     const container = document.getElementById('listaProductos');
+    if (!container) return;
     if (!lista || lista.length === 0) {
         container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">No hay productos que coincidan con la búsqueda.</p>';
         return;
@@ -2243,6 +2287,7 @@ function mostrarProductos(lista) {
 async function cargarProductos() {
     const tiendaId = document.getElementById('tiendaProducto').value;
     const container = document.getElementById('listaProductos');
+    if (!container) return;
     if (!tiendaId) {
         container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>';
         return;
@@ -2260,7 +2305,8 @@ async function cargarProductos() {
         });
         productosFiltrados = [...productosOriginales];
         mostrarProductos(productosFiltrados);
-        document.getElementById('resultadosBusqueda').textContent = `📦 ${productosOriginales.length} productos totales`;
+        const resultados = document.getElementById('resultadosBusqueda');
+        if (resultados) resultados.textContent = `📦 ${productosOriginales.length} productos totales`;
     } catch(e) {
         container.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar productos.</p>';
     }
@@ -2303,7 +2349,8 @@ async function guardarProducto() {
         if (editId) {
             await db.collection('tiendas').doc(tiendaId).collection('productos').doc(editId).update(data);
             toast('✅ Producto actualizado', 'success');
-            document.getElementById('btnCancelProd').classList.add('hidden');
+            const btnCancelProd = document.getElementById('btnCancelProd');
+            if (btnCancelProd) btnCancelProd.classList.add('hidden');
             document.getElementById('editProductoId').value = '';
         } else {
             await db.collection('tiendas').doc(tiendaId).collection('productos').add(data);
@@ -2336,14 +2383,16 @@ function editarProducto(id) {
     document.getElementById('nuevoPrecioBase').value = producto.precioBase || 0;
     document.getElementById('nuevoPesoMinimoBase').value = producto.pesoMinimo || 1;
     cambiarModoPeso();
-    document.getElementById('btnCancelProd').classList.remove('hidden');
+    const btnCancelProd = document.getElementById('btnCancelProd');
+    if (btnCancelProd) btnCancelProd.classList.remove('hidden');
     document.getElementById('nuevoNombre').focus();
     toast('✏️ Editando: ' + producto.name, 'info', 2000);
 }
 
 function cancelarEdProducto() {
     limpiarFormularioProducto();
-    document.getElementById('btnCancelProd').classList.add('hidden');
+    const btnCancelProd = document.getElementById('btnCancelProd');
+    if (btnCancelProd) btnCancelProd.classList.add('hidden');
     document.getElementById('editProductoId').value = '';
     toast('Edición cancelada', 'info');
 }
@@ -2377,7 +2426,8 @@ function limpiarFormularioProducto() {
     document.getElementById('nuevoTipoProducto').value = 'unidad';
     document.getElementById('btnTipoUnidad').classList.add('active');
     document.getElementById('btnTipoPeso').classList.remove('active');
-    document.getElementById('camposPeso').classList.remove('visible');
+    const camposPeso = document.getElementById('camposPeso');
+    if (camposPeso) camposPeso.classList.remove('visible');
     document.getElementById('labelPrecio').textContent = 'Precio *';
     cambiarModoPeso();
 }
@@ -2409,7 +2459,8 @@ function buscarInformacionProducto() {
 function switchTab(tab, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
+    const tabContent = document.getElementById('tab-' + tab);
+    if (tabContent) tabContent.classList.add('active');
     if (btn) btn.classList.add('active');
     else {
         const btns = document.querySelectorAll('.tab-btn');
@@ -2429,11 +2480,12 @@ async function cargarInventario() {
     const tiendaId = document.getElementById('inventarioTienda').value;
     const lista = document.getElementById('inventarioLista');
     const resumen = document.getElementById('inventarioResumen');
-    if (!tiendaId) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; resumen.style.display = 'none'; return; }
+    if (!lista) return;
+    if (!tiendaId) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; if (resumen) resumen.style.display = 'none'; return; }
     try {
         const snap = await db.collection('tiendas').doc(tiendaId).collection('productos').get();
-        if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos en esta tienda.</p>'; resumen.style.display = 'none'; return; }
-        resumen.style.display = 'block';
+        if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos en esta tienda.</p>'; if (resumen) resumen.style.display = 'none'; return; }
+        if (resumen) resumen.style.display = 'block';
         let totalProductos = 0, stockTotal = 0, stockBajo = 0;
         let html = '<div class="inventario-container">';
         snap.forEach(doc => {
@@ -2462,9 +2514,12 @@ async function cargarInventario() {
         });
         html += '</div>';
         lista.innerHTML = html;
-        document.getElementById('invTotalProductos').textContent = totalProductos;
-        document.getElementById('invStockTotal').textContent = stockTotal;
-        document.getElementById('invStockBajo').textContent = stockBajo;
+        const invTotalProductos = document.getElementById('invTotalProductos');
+        const invStockTotal = document.getElementById('invStockTotal');
+        const invStockBajo = document.getElementById('invStockBajo');
+        if (invTotalProductos) invTotalProductos.textContent = totalProductos;
+        if (invStockTotal) invStockTotal.textContent = stockTotal;
+        if (invStockBajo) invStockBajo.textContent = stockBajo;
     } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar inventario.</p>'; }
 }
 
@@ -2581,6 +2636,7 @@ function probarAltavoz() {
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
+    if (!selector) return;
     tiendaSeleccionada = selector.value;
     if (pedidosUnsub) { pedidosUnsub(); pedidosUnsub = null; }
     if (tiendaSeleccionada) { escucharPedidosDeTienda(tiendaSeleccionada); }
@@ -2612,21 +2668,32 @@ function escucharPedidosDeTienda(tiendaId) {
                 renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio); 
             });
             
-            document.getElementById('cnt-P').textContent = counts[estadosNegocio[0]] || 0;
-            document.getElementById('cnt-C').textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
-            document.getElementById('cnt-M').textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
-            document.getElementById('cnt-E').textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
+            const cntP = document.getElementById('cnt-P');
+            const cntC = document.getElementById('cnt-C');
+            const cntM = document.getElementById('cnt-M');
+            const cntE = document.getElementById('cnt-E');
+            if (cntP) cntP.textContent = counts[estadosNegocio[0]] || 0;
+            if (cntC) cntC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
+            if (cntM) cntM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
+            if (cntE) cntE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
             
-            document.getElementById('statP').textContent = counts[estadosNegocio[0]] || 0;
-            document.getElementById('statC').textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
-            document.getElementById('statM').textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
-            document.getElementById('statE').textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
+            const statP = document.getElementById('statP');
+            const statC = document.getElementById('statC');
+            const statM = document.getElementById('statM');
+            const statE = document.getElementById('statE');
+            if (statP) statP.textContent = counts[estadosNegocio[0]] || 0;
+            if (statC) statC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
+            if (statM) statM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
+            if (statE) statE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
             
             const pend = counts[estadosNegocio[0]] || 0;
-            document.getElementById('tabBadge').textContent = pend;
+            const tabBadge = document.getElementById('tabBadge');
+            if (tabBadge) tabBadge.textContent = pend;
             const hb = document.getElementById('headerBadge');
-            hb.textContent = pend;
-            hb.style.display = pend > 0 ? 'inline-block' : 'none';
+            if (hb) {
+                hb.textContent = pend;
+                hb.style.display = pend > 0 ? 'inline-block' : 'none';
+            }
             
             if (counts[estadosNegocio[0]] === 0) { 
                 detenerAlarmaGlobal();
@@ -2640,10 +2707,8 @@ function escucharPedidosDeTienda(tiendaId) {
 // NUEVA FUNCIÓN: ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
 function abrirModalAsignacion(tiendaId, pedidoId) {
-    // Guardar referencia del pedido
     pedidoAsignacion = { tiendaId, pedidoId };
     
-    // Obtener datos del pedido
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
     if (!pedido) {
         toast('⚠️ No se encontró el pedido', 'error');
@@ -2657,14 +2722,13 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
     // Obtener mensajeros disponibles (activos y conectados)
-    const mensajerosDisponibles = todosLosMensajeros ? todosLosMensajeros.filter(m => 
+    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && m.conectado !== false && !m.ocupado
-    ) : [];
+    );
     
-    // Generar HTML del modal
     const container = document.getElementById('modalAsignacionContenido');
     const titulo = document.getElementById('modalAsignacionTitulo');
-    titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    if (titulo) titulo.textContent = `📦 Asignar Pedido ${numero}`;
     
     let mensajerosOptions = '';
     if (mensajerosDisponibles.length === 0) {
@@ -2676,8 +2740,8 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
         });
     }
     
+    if (!container) return;
     container.innerHTML = `
-        <!-- Resumen del pedido -->
         <div class="pedido-info-resumen">
             <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
             <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
@@ -2685,7 +2749,6 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
         </div>
         
-        <!-- Opción 1: Asignación Manual -->
         <div class="opcion-asignacion">
             <div class="titulo">👤 Asignación Manual</div>
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
@@ -2700,7 +2763,6 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
             </button>
         </div>
         
-        <!-- Opción 2: Notificar a todos -->
         <div class="opcion-asignacion">
             <div class="titulo">📢 Notificar a Todos</div>
             <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y podrán tomar el pedido.</div>
@@ -2712,12 +2774,11 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
             </button>
         </div>
         
-        <!-- Cancelar -->
         <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
     `;
     
-    // Mostrar modal
-    document.getElementById('modalAsignacion').classList.add('active');
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
 
@@ -2726,6 +2787,7 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
+    if (!select) return;
     const mensajeroId = select.value;
     
     if (!mensajeroId) {
@@ -2734,7 +2796,7 @@ async function asignarPedidoManual() {
     }
     
     const { tiendaId, pedidoId } = pedidoAsignacion;
-    const mensajero = todosLosMensajeros ? todosLosMensajeros.find(m => m.uid === mensajeroId) : null;
+    const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
     
     try {
@@ -2753,7 +2815,6 @@ async function asignarPedidoManual() {
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
-        // Recargar la vista
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
         
@@ -2771,7 +2832,6 @@ async function notificarATodos() {
     try {
         toast('⏳ Notificando mensajeros...', 'info');
         
-        // Cambiar estado a "Listo para asignar"
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -2783,7 +2843,6 @@ async function notificarATodos() {
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         
-        // Reproducir sonido
         if (sonidoGlobal) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2804,7 +2863,6 @@ async function notificarATodos() {
             } catch(e) {}
         }
         
-        // Recargar la vista
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
         
@@ -2817,7 +2875,8 @@ async function notificarATodos() {
 // FUNCIÓN: CERRAR MODAL DE ASIGNACIÓN
 // ============================================================
 function cerrarModalAsignacion() {
-    document.getElementById('modalAsignacion').classList.remove('active');
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
     pedidoAsignacion = null;
 }
@@ -2827,7 +2886,6 @@ function cerrarModalAsignacion() {
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
-        // Verificar que el pedido exista y esté en estado Pendiente
         const docRef = db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId);
         const doc = await docRef.get();
@@ -2853,7 +2911,8 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // ABRIR MODAL DE ASIGNACIÓN
+        // Recargar mensajeros antes de abrir el modal
+        await cargarMensajerosAdmin();
         abrirModalAsignacion(tiendaId, pedidoId);
         
     } catch (e) {
@@ -2871,7 +2930,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const tieneMensajero = p.mensajeroId ? true : false;
     const estadoPreparacion = getEstadoPreparacion(tipoNegocio);
     
-    // Verificar si el pedido está "Listo para asignar" (nuevo estado)
     const esListoParaAsignar = estado === 'Listo para asignar';
     
     if (estado === 'Entregado' || estado === 'Cancelado') {
@@ -2887,7 +2945,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     } else if (estado === 'Asignado') {
         counts['Asignado'] = (counts['Asignado'] || 0) + 1;
     } else if (estado === 'Listo para asignar') {
-        // Contar como pendiente para el contador visual
         counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     }
     
@@ -2940,8 +2997,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const esPrimerEstado = estado === estadosNegocio[0];
     const estadoPrep = getEstadoPreparacion(tipoNegocio);
     
-    // ===== NUEVO BOTÓN: SERVICIO LISTO (NOTIFICAR MENSAJEROS) =====
-    // Solo aparece si el pedido está en estado Pendiente y NO tiene mensajero
+    // Botón Servicio Listo
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2966,7 +3022,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero} (${asignadoPor})</div>`;
     }
     
-    // Botón para avanzar (Admin puede)
+    // Botón para avanzar
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2984,7 +3040,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // Botón retroceder (Admin puede)
+    // Botón retroceder
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
     if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
@@ -2992,12 +3048,12 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // Botón cancelar (Admin puede)
+    // Botón cancelar
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // Botón editar (solo si no tiene mensajero)
+    // Botón editar
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
@@ -3019,7 +3075,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     }
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    // Si está "Listo para asignar", usar un borde especial
     const claseExtra = estado === 'Listo para asignar' ? 'r-pending' : ringClass;
     
     const card = document.createElement('div');
@@ -3101,10 +3156,15 @@ function mostrarPedidosPendientesGlobal() {
         });
     });
     
-    Object.entries({ 'Pendiente':'cnt-P', 'En Cocina':'cnt-C', 'En Camino':'cnt-M', 'Entregado':'cnt-E' }).forEach(([estado, id]) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = counts[estado] || 0;
-    });
+    // Actualizar contadores de columnas
+    const cntP = document.getElementById('cnt-P');
+    const cntC = document.getElementById('cnt-C');
+    const cntM = document.getElementById('cnt-M');
+    const cntE = document.getElementById('cnt-E');
+    if (cntP) cntP.textContent = counts['Pendiente'] || 0;
+    if (cntC) cntC.textContent = counts['En Cocina'] || 0;
+    if (cntM) cntM.textContent = counts['En Camino'] || 0;
+    if (cntE) cntE.textContent = counts['Entregado'] || 0;
     
     ['col-P','col-C','col-M','col-E'].forEach(colId => {
         const el = document.getElementById(colId);
@@ -3120,10 +3180,14 @@ function mostrarPedidosPendientesGlobal() {
         }
     });
     
-    document.getElementById('statP').textContent = counts['Pendiente'] || 0;
-    document.getElementById('statC').textContent = counts['En Cocina'] || 0;
-    document.getElementById('statM').textContent = counts['En Camino'] || 0;
-    document.getElementById('statE').textContent = counts['Entregado'] || 0;
+    const statP = document.getElementById('statP');
+    const statC = document.getElementById('statC');
+    const statM = document.getElementById('statM');
+    const statE = document.getElementById('statE');
+    if (statP) statP.textContent = counts['Pendiente'] || 0;
+    if (statC) statC.textContent = counts['En Cocina'] || 0;
+    if (statM) statM.textContent = counts['En Camino'] || 0;
+    if (statE) statE.textContent = counts['Entregado'] || 0;
 }
 
 function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
@@ -3185,7 +3249,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     
-    // Botón "Servicio Listo" - Actualizado
+    // Botón "Servicio Listo"
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -3297,7 +3361,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
-        // Si el pedido ya está asignado, no permitir cambios de estado (excepto cancelar)
         if (data.mensajeroId && nuevoEstado !== 'Cancelado') {
             toast('⚠️ Este pedido ya está asignado a un mensajero. Solo puedes cancelarlo.', 'warn');
             return;
@@ -3430,6 +3493,7 @@ function iniciarEscuchaGlobal() {
 async function cargarEstado() {
     const tid = document.getElementById('tiendaEstado').value;
     const wrap = document.getElementById('estadoWrap');
+    if (!wrap) return;
     if (!tid) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; return; }
     try {
         const doc = await db.collection('tiendas').doc(tid).get();
@@ -3489,10 +3553,14 @@ async function cargarEstado() {
             else if (estado === 'Cancelado') counts['Cancelado']++;
             else if (estado === 'Asignado') counts['Asignado']++;
         });
-        document.getElementById('resPendiente').textContent = counts[estados[0]] || 0;
-        document.getElementById('resPreparacion').textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
-        document.getElementById('resCamino').textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
-        document.getElementById('resEntregado').textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
+        const resPendiente = document.getElementById('resPendiente');
+        const resPreparacion = document.getElementById('resPreparacion');
+        const resCamino = document.getElementById('resCamino');
+        const resEntregado = document.getElementById('resEntregado');
+        if (resPendiente) resPendiente.textContent = counts[estados[0]] || 0;
+        if (resPreparacion) resPreparacion.textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
+        if (resCamino) resCamino.textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
+        if (resEntregado) resEntregado.textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
     } catch(e) { wrap.innerHTML = '<p style="color:var(--red);">Error al cargar estado.</p>'; }
 }
 
@@ -3509,7 +3577,6 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
         pedidoEditando = { id: pedidoId, tiendaId, data: p };
         itemsEditando = p.items ? p.items.map(item => ({ ...item })) : [];
         
-        // Cargar productos de la tienda para el selector
         const snap = await db.collection('tiendas').doc(tiendaId)
             .collection('productos').get();
         productosDisponibles = [];
@@ -3519,7 +3586,8 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
         });
         
         renderizarEditarPedido();
-        document.getElementById('modalEditarPedido').classList.add('active');
+        const modal = document.getElementById('modalEditarPedido');
+        if (modal) modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     } catch(e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -3527,7 +3595,8 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
 }
 
 function cerrarEditarPedido() {
-    document.getElementById('modalEditarPedido').classList.remove('active');
+    const modal = document.getElementById('modalEditarPedido');
+    if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
     pedidoEditando = null;
     itemsEditando = [];
@@ -3535,6 +3604,7 @@ function cerrarEditarPedido() {
 
 function renderizarEditarPedido() {
     const container = document.getElementById('editarPedidoContenido');
+    if (!container) return;
     if (!pedidoEditando) return;
     
     const p = pedidoEditando.data;
@@ -3616,6 +3686,7 @@ function quitarItemPedido(index) {
 
 function agregarProductoAPedido() {
     const selector = document.getElementById('selectorProductoPedido');
+    if (!selector) return;
     const prodId = selector.value;
     if (!prodId) { toast('⚠️ Selecciona un producto', 'warn'); return; }
     const producto = productosDisponibles.find(p => p.id === prodId);
@@ -3684,25 +3755,36 @@ async function guardarEdicionPedido() {
 }
 
 // ============================================================
-// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
+// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS (CORREGIDAS)
 // ============================================================
-async function actualizarEstadisticasMensajeros() {
+async function cargarMensajerosAdmin() {
     try {
         const snap = await db.collection('usuarios')
             .where('mensajero', '==', true)
             .get();
         
-        const pedidosSnap = await db.collectionGroup('pedidos')
-            .where('estado', 'in', ['Asignado', 'En camino'])
-            .get();
-        
-        const mensajerosOcupados = new Set();
-        pedidosSnap.forEach(doc => {
-            const data = doc.data();
-            if (data.mensajeroId) {
-                mensajerosOcupados.add(data.mensajeroId);
+        // Usar una consulta más simple para evitar el índice
+        // Obtener todos los pedidos y filtrar en memoria
+        let mensajerosOcupados = new Set();
+        try {
+            // Intentar obtener pedidos en proceso (sin usar collectionGroup)
+            const tiendasSnap = await db.collection('tiendas').get();
+            for (const tiendaDoc of tiendasSnap.docs) {
+                const pedidosSnap = await db.collection('tiendas')
+                    .doc(tiendaDoc.id)
+                    .collection('pedidos')
+                    .where('estado', 'in', ['Asignado', 'En camino'])
+                    .get();
+                pedidosSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.mensajeroId) {
+                        mensajerosOcupados.add(data.mensajeroId);
+                    }
+                });
             }
-        });
+        } catch (e) {
+            console.warn('⚠️ Error obteniendo pedidos en proceso:', e);
+        }
         
         let activos = 0, inactivos = 0, ocupados = 0;
         let mensajerosList = [];
@@ -3738,19 +3820,23 @@ async function actualizarEstadisticasMensajeros() {
             }
         });
         
-        // Guardar lista global para usar en el modal
-        window.todosLosMensajeros = mensajerosList;
+        todosLosMensajeros = mensajerosList;
         
-        document.getElementById('statActivos').textContent = activos;
-        document.getElementById('statInactivos').textContent = inactivos;
-        document.getElementById('statOcupados').textContent = ocupados;
+        const statActivos = document.getElementById('statActivos');
+        const statInactivos = document.getElementById('statInactivos');
+        const statOcupados = document.getElementById('statOcupados');
+        if (statActivos) statActivos.textContent = activos;
+        if (statInactivos) statInactivos.textContent = inactivos;
+        if (statOcupados) statOcupados.textContent = ocupados;
         
         console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
+        console.log('👥 Lista de mensajeros:', mensajerosList.map(m => ({ nombre: m.nombre, conectado: m.conectado, ocupado: m.ocupado })));
         
         return { activos, inactivos, ocupados };
         
     } catch (error) {
         console.error('❌ Error al actualizar estadísticas:', error);
+        // No mostrar toast para no molestar
         return { activos: 0, inactivos: 0, ocupados: 0 };
     }
 }
@@ -3772,7 +3858,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📍 Dirección de locales agregada');
     
     setTimeout(() => {
-        actualizarEstadisticasMensajeros();
+        cargarMensajerosAdmin();
     }, 2000);
 });
 
@@ -3792,8 +3878,9 @@ function actualizarOcupadosEnTiempoReal() {
         });
     });
     
-    document.getElementById('statOcupados').textContent = mensajerosOcupados.size;
-    actualizarEstadisticasMensajeros();
+    const statOcupados = document.getElementById('statOcupados');
+    if (statOcupados) statOcupados.textContent = mensajerosOcupados.size;
+    cargarMensajerosAdmin();
 }
 
 // Sobrescribir la función existente
@@ -3870,6 +3957,7 @@ window.abrirModalAsignacion = abrirModalAsignacion;
 window.cerrarModalAsignacion = cerrarModalAsignacion;
 window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
+window.cargarMensajerosAdmin = cargarMensajerosAdmin;
 </script>
 </body>
 </html>
