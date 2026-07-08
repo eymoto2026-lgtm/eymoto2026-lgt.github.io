@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -813,15 +813,17 @@
         
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const cliente = pedido.cliente || {};
+        const direccionTienda = tienda.direccion || 'Dirección no especificada';
         
         let html = `
             <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'Tienda'}</span></div>
+            <div class="info-row"><span class="label">📍 Dirección del local</span><span class="value">${direccionTienda}</span></div>
             <div class="info-row"><span class="label">🧾 Pedido</span><span class="value">${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</span></div>
             <div class="info-row"><span class="label">📅 Fecha</span><span class="value">${formatearFecha(pedido.fecha)}</span></div>
             <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:var(--yellow);">${pedido.estado || 'Pendiente'}</span></div>
             <div class="info-row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
             <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${cliente.telefono || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">📍 Dirección de entrega</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="info-row"><span class="label">🏘️ Barrio</span><span class="value">${cliente.barrio || 'N/A'}</span></div>
             <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
             <div class="info-row"><span class="label">📝 Observaciones</span><span class="value">${cliente.observaciones || 'Ninguna'}</span></div>
@@ -937,6 +939,7 @@
 
     console.log('✅ Panel de mensajero cargado correctamente');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
+    console.log('📍 Dirección de locales visible en detalles');
 </script>
 </body>
 </html>
