@@ -65,6 +65,7 @@ button:active{transform:scale(.98)}
 label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
 .form-group{margin-bottom:14px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .section-title{font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
@@ -358,8 +359,8 @@ header .spacer{flex:1}
 .buscador-input-group button{width:auto;padding:10px 16px;white-space:nowrap;}
 .buscador-resultados{font-size:11px;color:var(--text-muted);margin-top:6px;}
 
-@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
-@media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
+@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
 </head>
 <body>
@@ -470,7 +471,7 @@ header .spacer{flex:1}
         </button>
       </div>
 
-      <!-- MODAL CREAR NEGOCIO (ACTUALIZADO CON DIRECCIÓN) -->
+      <!-- MODAL CREAR NEGOCIO -->
       <div id="modalCrearNegocio" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;justify-content:center;align-items:center;padding:20px;">
         <div style="background:#1e1e1e;border-radius:20px;max-width:550px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -542,7 +543,7 @@ header .spacer{flex:1}
         </div>
       </div>
 
-      <!-- FORMULARIO DE EDICIÓN (ACTUALIZADO CON DIRECCIÓN) -->
+      <!-- FORMULARIO DE EDICIÓN -->
       <div id="formEditarTienda" style="display:none;background:var(--surface2);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--yellow);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h4 style="color:var(--yellow);">✏️ Editar tienda</h4>
@@ -1582,7 +1583,7 @@ function mostrarResumenNotificaciones() {
 }
 
 // ============================================================
-// EDITAR TIENDA (ACTUALIZADO CON DIRECCIÓN)
+// EDITAR TIENDA
 // ============================================================
 async function editarTienda(id) {
     try {
@@ -1668,7 +1669,7 @@ async function eliminarTienda(id) {
 }
 
 // ============================================================
-// CARGAR TIENDAS (ACTUALIZADO CON DIRECCIÓN)
+// CARGAR TIENDAS
 // ============================================================
 async function cargarTiendasSuperAdmin() {
     const lista = document.getElementById('listaTiendas');
