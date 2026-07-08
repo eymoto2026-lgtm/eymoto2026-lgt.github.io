@@ -98,14 +98,15 @@ header .spacer{flex:1}
 
 .wrap{max-width:1400px;margin:0 auto;padding:22px 20px}
 
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
 .stat-card .val{font-size:28px;font-weight:900;margin-bottom:2px;line-height:1}
 .stat-card .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
 .stat-card.c-yellow .val{color:var(--yellow)}
-.stat-card.c-blue .val{color:var(--blue)}
-.stat-card.c-orange .val{color:#FF6900}
 .stat-card.c-green .val{color:var(--green)}
+.stat-card.c-blue .val{color:var(--blue)}
+.stat-card.c-red .val{color:var(--red)}
+.stat-card.c-orange .val{color:#FF6900}
 .stat-card.c-purple .val{color:var(--purple)}
 .stat-card.c-cyan .val{color:var(--cyan)}
 .stat-card.c-pink .val{color:var(--pink)}
@@ -359,7 +360,7 @@ header .spacer{flex:1}
 .buscador-input-group button{width:auto;padding:10px 16px;white-space:nowrap;}
 .buscador-resultados{font-size:11px;color:var(--text-muted);margin-top:6px;}
 
-@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
 </head>
@@ -397,10 +398,11 @@ header .spacer{flex:1}
 
   <div class="wrap">
     <div class="stats-grid">
-      <div class="stat-card c-yellow"><div class="val" id="statP">0</div><div class="lbl">Pendientes</div></div>
-      <div class="stat-card c-blue"><div class="val" id="statC">0</div><div class="lbl">En cocina</div></div>
-      <div class="stat-card c-orange"><div class="val" id="statM">0</div><div class="lbl">En camino</div></div>
-      <div class="stat-card c-green"><div class="val" id="statE">0</div><div class="lbl">Entregados hoy</div></div>
+      <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
+      <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
+      <div class="stat-card c-orange"><div class="val" id="statOcupados">0</div><div class="lbl">Ocupados</div></div>
+      <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Por asignar</div></div>
+      <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
     </div>
 
     <!-- RESUMEN DE NOTIFICACIONES -->
@@ -3439,6 +3441,65 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('📍 Dirección de locales agregada');
 });
+
+// ============================================================
+// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
+// ============================================================
+// Esta función se ejecuta cuando se cargan los mensajeros en el panel
+async function cargarMensajerosAdmin() {
+    try {
+        const snap = await db.collection('usuarios')
+            .where('mensajero', '==', true)
+            .get();
+        
+        let activos = 0; // Conectados
+        let inactivos = 0; // Desconectados o cuenta inactiva
+        let ocupados = 0; // Conectados y con pedido en proceso
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const cuentaActiva = data.activo !== false;
+            const conectado = data.conectado !== false;
+            
+            // Verificar si tiene pedidos en proceso (Asignado o En camino)
+            let tienePedidoActivo = false;
+            // Esto se verifica en tiempo real en el listener
+            
+            if (!cuentaActiva) {
+                inactivos++;
+            } else if (conectado) {
+                activos++;
+            } else {
+                inactivos++;
+            }
+        });
+        
+        document.getElementById('statActivos').textContent = activos;
+        document.getElementById('statInactivos').textContent = inactivos;
+        
+        // Los ocupados se actualizan en el listener de pedidos
+        actualizarOcupados();
+        
+    } catch(e) {
+        console.error('Error cargando mensajeros:', e);
+    }
+}
+
+function actualizarOcupados() {
+    // Esta función se llama desde el listener de pedidos
+    let ocupados = 0;
+    // Recorrer todos los pedidos y contar mensajeros únicos con estado Asignado o En camino
+    const mensajerosOcupados = new Set();
+    Object.keys(todosLosPedidos).forEach(tiendaId => {
+        const pedidos = todosLosPedidos[tiendaId] || [];
+        pedidos.forEach(p => {
+            if (p.data.mensajeroId && (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
+                mensajerosOcupados.add(p.data.mensajeroId);
+            }
+        });
+    });
+    document.getElementById('statOcupados').textContent = mensajerosOcupados.size;
+}
 </script>
 </body>
 </html>
