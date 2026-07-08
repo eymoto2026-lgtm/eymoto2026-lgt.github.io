@@ -85,7 +85,6 @@
         .btn-tomar:active { transform: scale(0.97); }
         .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
-        /* Botón Conectar/Desconectar */
         .btn-conectar {
             padding: 8px 20px;
             border-radius: 25px;
@@ -195,7 +194,6 @@
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* Mensaje de recordatorio al iniciar sesión - NO SE CIERRA AUTOMÁTICAMENTE */
         .recordatorio {
             background: var(--yellow-bg);
             border: 2px solid var(--yellow);
@@ -527,7 +525,6 @@
     </header>
 
     <div class="wrap">
-        <!-- RECORDATORIO AL INICIAR SESIÓN - SOLO SE CIERRA CON BOTÓN O "X" -->
         <div class="recordatorio" id="recordatorioBienvenida">
             <div class="icono">🛵</div>
             <div class="contenido">
@@ -547,7 +544,6 @@
 
         <div class="kanban-wrap">
             <div class="kanban">
-                <!-- COLUMNA 1: PEDIDOS DISPONIBLES -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-yellow"></div>
@@ -559,7 +555,6 @@
                     </div>
                 </div>
 
-                <!-- COLUMNA 2: MIS PEDIDOS -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-blue"></div>
@@ -575,7 +570,6 @@
     </div>
 </div>
 
-<!-- MODAL DETALLE -->
 <div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -603,9 +597,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ============================================================
-    // GLOBALS
-    // ============================================================
     let mensajeroId = null;
     let nombreMensajero = '';
     let tiendasCache = {};
@@ -618,11 +609,7 @@
     let mensajeroConectado = false;
     let recordatorioMostrado = false;
     let listenersActivos = [];
-    let cargandoPedidos = false;
 
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
     async function verificarRolMensajero() {
         const user = auth.currentUser;
         if (!user) return null;
@@ -659,7 +646,6 @@
     }
 
     function logout() {
-        // Limpiar todos los listeners
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
         listenersActivos = [];
         if (watchId) navigator.geolocation.clearWatch(watchId);
@@ -681,9 +667,6 @@
         }
     });
 
-    // ============================================================
-    // INICIALIZAR PANEL
-    // ============================================================
     async function inicializarPanel() {
         const info = await verificarRolMensajero();
         if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
@@ -692,14 +675,11 @@
         document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
         document.getElementById('recordatorioNombre').textContent = nombreMensajero;
         
-        // Cargar estado de conexión
         await cargarEstadoConexion();
-        
         await cargarTiendas();
         escucharPedidosMensajero();
         iniciarGPS();
         
-        // Mostrar recordatorio si está desconectado (NO se cierra automáticamente)
         if (!mensajeroConectado && !recordatorioMostrado) {
             document.getElementById('recordatorioBienvenida').style.display = 'flex';
             recordatorioMostrado = true;
@@ -711,17 +691,11 @@
         toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
-    // ============================================================
-    // CERRAR RECORDATORIO (SOLO POR ACCIÓN DEL USUARIO)
-    // ============================================================
     function cerrarRecordatorio() {
         document.getElementById('recordatorioBienvenida').style.display = 'none';
         toast('Recordatorio cerrado', 'info', 1500);
     }
 
-    // ============================================================
-    // CARGAR ESTADO DE CONEXIÓN DESDE FIRESTORE
-    // ============================================================
     async function cargarEstadoConexion() {
         if (!mensajeroId) return;
         try {
@@ -737,9 +711,6 @@
         }
     }
 
-    // ============================================================
-    // ACTUALIZAR BOTÓN DE CONEXIÓN
-    // ============================================================
     function actualizarBotonConexion() {
         const btn = document.getElementById('btnConectar');
         const texto = document.getElementById('btnConectarTexto');
@@ -753,39 +724,29 @@
         renderizarDisponibles();
     }
 
-    // ============================================================
-    // TOGGLE CONEXIÓN
-    // ============================================================
     async function toggleConexion() {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado', 'error');
             return;
         }
-        
         const nuevoEstado = !mensajeroConectado;
-        
         try {
             toast(nuevoEstado ? '⏳ Conectando...' : '⏳ Desconectando...', 'info', 1500);
-            
             await db.collection('usuarios').doc(mensajeroId).update({
                 conectado: nuevoEstado,
                 ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
             mensajeroConectado = nuevoEstado;
             actualizarBotonConexion();
-            
             if (nuevoEstado) {
                 toast('✅ ¡Conectado! Ahora recibirás pedidos', 'success', 4000);
                 document.getElementById('recordatorioBienvenida').style.display = 'none';
-                // Recargar pedidos disponibles
                 escucharPedidosMensajero();
             } else {
                 toast('🔴 Desconectado. Ya no recibirás pedidos.', 'info', 4000);
                 todosDisponibles = [];
                 renderizarDisponibles();
             }
-            
         } catch (e) {
             toast('❌ Error: ' + e.message, 'error');
         }
@@ -799,9 +760,6 @@
         }
     }
 
-    // ============================================================
-    // CARGAR TIENDAS
-    // ============================================================
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
@@ -814,11 +772,7 @@
         } catch (e) { console.error(e); }
     }
 
-    // ============================================================
-    // ESCUCHAR PEDIDOS DEL MENSAJERO (SIN COLLECTION GROUP)
-    // ============================================================
     function escucharPedidosMensajero() {
-        // Limpiar listeners anteriores
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
         listenersActivos = [];
         
@@ -827,14 +781,7 @@
             return;
         }
 
-        // Variables para acumular pedidos
-        let pedidosDisponiblesTemp = [];
-        let pedidosMiosTemp = [];
-        let tiendasCompletadas = 0;
-
-        // Escuchar cada tienda individualmente
         tiendasIds.forEach(tiendaId => {
-            // 1. Escuchar pedidos "Listo para asignar" en esta tienda
             const unsubDisponibles = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -845,13 +792,8 @@
                         const data = doc.data();
                         disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
                     });
-                    
-                    // Actualizar la lista global de disponibles
-                    // Reconstruir desde cero para evitar duplicados
                     const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
                     todosDisponibles = [...otrosDisponibles, ...disponibles];
-                    
-                    // Si está conectado, mostrar, si no, ocultar
                     renderizarDisponibles();
                     actualizarEstadisticas();
                     actualizarHeaderBadge();
@@ -859,7 +801,6 @@
                     console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
 
-            // 2. Escuchar pedidos ASIGNADOS a este mensajero en esta tienda
             const unsubMios = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -870,11 +811,8 @@
                         const data = doc.data();
                         misPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
                     });
-                    
-                    // Actualizar la lista global de mis pedidos
                     const otrosMios = todosMisPedidos.filter(p => p.tiendaId !== tiendaId);
                     todosMisPedidos = [...otrosMios, ...misPedidos];
-                    
                     renderizarMisPedidos();
                     actualizarEstadisticas();
                     actualizarHeaderBadge();
@@ -889,61 +827,45 @@
         console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
     }
 
-    // ============================================================
-    // TOMAR PEDIDO
-    // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado como mensajero', 'error');
             return;
         }
-        
         if (!mensajeroConectado) {
             toast('⚠️ Debes estar CONECTADO para tomar pedidos', 'warn');
             document.getElementById('recordatorioBienvenida').style.display = 'flex';
             return;
         }
-
         try {
             const docRef = db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
-
             if (!doc.exists) {
                 toast('⚠️ El pedido ya no existe', 'error');
                 return;
             }
-
             const data = doc.data();
             if (data.estado !== 'Listo para asignar' || data.mensajeroId) {
                 toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
                 return;
             }
-
             await docRef.update({
                 mensajeroId: mensajeroId,
                 nombreMensajero: nombreMensajero,
                 estado: 'Asignado',
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
             });
-
             toast('✅ Pedido tomado con éxito', 'success');
-
         } catch (error) {
             toast('❌ Error al tomar el pedido: ' + error.message, 'error');
         }
     }
 
-    // ============================================================
-    // RENDERIZAR DISPONIBLES
-    // ============================================================
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
-        
-        // Solo mostrar disponibles si está conectado
         const disponiblesMostrar = mensajeroConectado ? todosDisponibles : [];
-        
         contador.textContent = disponiblesMostrar.length;
 
         if (!mensajeroConectado) {
@@ -988,19 +910,13 @@
         container.innerHTML = html;
     }
 
-    // ============================================================
-    // RENDERIZAR MIS PEDIDOS
-    // ============================================================
     function renderizarMisPedidos() {
         const container = document.getElementById('colMios');
         const contador = document.getElementById('cntMios');
-        
-        // Ordenar mis pedidos: primero los activos (Asignado, En camino)
         const pedidosOrdenados = [...todosMisPedidos].sort((a, b) => {
             const orden = { 'Asignado': 0, 'En camino': 1, 'Entregado': 2, 'Cancelado': 3 };
             return (orden[a.estado] || 4) - (orden[b.estado] || 4);
         });
-        
         contador.textContent = pedidosOrdenados.length;
 
         if (pedidosOrdenados.length === 0) {
@@ -1042,23 +958,17 @@
         container.innerHTML = html;
     }
 
-    // ============================================================
-    // ACCIONES DEL MENSAJERO SOBRE SUS PEDIDOS
-    // ============================================================
     async function iniciarEntregaMensajero(pedidoId, tiendaId) {
         try {
             const docRef = db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
-            
             if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
             const data = doc.data();
-            
             if (data.mensajeroId !== mensajeroId) {
                 toast('⚠️ Este pedido no te pertenece', 'error');
                 return;
             }
-            
             await docRef.update({
                 estado: 'En camino',
                 fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
@@ -1074,15 +984,12 @@
             const docRef = db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
-            
             if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
             const data = doc.data();
-            
             if (data.mensajeroId !== mensajeroId) {
                 toast('⚠️ Este pedido no te pertenece', 'error');
                 return;
             }
-            
             await docRef.update({
                 estado: 'Entregado',
                 fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
@@ -1093,17 +1000,12 @@
         }
     }
 
-    // ============================================================
-    // VER DETALLE DEL PEDIDO
-    // ============================================================
     function verDetallePedido(pedidoId, tiendaId) {
         const pedido = [...todosDisponibles, ...todosMisPedidos].find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-        
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const cliente = pedido.cliente || {};
         const direccionTienda = tienda.direccion || 'Dirección no especificada';
-        
         let html = `
             <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'Tienda'}</span></div>
             <div class="info-row"><span class="label">📍 Dirección del local</span><span class="value">${direccionTienda}</span></div>
@@ -1117,7 +1019,6 @@
             <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
             <div class="info-row"><span class="label">📝 Observaciones</span><span class="value">${cliente.observaciones || 'Ninguna'}</span></div>
         `;
-        
         if (pedido.items && pedido.items.length > 0) {
             html += `<div style="margin-top:12px;"><strong>🧾 Productos</strong>`;
             pedido.items.forEach(item => {
@@ -1128,7 +1029,6 @@
             });
             html += `</div>`;
         }
-        
         html += `
             <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--yellow);">
                 <div class="info-row"><span style="font-weight:700;">💰 TOTAL</span><span style="font-weight:800;color:var(--green);font-size:18px;">$${(pedido.total || 0).toLocaleString('es-CO')}</span></div>
@@ -1139,7 +1039,6 @@
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${pedido.estado === 'En camino' ? '🛵 Mensajero en camino' : pedido.estado === 'Entregado' ? '✅ Pedido entregado' : '⏳ Esperando asignación'}</div>
             </div>
         `;
-        
         document.getElementById('modalTitulo').textContent = `📋 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
         document.getElementById('modalContenido').innerHTML = html;
         document.getElementById('modalDetalle').classList.add('active');
@@ -1152,9 +1051,6 @@
         document.body.style.overflow = '';
     }
 
-    // ============================================================
-    // GPS
-    // ============================================================
     function iniciarGPS() {
         if (!navigator.geolocation) {
             toast('📍 GPS no soportado en este dispositivo', 'warn');
@@ -1166,9 +1062,6 @@
         }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 10000 });
     }
 
-    // ============================================================
-    // ESTADÍSTICAS
-    // ============================================================
     function actualizarEstadisticas() {
         const disponiblesMostrados = mensajeroConectado ? todosDisponibles.length : 0;
         document.getElementById('statDisponibles').textContent = disponiblesMostrados;
@@ -1187,9 +1080,6 @@
         badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
     }
 
-    // ============================================================
-    // FORMATEAR FECHA
-    // ============================================================
     function formatearFecha(fecha) {
         if (!fecha) return '--/--/--';
         try {
@@ -1201,9 +1091,6 @@
         } catch (e) { return '--/--/--'; }
     }
 
-    // ============================================================
-    // TOAST
-    // ============================================================
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
@@ -1216,9 +1103,6 @@
         return el;
     }
 
-    // ============================================================
-    // EXPONER FUNCIONES
-    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.tomarPedido = tomarPedido;
