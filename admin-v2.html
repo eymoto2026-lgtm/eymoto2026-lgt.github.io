@@ -6,6 +6,7 @@
 <title>Admin EyMoto — Panel General</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
+/* ===== TODOS TUS ESTILOS EXISTENTES ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
 :root{
@@ -359,6 +360,160 @@ header .spacer{flex:1}
 .buscador-input-group input{flex:1;min-width:150px;padding:10px 14px;}
 .buscador-input-group button{width:auto;padding:10px 16px;white-space:nowrap;}
 .buscador-resultados{font-size:11px;color:var(--text-muted);margin-top:6px;}
+
+/* ===== MODAL DE ASIGNACIÓN ===== */
+.modal-asignacion {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.modal-asignacion.active { display: flex; }
+.modal-asignacion .modal-content {
+    background: #1e1e1e;
+    border-radius: 20px;
+    max-width: 550px;
+    width: 100%;
+    padding: 28px;
+    border: 1px solid var(--yellow);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-asignacion .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.modal-asignacion .modal-header h3 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+}
+.modal-asignacion .modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+}
+.modal-asignacion .modal-close:hover { color: var(--red); }
+.modal-asignacion .opcion-asignacion {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+.modal-asignacion .opcion-asignacion:hover {
+    border-color: var(--yellow);
+}
+.modal-asignacion .opcion-asignacion .titulo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.modal-asignacion .opcion-asignacion .descripcion {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.modal-asignacion .opcion-asignacion select {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: #fff;
+    padding: 10px 12px;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+.modal-asignacion .opcion-asignacion select option {
+    background: #1e1e1e;
+}
+.modal-asignacion .opcion-asignacion .btn-asignar {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.modal-asignacion .opcion-asignacion .btn-asignar:hover {
+    transform: scale(1.01);
+}
+.modal-asignacion .opcion-asignacion .btn-asignar:active {
+    transform: scale(0.97);
+}
+.modal-asignacion .opcion-asignacion .btn-asignar.manual {
+    background: var(--blue);
+    color: #fff;
+}
+.modal-asignacion .opcion-asignacion .btn-asignar.manual:hover {
+    background: #0277bd;
+}
+.modal-asignacion .opcion-asignacion .btn-asignar.broadcast {
+    background: var(--yellow);
+    color: #1a1a2e;
+}
+.modal-asignacion .opcion-asignacion .btn-asignar.broadcast:hover {
+    background: var(--yellow-dim);
+}
+.modal-asignacion .opcion-asignacion .mensajeros-disponibles {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+.modal-asignacion .opcion-asignacion .mensajeros-disponibles .count {
+    color: var(--green);
+    font-weight: 700;
+}
+.modal-asignacion .btn-cancelar-modal {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+.modal-asignacion .btn-cancelar-modal:hover {
+    background: var(--surface3);
+    color: #fff;
+}
+.modal-asignacion .pedido-info-resumen {
+    background: var(--surface3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+.modal-asignacion .pedido-info-resumen .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+.modal-asignacion .pedido-info-resumen .label {
+    color: var(--text-muted);
+}
+.modal-asignacion .pedido-info-resumen .value {
+    color: #fff;
+    font-weight: 500;
+}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -758,6 +913,19 @@ header .spacer{flex:1}
   </div>
 </div>
 
+<!-- ===== MODAL DE ASIGNACIÓN DE PEDIDO ===== -->
+<div class="modal-asignacion" id="modalAsignacion">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalAsignacionTitulo">📦 Asignar Pedido</h3>
+            <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
+        </div>
+        <div id="modalAsignacionContenido">
+            <!-- Se llena dinámicamente desde JavaScript -->
+        </div>
+    </div>
+</div>
+
 <!-- MODAL ESCÁNER ADMIN -->
 <div class="modal-scanner" id="modalScannerAdmin">
     <div class="modal-content">
@@ -981,6 +1149,7 @@ let pedidoEditando = null;
 let tiendaEditando = null;
 let productosDisponibles = [];
 let itemsEditando = [];
+let pedidoAsignacion = null; // Para el modal de asignación
 
 // ============================================================
 // TOAST
@@ -2468,52 +2637,153 @@ function escucharPedidosDeTienda(tiendaId) {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (BOTÓN PARA ADMIN)
+// NUEVA FUNCIÓN: ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
-async function marcarServicioListo(tiendaId, pedidoId) {
-    try {
-        toast('⏳ Preparando notificación...', 'info');
-        
-        // 1. Obtener el pedido
-        const docRef = db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId);
-        const doc = await docRef.get();
-        
-        if (!doc.exists) {
-            toast('⚠️ Pedido no encontrado', 'error');
-            return;
-        }
-        
-        const data = doc.data();
-        
-        // 2. Verificar que esté en estado Pendiente y sin mensajero
-        const tienda = tiendasCache[tiendaId] || {};
-        const tipoNegocio = tienda.tipoNegocio || 'restaurante';
-        const estadosNegocio = getEstadosNegocio(tipoNegocio);
-        const estadoPendiente = estadosNegocio[0] || 'Pendiente';
-        
-        if (data.estado !== estadoPendiente) {
-            toast('⚠️ El pedido ya no está pendiente', 'warn');
-            return;
-        }
-        
-        if (data.mensajeroId) {
-            toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn');
-            return;
-        }
-        
-        // 3. Cambiar estado a "Listo para asignar"
-        await docRef.update({
-            estado: 'Listo para asignar',
-            fechaListo: firebase.firestore.FieldValue.serverTimestamp()
+function abrirModalAsignacion(tiendaId, pedidoId) {
+    // Guardar referencia del pedido
+    pedidoAsignacion = { tiendaId, pedidoId };
+    
+    // Obtener datos del pedido
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    const cliente = pedido.cliente || {};
+    const total = pedido.total || 0;
+    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+    
+    // Obtener mensajeros disponibles (activos y conectados)
+    const mensajerosDisponibles = todosLosMensajeros ? todosLosMensajeros.filter(m => 
+        m.activo !== false && m.conectado !== false && !m.ocupado
+    ) : [];
+    
+    // Generar HTML del modal
+    const container = document.getElementById('modalAsignacionContenido');
+    const titulo = document.getElementById('modalAsignacionTitulo');
+    titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    
+    let mensajerosOptions = '';
+    if (mensajerosDisponibles.length === 0) {
+        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    } else {
+        mensajerosOptions = '<option value="">Seleccionar mensajero...</option>';
+        mensajerosDisponibles.forEach(m => {
+            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'} (Disponible)</option>`;
         });
+    }
+    
+    container.innerHTML = `
+        <!-- Resumen del pedido -->
+        <div class="pedido-info-resumen">
+            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+        </div>
         
-        toast('✅ Servicio listo! Notificando mensajeros...', 'success', 4000);
+        <!-- Opción 1: Asignación Manual -->
+        <div class="opcion-asignacion">
+            <div class="titulo">👤 Asignación Manual</div>
+            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+            <select id="selectMensajeroManual">
+                ${mensajerosOptions}
+            </select>
+            <div class="mensajeros-disponibles">
+                Mensajeros disponibles: <span class="count">${mensajerosDisponibles.length}</span>
+            </div>
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" ${mensajerosDisponibles.length === 0 ? 'disabled' : ''}>
+                ✅ Asignar a este mensajero
+            </button>
+        </div>
         
-        // 4. La notificación a mensajeros se maneja automáticamente
-        // porque el panel de mensajeros escucha los cambios en tiempo real
+        <!-- Opción 2: Notificar a todos -->
+        <div class="opcion-asignacion">
+            <div class="titulo">📢 Notificar a Todos</div>
+            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y podrán tomar el pedido.</div>
+            <div class="mensajeros-disponibles">
+                Mensajeros que recibirán la notificación: <span class="count">${mensajerosDisponibles.length}</span>
+            </div>
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" ${mensajerosDisponibles.length === 0 ? 'disabled' : ''}>
+                🔔 Notificar a todos
+            </button>
+        </div>
         
-        // 5. Reproducir sonido de notificación
+        <!-- Cancelar -->
+        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
+    `;
+    
+    // Mostrar modal
+    document.getElementById('modalAsignacion').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// ============================================================
+// FUNCIÓN: ASIGNAR PEDIDO MANUALMENTE
+// ============================================================
+async function asignarPedidoManual() {
+    const select = document.getElementById('selectMensajeroManual');
+    const mensajeroId = select.value;
+    
+    if (!mensajeroId) {
+        toast('⚠️ Selecciona un mensajero', 'warn');
+        return;
+    }
+    
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    const mensajero = todosLosMensajeros ? todosLosMensajeros.find(m => m.uid === mensajeroId) : null;
+    const nombreMensajero = mensajero?.nombre || 'Mensajero';
+    
+    try {
+        toast('⏳ Asignando pedido...', 'info');
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                mensajeroId: mensajeroId,
+                nombreMensajero: nombreMensajero,
+                estado: 'Asignado',
+                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
+                asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
+            });
+        
+        toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
+        cerrarModalAsignacion();
+        
+        // Recargar la vista
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+        
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNCIÓN: NOTIFICAR A TODOS LOS MENSAJEROS
+// ============================================================
+async function notificarATodos() {
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    
+    try {
+        toast('⏳ Notificando mensajeros...', 'info');
+        
+        // Cambiar estado a "Listo para asignar"
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                estado: 'Listo para asignar',
+                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                notificadoPor: auth.currentUser?.email || 'Admin'
+            });
+        
+        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+        cerrarModalAsignacion();
+        
+        // Reproducir sonido
         if (sonidoGlobal) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2534,11 +2804,59 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             } catch(e) {}
         }
         
-        // 6. Recargar la vista
+        // Recargar la vista
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
         
-    } catch(e) {
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNCIÓN: CERRAR MODAL DE ASIGNACIÓN
+// ============================================================
+function cerrarModalAsignacion() {
+    document.getElementById('modalAsignacion').classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoAsignacion = null;
+}
+
+// ============================================================
+// FUNCIÓN MARCAR SERVICIO LISTO (ACTUALIZADA - ABRE MODAL)
+// ============================================================
+async function marcarServicioListo(tiendaId, pedidoId) {
+    try {
+        // Verificar que el pedido exista y esté en estado Pendiente
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        const tienda = tiendasCache[tiendaId] || {};
+        const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+        const estadosNegocio = getEstadosNegocio(tipoNegocio);
+        const estadoPendiente = estadosNegocio[0] || 'Pendiente';
+        
+        if (data.estado !== estadoPendiente) {
+            toast('⚠️ El pedido ya no está pendiente', 'warn');
+            return;
+        }
+        
+        if (data.mensajeroId) {
+            toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn');
+            return;
+        }
+        
+        // ABRIR MODAL DE ASIGNACIÓN
+        abrirModalAsignacion(tiendaId, pedidoId);
+        
+    } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
     }
 }
@@ -2644,7 +2962,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     // Mostrar información del mensajero si está asignado
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
-        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero}</div>`;
+        const asignadoPor = p.asignadoPor || 'Sistema';
+        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero} (${asignadoPor})</div>`;
     }
     
     // Botón para avanzar (Admin puede)
@@ -2866,7 +3185,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     
-    // Botón "Servicio Listo"
+    // Botón "Servicio Listo" - Actualizado
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2885,7 +3204,8 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
-        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero}</div>`;
+        const asignadoPor = p.asignadoPor || 'Sistema';
+        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero} (${asignadoPor})</div>`;
     }
     
     if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
@@ -3364,6 +3684,128 @@ async function guardarEdicionPedido() {
 }
 
 // ============================================================
+// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
+// ============================================================
+async function actualizarEstadisticasMensajeros() {
+    try {
+        const snap = await db.collection('usuarios')
+            .where('mensajero', '==', true)
+            .get();
+        
+        const pedidosSnap = await db.collectionGroup('pedidos')
+            .where('estado', 'in', ['Asignado', 'En camino'])
+            .get();
+        
+        const mensajerosOcupados = new Set();
+        pedidosSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.mensajeroId) {
+                mensajerosOcupados.add(data.mensajeroId);
+            }
+        });
+        
+        let activos = 0, inactivos = 0, ocupados = 0;
+        let mensajerosList = [];
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const cuentaActiva = data.activo !== false;
+            const conectado = data.conectado !== false;
+            const tienePedidoActivo = mensajerosOcupados.has(doc.id);
+            
+            const mensajero = {
+                uid: doc.id,
+                ...data,
+                ocupado: tienePedidoActivo,
+                conectado: conectado,
+                activo: cuentaActiva
+            };
+            mensajerosList.push(mensajero);
+            
+            if (!cuentaActiva) {
+                inactivos++;
+                return;
+            }
+            
+            if (conectado) {
+                if (tienePedidoActivo) {
+                    ocupados++;
+                } else {
+                    activos++;
+                }
+            } else {
+                inactivos++;
+            }
+        });
+        
+        // Guardar lista global para usar en el modal
+        window.todosLosMensajeros = mensajerosList;
+        
+        document.getElementById('statActivos').textContent = activos;
+        document.getElementById('statInactivos').textContent = inactivos;
+        document.getElementById('statOcupados').textContent = ocupados;
+        
+        console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
+        
+        return { activos, inactivos, ocupados };
+        
+    } catch (error) {
+        console.error('❌ Error al actualizar estadísticas:', error);
+        return { activos: 0, inactivos: 0, ocupados: 0 };
+    }
+}
+
+// ============================================================
+// INICIALIZAR
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('filtroTienda');
+    if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
+    document.addEventListener('click', function activarAudioPorClic() {
+        activarAudioAutomatico();
+        document.removeEventListener('click', activarAudioPorClic);
+    }, { once: true });
+    cargarPreferenciaSonido();
+    console.log('✅ Panel de administración cargado correctamente');
+    console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
+    console.log('📦 Estados personalizados por tipo de negocio activados');
+    console.log('📍 Dirección de locales agregada');
+    
+    setTimeout(() => {
+        actualizarEstadisticasMensajeros();
+    }, 2000);
+});
+
+// ============================================================
+// ACTUALIZAR OCUPADOS EN TIEMPO REAL
+// ============================================================
+function actualizarOcupadosEnTiempoReal() {
+    const mensajerosOcupados = new Set();
+    
+    Object.keys(todosLosPedidos).forEach(tiendaId => {
+        const pedidos = todosLosPedidos[tiendaId] || [];
+        pedidos.forEach(p => {
+            if (p.data.mensajeroId && 
+                (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
+                mensajerosOcupados.add(p.data.mensajeroId);
+            }
+        });
+    });
+    
+    document.getElementById('statOcupados').textContent = mensajerosOcupados.size;
+    actualizarEstadisticasMensajeros();
+}
+
+// Sobrescribir la función existente
+const originalActualizarEstadisticas = window.actualizarEstadisticas;
+window.actualizarEstadisticas = function() {
+    if (originalActualizarEstadisticas) {
+        originalActualizarEstadisticas();
+    }
+    actualizarOcupadosEnTiempoReal();
+};
+
+// ============================================================
 // EXPONER FUNCIONES AL GLOBAL
 // ============================================================
 window.toast = toast;
@@ -3424,126 +3866,10 @@ window.exportarInventario = exportarInventario;
 window.resetearStockCero = resetearStockCero;
 window.actualizarTodosStock = actualizarTodosStock;
 window.cargarEstado = cargarEstado;
-
-// ============================================================
-// FUNCIÓN PARA ACTUALIZAR ESTADÍSTICAS DE MENSAJEROS - CORREGIDA
-// ============================================================
-async function actualizarEstadisticasMensajeros() {
-    try {
-        // Obtener todos los mensajeros
-        const snap = await db.collection('usuarios')
-            .where('mensajero', '==', true)
-            .get();
-        
-        // Obtener todos los pedidos en proceso (Asignado o En camino)
-        const pedidosSnap = await db.collectionGroup('pedidos')
-            .where('estado', 'in', ['Asignado', 'En camino'])
-            .get();
-        
-        // Crear Set de mensajeros ocupados
-        const mensajerosOcupados = new Set();
-        pedidosSnap.forEach(doc => {
-            const data = doc.data();
-            if (data.mensajeroId) {
-                mensajerosOcupados.add(data.mensajeroId);
-            }
-        });
-        
-        let activos = 0;      // Conectados + Sin pedidos en proceso
-        let inactivos = 0;    // Desconectados O cuenta desactivada
-        let ocupados = 0;     // Conectados + CON pedido en proceso
-        
-        snap.forEach(doc => {
-            const data = doc.data();
-            const cuentaActiva = data.activo !== false;
-            const conectado = data.conectado !== false;
-            const tienePedidoActivo = mensajerosOcupados.has(doc.id);
-            
-            if (!cuentaActiva) {
-                inactivos++;
-                return;
-            }
-            
-            if (conectado) {
-                if (tienePedidoActivo) {
-                    ocupados++;
-                } else {
-                    activos++;
-                }
-            } else {
-                inactivos++;
-            }
-        });
-        
-        // Actualizar la interfaz
-        document.getElementById('statActivos').textContent = activos;
-        document.getElementById('statInactivos').textContent = inactivos;
-        document.getElementById('statOcupados').textContent = ocupados;
-        
-        console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
-        
-        return { activos, inactivos, ocupados };
-        
-    } catch (error) {
-        console.error('❌ Error al actualizar estadísticas:', error);
-        return { activos: 0, inactivos: 0, ocupados: 0 };
-    }
-}
-
-// ============================================================
-// INICIALIZAR
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const sel = document.getElementById('filtroTienda');
-    if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
-    document.addEventListener('click', function activarAudioPorClic() {
-        activarAudioAutomatico();
-        document.removeEventListener('click', activarAudioPorClic);
-    }, { once: true });
-    cargarPreferenciaSonido();
-    console.log('✅ Panel de administración cargado correctamente');
-    console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
-    console.log('📦 Estados personalizados por tipo de negocio activados');
-    console.log('📍 Dirección de locales agregada');
-    
-    // Actualizar estadísticas de mensajeros al cargar
-    setTimeout(() => {
-        actualizarEstadisticasMensajeros();
-    }, 2000);
-});
-
-// ============================================================
-// ACTUALIZAR OCUPADOS EN TIEMPO REAL
-// ============================================================
-function actualizarOcupadosEnTiempoReal() {
-    const mensajerosOcupados = new Set();
-    
-    Object.keys(todosLosPedidos).forEach(tiendaId => {
-        const pedidos = todosLosPedidos[tiendaId] || [];
-        pedidos.forEach(p => {
-            if (p.data.mensajeroId && 
-                (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
-                mensajerosOcupados.add(p.data.mensajeroId);
-            }
-        });
-    });
-    
-    // Actualizar solo el contador de ocupados
-    document.getElementById('statOcupados').textContent = mensajerosOcupados.size;
-    
-    // También actualizar activos e inactivos
-    actualizarEstadisticasMensajeros();
-}
-
-// Sobrescribir la función existente de actualización de estadísticas
-// para que incluya la nueva lógica
-const originalActualizarEstadisticas = window.actualizarEstadisticas;
-window.actualizarEstadisticas = function() {
-    if (originalActualizarEstadisticas) {
-        originalActualizarEstadisticas();
-    }
-    actualizarOcupadosEnTiempoReal();
-};
+window.abrirModalAsignacion = abrirModalAsignacion;
+window.cerrarModalAsignacion = cerrarModalAsignacion;
+window.asignarPedidoManual = asignarPedidoManual;
+window.notificarATodos = notificarATodos;
 </script>
 </body>
 </html>
