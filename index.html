@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>EyMotoComidas - Menú Digital</title>
-    
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    
     <style>
-        /* ===== TODOS LOS ESTILOS COMPLETOS (MANTENER TUS ESTILOS EXISTENTES) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -322,7 +319,6 @@
             text-align: center;
         }
 
-        /* ===== SELECTOR DE PESO CON INPUT NUMÉRICO ===== */
         .selector-peso {
             margin-top: 8px;
             background: #f5f5f5;
@@ -490,7 +486,6 @@
             transform: scale(0.9);
         }
 
-        /* ===== CARRITO FLOTANTE ===== */
         .carrito-flotante {
             position: fixed;
             bottom: 0;
@@ -586,7 +581,6 @@
             box-shadow: none;
         }
 
-        /* ===== FORMULARIO ===== */
         .form-datos {
             margin-top: 8px;
             padding-top: 8px;
@@ -646,7 +640,6 @@
             padding-left: 2px;
         }
 
-        /* ===== MÉTODOS DE PAGO ===== */
         .metodo-pago-option {
             display: flex;
             align-items: center;
@@ -690,7 +683,6 @@
             border-radius: 6px;
         }
 
-        /* ===== BOTÓN LECTOR QR ===== */
         .btn-lector-qr {
             position: fixed;
             bottom: 200px;
@@ -720,7 +712,6 @@
             display: none !important;
         }
 
-        /* ===== MODAL DEL LECTOR QR ===== */
         .modal-qr {
             display: none;
             position: fixed;
@@ -827,7 +818,6 @@
             transform: scale(0.97);
         }
 
-        /* ===== TOAST ===== */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -862,7 +852,6 @@
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        /* ===== TIENDA CERRADA ===== */
         .tienda-cerrada-overlay {
             position: fixed;
             top: 0;
@@ -920,7 +909,6 @@
             display: block;
         }
 
-        /* ===== MODAL DE PRODUCTO ===== */
         .modal-producto {
             display: none;
             position: fixed;
@@ -1105,7 +1093,6 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ===== MODAL LECTOR QR ===== -->
     <div class="modal-qr" id="modalQR" onclick="cerrarModalQR(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <button class="modal-cerrar" onclick="cerrarModalQR()">✕</button>
@@ -1119,7 +1106,6 @@
         </div>
     </div>
 
-    <!-- ===== MODAL DE PRODUCTO ===== -->
     <div class="modal-producto" id="modalProducto" onclick="cerrarModalProducto(event)">
         <div class="modal-contenido" onclick="event.stopPropagation()">
             <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
@@ -1142,14 +1128,12 @@
         </div>
     </div>
 
-    <!-- ===== TIENDA CERRADA ===== -->
     <div class="tienda-cerrada-overlay" id="tiendaCerradaOverlay">
         <div class="icono">🔒</div>
         <h2 id="cerradoTitulo">Tienda Cerrada</h2>
         <p>Lo sentimos, la tienda se encuentra cerrada temporalmente. Vuelve más tarde.</p>
     </div>
 
-    <!-- ===== HEADER ===== -->
     <div class="header" id="headerPrincipal">
         <div class="banner-container">
             <img id="bannerHeader" src="" alt="Banner" onerror="this.style.display='none'">
@@ -1166,12 +1150,10 @@
         </div>
     </div>
 
-    <!-- ===== BOTÓN LECTOR QR ===== -->
     <button class="btn-lector-qr oculto" id="btnAbrirQR" onclick="abrirModalQR()" style="display:none;">
         📷 Escanear QR
     </button>
 
-    <!-- ===== CONTENIDO ===== -->
     <div class="container" id="contenedorMenu">
         <div class="categorias-wrapper" id="categoriasWrapper">
             <div class="categorias-container" id="categoriasContainer"></div>
@@ -1186,7 +1168,6 @@
         </div>
     </div>
 
-    <!-- ===== CARRITO FLOTANTE ===== -->
     <div class="carrito-flotante" id="carritoFlotante">
         <div class="carrito-header">
             <h3>🛒 Carrito</h3>
@@ -1198,7 +1179,6 @@
             </div>
         </div>
         
-        <!-- ===== FORMULARIO CON MÉTODOS DE PAGO ===== -->
         <div class="form-datos" id="formDatos">
             <span class="label-form">👤 Datos de entrega <span class="required-asterisk">*</span></span>
             <input type="text" id="clienteNombre" placeholder="Tu nombre completo *" class="required">
@@ -1257,15 +1237,11 @@
         </div>
     </div>
 
-    <!-- ===== FIREBASE SDK ===== -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
     <script>
-        // ============================================================
-        // CONFIGURACIÓN FIREBASE
-        // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
             authDomain: "eymotocomidas.firebaseapp.com",
@@ -1278,15 +1254,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // ============================================================
-        // ===== OBTENER TIENDA ID DESDE LA URL - CORREGIDO =====
-        // ============================================================
-        
-        // Obtener el ID de la tienda desde la URL
         const params = new URLSearchParams(window.location.search);
         const TIENDA_ID = params.get('tienda');
         
-        // Si no hay tienda en la URL, mostrar error
         if (!TIENDA_ID) {
             document.getElementById('listaProductos').innerHTML = `
                 <div style="color:#FF3D00;text-align:center;padding:30px;">
@@ -1300,15 +1270,8 @@
             console.log('🏪 Tienda ID desde URL:', TIENDA_ID);
         }
         
-        // Número de WhatsApp de la tienda (se cargará desde Firestore)
         let WHATSAPP_TIENDA = '573169934516';
-        
-        console.log('🏪 Tienda ID final:', TIENDA_ID);
-        console.log('📱 WhatsApp tienda:', WHATSAPP_TIENDA);
 
-        // ============================================================
-        // GLOBALS
-        // ============================================================
         let carrito = [];
         let productos = [];
         let tiendaData = {};
@@ -1322,9 +1285,6 @@
         let clienteAutenticado = null;
         let pesosSeleccionados = {};
 
-        // ============================================================
-        // AUTENTICACIÓN POR EMAIL (MÁS CONFIABLE)
-        // ============================================================
         async function autenticarCliente() {
             try {
                 if (auth.currentUser) {
@@ -1358,9 +1318,6 @@
             }
         }
 
-        // ============================================================
-        // SISTEMA DE AUDIO
-        // ============================================================
         function getAudioContext() {
             if (!audioContextGlobal) {
                 try {
@@ -1470,13 +1427,9 @@
             activarAudio();
         }, { once: true });
 
-        // ============================================================
-        // FUNCIÓN PARA OCULTAR/MOSTRAR EL BOTÓN QR
-        // ============================================================
         function actualizarVisibilidadBotonQR(activado) {
             const btn = document.getElementById('btnAbrirQR');
             if (!btn) return;
-            
             if (activado) {
                 btn.classList.remove('oculto');
                 btn.style.display = 'flex';
@@ -1488,9 +1441,6 @@
             }
         }
 
-        // ============================================================
-        // CARGAR NÚMERO DE WHATSAPP DESDE FIRESTORE
-        // ============================================================
         async function cargarNumeroWhatsApp() {
             if (!TIENDA_ID) return;
             try {
@@ -1505,9 +1455,6 @@
             }
         }
 
-        // ============================================================
-        // VERIFICAR ESCANEO ACTIVADO
-        // ============================================================
         async function verificarEscaneoActivado() {
             if (!TIENDA_ID) return false;
             try {
@@ -1521,9 +1468,6 @@
             }
         }
 
-        // ============================================================
-        // FUNCIONES DE COLOR
-        // ============================================================
         function getColorBrightness(hexColor) {
             if (!hexColor) return 0.5;
             let r, g, b;
@@ -1683,9 +1627,6 @@
             img.src = imagenUrl;
         }
 
-        // ============================================================
-        // SELECCIONAR MÉTODO DE PAGO
-        // ============================================================
         function seleccionarPago(metodo, el) {
             document.querySelectorAll('.metodo-pago-option').forEach(opt => {
                 opt.classList.remove('seleccionado');
@@ -1703,34 +1644,25 @@
             }
         }
 
-        // ============================================================
-        // LECTOR QR
-        // ============================================================
         async function abrirModalQR() {
             const escaneoActivado = await verificarEscaneoActivado();
-            
             if (!escaneoActivado) {
                 reproducirSonido('error');
                 mostrarToast('⛔ El escaneo de códigos está DESACTIVADO en esta tienda', 'error', 3500);
                 return;
             }
-            
             if (!tiendaAbierta) {
                 reproducirSonido('error');
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error', 3000);
                 return;
             }
-            
             reproducirSonido('beep');
-            
             document.getElementById('modalQR').classList.add('active');
             document.body.style.overflow = 'hidden';
-            
             const mensaje = document.getElementById('qrMensaje');
             mensaje.innerHTML = '📷 Acerca la cámara al código QR del producto';
             mensaje.style.borderLeft = 'none';
             mensaje.style.background = '#f5f5f5';
-            
             iniciarLectorQR();
         }
 
@@ -1744,26 +1676,20 @@
         function iniciarLectorQR() {
             if (escaneandoQR) return;
             escaneandoQR = true;
-
             const container = document.getElementById('qrScanner');
             const mensaje = document.getElementById('qrMensaje');
-            
             container.innerHTML = '';
-
             if (typeof Html5Qrcode === 'undefined') {
                 mensaje.innerHTML = '❌ La librería QR no se cargó correctamente. Revisa tu conexión.';
                 escaneandoQR = false;
                 return;
             }
-
             html5QrCode = new Html5Qrcode("qrScanner");
-
             const config = {
                 fps: 10,
                 qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0
             };
-
             html5QrCode.start(
                 { facingMode: "environment" },
                 config,
@@ -1789,72 +1715,55 @@
 
         function onScanSuccess(decodedText, decodedResult) {
             console.log('📷 QR escaneado:', decodedText);
-            
             const mensaje = document.getElementById('qrMensaje');
-            
             const producto = productos.find(p => 
                 p.codigoQR === decodedText || 
                 p.id === decodedText ||
                 p.barcode === decodedText ||
                 (p.codigoQR && p.codigoQR.toString() === decodedText.toString())
             );
-            
             reproducirSonido('beep');
-            
             if (producto) {
                 setTimeout(() => {
                     reproducirSonido('success');
                 }, 150);
-                
                 agregarAlCarrito(producto.id);
-                
                 mensaje.innerHTML = `
                     ✅ Producto agregado: <span class="producto-nombre">${escHtml(producto.name)}</span>
                     <br>💰 $${(producto.precio || 0).toLocaleString('es-CO')}
                     <br><span style="font-size:12px;color:#888;">📦 Stock: ${producto.stock !== undefined ? producto.stock : 'N/A'}</span>
                     <br><span style="font-size:12px;color:#888;">Continúa escaneando o cierra el escáner</span>
                 `;
-                
                 mensaje.style.borderLeft = '4px solid #00C853';
                 mensaje.style.background = 'rgba(0,200,83,0.08)';
-                
                 actualizarCarrito();
-                
             } else {
                 setTimeout(() => {
                     reproducirSonido('error');
                 }, 150);
-                
                 mensaje.innerHTML = `
                     ⚠️ Producto no encontrado: <strong>${escHtml(decodedText)}</strong>
                     <br><span style="font-size:12px;color:#888;">Asegúrate de escanear el código QR correcto</span>
                     <br><span style="font-size:11px;color:#aaa;">💡 El código debe coincidir con el campo "Código QR" del producto</span>
                     <br><span style="font-size:11px;color:#aaa;">🔍 Código escaneado: ${escHtml(decodedText)}</span>
                 `;
-                
                 mensaje.style.borderLeft = '4px solid #FF3D00';
                 mensaje.style.background = 'rgba(255,61,0,0.08)';
-                
                 if (navigator.vibrate) navigator.vibrate(500);
             }
         }
 
         function onScanError(err) {}
 
-        // ============================================================
-        // CARGAR TIENDA
-        // ============================================================
         async function cargarTienda() {
             if (!TIENDA_ID) {
                 mostrarToast('⚠️ No se especificó una tienda', 'error');
                 document.getElementById('nombreTiendaHeader').textContent = '⚠️ Sin tienda';
                 return;
             }
-            
             try {
                 console.log('🔍 Buscando tienda con ID:', TIENDA_ID);
                 const doc = await db.collection('tiendas').doc(TIENDA_ID).get();
-                
                 if (!doc.exists) {
                     console.error('❌ Tienda no encontrada en Firestore:', TIENDA_ID);
                     document.getElementById('nombreTiendaHeader').textContent = '❌ Tienda no encontrada';
@@ -1867,17 +1776,12 @@
                     `;
                     return;
                 }
-                
                 tiendaData = doc.data();
                 console.log('✅ Tienda cargada:', tiendaData.nombre);
-                
                 document.getElementById('nombreTiendaHeader').textContent = tiendaData.nombre || 'EyMotoComidas';
                 document.getElementById('whatsappHeader').textContent = '📱 ' + (tiendaData.whatsapp || 'Sin teléfono');
-
-                // Cargar WhatsApp
                 WHATSAPP_TIENDA = tiendaData.whatsapp || '573169934516';
 
-                // Banner
                 const bannerEl = document.getElementById('bannerHeader');
                 const bannerPlaceholder = document.getElementById('bannerPlaceholder');
                 if (tiendaData.banner && tiendaData.banner.trim() !== '') {
@@ -1909,7 +1813,6 @@
                     }
                 }
 
-                // Logo
                 const logoEl = document.getElementById('logoHeader');
                 const logoPlaceholder = document.getElementById('logoPlaceholder');
                 if (tiendaData.logo && tiendaData.logo.trim() !== '') {
@@ -1933,7 +1836,6 @@
 
                 tiendaAbierta = tiendaData.abierta !== false;
                 escaneoActivado = tiendaData.barcodeScanningEnabled !== false;
-                
                 actualizarVisibilidadBotonQR(escaneoActivado);
                 
                 const estadoEl = document.getElementById('estadoHeader');
@@ -1969,14 +1871,9 @@
             );
         }
 
-        // ============================================================
-        // FUNCIONES PARA PRODUCTOS POR PESO
-        // ============================================================
         function calcularPrecioPorPeso(producto, gramos) {
             if (!producto || producto.tipoProducto !== 'peso') return 0;
-            
             const modo = producto.modoPeso || 'por_gramo';
-            
             if (modo === 'por_gramo') {
                 const precioPorGramo = producto.precioPorGramo || 0;
                 return precioPorGramo * gramos;
@@ -1992,38 +1889,30 @@
             let gramos = parseInt(valor);
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
-            
             const pesoMinimo = producto.pesoMinimo || 1;
             const pesoMaximo = 10000;
-            
             if (isNaN(gramos) || gramos < 1) {
                 gramos = 1;
             }
             if (gramos > pesoMaximo) {
                 gramos = pesoMaximo;
             }
-            
             pesosSeleccionados[productoId] = gramos;
-            
             const input = document.getElementById(`pesoInput-${productoId}`);
             if (input && parseInt(input.value) !== gramos) {
                 input.value = gramos;
             }
-            
             const label = document.getElementById(`pesoLabel-${productoId}`);
             if (label) label.textContent = `${gramos}g`;
-            
             const precioTotal = calcularPrecioPorPeso(producto, gramos);
             const precioEl = document.getElementById(`pesoPrecioTotal-${productoId}`);
             if (precioEl) {
                 precioEl.innerHTML = `💰 <span class="label">Total:</span> $${Math.round(precioTotal).toLocaleString('es-CO')}`;
             }
-            
             const precioDisplay = document.querySelector(`#producto-precio-${productoId}`);
             if (precioDisplay) {
                 precioDisplay.textContent = `$${Math.round(precioTotal).toLocaleString('es-CO')}`;
             }
-            
             const itemEnCarrito = carrito.find(c => c.id === productoId);
             if (itemEnCarrito && itemEnCarrito.tipoProducto === 'peso') {
                 itemEnCarrito.pesoGramos = gramos;
@@ -2036,11 +1925,9 @@
         function validarPesoInput(productoId, valor) {
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
-            
             const pesoMinimo = producto.pesoMinimo || 1;
             const pesoMaximo = 10000;
             let gramos = parseInt(valor);
-            
             if (isNaN(gramos) || gramos < 1) {
                 gramos = 1;
                 mostrarToast('⚠️ El peso mínimo es 1 gramo', 'info', 2000);
@@ -2049,30 +1936,22 @@
                 gramos = pesoMaximo;
                 mostrarToast(`⚠️ El peso máximo es ${pesoMaximo}g`, 'info', 2000);
             }
-            
             actualizarPesoInput(productoId, gramos);
         }
 
         function cambiarPesoInput(productoId, cambio) {
             const producto = productos.find(p => p.id === productoId);
             if (!producto) return;
-            
             const input = document.getElementById(`pesoInput-${productoId}`);
             if (!input) return;
-            
             let nuevoValor = parseInt(input.value) + cambio;
             const pesoMaximo = 10000;
-            
             if (nuevoValor < 1) nuevoValor = 1;
             if (nuevoValor > pesoMaximo) nuevoValor = pesoMaximo;
-            
             input.value = nuevoValor;
             actualizarPesoInput(productoId, nuevoValor);
         }
 
-        // ============================================================
-        // CARGAR PRODUCTOS
-        // ============================================================
         async function cargarProductos() {
             const lista = document.getElementById('listaProductos');
             const categoriasContainer = document.getElementById('categoriasContainer');
@@ -2329,9 +2208,6 @@
             });
         }
 
-        // ============================================================
-        // CARRITO
-        // ============================================================
         function agregarAlCarrito(productoId) {
             if (!tiendaAbierta) {
                 mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error');
@@ -2413,7 +2289,6 @@
             const cantidad = carrito.find(p => p.id === productoId)?.cantidad || 0;
             const el = document.getElementById(`cant-${productoId}`);
             if (el) el.textContent = cantidad;
-            
             const btnRestar = document.getElementById(`restar-${productoId}`);
             if (btnRestar) {
                 if (cantidad > 0) {
@@ -2519,12 +2394,8 @@
             return `#${num}`;
         }
 
-        // ============================================================
-        // ENVIAR PEDIDO
-        // ============================================================
         async function enviarPedido() {
             const user = await autenticarCliente();
-            
             if (!user) {
                 mostrarToast('❌ Error de autenticación. Intenta de nuevo.', 'error');
                 return;
@@ -2602,7 +2473,6 @@
             });
 
             let uidCliente = user.uid;
-            
             if (uidCliente && uidCliente.startsWith('temp_')) {
                 try {
                     if (auth.currentUser) {
@@ -2644,7 +2514,6 @@
                 pedidoData.email = user.email;
             }
 
-            // Actualizar stock
             try {
                 const batch = db.batch();
                 const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -2671,7 +2540,6 @@
                 console.error('❌ Error al actualizar stock:', error);
             }
 
-            // Guardar pedido
             try {
                 let guardado = false;
                 let intentos = 0;
@@ -2681,17 +2549,13 @@
                     try {
                         intentos++;
                         console.log(`📤 Intentando guardar pedido (intento ${intentos})...`);
-                        
                         const docRef = await db.collection('tiendas').doc(TIENDA_ID).collection('pedidos').add(pedidoData);
                         console.log('✅ Pedido guardado en Firestore con ID:', docRef.id);
                         guardado = true;
-                        
                     } catch (error) {
                         console.error(`❌ Intento ${intentos} falló:`, error);
-                        
                         if (intentos < maxIntentos) {
                             await new Promise(resolve => setTimeout(resolve, 1000));
-                            
                             if (error.message.includes('permission') || error.message.includes('permissions')) {
                                 console.log('🔄 Re-autenticando...');
                                 try {
@@ -2718,7 +2582,6 @@
                 return;
             }
 
-            // ===== ENVIAR WHATSAPP =====
             const telefonoWhatsApp = WHATSAPP_TIENDA;
             const nombreTienda = tiendaData.nombre || 'EYMOTOCOMIDAS';
 
@@ -2766,7 +2629,6 @@
 
             mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
 
-            // Limpiar carrito
             carrito = [];
             actualizarCarrito();
             ocultarFormulario();
@@ -2783,9 +2645,6 @@
             });
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function mostrarToast(mensaje, tipo = 'success', duracion = 4000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -2808,9 +2667,6 @@
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // ============================================================
-        // MODAL DE PRODUCTO
-        // ============================================================
         let productoModalActual = null;
         let imagenesModal = [];
         let indiceImagenActual = 0;
@@ -2820,7 +2676,6 @@
             if (!producto) return;
             
             productoModalActual = producto;
-            
             imagenesModal = [];
             if (producto.img && producto.img.trim() !== '') {
                 imagenesModal.push(producto.img);
@@ -2859,7 +2714,6 @@
             document.getElementById('modalPrecio').textContent = '$' + Math.round(precioModal).toLocaleString('es-CO');
             
             document.getElementById('modalBtnAgregar').dataset.productoId = productoId;
-            
             document.getElementById('modalProducto').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -2928,9 +2782,6 @@
             indiceImagenActual = 0;
         }
 
-        // ============================================================
-        // EXPONER FUNCIONES AL GLOBAL
-        // ============================================================
         window.actualizarPesoInput = actualizarPesoInput;
         window.validarPesoInput = validarPesoInput;
         window.cambiarPesoInput = cambiarPesoInput;
@@ -2950,9 +2801,6 @@
         window.agregarAlCarritoDesdeModal = agregarAlCarritoDesdeModal;
         window.mostrarToast = mostrarToast;
 
-        // ============================================================
-        // INICIALIZAR
-        // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 Iniciando menú digital...');
             console.log('🏪 Tienda ID:', TIENDA_ID);
