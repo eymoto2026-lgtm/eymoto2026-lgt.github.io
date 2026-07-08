@@ -50,6 +50,9 @@ button:active{transform:scale(.98)}
 .btn-success:hover{background:#00b748}
 .btn-whatsapp{background:#25D366;color:#fff}
 .btn-whatsapp:hover{background:#1da851}
+.btn-servicio-listo{background:var(--green-bg);color:var(--green);border:2px solid var(--green);font-weight:800;width:100%;padding:10px;border-radius:8px;cursor:pointer;transition:all 0.2s;}
+.btn-servicio-listo:hover{background:var(--green);color:#fff;}
+.btn-servicio-listo:active{transform:scale(0.97);}
 .btn-editar-pedido{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);font-size:11px;padding:8px;border-radius:7px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
 .btn-editar-pedido:hover{background:var(--blue);color:#fff;}
 .btn-peso{background:var(--surface3);color:var(--text-muted);border:2px solid var(--border2);padding:10px;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;flex:1;text-align:center}
@@ -449,7 +452,7 @@ header .spacer{flex:1}
       <div class="kanban-wrap">
         <div class="kanban" id="kanbanBoard">
           <div class="kanban-col"><div class="kanban-col-header"><div class="col-dot dot-yellow"></div><h4>Pendientes</h4><span class="col-count" id="cnt-P">0</span></div><div id="col-P"><div class="empty-col"><span class="ico">⏳</span>Sin pedidos pendientes</div></div></div>
-          <div class="kanban-col"><div class="kanban-col-header"><div class="col-dot dot-blue"></div><h4>En cocina</h4><span class="col-count" id="cnt-C">0</span></div><div id="col-C"><div class="empty-col"><span class="ico">👨‍🍳</span>Nada en preparación</div></div></div>
+          <div class="kanban-col"><div class="kanban-col-header"><div class="col-dot dot-blue"></div><h4>En cocina / Preparación</h4><span class="col-count" id="cnt-C">0</span></div><div id="col-C"><div class="empty-col"><span class="ico">👨‍🍳</span>Nada en preparación</div></div></div>
           <div class="kanban-col"><div class="kanban-col-header"><div class="col-dot dot-orange"></div><h4>En camino</h4><span class="col-count" id="cnt-M">0</span></div><div id="col-M"><div class="empty-col"><span class="ico">🛵</span>Nada en camino</div></div></div>
           <div class="kanban-col"><div class="kanban-col-header"><div class="col-dot dot-green"></div><h4>Entregados</h4><span class="col-count" id="cnt-E">0</span></div><div id="col-E"><div class="empty-col"><span class="ico">✅</span>Sin entregas aún</div></div></div>
         </div>
@@ -938,7 +941,6 @@ function obtenerColorClase(estado, tipoNegocio) {
     switch(estadoIndex) {
         case 0: return 'r-pending';
         case 1: {
-            // Si es tienda o licorería, usar color morado para despacho
             if (tipoNegocio === 'tienda' || tipoNegocio === 'licoreria') {
                 return 'r-despacho';
             }
@@ -1866,41 +1868,512 @@ async function crearNegocioCompleto() {
 }
 
 // ============================================================
-// FUNCIONES PARA TIPO DE PRODUCTO (PESO) - MANTENER IGUAL
+// FUNCIONES PARA TIPO DE PRODUCTO (PESO)
 // ============================================================
-// (Las funciones seleccionarTipoProducto, cambiarModoPeso, actualizarPreciosPeso
-//  se mantienen igual que en tu código original)
+function seleccionarTipoProducto(tipo) {
+    document.getElementById('nuevoTipoProducto').value = tipo;
+    document.getElementById('btnTipoUnidad').classList.toggle('active', tipo === 'unidad');
+    document.getElementById('btnTipoPeso').classList.toggle('active', tipo === 'peso');
+    document.getElementById('camposPeso').classList.toggle('visible', tipo === 'peso');
+    document.getElementById('labelPrecio').textContent = tipo === 'peso' ? '⚖️ Precio por gramo (COP)' : 'Precio *';
+    if (tipo === 'peso') {
+        actualizarPreciosPeso();
+    }
+}
+
+function cambiarModoPeso() {
+    const modo = document.getElementById('nuevoModoPeso').value;
+    document.getElementById('modoPorGramo').style.display = modo === 'por_gramo' ? 'block' : 'none';
+    document.getElementById('modoPorBase').style.display = modo === 'por_base' ? 'block' : 'none';
+    actualizarPreciosPeso();
+}
+
+function actualizarPreciosPeso() {
+    const modo = document.getElementById('nuevoModoPeso').value;
+    if (modo === 'por_gramo') {
+        const precioGramo = parseFloat(document.getElementById('nuevoPrecioPorGramo').value) || 0;
+        const pesoMinimo = parseFloat(document.getElementById('nuevoPesoMinimo').value) || 250;
+        document.getElementById('precioPorKiloDisplay').textContent = '$' + (precioGramo * 1000).toLocaleString('es-CO');
+        document.getElementById('precioMinimoDisplay').textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
+        document.getElementById('nuevoPrecio').value = precioGramo;
+    } else if (modo === 'por_base') {
+        const precioBase = parseFloat(document.getElementById('nuevoPrecioBase').value) || 0;
+        const pesoBase = parseFloat(document.getElementById('nuevoPesoBase').value) || 500;
+        const pesoMinimo = parseFloat(document.getElementById('nuevoPesoMinimoBase').value) || 250;
+        const precioGramo = pesoBase > 0 ? precioBase / pesoBase : 0;
+        document.getElementById('precioGramoDisplay').textContent = '$' + precioGramo.toLocaleString('es-CO');
+        document.getElementById('precioMinimoBaseDisplay').textContent = '$' + (precioGramo * pesoMinimo).toLocaleString('es-CO');
+        document.getElementById('nuevoPrecio').value = precioGramo;
+    }
+}
 
 // ============================================================
-// ESCÁNER ADMIN - MANTENER IGUAL
+// ESCÁNER ADMIN
 // ============================================================
-// (Las funciones abrirScannerAdmin, cerrarScannerAdmin, iniciarScannerAdmin,
-//  detenerScannerAdmin, onScannerAdminSuccess, etc. se mantienen igual)
+function abrirScannerAdmin() {
+    const modal = document.getElementById('modalScannerAdmin');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    const mensaje = document.getElementById('scannerAdminMensaje');
+    mensaje.textContent = '📷 Acerca la cámara al código QR o código de barras';
+    mensaje.className = 'scanner-mensaje';
+    iniciarScannerAdmin();
+}
+
+function cerrarScannerAdmin() {
+    detenerScannerAdmin();
+    document.getElementById('modalScannerAdmin').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function iniciarScannerAdmin() {
+    if (scannerAdminActivo) return;
+    scannerAdminActivo = true;
+    const container = document.getElementById('scannerAdmin');
+    container.innerHTML = '';
+    if (typeof Html5Qrcode === 'undefined') {
+        document.getElementById('scannerAdminMensaje').textContent = '❌ La librería QR no se cargó correctamente.';
+        scannerAdminActivo = false;
+        return;
+    }
+    scannerAdmin = new Html5Qrcode("scannerAdmin");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+    scannerAdmin.start(
+        { facingMode: "environment" },
+        config,
+        onScannerAdminSuccess,
+        onScannerAdminError
+    ).catch(err => {
+        document.getElementById('scannerAdminMensaje').textContent = '⚠️ No se pudo acceder a la cámara.';
+        scannerAdminActivo = false;
+    });
+}
+
+function detenerScannerAdmin() {
+    scannerAdminActivo = false;
+    if (scannerAdmin) {
+        try {
+            scannerAdmin.stop().then(() => {
+                scannerAdmin.clear();
+            }).catch(err => {});
+        } catch(e) {}
+        scannerAdmin = null;
+    }
+}
+
+function onScannerAdminSuccess(decodedText) {
+    const mensaje = document.getElementById('scannerAdminMensaje');
+    mensaje.textContent = `✅ Código escaneado: ${decodedText}`;
+    mensaje.className = 'scanner-mensaje success';
+    document.getElementById('nuevoCodigoQR').value = decodedText;
+    detenerScannerAdmin();
+    setTimeout(() => cerrarScannerAdmin(), 1500);
+    if (navigator.vibrate) navigator.vibrate(100);
+}
+
+function onScannerAdminError(err) {}
 
 // ============================================================
-// BUSCADOR DE PRODUCTOS - MANTENER IGUAL
+// BUSCADOR DE PRODUCTOS
 // ============================================================
-// (Las funciones filtrarProductos, mostrarProductos, limpiarBuscador se mantienen igual)
+function filtrarProductos() {
+    const busqueda = document.getElementById('buscadorProducto').value.toLowerCase().trim();
+    const container = document.getElementById('listaProductos');
+    const resultados = document.getElementById('resultadosBusqueda');
+    
+    if (!busqueda) {
+        // Mostrar todos los productos
+        productosFiltrados = productosOriginales;
+        filtroActivo = false;
+        resultados.textContent = 'Mostrando todos los productos';
+    } else {
+        productosFiltrados = productosOriginales.filter(p => {
+            const nombre = (p.name || '').toLowerCase();
+            const categoria = (p.categoria || '').toLowerCase();
+            const descripcion = (p.descripcion || '').toLowerCase();
+            return nombre.includes(busqueda) || categoria.includes(busqueda) || descripcion.includes(busqueda);
+        });
+        filtroActivo = true;
+        resultados.textContent = `🔍 ${productosFiltrados.length} productos encontrados`;
+    }
+    mostrarProductos(productosFiltrados);
+}
+
+function limpiarBuscador() {
+    document.getElementById('buscadorProducto').value = '';
+    filtrarProductos();
+}
+
+function mostrarProductos(lista) {
+    const container = document.getElementById('listaProductos');
+    if (!lista || lista.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">No hay productos que coincidan con la búsqueda.</p>';
+        return;
+    }
+    let html = '';
+    lista.forEach(p => {
+        const estadoClase = p.estado === 'agotado' ? 'agotado' : 'disponible';
+        const tipoLabel = p.tipoProducto === 'peso' ? 'peso' : 'unidad';
+        html += `
+            <div class="prod-item">
+                <div class="prod-img">${p.img ? `<img src="${p.img}" alt="${p.name||''}" onerror="this.parentElement.innerHTML='📦'">` : '📦'}</div>
+                <div class="prod-info">
+                    <h5>${p.name || 'Sin nombre'} <span class="prod-estado-badge ${estadoClase}">${p.estado || 'disponible'}</span></h5>
+                    <div class="pdesc">${p.descripcion || ''}</div>
+                    <span class="prod-cat">${p.categoria || 'General'}</span>
+                    <span class="prod-tipo-badge ${tipoLabel}">${tipoLabel === 'peso' ? '⚖️ Peso' : '📦 Unidad'}</span>
+                    ${p.codigoQR ? `<span class="prod-qr-code">🔲 ${p.codigoQR}</span>` : ''}
+                    ${p.stock !== undefined ? `<span style="font-size:10px;color:var(--text-muted);margin-left:4px;">📦 Stock: ${p.stock}</span>` : ''}
+                    <span class="prod-price">$${(p.precio || 0).toLocaleString('es-CO')}</span>
+                </div>
+                <div class="prod-actions">
+                    <button class="btn-info btn-sm" onclick="window.editarProducto('${p.id}')">✏️</button>
+                    <button class="btn-danger btn-sm" onclick="window.eliminarProducto('${p.id}')">🗑</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
 
 // ============================================================
-// PRODUCTOS - MANTENER IGUAL
+// PRODUCTOS
 // ============================================================
-// (Las funciones cargarProductos, guardarProducto, editarProducto, etc. se mantienen igual)
+async function cargarProductos() {
+    const tiendaId = document.getElementById('tiendaProducto').value;
+    const container = document.getElementById('listaProductos');
+    if (!tiendaId) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>';
+        return;
+    }
+    try {
+        const snap = await db.collection('tiendas').doc(tiendaId).collection('productos').get();
+        if (snap.empty) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos en esta tienda.</p>';
+            return;
+        }
+        productosOriginales = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            productosOriginales.push({ id: doc.id, ...p });
+        });
+        productosFiltrados = [...productosOriginales];
+        mostrarProductos(productosFiltrados);
+        document.getElementById('resultadosBusqueda').textContent = `📦 ${productosOriginales.length} productos totales`;
+    } catch(e) {
+        container.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar productos.</p>';
+    }
+}
+
+async function guardarProducto() {
+    const tiendaId = document.getElementById('tiendaProducto').value;
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'error'); return; }
+    const editId = document.getElementById('editProductoId').value;
+    const name = document.getElementById('nuevoNombre').value.trim();
+    const precio = parseFloat(document.getElementById('nuevoPrecio').value) || 0;
+    const categoria = document.getElementById('nuevoCategoria').value.trim() || 'General';
+    const descripcion = document.getElementById('nuevoDescripcion').value.trim();
+    const img = document.getElementById('nuevoImagen').value.trim();
+    const img2 = document.getElementById('nuevoImagen2').value.trim();
+    const codigoQR = document.getElementById('nuevoCodigoQR').value.trim();
+    const estado = document.getElementById('nuevoEstado').value;
+    const stock = parseInt(document.getElementById('nuevoStock').value) || 0;
+    const tipoProducto = document.getElementById('nuevoTipoProducto').value || 'unidad';
+    const modoPeso = document.getElementById('nuevoModoPeso').value || 'por_gramo';
+    const pesoMinimo = parseInt(document.getElementById('nuevoPesoMinimo').value) || 1;
+    const precioPorGramo = parseFloat(document.getElementById('nuevoPrecioPorGramo').value) || 0;
+    const pesoBase = parseInt(document.getElementById('nuevoPesoBase').value) || 500;
+    const precioBase = parseFloat(document.getElementById('nuevoPrecioBase').value) || 0;
+    const pesoMinimoBase = parseInt(document.getElementById('nuevoPesoMinimoBase').value) || 1;
+    if (!name) { toast('⚠️ Ingresa el nombre del producto', 'error'); return; }
+    if (tipoProducto === 'unidad' && precio <= 0) { toast('⚠️ Ingresa un precio válido', 'error'); return; }
+    if (tipoProducto === 'peso' && modoPeso === 'por_gramo' && precioPorGramo <= 0) { toast('⚠️ Ingresa un precio por gramo válido', 'error'); return; }
+    if (tipoProducto === 'peso' && modoPeso === 'por_base' && (pesoBase <= 0 || precioBase <= 0)) { toast('⚠️ Ingresa peso y precio base válidos', 'error'); return; }
+    const data = {
+        name, categoria, descripcion, img, img2, codigoQR, estado, stock,
+        tipoProducto, modoPeso,
+        pesoMinimo: tipoProducto === 'peso' ? (modoPeso === 'por_gramo' ? pesoMinimo : pesoMinimoBase) : 0,
+        precioPorGramo: tipoProducto === 'peso' ? precioPorGramo : 0,
+        pesoBase: tipoProducto === 'peso' ? pesoBase : 0,
+        precioBase: tipoProducto === 'peso' ? precioBase : 0,
+        precio: tipoProducto === 'unidad' ? precio : (modoPeso === 'por_gramo' ? precioPorGramo : (pesoBase > 0 ? precioBase / pesoBase : 0))
+    };
+    try {
+        if (editId) {
+            await db.collection('tiendas').doc(tiendaId).collection('productos').doc(editId).update(data);
+            toast('✅ Producto actualizado', 'success');
+            document.getElementById('btnCancelProd').classList.add('hidden');
+            document.getElementById('editProductoId').value = '';
+        } else {
+            await db.collection('tiendas').doc(tiendaId).collection('productos').add(data);
+            toast('✅ Producto creado', 'success');
+        }
+        limpiarFormularioProducto();
+        cargarProductos();
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+function editarProducto(id) {
+    const producto = productosFiltrados.find(p => p.id === id);
+    if (!producto) { toast('⚠️ Producto no encontrado', 'error'); return; }
+    document.getElementById('editProductoId').value = id;
+    document.getElementById('nuevoNombre').value = producto.name || '';
+    document.getElementById('nuevoPrecio').value = producto.precio || 0;
+    document.getElementById('nuevoCategoria').value = producto.categoria || '';
+    document.getElementById('nuevoDescripcion').value = producto.descripcion || '';
+    document.getElementById('nuevoImagen').value = producto.img || '';
+    document.getElementById('nuevoImagen2').value = producto.img2 || '';
+    document.getElementById('nuevoCodigoQR').value = producto.codigoQR || '';
+    document.getElementById('nuevoEstado').value = producto.estado || 'disponible';
+    document.getElementById('nuevoStock').value = producto.stock || 0;
+    const tipo = producto.tipoProducto || 'unidad';
+    seleccionarTipoProducto(tipo);
+    document.getElementById('nuevoModoPeso').value = producto.modoPeso || 'por_gramo';
+    document.getElementById('nuevoPesoMinimo').value = producto.pesoMinimo || 1;
+    document.getElementById('nuevoPrecioPorGramo').value = producto.precioPorGramo || 0;
+    document.getElementById('nuevoPesoBase').value = producto.pesoBase || 500;
+    document.getElementById('nuevoPrecioBase').value = producto.precioBase || 0;
+    document.getElementById('nuevoPesoMinimoBase').value = producto.pesoMinimo || 1;
+    cambiarModoPeso();
+    document.getElementById('btnCancelProd').classList.remove('hidden');
+    document.getElementById('nuevoNombre').focus();
+    toast('✏️ Editando: ' + producto.name, 'info', 2000);
+}
+
+function cancelarEdProducto() {
+    limpiarFormularioProducto();
+    document.getElementById('btnCancelProd').classList.add('hidden');
+    document.getElementById('editProductoId').value = '';
+    toast('Edición cancelada', 'info');
+}
+
+async function eliminarProducto(id) {
+    const tiendaId = document.getElementById('tiendaProducto').value;
+    if (!tiendaId) return;
+    if (!confirm('¿Eliminar este producto?')) return;
+    try {
+        await db.collection('tiendas').doc(tiendaId).collection('productos').doc(id).delete();
+        toast('✅ Producto eliminado', 'success');
+        cargarProductos();
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+function limpiarFormularioProducto() {
+    document.getElementById('nuevoNombre').value = '';
+    document.getElementById('nuevoPrecio').value = '';
+    document.getElementById('nuevoCategoria').value = '';
+    document.getElementById('nuevoDescripcion').value = '';
+    document.getElementById('nuevoImagen').value = '';
+    document.getElementById('nuevoImagen2').value = '';
+    document.getElementById('nuevoCodigoQR').value = '';
+    document.getElementById('nuevoEstado').value = 'disponible';
+    document.getElementById('nuevoStock').value = '0';
+    document.getElementById('nuevoPesoMinimo').value = '250';
+    document.getElementById('nuevoPrecioPorGramo').value = '30';
+    document.getElementById('nuevoPesoBase').value = '500';
+    document.getElementById('nuevoPrecioBase').value = '2000';
+    document.getElementById('nuevoPesoMinimoBase').value = '250';
+    document.getElementById('nuevoTipoProducto').value = 'unidad';
+    document.getElementById('btnTipoUnidad').classList.add('active');
+    document.getElementById('btnTipoPeso').classList.remove('active');
+    document.getElementById('camposPeso').classList.remove('visible');
+    document.getElementById('labelPrecio').textContent = 'Precio *';
+    cambiarModoPeso();
+}
+
+function buscarInformacionProducto() {
+    const codigo = document.getElementById('nuevoCodigoQR').value.trim();
+    if (!codigo) { toast('⚠️ Escanea o ingresa un código primero', 'warn'); return; }
+    toast('🔍 Buscando información...', 'info');
+    fetch(`https://world.openfoodfacts.org/api/v0/product/${codigo}.json`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 1) {
+                const product = data.product;
+                document.getElementById('nuevoNombre').value = product.product_name || '';
+                document.getElementById('nuevoCategoria').value = product.categories?.split(',').map(c => c.trim()).find(c => c) || '';
+                document.getElementById('nuevoDescripcion').value = product.generic_name || '';
+                if (product.image_url) document.getElementById('nuevoImagen').value = product.image_url;
+                toast('✅ Información encontrada', 'success', 3000);
+            } else {
+                toast('⚠️ Producto no encontrado en Open Food Facts', 'warn', 3000);
+            }
+        })
+        .catch(() => toast('❌ Error al buscar información', 'error'));
+}
 
 // ============================================================
-// SWITCH TAB - MANTENER IGUAL
+// SWITCH TAB
 // ============================================================
-// (La función switchTab se mantiene igual)
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+    else {
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => {
+            if (b.textContent.toLowerCase().includes(tab)) b.classList.add('active');
+        });
+    }
+    if (tab === 'tiendas') { cargarTiendasSuperAdmin(); }
+    if (tab === 'inventario') { cargarInventario(); }
+    if (tab === 'productos') { cargarSelectsTiendas(); }
+}
 
 // ============================================================
-// INVENTARIO - MANTENER IGUAL
+// INVENTARIO
 // ============================================================
-// (Las funciones cargarInventario, ajustarStock, actualizarStockManual, etc. se mantienen igual)
+async function cargarInventario() {
+    const tiendaId = document.getElementById('inventarioTienda').value;
+    const lista = document.getElementById('inventarioLista');
+    const resumen = document.getElementById('inventarioResumen');
+    if (!tiendaId) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; resumen.style.display = 'none'; return; }
+    try {
+        const snap = await db.collection('tiendas').doc(tiendaId).collection('productos').get();
+        if (snap.empty) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay productos en esta tienda.</p>'; resumen.style.display = 'none'; return; }
+        resumen.style.display = 'block';
+        let totalProductos = 0, stockTotal = 0, stockBajo = 0;
+        let html = '<div class="inventario-container">';
+        snap.forEach(doc => {
+            const p = doc.data();
+            const stock = p.stock !== undefined ? p.stock : 0;
+            totalProductos++;
+            stockTotal += stock;
+            const estado = stock === 0 ? 'critico' : (stock < 5 ? 'bajo' : 'normal');
+            if (stock < 5) stockBajo++;
+            const estadoLabel = estado === 'critico' ? '🔴 0' : (estado === 'bajo' ? '⚠️ ' + stock : '✅ ' + stock);
+            html += `
+                <div class="inventario-item">
+                    <div class="info">
+                        <div class="nombre">${p.name || 'Sin nombre'}</div>
+                        <div class="categoria">${p.categoria || 'General'}</div>
+                    </div>
+                    <div class="stock-control">
+                        <button class="inv-btn-mini restar" onclick="window.ajustarStock('${doc.id}', -1)">−</button>
+                        <input class="inv-cantidad-input" id="stockInput-${doc.id}" value="${stock}" onchange="window.actualizarStockManual('${doc.id}', this.value)">
+                        <button class="inv-btn-mini sumar" onclick="window.ajustarStock('${doc.id}', 1)">+</button>
+                    </div>
+                    <button class="inv-btn-actualizar" onclick="window.actualizarStockManual('${doc.id}', document.getElementById('stockInput-${doc.id}').value)">💾</button>
+                    <span class="inv-estado ${estado}"><span class="icono">${estado === 'critico' ? '🔴' : (estado === 'bajo' ? '⚠️' : '✅')}</span>${estadoLabel}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        lista.innerHTML = html;
+        document.getElementById('invTotalProductos').textContent = totalProductos;
+        document.getElementById('invStockTotal').textContent = stockTotal;
+        document.getElementById('invStockBajo').textContent = stockBajo;
+    } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar inventario.</p>'; }
+}
+
+function ajustarStock(productoId, cambio) {
+    const input = document.getElementById(`stockInput-${productoId}`);
+    if (!input) return;
+    const valor = parseInt(input.value) || 0;
+    const nuevoValor = Math.max(0, valor + cambio);
+    input.value = nuevoValor;
+    actualizarStockManual(productoId, nuevoValor);
+}
+
+async function actualizarStockManual(productoId, nuevoStock) {
+    const tiendaId = document.getElementById('inventarioTienda').value;
+    if (!tiendaId) return;
+    const stock = parseInt(nuevoStock);
+    if (isNaN(stock) || stock < 0) { toast('⚠️ Stock inválido', 'error'); return; }
+    try {
+        await db.collection('tiendas').doc(tiendaId).collection('productos').doc(productoId).update({
+            stock: stock,
+            estado: stock === 0 ? 'agotado' : 'disponible'
+        });
+        toast('✅ Stock actualizado', 'success', 1500);
+        cargarInventario();
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+function exportarInventario() {
+    const tiendaId = document.getElementById('inventarioTienda').value;
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
+    const items = document.querySelectorAll('.inventario-item');
+    if (items.length === 0) { toast('⚠️ No hay productos para exportar', 'warn'); return; }
+    let csv = 'Nombre,Categoría,Stock,Estado\n';
+    items.forEach(item => {
+        const nombre = item.querySelector('.nombre')?.textContent || '';
+        const categoria = item.querySelector('.categoria')?.textContent || '';
+        const stock = item.querySelector('.inv-cantidad-input')?.value || '0';
+        const estado = item.querySelector('.inv-estado')?.textContent?.trim() || '';
+        csv += `"${nombre}","${categoria}",${stock},"${estado}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `inventario_${tiendaId}.csv`;
+    link.click();
+    toast('📊 Inventario exportado', 'success');
+}
+
+function resetearStockCero() {
+    const tiendaId = document.getElementById('inventarioTienda').value;
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
+    if (!confirm('¿Resetear todo el stock a 0 en esta tienda?')) return;
+    const items = document.querySelectorAll('.inventario-item');
+    items.forEach(item => {
+        const input = item.querySelector('.inv-cantidad-input');
+        if (input) input.value = 0;
+    });
+    toast('🔄 Stock reseteado en la interfaz. Guarda los cambios.', 'info');
+}
+
+function actualizarTodosStock() {
+    const tiendaId = document.getElementById('inventarioTienda').value;
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
+    const items = document.querySelectorAll('.inventario-item');
+    items.forEach(item => {
+        const input = item.querySelector('.inv-cantidad-input');
+        if (input) {
+            const id = input.id.replace('stockInput-', '');
+            actualizarStockManual(id, input.value);
+        }
+    });
+    toast('📦 Todos los stocks actualizados', 'success', 3000);
+}
 
 // ============================================================
-// SONIDO / ALARMA (ALTABOZ) - MANTENER IGUAL
+// SONIDO / ALARMA (ALTABOZ)
 // ============================================================
-// (La función probarAltavoz se mantiene igual)
+function probarAltavoz() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const notas = [523, 659, 784, 1047];
+        notas.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            const t = i * 0.15;
+            gain.gain.setValueAtTime(0.25, ctx.currentTime + t);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+            osc.start(ctx.currentTime + t);
+            osc.stop(ctx.currentTime + t + 0.25);
+        });
+        if ('speechSynthesis' in window) {
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance('Ey Moto, sistema operativo');
+                utterance.lang = 'es-ES';
+                utterance.rate = 0.9;
+                const voces = window.speechSynthesis.getVoices();
+                const vozEspañol = voces.find(v => v.lang.startsWith('es'));
+                if (vozEspañol) utterance.voice = vozEspañol;
+                window.speechSynthesis.speak(utterance);
+            } catch(e) {}
+        }
+        toast('🔔 Altavoz probado', 'info', 1500);
+    } catch(e) { toast('⚠️ Error al reproducir sonido', 'warn'); }
+}
 
 // ============================================================
 // PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO
@@ -1962,6 +2435,82 @@ function escucharPedidosDeTienda(tiendaId) {
         }, err => { console.error('Firestore error:', err); toast('Error al escuchar pedidos.', 'error'); });
 }
 
+// ============================================================
+// FUNCIÓN MARCAR SERVICIO LISTO (BOTÓN PARA ADMIN)
+// ============================================================
+async function marcarServicioListo(tiendaId, pedidoId) {
+    try {
+        toast('⏳ Preparando notificación...', 'info');
+        
+        // 1. Obtener el pedido
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        
+        // 2. Verificar que esté en estado Pendiente y sin mensajero
+        const tienda = tiendasCache[tiendaId] || {};
+        const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+        const estadosNegocio = getEstadosNegocio(tipoNegocio);
+        const estadoPendiente = estadosNegocio[0] || 'Pendiente';
+        
+        if (data.estado !== estadoPendiente) {
+            toast('⚠️ El pedido ya no está pendiente', 'warn');
+            return;
+        }
+        
+        if (data.mensajeroId) {
+            toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn');
+            return;
+        }
+        
+        // 3. Cambiar estado a "Listo para asignar"
+        await docRef.update({
+            estado: 'Listo para asignar',
+            fechaListo: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        toast('✅ Servicio listo! Notificando mensajeros...', 'success', 4000);
+        
+        // 4. La notificación a mensajeros se maneja automáticamente
+        // porque el panel de mensajeros escucha los cambios en tiempo real
+        
+        // 5. Reproducir sonido de notificación
+        if (sonidoGlobal) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                [600, 800, 1000, 1200].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = i * 0.12;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.2);
+                });
+            } catch(e) {}
+        }
+        
+        // 6. Recargar la vista
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+        
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
 function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio) {
     const p = doc.data();
     const pid = doc.id;
@@ -1971,6 +2520,9 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const tieneMensajero = p.mensajeroId ? true : false;
     const estadoPreparacion = getEstadoPreparacion(tipoNegocio);
+    
+    // Verificar si el pedido está "Listo para asignar" (nuevo estado)
+    const esListoParaAsignar = estado === 'Listo para asignar';
     
     if (estado === 'Entregado' || estado === 'Cancelado') {
         detenerAlarmaGlobal(pid);
@@ -1984,6 +2536,9 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
     } else if (estado === 'Asignado') {
         counts['Asignado'] = (counts['Asignado'] || 0) + 1;
+    } else if (estado === 'Listo para asignar') {
+        // Contar como pendiente para el contador visual
+        counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     }
     
     const colEl = document.getElementById(columna);
@@ -2028,15 +2583,40 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES - ADMIN PUEDE AVANZAR =====
+    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     const estadoPrep = getEstadoPreparacion(tipoNegocio);
     
-    // Botón para avanzar (Admin siempre puede)
-    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado') {
+    // ===== NUEVO BOTÓN: SERVICIO LISTO (NOTIFICAR MENSAJEROS) =====
+    // Solo aparece si el pedido está en estado Pendiente y NO tiene mensajero
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Listo para asignar') {
+        acciones += `
+            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                ✅ Servicio Listo (Notificar Mensajeros)
+            </button>
+        `;
+    }
+    
+    // Mostrar si el pedido está "Listo para asignar"
+    if (estado === 'Listo para asignar' && !tieneMensajero) {
+        acciones += `
+            <div style="background:var(--green-bg);color:var(--green);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:12px;">
+                📢 Notificando mensajeros disponibles...
+            </div>
+        `;
+    }
+    
+    // Mostrar información del mensajero si está asignado
+    if (tieneMensajero) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero';
+        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero}</div>`;
+    }
+    
+    // Botón para avanzar (Admin puede)
+    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2055,25 +2635,20 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     
     // Botón retroceder (Admin puede)
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado') {
+    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
             ↩️ ${estadoAnterior}
         </button>`;
     }
     
     // Botón cancelar (Admin puede)
-    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado') {
+    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
     // Botón editar (solo si no tiene mensajero)
-    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero) {
+    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    // Mostrar mensaje de que el pedido está en preparación
-    if (estado === estadoPrep && !tieneMensajero) {
-        acciones += `<div style="font-size:11px;color:var(--blue);margin-top:4px;text-align:center;">⏳ Esperando asignación de mensajero</div>`;
     }
     
     // Botones finales
@@ -2092,23 +2667,23 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // Mostrar información del mensajero si está asignado
-    let mensajeroInfo = '';
-    if (tieneMensajero) {
-        const nombreMensajero = p.nombreMensajero || 'Mensajero';
-        mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
-    }
-    
     const ringClass = obtenerColorClase(estado, tipoNegocio);
+    // Si está "Listo para asignar", usar un borde especial
+    const claseExtra = estado === 'Listo para asignar' ? 'r-pending' : ringClass;
     
     const card = document.createElement('div');
-    card.className = `pedido-card ${ringClass}`;
+    card.className = `pedido-card ${claseExtra}`;
+    if (estado === 'Listo para asignar') {
+        card.style.borderColor = 'var(--green)';
+        card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
+    }
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:var(--yellow);margin-bottom:6px;">📌 ${estado}</div>
-        ${mensajeroInfo}
+        <div style="font-size:12px;color:${estado === 'Listo para asignar' ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">
+            📌 ${estado === 'Listo para asignar' ? '🔔 LISTO PARA ASIGNAR' : estado}
+        </div>
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -2132,7 +2707,7 @@ function mostrarPedidosPendientesGlobal() {
     resetKanban();
     
     const counts = {
-        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0
+        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0, 'Listo para asignar': 0
     };
     
     Object.keys(todosLosPedidos).forEach(tiendaId => {
@@ -2161,6 +2736,8 @@ function mostrarPedidosPendientesGlobal() {
                 counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
             } else if (estado === 'Asignado') {
                 counts['Asignado'] = (counts['Asignado'] || 0) + 1;
+            } else if (estado === 'Listo para asignar') {
+                counts['Pendiente']++;
             } else if (estadosNegocio.indexOf(estado) === 0) {
                 counts['Pendiente']++;
             } else if (estadosNegocio.indexOf(estado) === 1) {
@@ -2208,8 +2785,10 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const tieneMensajero = p.mensajeroId ? true : false;
     const estadoPrep = getEstadoPreparacion(tipoNegocio);
+    const esListoParaAsignar = estado === 'Listo para asignar';
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
+    const claseExtra = esListoParaAsignar ? 'r-pending' : ringClass;
     
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
@@ -2255,7 +2834,29 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     
-    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado') {
+    // Botón "Servicio Listo"
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Listo para asignar') {
+        acciones += `
+            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                ✅ Servicio Listo (Notificar Mensajeros)
+            </button>
+        `;
+    }
+    
+    if (estado === 'Listo para asignar' && !tieneMensajero) {
+        acciones += `
+            <div style="background:var(--green-bg);color:var(--green);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:12px;">
+                📢 Notificando mensajeros disponibles...
+            </div>
+        `;
+    }
+    
+    if (tieneMensajero) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero';
+        acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero}</div>`;
+    }
+    
+    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('cocina')) iconoSiguiente = '👨‍🍳';
@@ -2269,16 +2870,12 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         </button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado') {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero) {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    if (estado === estadoPrep && !tieneMensajero) {
-        acciones += `<div style="font-size:11px;color:var(--blue);margin-top:4px;text-align:center;">⏳ Esperando asignación de mensajero</div>`;
     }
     
     if (esUltimo || estado === 'Cancelado') {
@@ -2288,20 +2885,19 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         }
     }
     
-    let mensajeroInfo = '';
-    if (tieneMensajero) {
-        const nombreMensajero = p.nombreMensajero || 'Mensajero';
-        mensajeroInfo = `<div style="font-size:11px;color:var(--blue);margin-top:4px;">🛵 ${nombreMensajero}</div>`;
-    }
-    
     const card = document.createElement('div');
-    card.className = `pedido-card ${ringClass}`;
+    card.className = `pedido-card ${claseExtra}`;
+    if (esListoParaAsignar) {
+        card.style.borderColor = 'var(--green)';
+        card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
+    }
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:var(--yellow);margin-bottom:6px;">📌 ${estado}</div>
-        ${mensajeroInfo}
+        <div style="font-size:12px;color:${esListoParaAsignar ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">
+            📌 ${esListoParaAsignar ? '🔔 LISTO PARA ASIGNAR' : estado}
+        </div>
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -2328,7 +2924,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO (SOLO ADMIN)
+// ADMIN CAMBIA ESTADO
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -2462,7 +3058,6 @@ function iniciarEscuchaGlobal() {
                             const data = change.doc.data();
                             const pedidoId = change.doc.id;
                             
-                            // Si el pedido fue tomado por un mensajero, detener alarma
                             if (data.mensajeroId || data.estado === 'Asignado') {
                                 detenerAlarmaGlobal(pedidoId);
                             }
@@ -2552,10 +3147,189 @@ async function cargarEstado() {
 // ============================================================
 // FUNCIONES DE EDICIÓN DE PEDIDOS
 // ============================================================
-// (Las funciones abrirEditarPedido, cerrarEditarPedido, cargarProductosDeTienda,
-//  actualizarSelectorProductos, renderizarEditarPedido, cambiarCantidadItem,
-//  quitarItemPedido, agregarProductoAPedido, guardarEdicionPedido,
-//  enviarActualizacionPedido se mantienen igual)
+async function abrirEditarPedido(tiendaId, pedidoId) {
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        
+        const p = doc.data();
+        pedidoEditando = { id: pedidoId, tiendaId, data: p };
+        itemsEditando = p.items ? p.items.map(item => ({ ...item })) : [];
+        
+        // Cargar productos de la tienda para el selector
+        const snap = await db.collection('tiendas').doc(tiendaId)
+            .collection('productos').get();
+        productosDisponibles = [];
+        snap.forEach(d => {
+            const prod = d.data();
+            productosDisponibles.push({ id: d.id, ...prod });
+        });
+        
+        renderizarEditarPedido();
+        document.getElementById('modalEditarPedido').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+function cerrarEditarPedido() {
+    document.getElementById('modalEditarPedido').classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoEditando = null;
+    itemsEditando = [];
+}
+
+function renderizarEditarPedido() {
+    const container = document.getElementById('editarPedidoContenido');
+    if (!pedidoEditando) return;
+    
+    const p = pedidoEditando.data;
+    const cliente = p.cliente || {};
+    let total = 0;
+    let itemsHtml = '';
+    
+    itemsEditando.forEach((item, index) => {
+        const subtotal = item.precio * item.cantidad;
+        total += subtotal;
+        let nombreItem = item.nombre || 'Producto';
+        if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+        itemsHtml += `
+            <div class="producto-editar-item">
+                <div class="info">
+                    <div class="nombre">${nombreItem}</div>
+                    <div class="detalle">$${item.precio.toLocaleString('es-CO')} x ${item.cantidad}</div>
+                </div>
+                <div class="acciones">
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
+                    <span class="cantidad">${item.cantidad}</span>
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
+                    <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    let selectorProductos = '<option value="">Agregar producto...</option>';
+    productosDisponibles.forEach(prod => {
+        const nombre = prod.name || 'Producto';
+        const precio = prod.precio || 0;
+        selectorProductos += `<option value="${prod.id}">${nombre} - $${precio.toLocaleString('es-CO')}</option>`;
+    });
+    
+    container.innerHTML = `
+        <div class="pedido-info">
+            <div class="row"><span class="label">🧾 Pedido:</span><span>${p.numeroPedido || '#' + p.id}</span></div>
+            <div class="row"><span class="label">👤 Cliente:</span><span>${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección:</span><span>${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">📱 Teléfono:</span><span>${cliente.telefono || 'N/A'}</span></div>
+        </div>
+        
+        <div style="font-weight:700;margin-bottom:8px;">🧾 Productos (${itemsEditando.length})</div>
+        <div class="productos-lista">
+            ${itemsHtml || '<div style="color:var(--text-muted);text-align:center;padding:10px;">No hay productos</div>'}
+        </div>
+        
+        <div class="agregar-producto-area">
+            <select id="selectorProductoPedido">${selectorProductos}</select>
+            <button class="btn-agregar" onclick="window.agregarProductoAPedido()">➕ Agregar producto</button>
+        </div>
+        
+        <div class="total-editar">
+            <span>💰 TOTAL</span>
+            <span class="val">$${total.toLocaleString('es-CO')}</span>
+        </div>
+        
+        <button class="btn-guardar-edicion" onclick="window.guardarEdicionPedido()">💾 Guardar cambios</button>
+    `;
+}
+
+function cambiarCantidadItem(index, delta) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    const nuevaCant = itemsEditando[index].cantidad + delta;
+    if (nuevaCant < 1) {
+        itemsEditando.splice(index, 1);
+    } else {
+        itemsEditando[index].cantidad = nuevaCant;
+    }
+    renderizarEditarPedido();
+}
+
+function quitarItemPedido(index) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    itemsEditando.splice(index, 1);
+    renderizarEditarPedido();
+}
+
+function agregarProductoAPedido() {
+    const selector = document.getElementById('selectorProductoPedido');
+    const prodId = selector.value;
+    if (!prodId) { toast('⚠️ Selecciona un producto', 'warn'); return; }
+    const producto = productosDisponibles.find(p => p.id === prodId);
+    if (!producto) return;
+    
+    const existente = itemsEditando.find(i => i.id === prodId && i.pesoGramos === (producto.pesoMinimo || null));
+    if (existente) {
+        existente.cantidad++;
+    } else {
+        let precio = producto.precio || 0;
+        let pesoGramos = null;
+        if (producto.tipoProducto === 'peso') {
+            pesoGramos = producto.pesoMinimo || 1;
+            if (producto.modoPeso === 'por_gramo' && producto.precioPorGramo) {
+                precio = producto.precioPorGramo * pesoGramos;
+            } else if (producto.modoPeso === 'por_base' && producto.pesoBase && producto.precioBase) {
+                precio = (producto.precioBase / producto.pesoBase) * pesoGramos;
+            }
+        }
+        itemsEditando.push({
+            id: prodId,
+            nombre: producto.name || 'Producto',
+            cantidad: 1,
+            precio: Math.round(precio),
+            pesoGramos: pesoGramos
+        });
+    }
+    renderizarEditarPedido();
+    toast('✅ Producto agregado', 'success', 1500);
+}
+
+async function guardarEdicionPedido() {
+    if (!pedidoEditando) return;
+    const { tiendaId, id } = pedidoEditando;
+    try {
+        let total = 0;
+        const itemsParaGuardar = itemsEditando.map(item => {
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            return {
+                id: item.id,
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                precio: item.precio,
+                total: subtotal,
+                pesoGramos: item.pesoGramos || null
+            };
+        });
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(id)
+            .update({
+                items: itemsParaGuardar,
+                total: Math.round(total),
+                editadoPor: auth.currentUser?.email || 'Admin',
+                fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        
+        toast('✅ Pedido actualizado correctamente', 'success');
+        cerrarEditarPedido();
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
 
 // ============================================================
 // EXPONER FUNCIONES AL GLOBAL
@@ -2583,7 +3357,7 @@ window.cambiarCantidadItem = cambiarCantidadItem;
 window.quitarItemPedido = quitarItemPedido;
 window.agregarProductoAPedido = agregarProductoAPedido;
 window.guardarEdicionPedido = guardarEdicionPedido;
-window.enviarActualizacionPedido = enviarActualizacionPedido;
+window.marcarServicioListo = marcarServicioListo;
 window.abrirModalCrearNegocio = abrirModalCrearNegocio;
 window.cerrarModalCrearNegocio = cerrarModalCrearNegocio;
 window.verificarCorreoAdmin = verificarCorreoAdmin;
