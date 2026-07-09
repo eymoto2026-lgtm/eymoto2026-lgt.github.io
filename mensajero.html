@@ -85,6 +85,7 @@
         .btn-tomar:active { transform: scale(0.97); }
         .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
+        /* Botón Conectar/Desconectar */
         .btn-conectar {
             padding: 8px 20px;
             border-radius: 25px;
@@ -194,6 +195,7 @@
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
+        /* Mensaje de recordatorio al iniciar sesión - NO SE CIERRA AUTOMÁTICAMENTE */
         .recordatorio {
             background: var(--yellow-bg);
             border: 2px solid var(--yellow);
@@ -525,6 +527,7 @@
     </header>
 
     <div class="wrap">
+        <!-- RECORDATORIO AL INICIAR SESIÓN - SOLO SE CIERRA CON BOTÓN O "X" -->
         <div class="recordatorio" id="recordatorioBienvenida">
             <div class="icono">🛵</div>
             <div class="contenido">
@@ -544,6 +547,7 @@
 
         <div class="kanban-wrap">
             <div class="kanban">
+                <!-- COLUMNA 1: PEDIDOS DISPONIBLES -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-yellow"></div>
@@ -555,6 +559,7 @@
                     </div>
                 </div>
 
+                <!-- COLUMNA 2: MIS PEDIDOS -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-blue"></div>
@@ -570,6 +575,7 @@
     </div>
 </div>
 
+<!-- MODAL DETALLE -->
 <div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -597,6 +603,9 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // ============================================================
+    // GLOBALS
+    // ============================================================
     let mensajeroId = null;
     let nombreMensajero = '';
     let tiendasCache = {};
@@ -610,6 +619,9 @@
     let recordatorioMostrado = false;
     let listenersActivos = [];
 
+    // ============================================================
+    // AUTENTICACIÓN
+    // ============================================================
     async function verificarRolMensajero() {
         const user = auth.currentUser;
         if (!user) return null;
@@ -667,6 +679,9 @@
         }
     });
 
+    // ============================================================
+    // INICIALIZAR PANEL
+    // ============================================================
     async function inicializarPanel() {
         const info = await verificarRolMensajero();
         if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
@@ -675,11 +690,14 @@
         document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
         document.getElementById('recordatorioNombre').textContent = nombreMensajero;
         
+        // Cargar estado de conexión
         await cargarEstadoConexion();
+        
         await cargarTiendas();
         escucharPedidosMensajero();
         iniciarGPS();
         
+        // Mostrar recordatorio si está desconectado (NO se cierra automáticamente)
         if (!mensajeroConectado && !recordatorioMostrado) {
             document.getElementById('recordatorioBienvenida').style.display = 'flex';
             recordatorioMostrado = true;
@@ -691,11 +709,17 @@
         toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
+    // ============================================================
+    // CERRAR RECORDATORIO (SOLO POR ACCIÓN DEL USUARIO)
+    // ============================================================
     function cerrarRecordatorio() {
         document.getElementById('recordatorioBienvenida').style.display = 'none';
         toast('Recordatorio cerrado', 'info', 1500);
     }
 
+    // ============================================================
+    // CARGAR ESTADO DE CONEXIÓN DESDE FIRESTORE
+    // ============================================================
     async function cargarEstadoConexion() {
         if (!mensajeroId) return;
         try {
@@ -711,6 +735,9 @@
         }
     }
 
+    // ============================================================
+    // ACTUALIZAR BOTÓN DE CONEXIÓN
+    // ============================================================
     function actualizarBotonConexion() {
         const btn = document.getElementById('btnConectar');
         const texto = document.getElementById('btnConectarTexto');
@@ -724,6 +751,9 @@
         renderizarDisponibles();
     }
 
+    // ============================================================
+    // TOGGLE CONEXIÓN
+    // ============================================================
     async function toggleConexion() {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado', 'error');
@@ -760,6 +790,9 @@
         }
     }
 
+    // ============================================================
+    // CARGAR TIENDAS
+    // ============================================================
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
@@ -772,6 +805,9 @@
         } catch (e) { console.error(e); }
     }
 
+    // ============================================================
+    // ESCUCHAR PEDIDOS DEL MENSAJERO (SIN COLLECTION GROUP)
+    // ============================================================
     function escucharPedidosMensajero() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
         listenersActivos = [];
@@ -827,6 +863,9 @@
         console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
     }
 
+    // ============================================================
+    // TOMAR PEDIDO
+    // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado como mensajero', 'error');
@@ -862,6 +901,9 @@
         }
     }
 
+    // ============================================================
+    // RENDERIZAR DISPONIBLES
+    // ============================================================
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
@@ -910,6 +952,9 @@
         container.innerHTML = html;
     }
 
+    // ============================================================
+    // RENDERIZAR MIS PEDIDOS
+    // ============================================================
     function renderizarMisPedidos() {
         const container = document.getElementById('colMios');
         const contador = document.getElementById('cntMios');
@@ -958,6 +1003,9 @@
         container.innerHTML = html;
     }
 
+    // ============================================================
+    // ACCIONES DEL MENSAJERO SOBRE SUS PEDIDOS
+    // ============================================================
     async function iniciarEntregaMensajero(pedidoId, tiendaId) {
         try {
             const docRef = db.collection('tiendas').doc(tiendaId)
@@ -1000,6 +1048,9 @@
         }
     }
 
+    // ============================================================
+    // VER DETALLE DEL PEDIDO
+    // ============================================================
     function verDetallePedido(pedidoId, tiendaId) {
         const pedido = [...todosDisponibles, ...todosMisPedidos].find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
@@ -1051,6 +1102,9 @@
         document.body.style.overflow = '';
     }
 
+    // ============================================================
+    // GPS
+    // ============================================================
     function iniciarGPS() {
         if (!navigator.geolocation) {
             toast('📍 GPS no soportado en este dispositivo', 'warn');
@@ -1062,6 +1116,9 @@
         }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 10000 });
     }
 
+    // ============================================================
+    // ESTADÍSTICAS
+    // ============================================================
     function actualizarEstadisticas() {
         const disponiblesMostrados = mensajeroConectado ? todosDisponibles.length : 0;
         document.getElementById('statDisponibles').textContent = disponiblesMostrados;
@@ -1080,6 +1137,9 @@
         badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
     }
 
+    // ============================================================
+    // FORMATEAR FECHA
+    // ============================================================
     function formatearFecha(fecha) {
         if (!fecha) return '--/--/--';
         try {
@@ -1091,6 +1151,9 @@
         } catch (e) { return '--/--/--'; }
     }
 
+    // ============================================================
+    // TOAST
+    // ============================================================
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
@@ -1103,6 +1166,9 @@
         return el;
     }
 
+    // ============================================================
+    // EXPONER FUNCIONES
+    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.tomarPedido = tomarPedido;
