@@ -425,7 +425,6 @@
         }
 
         tiendasIds.forEach(tiendaId => {
-            // Pedidos disponibles ("Listo para asignar")
             const unsubDisponibles = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -447,7 +446,6 @@
                     console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
 
-            // Mis pedidos
             const unsubMios = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -509,9 +507,6 @@
         }
     }
 
-    // ============================================================
-    // ACCIONES DEL MENSAJERO (FLUJO CORRECTO)
-    // ============================================================
     async function llegueAlRestaurante(pedidoId, tiendaId) {
         try {
             const docRef = db.collection('tiendas').doc(tiendaId)
