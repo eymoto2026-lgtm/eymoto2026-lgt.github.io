@@ -150,6 +150,7 @@ header .spacer{flex:1}
 .pedido-card.r-packing{border-color:var(--orange)}
 .pedido-card.r-baking{border-color:var(--orange)}
 .pedido-card.r-arranging{border-color:var(--pink)}
+.pedido-card.r-listo{border-color:var(--green);box-shadow:0 0 20px rgba(0,200,83,0.2);}
 
 .pedido-tienda{font-size:14px;font-weight:900;color:var(--yellow);margin-bottom:6px;}
 .pedido-titulo{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
@@ -360,159 +361,48 @@ header .spacer{flex:1}
 .buscador-input-group button{width:auto;padding:10px 16px;white-space:nowrap;}
 .buscador-resultados{font-size:11px;color:var(--text-muted);margin-top:6px;}
 
-/* ===== MODAL DE ASIGNACIÓN ===== */
 .modal-asignacion {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.92);
-    z-index: 99999;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
+    display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;justify-content:center;align-items:center;padding:20px;
 }
-.modal-asignacion.active { display: flex; }
-.modal-asignacion .modal-content {
-    background: #1e1e1e;
-    border-radius: 20px;
-    max-width: 550px;
-    width: 100%;
-    padding: 28px;
-    border: 1px solid var(--yellow);
-    max-height: 90vh;
-    overflow-y: auto;
+.modal-asignacion.active{display:flex;}
+.modal-asignacion .modal-content{
+    background:#1e1e1e;border-radius:20px;max-width:550px;width:100%;padding:28px;border:1px solid var(--yellow);max-height:90vh;overflow-y:auto;
 }
-.modal-asignacion .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
+.modal-asignacion .modal-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);
 }
-.modal-asignacion .modal-header h3 {
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
+.modal-asignacion .modal-header h3{color:#fff;font-size:18px;font-weight:700;}
+.modal-asignacion .modal-close{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;}
+.modal-asignacion .modal-close:hover{color:var(--red);}
+.modal-asignacion .opcion-asignacion{
+    background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;transition:all 0.3s ease;
 }
-.modal-asignacion .modal-close {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 24px;
-    cursor: pointer;
+.modal-asignacion .opcion-asignacion:hover{border-color:var(--yellow);}
+.modal-asignacion .opcion-asignacion .titulo{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
+.modal-asignacion .opcion-asignacion .descripcion{font-size:12px;color:var(--text-muted);margin-bottom:10px;}
+.modal-asignacion .opcion-asignacion select{
+    background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;margin-bottom:8px;
 }
-.modal-asignacion .modal-close:hover { color: var(--red); }
-.modal-asignacion .opcion-asignacion {
-    background: var(--surface2);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 12px;
-    transition: all 0.3s ease;
+.modal-asignacion .opcion-asignacion select option{background:#1e1e1e;}
+.modal-asignacion .opcion-asignacion .btn-asignar{width:100%;padding:10px;border-radius:8px;border:none;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.modal-asignacion .opcion-asignacion .btn-asignar:hover{transform:scale(1.01);}
+.modal-asignacion .opcion-asignacion .btn-asignar:active{transform:scale(0.97);}
+.modal-asignacion .opcion-asignacion .btn-asignar.manual{background:var(--blue);color:#fff;}
+.modal-asignacion .opcion-asignacion .btn-asignar.manual:hover{background:#0277bd;}
+.modal-asignacion .opcion-asignacion .btn-asignar.broadcast{background:var(--yellow);color:#1a1a2e;}
+.modal-asignacion .opcion-asignacion .btn-asignar.broadcast:hover{background:var(--yellow-dim);}
+.modal-asignacion .opcion-asignacion .mensajeros-disponibles{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.modal-asignacion .opcion-asignacion .mensajeros-disponibles .count{color:var(--green);font-weight:700;}
+.modal-asignacion .btn-cancelar-modal{
+    width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;
 }
-.modal-asignacion .opcion-asignacion:hover {
-    border-color: var(--yellow);
+.modal-asignacion .btn-cancelar-modal:hover{background:var(--surface3);color:#fff;}
+.modal-asignacion .pedido-info-resumen{
+    background:var(--surface3);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;
 }
-.modal-asignacion .opcion-asignacion .titulo {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 4px;
-}
-.modal-asignacion .opcion-asignacion .descripcion {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-.modal-asignacion .opcion-asignacion select {
-    background: var(--surface3);
-    border: 1px solid var(--border2);
-    color: #fff;
-    padding: 10px 12px;
-    border-radius: 8px;
-    width: 100%;
-    margin-bottom: 8px;
-}
-.modal-asignacion .opcion-asignacion select option {
-    background: #1e1e1e;
-}
-.modal-asignacion .opcion-asignacion .btn-asignar {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.modal-asignacion .opcion-asignacion .btn-asignar:hover {
-    transform: scale(1.01);
-}
-.modal-asignacion .opcion-asignacion .btn-asignar:active {
-    transform: scale(0.97);
-}
-.modal-asignacion .opcion-asignacion .btn-asignar.manual {
-    background: var(--blue);
-    color: #fff;
-}
-.modal-asignacion .opcion-asignacion .btn-asignar.manual:hover {
-    background: #0277bd;
-}
-.modal-asignacion .opcion-asignacion .btn-asignar.broadcast {
-    background: var(--yellow);
-    color: #1a1a2e;
-}
-.modal-asignacion .opcion-asignacion .btn-asignar.broadcast:hover {
-    background: var(--yellow-dim);
-}
-.modal-asignacion .opcion-asignacion .mensajeros-disponibles {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-.modal-asignacion .opcion-asignacion .mensajeros-disponibles .count {
-    color: var(--green);
-    font-weight: 700;
-}
-.modal-asignacion .btn-cancelar-modal {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    color: var(--text-muted);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 4px;
-}
-.modal-asignacion .btn-cancelar-modal:hover {
-    background: var(--surface3);
-    color: #fff;
-}
-.modal-asignacion .pedido-info-resumen {
-    background: var(--surface3);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-size: 13px;
-}
-.modal-asignacion .pedido-info-resumen .row {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px 0;
-}
-.modal-asignacion .pedido-info-resumen .label {
-    color: var(--text-muted);
-}
-.modal-asignacion .pedido-info-resumen .value {
-    color: #fff;
-    font-weight: 500;
-}
+.modal-asignacion .pedido-info-resumen .row{display:flex;justify-content:space-between;padding:2px 0;}
+.modal-asignacion .pedido-info-resumen .label{color:var(--text-muted);}
+.modal-asignacion .pedido-info-resumen .value{color:#fff;font-weight:500;}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -634,7 +524,6 @@ header .spacer{flex:1}
             <h3 style="color:#fff;">➕ Crear nuevo negocio</h3>
             <button onclick="window.cerrarModalCrearNegocio()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">✕</button>
           </div>
-
           <div style="background:var(--surface3);border-radius:10px;padding:16px;margin-bottom:12px;">
             <p style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🏪 Datos de la tienda</p>
             <div class="form-group"><label>Nombre del negocio *</label><input id="nuevoNegocioNombre" placeholder="Ej: TuMandadoVallenato"></div>
@@ -643,7 +532,6 @@ header .spacer{flex:1}
             <div class="form-group"><label>WhatsApp secundario (opcional)</label><input id="nuevoNegocioWhatsapp2" placeholder="573000000001"><small style="color:var(--text-muted);font-size:11px;">Los pedidos llegarán a ambos números.</small></div>
             <div class="form-group"><label>URL del logo</label><input id="nuevoNegocioLogo" placeholder="https://..."></div>
             <div class="form-group"><label>URL del banner</label><input id="nuevoNegocioBanner" placeholder="https://..."></div>
-            
             <div class="form-group">
               <label>🏪 Tipo de negocio</label>
               <select id="nuevoNegocioTipo">
@@ -660,22 +548,18 @@ header .spacer{flex:1}
               </select>
               <small style="color:var(--text-muted);font-size:10px;">Define el flujo de estados que tendrán los pedidos</small>
             </div>
-            
             <div class="row2">
               <div class="form-group"><label>📱 Nequi</label><input id="nuevoNegocioNequi" placeholder="3002937289"></div>
               <div class="form-group"><label>📱 Daviplata</label><input id="nuevoNegocioDaviplata" placeholder="3002937289"></div>
             </div>
           </div>
-
           <div style="background:var(--surface3);border-radius:10px;padding:16px;margin-top:12px;">
             <p style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🔐 Datos del administrador</p>
-            
             <div class="form-group">
               <label>Correo del administrador *</label>
               <input id="nuevoNegocioAdminEmail" type="email" placeholder="admin@negocio.com" oninput="window.verificarCorreoAdmin(this.value)">
               <small id="emailAyuda" style="color:var(--text-muted);font-size:11px;">Si pones tu correo, la tienda se asignará a tu usuario Super Admin.</small>
             </div>
-
             <div id="campoContraseña">
               <div class="form-group">
                 <label>Contraseña *</label>
@@ -683,7 +567,6 @@ header .spacer{flex:1}
                 <small id="passwordAyuda" style="color:var(--text-muted);font-size:11px;">Obligatorio para nuevos administradores.</small>
               </div>
             </div>
-
             <div id="avisoSuperAdmin" style="display:none;background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:12px;margin-top:6px;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:20px;">👑</span>
@@ -694,7 +577,6 @@ header .spacer{flex:1}
               </div>
             </div>
           </div>
-
           <button onclick="window.crearNegocioCompleto()" style="width:100%;padding:14px;border-radius:10px;background:var(--yellow);color:#1a1a2e;font-weight:800;font-size:15px;border:none;cursor:pointer;margin-top:12px;">🚀 Crear negocio</button>
         </div>
       </div>
@@ -712,7 +594,6 @@ header .spacer{flex:1}
         <div class="form-group"><label>WhatsApp secundario</label><input id="whatsapp2" placeholder="573000000001"></div>
         <div class="form-group"><label>URL del logo</label><input id="logoTienda" placeholder="https://..."></div>
         <div class="form-group"><label>URL del banner</label><input id="bannerTienda" placeholder="https://..."></div>
-        
         <div class="form-group">
           <label>🏪 Tipo de negocio</label>
           <select id="tipoNegocioEditar">
@@ -729,7 +610,6 @@ header .spacer{flex:1}
           </select>
           <small style="color:var(--text-muted);font-size:10px;">Define el flujo de estados que tendrán los pedidos</small>
         </div>
-        
         <div class="form-group"><label>📱 Nequi</label><input id="nequi" placeholder="3002937289"></div>
         <div class="form-group"><label>📱 Daviplata</label><input id="daviplata" placeholder="3002937289"></div>
         <div class="form-group"><label>Categorías agotadas (separadas por coma)</label><input id="categoriasAgotadas" placeholder="Ej: Hamburguesas, Perros, Bebidas"></div>
@@ -749,7 +629,6 @@ header .spacer{flex:1}
           <div class="section-title">Añadir / editar producto</div>
           <input type="hidden" id="editProductoId">
           <div class="form-group"><label>Tienda</label><select id="tiendaProducto" onchange="window.cargarProductos()"><option value="">Seleccionar...</option></select></div>
-          
           <div class="buscador-container">
             <div class="buscador-header">
               <span>🔍</span>
@@ -764,26 +643,18 @@ header .spacer{flex:1}
               <span id="resultadosBusqueda">Mostrando todos los productos</span>
             </div>
           </div>
-          
           <div class="form-group"><label>Nombre *</label><input id="nuevoNombre" placeholder="Ej: Gaseosa"></div>
-          
           <div class="form-group">
             <label>⚖️ Tipo de producto</label>
             <div class="tipo-producto-btns">
-              <button type="button" class="btn-peso active" id="btnTipoUnidad" onclick="window.seleccionarTipoProducto('unidad')">
-                📦 Por unidad
-              </button>
-              <button type="button" class="btn-peso" id="btnTipoPeso" onclick="window.seleccionarTipoProducto('peso')">
-                ⚖️ Por peso
-              </button>
+              <button type="button" class="btn-peso active" id="btnTipoUnidad" onclick="window.seleccionarTipoProducto('unidad')">📦 Por unidad</button>
+              <button type="button" class="btn-peso" id="btnTipoPeso" onclick="window.seleccionarTipoProducto('peso')">⚖️ Por peso</button>
             </div>
             <input type="hidden" id="nuevoTipoProducto" value="unidad">
             <small style="color:var(--text-muted);font-size:11px;">Selecciona si el producto se vende por unidad o por peso (gramos)</small>
           </div>
-
           <div class="campos-peso" id="camposPeso">
             <div class="titulo-peso">⚖️ Configuración de peso</div>
-            
             <div class="form-group">
               <label>Modo de precio por peso</label>
               <select id="nuevoModoPeso" onchange="window.cambiarModoPeso()">
@@ -792,7 +663,6 @@ header .spacer{flex:1}
               </select>
               <small style="color:var(--text-muted);font-size:10px;">Elige cómo quieres definir el precio del producto</small>
             </div>
-
             <div id="modoPorGramo" class="modo-peso">
               <div class="row2">
                 <div class="form-group">
@@ -813,7 +683,6 @@ header .spacer{flex:1}
                 </div>
               </div>
             </div>
-
             <div id="modoPorBase" class="modo-peso" style="display:none;">
               <div class="row2">
                 <div class="form-group">
@@ -840,39 +709,28 @@ header .spacer{flex:1}
               </div>
             </div>
           </div>
-
           <div class="form-group">
             <label id="labelPrecio">Precio *</label>
             <input id="nuevoPrecio" type="number" placeholder="3500" step="100">
           </div>
-
           <div class="row2">
             <div class="form-group"><label>Categoría</label><input id="nuevoCategoria" placeholder="Bebidas"></div>
           </div>
           <div class="form-group"><label>Descripción</label><textarea id="nuevoDescripcion" rows="2" placeholder="Descripción..."></textarea></div>
           <div class="form-group"><label>URL imagen</label><input id="nuevoImagen" placeholder="https://..."></div>
           <div class="form-group"><label>URL imagen 2</label><input id="nuevoImagen2" placeholder="https://..."></div>
-          
           <div class="form-group">
             <label>Código QR / Barras</label>
             <div class="input-with-btn">
               <input id="nuevoCodigoQR" placeholder="7501234567890">
-              <button type="button" class="btn-success btn-sm" onclick="window.abrirScannerAdmin()" style="width:auto;padding:10px 16px;white-space:nowrap;">
-                📷 Escanear
-              </button>
+              <button type="button" class="btn-success btn-sm" onclick="window.abrirScannerAdmin()" style="width:auto;padding:10px 16px;white-space:nowrap;">📷 Escanear</button>
             </div>
             <small style="color:var(--text-muted);font-size:11px;">Escanea un código QR o código de barras (EAN/UPC)</small>
           </div>
-
           <div class="buscar-info-btn">
-            <button type="button" class="btn-info btn-sm" onclick="window.buscarInformacionProducto()" style="width:auto;padding:8px 16px;">
-              🔍 Buscar en Open Food Facts
-            </button>
-            <button type="button" class="btn-ghost btn-sm" onclick="window.limpiarFormularioProducto()" style="width:auto;padding:8px 16px;">
-              🗑️ Limpiar formulario
-            </button>
+            <button type="button" class="btn-info btn-sm" onclick="window.buscarInformacionProducto()" style="width:auto;padding:8px 16px;">🔍 Buscar en Open Food Facts</button>
+            <button type="button" class="btn-ghost btn-sm" onclick="window.limpiarFormularioProducto()" style="width:auto;padding:8px 16px;">🗑️ Limpiar formulario</button>
           </div>
-          
           <div class="form-group"><label>Estado</label><select id="nuevoEstado"><option value="disponible">✅ Disponible</option><option value="agotado">❌ Agotado</option></select></div>
           <div class="form-group"><label>Stock</label><input id="nuevoStock" type="number" placeholder="0" value="0"></div>
           <div style="display:flex;gap:8px"><button onclick="window.guardarProducto()">Guardar</button><button class="btn-ghost hidden" id="btnCancelProd" onclick="window.cancelarEdProducto()" style="width:auto;padding:10px 16px;">Cancelar</button></div>
@@ -1032,8 +890,12 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
     
-    if (estado === 'Cancelado') {
-        return { columna: 'col-E', contador: 'Cancelado' };
+    if (estado === 'Cancelado' || estado === 'Entregado') {
+        return { columna: 'col-E', contador: 'Entregado' };
+    }
+    
+    if (estado === 'Listo para asignar') {
+        return { columna: 'col-P', contador: 'Listo para asignar' };
     }
     
     if (estadoIndex === -1) {
@@ -1051,6 +913,8 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
 
 function obtenerColorClase(estado, tipoNegocio) {
     if (estado === 'Cancelado') return 'r-cancel';
+    if (estado === 'Listo para asignar') return 'r-listo';
+    if (estado === 'Entregado') return 'r-done';
     
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
@@ -2586,7 +2450,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO
+// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO (CORREGIDO)
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2617,6 +2481,7 @@ function escucharPedidosDeTienda(tiendaId) {
             estadosNegocio.forEach(e => { counts[e] = 0; });
             counts['Cancelado'] = 0;
             counts['Asignado'] = 0;
+            counts['Listo para asignar'] = 0;
             
             snap.forEach(doc => { 
                 renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio); 
@@ -2626,7 +2491,10 @@ function escucharPedidosDeTienda(tiendaId) {
             const cntC = document.getElementById('cnt-C');
             const cntM = document.getElementById('cnt-M');
             const cntE = document.getElementById('cnt-E');
-            if (cntP) cntP.textContent = counts[estadosNegocio[0]] || 0;
+            
+            // Pendientes: incluye "Pendiente" y "Listo para asignar"
+            const totalPendientes = (counts[estadosNegocio[0]] || 0) + (counts['Listo para asignar'] || 0);
+            if (cntP) cntP.textContent = totalPendientes;
             if (cntC) cntC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
             if (cntM) cntM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
             if (cntE) cntE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
@@ -2635,12 +2503,12 @@ function escucharPedidosDeTienda(tiendaId) {
             const statC = document.getElementById('statC');
             const statM = document.getElementById('statM');
             const statE = document.getElementById('statE');
-            if (statP) statP.textContent = counts[estadosNegocio[0]] || 0;
+            if (statP) statP.textContent = totalPendientes;
             if (statC) statC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
             if (statM) statM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
             if (statE) statE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
             
-            const pend = counts[estadosNegocio[0]] || 0;
+            const pend = totalPendientes;
             const tabBadge = document.getElementById('tabBadge');
             if (tabBadge) tabBadge.textContent = pend;
             const hb = document.getElementById('headerBadge');
@@ -2649,7 +2517,7 @@ function escucharPedidosDeTienda(tiendaId) {
                 hb.style.display = pend > 0 ? 'inline-block' : 'none';
             }
             
-            if (counts[estadosNegocio[0]] === 0) { 
+            if (counts[estadosNegocio[0]] === 0 && counts['Listo para asignar'] === 0) { 
                 detenerAlarmaGlobal();
                 pedidosPendientes.clear(); 
             }
@@ -2674,14 +2542,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     
     const { columna, contador } = obtenerColumnaYContador(estado, tipoNegocio);
     
-    if (counts[estado] !== undefined) {
+    if (estado === 'Listo para asignar') {
+        counts['Listo para asignar'] = (counts['Listo para asignar'] || 0) + 1;
+    } else if (counts[estado] !== undefined) {
         counts[estado]++;
     } else if (estado === 'Cancelado') {
         counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
     } else if (estado === 'Asignado') {
         counts['Asignado'] = (counts['Asignado'] || 0) + 1;
-    } else if (estado === 'Listo para asignar') {
-        counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     }
     
     const colEl = document.getElementById(columna);
@@ -2740,7 +2608,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // Botón "Servicio Listo" - ESTE ES EL QUE NOTIFICA A MENSAJEROS
+    // ===== BOTÓN "SERVICIO LISTO" - SOLO APARECE EN EL SEGUNDO ESTADO (En cocina) =====
+    // El segundo estado es estadosNegocio[1]
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2749,6 +2618,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
+    // ===== BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE) =====
+    // Esto permite pasar de "Pendiente" a "En cocina" (el segundo estado)
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -2768,6 +2639,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
+    // ===== BOTONES PARA AVANZAR EN OTROS ESTADOS =====
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2780,6 +2652,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
+    // ===== BOTÓN RETROCEDER =====
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
     if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
@@ -2787,14 +2660,17 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
+    // ===== BOTÓN CANCELAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
+    // ===== BOTÓN EDITAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
+    // ===== BOTONES FINALES =====
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2802,6 +2678,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
+    // ===== MENSAJE "LISTO PARA ASIGNAR" =====
     if (estado === 'Listo para asignar' && !tieneMensajero) {
         acciones += `
             <div style="background:var(--green-bg);color:var(--green);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:12px;">
@@ -2810,6 +2687,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
+    // ===== INFORMACIÓN DEL MENSAJERO =====
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         const asignadoPor = p.asignadoPor || 'Sistema';
@@ -2817,7 +2695,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     }
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = estado === 'Listo para asignar' ? 'r-pending' : ringClass;
+    const claseExtra = estado === 'Listo para asignar' ? 'r-listo' : ringClass;
     
     const card = document.createElement('div');
     card.className = `pedido-card ${claseExtra}`;
@@ -2884,7 +2762,7 @@ function mostrarPedidosPendientesGlobal() {
             } else if (estado === 'Asignado') {
                 counts['Asignado'] = (counts['Asignado'] || 0) + 1;
             } else if (estado === 'Listo para asignar') {
-                counts['Pendiente']++;
+                counts['Listo para asignar'] = (counts['Listo para asignar'] || 0) + 1;
             } else if (estadosNegocio.indexOf(estado) === 0) {
                 counts['Pendiente']++;
             } else if (estadosNegocio.indexOf(estado) === 1) {
@@ -2897,11 +2775,13 @@ function mostrarPedidosPendientesGlobal() {
         });
     });
     
+    const totalPendientes = counts['Pendiente'] + counts['Listo para asignar'];
+    
     const cntP = document.getElementById('cnt-P');
     const cntC = document.getElementById('cnt-C');
     const cntM = document.getElementById('cnt-M');
     const cntE = document.getElementById('cnt-E');
-    if (cntP) cntP.textContent = counts['Pendiente'] || 0;
+    if (cntP) cntP.textContent = totalPendientes;
     if (cntC) cntC.textContent = counts['En Cocina'] || 0;
     if (cntM) cntM.textContent = counts['En Camino'] || 0;
     if (cntE) cntE.textContent = counts['Entregado'] || 0;
@@ -2924,7 +2804,7 @@ function mostrarPedidosPendientesGlobal() {
     const statC = document.getElementById('statC');
     const statM = document.getElementById('statM');
     const statE = document.getElementById('statE');
-    if (statP) statP.textContent = counts['Pendiente'] || 0;
+    if (statP) statP.textContent = totalPendientes;
     if (statC) statC.textContent = counts['En Cocina'] || 0;
     if (statM) statM.textContent = counts['En Camino'] || 0;
     if (statE) statE.textContent = counts['Entregado'] || 0;
@@ -2942,7 +2822,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const esListoParaAsignar = estado === 'Listo para asignar';
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = esListoParaAsignar ? 'r-pending' : ringClass;
+    const claseExtra = esListoParaAsignar ? 'r-listo' : ringClass;
     
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
@@ -2988,7 +2868,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     
-    // Botón "Servicio Listo" - ESTE ES EL QUE NOTIFICA A MENSAJEROS
+    // ===== BOTÓN "SERVICIO LISTO" - SOLO EN SEGUNDO ESTADO =====
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2997,6 +2877,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         `;
     }
     
+    // ===== BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE) =====
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -3100,7 +2981,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (REDIRIGE AL PANEL DE MENSAJEROS)
+// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA)
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3118,6 +2999,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
         
+        // ===== VERIFICAR QUE ESTÉ EN EL SEGUNDO ESTADO (En cocina) =====
         const estadoCocina = estadosNegocio[1];
         
         if (!estadoCocina) {
@@ -3135,7 +3017,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // Cambiar el estado a "Listo para asignar"
+        // ===== CAMBIAR EL ESTADO A "Listo para asignar" =====
         await docRef.update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3144,18 +3026,16 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         
         toast('✅ Pedido marcado como "Listo para asignar"', 'success');
         
-        // Abrir el panel de mensajeros con el pedido para asignar
+        // ===== ABRIR EL MODAL DE ASIGNACIÓN EN EL PANEL DE MENSAJEROS =====
         const urlBase = window.location.origin + window.location.pathname;
         const urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
         const linkCompleto = `${urlMensajeros}?asignar=${pedidoId}&tienda=${tiendaId}`;
         
-        // Intentar abrir en nueva ventana
         const ventanaMensajeros = window.open(linkCompleto, '_blank', 'width=1200,height=800');
         
         if (ventanaMensajeros) {
             toast('📋 Abriendo panel de mensajeros para asignar el pedido', 'info', 4000);
         } else {
-            // Si no se pudo abrir, copiar al portapapeles
             try {
                 await navigator.clipboard.writeText(linkCompleto);
                 toast('📋 Enlace copiado al portapapeles. Ábrelo en el panel de mensajeros', 'info', 5000);
@@ -3382,18 +3262,25 @@ async function cargarEstado() {
         estados.forEach(e => counts[e] = 0);
         counts['Cancelado'] = 0;
         counts['Asignado'] = 0;
+        counts['Listo para asignar'] = 0;
         snap.forEach(doc => {
             const p = doc.data();
             const estado = p.estado || estados[0] || 'Pendiente';
-            if (counts[estado] !== undefined) counts[estado]++;
-            else if (estado === 'Cancelado') counts['Cancelado']++;
-            else if (estado === 'Asignado') counts['Asignado']++;
+            if (estado === 'Listo para asignar') {
+                counts['Listo para asignar']++;
+            } else if (counts[estado] !== undefined) {
+                counts[estado]++;
+            } else if (estado === 'Cancelado') {
+                counts['Cancelado']++;
+            } else if (estado === 'Asignado') {
+                counts['Asignado']++;
+            }
         });
         const resPendiente = document.getElementById('resPendiente');
         const resPreparacion = document.getElementById('resPreparacion');
         const resCamino = document.getElementById('resCamino');
         const resEntregado = document.getElementById('resEntregado');
-        if (resPendiente) resPendiente.textContent = counts[estados[0]] || 0;
+        if (resPendiente) resPendiente.textContent = (counts[estados[0]] || 0) + (counts['Listo para asignar'] || 0);
         if (resPreparacion) resPreparacion.textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
         if (resCamino) resCamino.textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
         if (resEntregado) resEntregado.textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
@@ -3715,7 +3602,6 @@ function actualizarOcupadosEnTiempoReal() {
     cargarMensajerosAdmin();
 }
 
-// Sobrescribir la función existente
 const originalActualizarEstadisticas = window.actualizarEstadisticas;
 window.actualizarEstadisticas = function() {
     if (originalActualizarEstadisticas) {
