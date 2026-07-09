@@ -2702,7 +2702,7 @@ function escucharPedidosDeTienda(tiendaId) {
 }
 
 // ============================================================
-// RENDER PEDIDO CON ESTADOS DINÁMICOS (CORREGIDO - FLUJO CORRECTO)
+// FUNCIÓN: RENDER PEDIDO CON ESTADOS DINÁMICOS (CORREGIDA)
 // ============================================================
 function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio) {
     const p = doc.data();
@@ -2774,7 +2774,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES (FLUJO CORRECTO) =====
+    // ===== ACCIONES CORREGIDAS =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
@@ -2793,7 +2793,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     }
     
     // ===== 2. BOTÓN AVANZAR A "EN COCINA" (SOLO EN PENDIENTE) =====
-    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
             let icono = '▶';
@@ -2812,8 +2812,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // ===== 3. BOTÓN "SERVICIO LISTO" (SOLO EN COCINA/PREPARACIÓN) =====
-    // Solo en el SEGUNDO estado (En cocina, Preparando, etc.) Y sin mensajero
+    // ===== 3. BOTÓN "SERVICIO LISTO" (SOLO EN COCINA/PREPARACIÓN - SEGUNDO ESTADO) =====
+    // 👈 ESTE ES EL BOTÓN QUE DEBE APARECER CUANDO EL PEDIDO ESTÁ EN "En cocina"
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2822,7 +2822,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== 4. BOTÓN AVANZAR (Para otros estados) =====
+    // ===== 4. BOTÓN AVANZAR (Para otros estados que no sean los primeros) =====
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2848,7 +2848,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // ===== 7. BOTÓN EDITAR =====
+    // ===== 7. BOTÓN EDITAR (solo si no tiene mensajero y no está en cocina) =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
@@ -3052,11 +3052,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
-    
-    // Botón de pago en Pendiente
-    if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
-        // Los botones de pago se agregan en el HTML del card
-    }
     
     // Botón "Servicio Listo" (SOLO EN SEGUNDO ESTADO)
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
@@ -3669,7 +3664,7 @@ async function cargarMensajerosAdmin() {
 }
 
 // ============================================================
-// NUEVA FUNCIÓN: ABRIR MODAL DE ASIGNACIÓN (CON 2 OPCIONES)
+// ABRIR MODAL DE ASIGNACIÓN (CON 2 OPCIONES) - CORREGIDO
 // ============================================================
 function abrirModalAsignacion(tiendaId, pedidoId) {
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -3695,7 +3690,6 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
     const titulo = document.getElementById('modalAsignacionTitulo');
     if (titulo) titulo.textContent = `📦 Asignar Pedido ${numero}`;
     
-    // Generar opciones para el select de mensajeros
     let mensajerosOptions = '';
     if (mensajerosDisponibles.length === 0) {
         mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
@@ -3722,14 +3716,10 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
             
             <div style="margin: 8px 0 4px 0;">
-                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles:</label>
+                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
                 <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
                     ${mensajerosOptions}
                 </select>
-            </div>
-            
-            <div class="mensajeros-disponibles">
-                Mensajeros disponibles: <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
             </div>
             
             <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
@@ -3771,7 +3761,7 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// FUNCIÓN: ASIGNAR PEDIDO MANUALMENTE (OPCIÓN 1)
+// ASIGNAR PEDIDO MANUALMENTE (OPCIÓN 1)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -3812,7 +3802,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// FUNCIÓN: NOTIFICAR A TODOS (OPCIÓN 2)
+// NOTIFICAR A TODOS (OPCIÓN 2)
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -3860,7 +3850,7 @@ async function notificarATodos() {
 }
 
 // ============================================================
-// FUNCIÓN: CERRAR MODAL DE ASIGNACIÓN
+// CERRAR MODAL DE ASIGNACIÓN
 // ============================================================
 function cerrarModalAsignacion() {
     const modal = document.getElementById('modalAsignacion');
@@ -3870,7 +3860,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (ACTUALIZADA - ABRE MODAL)
+// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA - SOLO EN COCINA)
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3887,11 +3877,17 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tienda = tiendasCache[tiendaId] || {};
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
-        const estadoPendiente = estadosNegocio[0] || 'Pendiente';
         
-        // Verificar que el pedido esté en el SEGUNDO estado (En cocina, Preparando, etc.)
-        if (estado !== estadosNegocio[1]) {
-            toast(`⚠️ El pedido debe estar en "${estadosNegocio[1]}" para marcar como listo`, 'warn');
+        // ===== VERIFICAR QUE ESTÉ EN EL SEGUNDO ESTADO (En cocina) =====
+        const estadoCocina = estadosNegocio[1]; // Segundo estado: En cocina, Preparando, etc.
+        
+        if (!estadoCocina) {
+            toast('⚠️ No se pudo determinar el estado de cocina', 'error');
+            return;
+        }
+        
+        if (data.estado !== estadoCocina) {
+            toast(`⚠️ El pedido debe estar en "${estadoCocina}" para marcar como listo. Estado actual: "${data.estado}"`, 'warn');
             return;
         }
         
@@ -3900,11 +3896,35 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // Recargar mensajeros antes de abrir el modal
+        // ===== RECARGAR MENSAJEROS Y ABRIR MODAL =====
         await cargarMensajerosAdmin();
+        
+        // Verificar que haya mensajeros disponibles
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && m.conectado !== false && !m.ocupado
+        );
+        
+        if (mensajerosDisponibles.length === 0) {
+            toast('⚠️ No hay mensajeros disponibles en este momento', 'warn', 4000);
+            // Preguntar si quiere poner el pedido en lista de espera
+            if (confirm('No hay mensajeros disponibles. ¿Quieres poner el pedido en "Listo para asignar" para que lo tomen cuando se conecten?')) {
+                await docRef.update({
+                    estado: 'Listo para asignar',
+                    fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                    notificadoPor: auth.currentUser?.email || 'Admin'
+                });
+                toast('📢 Pedido puesto en lista de espera. Los mensajeros lo verán cuando se conecten.', 'info', 4000);
+                if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+                else mostrarPedidosPendientesGlobal();
+            }
+            return;
+        }
+        
+        // Si hay mensajeros disponibles, abrir el modal
         abrirModalAsignacion(tiendaId, pedidoId);
         
     } catch (e) {
+        console.error('Error en marcarServicioListo:', e);
         toast('❌ Error: ' + e.message, 'error');
     }
 }
