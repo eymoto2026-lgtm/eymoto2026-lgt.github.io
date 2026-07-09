@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Mensajeros - EyMoto</title>
@@ -28,7 +31,7 @@
         .btn-warning { background: var(--orange); color: #1a1a2e; } .btn-warning:hover { background: #e65c00; }
         .hidden { display: none !important; }
 
-        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
@@ -223,6 +226,17 @@
     </div>
 </div>
 
+<!-- MODAL DE ASIGNACIÓN -->
+<div class="modal" id="modalAsignacion" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalAsignacionTitulo">📦 Asignar Pedido</h3>
+            <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
+        </div>
+        <div id="modalAsignacionContenido"></div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -261,6 +275,7 @@
     let listenerPedidosAsignar = null;
     let todosLosPedidos = [];
     let tiendasCache = {};
+    let pedidoAsignacion = null;
 
     function iniciarSesion() {
         const email = document.getElementById('email').value.trim();
@@ -330,7 +345,7 @@
                     const data = doc.data();
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === doc.id && 
-                        (p.estado === 'Asignado' || p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido')
+                        (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
                     );
                     todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
                 });
@@ -481,15 +496,6 @@
                 }
             }
             
-            let opcionesMensajeros = `<option value="">Seleccionar mensajero...</option>`;
-            mensajerosActivos.forEach(m => {
-                opcionesMensajeros += `<option value="${m.uid}">${m.nombre || 'Mensajero'}</option>`;
-            });
-            
-            if (mensajerosActivos.length === 0) {
-                opcionesMensajeros = `<option value="">⚠️ No hay mensajeros disponibles</option>`;
-            }
-            
             html += `
                 <div class="pedido-asignar" id="pedido-${p.id}">
                     <div class="header">
@@ -518,10 +524,8 @@
     }
 
     // ============================================================
-    // MODAL DE ASIGNACIÓN (AHORA EN ADMIN MENSAJEROS)
+    // MODAL DE ASIGNACIÓN
     // ============================================================
-    let pedidoAsignacion = null;
-
     function abrirModalAsignacion(pedidoId, tiendaId) {
         const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
@@ -538,10 +542,11 @@
             m.activo !== false && !m.ocupado
         );
         
-        const modal = document.createElement('div');
-        modal.className = 'modal active';
-        modal.id = 'modalAsignacion';
-        modal.onclick = function(e) { if (e.target === this) cerrarModalAsignacion(); };
+        const modal = document.getElementById('modalAsignacion');
+        const contenido = document.getElementById('modalAsignacionContenido');
+        const titulo = document.getElementById('modalAsignacionTitulo');
+        
+        titulo.textContent = `📦 Asignar Pedido ${numero}`;
         
         let mensajerosOptions = '';
         if (mensajerosDisponibles.length === 0) {
@@ -553,63 +558,57 @@
             });
         }
         
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>📦 Asignar Pedido ${numero}</h3>
-                    <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
-                </div>
-                <div class="pedido-info-resumen">
-                    <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
-                    <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                    <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
-                    <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
-                </div>
-                
-                <div class="opcion-asignacion" style="border-color: var(--blue);">
-                    <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
-                    <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
-                    <div style="margin: 8px 0 4px 0;">
-                        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
-                        <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
-                            ${mensajerosOptions}
-                        </select>
-                    </div>
-                    <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
-                            style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                            ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                        ✅ Asignar a este mensajero
-                    </button>
-                </div>
-                
-                <div class="opcion-asignacion" style="border-color: var(--yellow);">
-                    <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-                    <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
-                    <div class="mensajeros-disponibles">
-                        📨 Mensajeros que recibirán la notificación: 
-                        <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
-                    </div>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                        ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
-                    </div>
-                    <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
-                            style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                            ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                        🔔 Notificar a todos los mensajeros
-                    </button>
-                </div>
-                
-                <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
+        contenido.innerHTML = `
+            <div class="pedido-info-resumen">
+                <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+                <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+                <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
             </div>
+            
+            <div class="opcion-asignacion" style="border-color: var(--blue);">
+                <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
+                <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+                <div style="margin: 8px 0 4px 0;">
+                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                    <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                        ${mensajerosOptions}
+                    </select>
+                </div>
+                <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                        style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                        ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                    ✅ Asignar a este mensajero
+                </button>
+            </div>
+            
+            <div class="opcion-asignacion" style="border-color: var(--yellow);">
+                <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
+                <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
+                <div class="mensajeros-disponibles">
+                    📨 Mensajeros que recibirán la notificación: 
+                    <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                    ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
+                </div>
+                <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                        style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                        ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                    🔔 Notificar a todos los mensajeros
+                </button>
+            </div>
+            
+            <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
         `;
         
-        document.body.appendChild(modal);
+        modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
 
     function cerrarModalAsignacion() {
         const modal = document.getElementById('modalAsignacion');
-        if (modal) modal.remove();
+        modal.style.display = 'none';
         document.body.style.overflow = '';
         pedidoAsignacion = null;
     }
@@ -669,9 +668,6 @@
             
             toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
             cerrarModalAsignacion();
-            
-            if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-            else mostrarPedidosPendientesGlobal();
             
         } catch (e) {
             toast('❌ Error: ' + e.message, 'error');
@@ -825,6 +821,7 @@
         return el;
     }
 
+    // Exponer funciones
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.crearMensajero = crearMensajero;
