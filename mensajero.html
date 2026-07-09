@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EyMoto - Panel Mensajero</title>
+    <title>EyMoto - Panel Mensajero (V2)</title>
+    <!-- Estilos mejorados para una mejor experiencia -->
     <style>
         * {
             margin: 0;
@@ -85,7 +86,7 @@
         .btn-tomar:active { transform: scale(0.97); }
         .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
-        /* Botón Conectar/Desconectar */
+        /* Botón Conectar/Desconectar mejorado */
         .btn-conectar {
             padding: 8px 20px;
             border-radius: 25px;
@@ -195,14 +196,14 @@
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* Mensaje de recordatorio al iniciar sesión - NO SE CIERRA AUTOMÁTICAMENTE */
+        /* Recordatorio mejorado */
         .recordatorio {
             background: var(--yellow-bg);
             border: 2px solid var(--yellow);
             border-radius: 12px;
             padding: 16px 20px;
             margin-bottom: 20px;
-            display: flex;
+            display: none;
             align-items: flex-start;
             gap: 12px;
             animation: slideDown 0.5s ease;
@@ -258,9 +259,9 @@
         .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
         .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
         .stat-card.c-yellow .val { color: var(--yellow); }
-        .stat-card.c-green .val { color: var(--green); }
         .stat-card.c-blue .val { color: var(--blue); }
         .stat-card.c-orange .val { color: var(--orange); }
+        .stat-card.c-green .val { color: var(--green); }
         .stat-card.c-red .val { color: var(--red); }
 
         .kanban-wrap { overflow-x: auto; padding-bottom: 6px; }
@@ -306,6 +307,7 @@
         }
         .empty-col .ico { font-size: 28px; display: block; margin-bottom: 8px; opacity: .4; }
 
+        /* Tarjetas de pedido mejoradas */
         .pedido-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -527,7 +529,7 @@
     </header>
 
     <div class="wrap">
-        <!-- RECORDATORIO AL INICIAR SESIÓN - SOLO SE CIERRA CON BOTÓN O "X" -->
+        <!-- RECORDATORIO -->
         <div class="recordatorio" id="recordatorioBienvenida">
             <div class="icono">🛵</div>
             <div class="contenido">
@@ -591,6 +593,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
+    // ============================================================
+    // CONFIGURACIÓN FIREBASE
+    // ============================================================
     const firebaseConfig = {
         apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
         authDomain: "eymotocomidas.firebaseapp.com",
@@ -612,9 +617,6 @@
     let tiendasIds = [];
     let todosDisponibles = [];
     let todosMisPedidos = [];
-    let modoGPS = false;
-    let watchId = null;
-    let ubicacionActual = null;
     let mensajeroConectado = false;
     let recordatorioMostrado = false;
     let listenersActivos = [];
@@ -660,7 +662,6 @@
     function logout() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
         listenersActivos = [];
-        if (watchId) navigator.geolocation.clearWatch(watchId);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -675,7 +676,6 @@
         } else {
             document.getElementById('loginBox').classList.remove('hidden');
             document.getElementById('panel').classList.add('hidden');
-            if (watchId) navigator.geolocation.clearWatch(watchId);
         }
     });
 
@@ -690,14 +690,10 @@
         document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
         document.getElementById('recordatorioNombre').textContent = nombreMensajero;
         
-        // Cargar estado de conexión
         await cargarEstadoConexion();
-        
         await cargarTiendas();
         escucharPedidosMensajero();
-        iniciarGPS();
         
-        // Mostrar recordatorio si está desconectado (NO se cierra automáticamente)
         if (!mensajeroConectado && !recordatorioMostrado) {
             document.getElementById('recordatorioBienvenida').style.display = 'flex';
             recordatorioMostrado = true;
@@ -710,7 +706,7 @@
     }
 
     // ============================================================
-    // CERRAR RECORDATORIO (SOLO POR ACCIÓN DEL USUARIO)
+    // CERRAR RECORDATORIO
     // ============================================================
     function cerrarRecordatorio() {
         document.getElementById('recordatorioBienvenida').style.display = 'none';
@@ -718,7 +714,7 @@
     }
 
     // ============================================================
-    // CARGAR ESTADO DE CONEXIÓN DESDE FIRESTORE
+    // CARGAR ESTADO DE CONEXIÓN
     // ============================================================
     async function cargarEstadoConexion() {
         if (!mensajeroId) return;
@@ -728,16 +724,10 @@
                 const data = doc.data();
                 mensajeroConectado = data.conectado !== false;
                 actualizarBotonConexion();
-                console.log('📡 Estado de conexión:', mensajeroConectado ? 'Conectado' : 'Desconectado');
             }
-        } catch (e) {
-            console.error('Error cargando estado de conexión:', e);
-        }
+        } catch (e) { console.error('Error cargando estado de conexión:', e); }
     }
 
-    // ============================================================
-    // ACTUALIZAR BOTÓN DE CONEXIÓN
-    // ============================================================
     function actualizarBotonConexion() {
         const btn = document.getElementById('btnConectar');
         const texto = document.getElementById('btnConectarTexto');
@@ -751,9 +741,6 @@
         renderizarDisponibles();
     }
 
-    // ============================================================
-    // TOGGLE CONEXIÓN
-    // ============================================================
     async function toggleConexion() {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado', 'error');
@@ -806,7 +793,7 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS DEL MENSAJERO (SIN COLLECTION GROUP)
+    // ESCUCHAR PEDIDOS (SOLUCIÓN: 'Listo para asignar' es visible)
     // ============================================================
     function escucharPedidosMensajero() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
@@ -818,6 +805,7 @@
         }
 
         tiendasIds.forEach(tiendaId => {
+            // Escuchar pedidos "Listo para asignar" (el estado correcto)
             const unsubDisponibles = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -826,8 +814,12 @@
                     const disponibles = [];
                     snap.forEach(doc => {
                         const data = doc.data();
-                        disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                        // No mostrar pedidos que ya tienen mensajero
+                        if (!data.mensajeroId) {
+                            disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                        }
                     });
+                    // Actualizar la lista global de disponibles
                     const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
                     todosDisponibles = [...otrosDisponibles, ...disponibles];
                     renderizarDisponibles();
@@ -837,6 +829,7 @@
                     console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
 
+            // Escuchar pedidos asignados al mensajero
             const unsubMios = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -860,7 +853,7 @@
             listenersActivos.push(unsubMios);
         });
 
-        console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
+        console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos "Listo para asignar"`);
     }
 
     // ============================================================
@@ -902,12 +895,14 @@
     }
 
     // ============================================================
-    // RENDERIZAR DISPONIBLES
+    // RENDERIZAR DISPONIBLES (CORREGIDO)
     // ============================================================
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
-        const disponiblesMostrar = mensajeroConectado ? todosDisponibles : [];
+        
+        // Filtrar pedidos que no tienen mensajero asignado
+        const disponiblesMostrar = mensajeroConectado ? todosDisponibles.filter(p => !p.mensajeroId) : [];
         contador.textContent = disponiblesMostrar.length;
 
         if (!mensajeroConectado) {
@@ -1103,24 +1098,10 @@
     }
 
     // ============================================================
-    // GPS
-    // ============================================================
-    function iniciarGPS() {
-        if (!navigator.geolocation) {
-            toast('📍 GPS no soportado en este dispositivo', 'warn');
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(pos => {
-            ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            console.log('📍 Ubicación obtenida:', ubicacionActual);
-        }, err => console.warn('⚠️ Error GPS:', err.message), { enableHighAccuracy: true, timeout: 10000 });
-    }
-
-    // ============================================================
     // ESTADÍSTICAS
     // ============================================================
     function actualizarEstadisticas() {
-        const disponiblesMostrados = mensajeroConectado ? todosDisponibles.length : 0;
+        const disponiblesMostrados = mensajeroConectado ? todosDisponibles.filter(p => !p.mensajeroId).length : 0;
         document.getElementById('statDisponibles').textContent = disponiblesMostrados;
         const asignados = todosMisPedidos.filter(p => p.estado === 'Asignado').length;
         const enCamino = todosMisPedidos.filter(p => p.estado === 'En camino').length;
@@ -1131,7 +1112,7 @@
     }
 
     function actualizarHeaderBadge() {
-        const disponibles = mensajeroConectado ? todosDisponibles.length : 0;
+        const disponibles = mensajeroConectado ? todosDisponibles.filter(p => !p.mensajeroId).length : 0;
         const badge = document.getElementById('headerBadge');
         badge.textContent = disponibles;
         badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
@@ -1182,11 +1163,9 @@
     window.actualizarBotonConexion = actualizarBotonConexion;
     window.cerrarRecordatorio = cerrarRecordatorio;
 
-    console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('📢 Escuchando pedidos disponibles en tiempo real (sin collectionGroup)');
-    console.log('📍 Dirección de locales visible en detalles');
+    console.log('✅ Panel de mensajero V2 cargado correctamente');
+    console.log('📢 Escuchando pedidos en estado "Listo para asignar"');
     console.log('🔌 Control de conexión activado');
-    console.log('📌 Recordatorio solo se cierra con acción del usuario');
 </script>
 </body>
 </html>
