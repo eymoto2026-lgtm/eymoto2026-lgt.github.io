@@ -5,144 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Mensajeros - EyMoto</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
-            --yellow: #FFD600;
-            --yellow-dim: #e6c200;
-            --green: #00C853;
-            --green-bg: rgba(0,200,83,0.12);
-            --blue: #00B0FF;
-            --blue-bg: rgba(0,176,255,0.12);
-            --red: #FF3D00;
-            --red-bg: rgba(255,61,0,0.12);
-            --orange: #FF6900;
-            --orange-bg: rgba(255,105,0,0.12);
-            --purple: #9B59B6;
-            --purple-bg: rgba(155,89,182,0.12);
-            --surface: #141414;
-            --surface2: #1e1e1e;
-            --surface3: #252525;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text-muted: #888;
-            --radius: 10px;
+            --yellow: #FFD600; --yellow-dim: #e6c200; --green: #00C853; --green-bg: rgba(0,200,83,0.12);
+            --blue: #00B0FF; --blue-bg: rgba(0,176,255,0.12); --red: #FF3D00; --red-bg: rgba(255,61,0,0.12);
+            --orange: #FF6900; --orange-bg: rgba(255,105,0,0.12); --purple: #9B59B6; --purple-bg: rgba(155,89,182,0.12);
+            --surface: #141414; --surface2: #1e1e1e; --surface3: #252525; --border: #2e2e2e; --border2: #3a3a3a;
+            --text-muted: #888; --radius: 10px;
         }
-        input, select, textarea, button {
-            font-family: inherit;
-            font-size: 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border2);
-            background: var(--surface3);
-            color: #fff;
-            padding: 11px 14px;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color .2s, background .2s;
-        }
+        input, select, button { font-family: inherit; font-size: 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; padding: 11px 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color .2s; }
         input:focus, select:focus { border-color: var(--yellow); }
-        select option { background: #1e1e1e; }
-        button {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: background .15s, transform .1s;
-        }
+        button { background: var(--yellow); color: #1a1a2e; font-weight: 700; border: none; cursor: pointer; transition: background .15s, transform .1s; }
         button:hover { background: var(--yellow-dim); }
         button:active { transform: scale(.98); }
         .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
-        .btn-danger { background: #c0392b; color: #fff; }
-        .btn-danger:hover { background: #a93226; }
-        .btn-success { background: #00C853; color: #fff; }
-        .btn-success:hover { background: #00b748; }
-        .btn-info { background: #0288d1; color: #fff; }
-        .btn-info:hover { background: #0277bd; }
+        .btn-danger { background: #c0392b; color: #fff; } .btn-danger:hover { background: #a93226; }
+        .btn-success { background: #00C853; color: #fff; } .btn-success:hover { background: #00b748; }
+        .btn-info { background: #0288d1; color: #fff; } .btn-info:hover { background: #0277bd; }
         .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
-        .btn-warning { background: var(--orange); color: #1a1a2e; }
-        .btn-warning:hover { background: #e65c00; }
+        .btn-warning { background: var(--orange); color: #1a1a2e; } .btn-warning:hover { background: #e65c00; }
         .hidden { display: none !important; }
 
-        header {
-            background: #0d0d0d;
-            border-bottom: 1px solid var(--border);
-            padding: 13px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        header .brand {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 900;
-            font-size: 14px;
-            padding: 5px 14px;
-            border-radius: 20px;
-        }
+        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+        header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
-        .header-badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 7px;
-            border-radius: 10px;
-            display: none;
-        }
+        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; }
 
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
 
-        #loginBox {
-            max-width: 420px;
-            margin: 60px auto;
-            padding: 32px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
-        #loginBox .brand {
-            display: inline-block;
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-size: 26px;
-            font-weight: 900;
-            padding: 10px 24px;
-            border-radius: 30px;
-        }
+        #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+        #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
         #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
         #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* ===== ESTADÍSTICAS ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 18px;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
         .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
         .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
         .stat-card.c-yellow .val { color: var(--yellow); }
@@ -152,320 +54,89 @@
         .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-purple .val { color: var(--purple); }
 
-        /* ===== PEDIDOS PARA ASIGNAR ===== */
-        .pedido-asignar {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border-left: 4px solid var(--yellow);
-        }
-        .pedido-asignar .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .pedido-asignar .header .numero {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--yellow);
-        }
-        .pedido-asignar .header .estado-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--blue-bg);
-            color: var(--blue);
-        }
-        .pedido-asignar .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 16px;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
+        .pedido-asignar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); }
+        .pedido-asignar .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .pedido-asignar .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
+        .pedido-asignar .header .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--blue-bg); color: var(--blue); }
+        .pedido-asignar .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin-bottom: 8px; }
         .pedido-asignar .info-grid .label { color: var(--text-muted); }
         .pedido-asignar .info-grid .value { color: #fff; font-weight: 500; }
-        .pedido-asignar .items-list {
-            background: var(--surface2);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 8px 0;
-            font-size: 12px;
-        }
-        .pedido-asignar .items-list .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-            border-bottom: 1px solid var(--border);
-        }
+        .pedido-asignar .items-list { background: var(--surface2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
+        .pedido-asignar .items-list .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
         .pedido-asignar .items-list .item:last-child { border-bottom: none; }
-        .pedido-asignar .total {
-            font-size: 16px;
-            font-weight: 800;
-            text-align: right;
-            color: var(--green);
-            margin-top: 6px;
-        }
-        .pedido-asignar .asignar-area {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .pedido-asignar .asignar-area select {
-            flex: 2;
-            min-width: 150px;
-        }
-        .pedido-asignar .asignar-area button {
-            flex: 1;
-            min-width: 100px;
-        }
-        .pedido-asignar .estado-preparacion {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 700;
-            background: var(--blue-bg);
-            color: var(--blue);
-        }
+        .pedido-asignar .total { font-size: 16px; font-weight: 800; text-align: right; color: var(--green); margin-top: 6px; }
+        .pedido-asignar .asignar-area { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+        .pedido-asignar .asignar-area select { flex: 2; min-width: 150px; }
+        .pedido-asignar .asignar-area button { flex: 1; min-width: 100px; }
 
-        /* ===== FORMULARIO CREAR MENSAJERO ===== */
-        .form-crear {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .form-crear .titulo {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .form-crear .row2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .form-crear .acciones {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
+        .form-crear { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .form-crear .titulo { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .form-crear .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-crear .acciones { display: flex; gap: 8px; margin-top: 12px; }
 
-        /* ===== LISTA DE MENSAJEROS ===== */
-        .mensajero-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            transition: border-color 0.3s;
-        }
+        .mensajero-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; transition: border-color 0.3s; }
         .mensajero-card:hover { border-color: var(--yellow); }
-        .mensajero-card .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--surface3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--yellow);
-            flex-shrink: 0;
-            border: 2px solid var(--border);
-        }
-        .mensajero-card .info {
-            flex: 1;
-            min-width: 150px;
-        }
-        .mensajero-card .info .nombre {
-            font-size: 15px;
-            font-weight: 700;
-        }
-        .mensajero-card .info .email {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .mensajero-card .info .meta {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .mensajero-card .estado {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
+        .mensajero-card .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--yellow); flex-shrink: 0; border: 2px solid var(--border); }
+        .mensajero-card .info { flex: 1; min-width: 150px; }
+        .mensajero-card .info .nombre { font-size: 15px; font-weight: 700; }
+        .mensajero-card .info .email { font-size: 12px; color: var(--text-muted); }
+        .mensajero-card .info .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .mensajero-card .estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
         .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
         .mensajero-card .estado.ocupado { background: var(--orange-bg); color: var(--orange); }
-        .mensajero-card .acciones {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
+        .mensajero-card .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
 
-        #toastWrap {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-        .toast {
-            background: #1e1e1e;
-            border: 1px solid var(--border2);
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0,0,0,.5);
-            animation: toastIn .3s ease;
-            pointer-events: auto;
-            max-width: 380px;
-            cursor: pointer;
-        }
+        #toastWrap { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        .toast { background: #1e1e1e; border: 1px solid var(--border2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: toastIn .3s ease; pointer-events: auto; max-width: 380px; cursor: pointer; }
         .toast.t-success { border-left: 3px solid var(--green); }
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .toast-fade { animation: toastOut .3s ease forwards; }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px); }
-        }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.92);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
         .modal.active { display: flex; }
-        .modal .modal-content {
-            background: #1e1e1e;
-            border-radius: 20px;
-            max-width: 500px;
-            width: 100%;
-            padding: 24px;
-            border: 1px solid var(--yellow);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+        .modal .modal-content { background: #1e1e1e; border-radius: 20px; max-width: 550px; width: 100%; padding: 24px; border: 1px solid var(--yellow); max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
         .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
-        .modal .modal-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-        }
+        .modal .modal-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
         .modal .modal-close:hover { color: var(--red); }
-        .modal .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border);
-        }
+        .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
         .modal .info-row .label { color: var(--text-muted); }
         .modal .info-row .value { color: #fff; font-weight: 500; }
 
-        .filtros {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            background: var(--surface2);
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-        .filtros select, .filtros input {
-            flex: 1;
-            min-width: 150px;
-        }
+        .filtros { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: var(--surface2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .filtros select, .filtros input { flex: 1; min-width: 150px; }
         .filtros button { flex: 0 0 auto; width: auto; }
 
-        .seccion-pedidos {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid var(--border);
-        }
-        .seccion-pedidos .titulo-seccion {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .seccion-pedidos .titulo-seccion .badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-        .pedido-asignar .preparacion-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 700;
-        }
-        .preparacion-badge.cocina { background: var(--blue-bg); color: var(--blue); }
-        .preparacion-badge.despacho { background: var(--purple-bg); color: var(--purple); }
-        .preparacion-badge.preparando { background: var(--cyan-bg); color: var(--cyan); }
-        .preparacion-badge.cortando { background: var(--red-bg); color: var(--red); }
-        .preparacion-badge.horneando { background: var(--orange-bg); color: var(--orange); }
-        .preparacion-badge.arreglando { background: var(--pink-bg); color: var(--pink); }
-        .preparacion-badge.proceso { background: var(--blue-bg); color: var(--blue); }
+        .seccion-pedidos { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .seccion-pedidos .titulo-seccion { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .seccion-pedidos .titulo-seccion .badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+
+        .opcion-asignacion { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; transition: all 0.3s ease; }
+        .opcion-asignacion:hover { border-color: var(--yellow); }
+        .opcion-asignacion .titulo { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .opcion-asignacion .descripcion { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+        .opcion-asignacion select { background: var(--surface3); border: 1px solid var(--border2); color: #fff; padding: 10px 12px; border-radius: 8px; width: 100%; margin-bottom: 8px; }
+        .opcion-asignacion select option { background: #1e1e1e; }
+        .opcion-asignacion .btn-asignar { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .opcion-asignacion .btn-asignar:hover { transform: scale(1.01); }
+        .opcion-asignacion .btn-asignar:active { transform: scale(0.97); }
+        .opcion-asignacion .btn-asignar.manual { background: var(--blue); color: #fff; }
+        .opcion-asignacion .btn-asignar.manual:hover { background: #0277bd; }
+        .opcion-asignacion .btn-asignar.broadcast { background: var(--yellow); color: #1a1a2e; }
+        .opcion-asignacion .btn-asignar.broadcast:hover { background: var(--yellow-dim); }
+        .opcion-asignacion .mensajeros-disponibles { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .opcion-asignacion .mensajeros-disponibles .count { color: var(--green); font-weight: 700; }
+        .btn-cancelar-modal { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border2); background: transparent; color: var(--text-muted); font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
+        .btn-cancelar-modal:hover { background: var(--surface3); color: #fff; }
+        .pedido-info-resumen { background: var(--surface3); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
+        .pedido-info-resumen .row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .pedido-info-resumen .label { color: var(--text-muted); }
+        .pedido-info-resumen .value { color: #fff; font-weight: 500; }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
@@ -503,7 +174,6 @@
     </header>
 
     <div class="wrap">
-        <!-- ESTADÍSTICAS -->
         <div class="stats-grid">
             <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
             <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
@@ -512,7 +182,6 @@
             <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
         </div>
 
-        <!-- FILTROS -->
         <div class="filtros">
             <select id="filtroEstado" onchange="filtrarMensajeros()">
                 <option value="">📋 Todos</option>
@@ -524,69 +193,33 @@
             <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
         </div>
 
-        <!-- FORMULARIO CREAR MENSAJERO -->
         <div class="form-crear">
             <div class="titulo">➕ Crear nuevo mensajero</div>
             <div class="row2">
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label>
-                    <input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label>
-                    <input id="nuevoNombre" placeholder="Carlos Pérez">
-                </div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label><input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com"></div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label><input id="nuevoNombre" placeholder="Carlos Pérez"></div>
             </div>
             <div class="row2">
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label>
-                    <input id="nuevoTelefono" placeholder="3169934516">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label>
-                    <input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!">
-                </div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label><input id="nuevoTelefono" placeholder="3169934516"></div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label><input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!"></div>
             </div>
             <div class="acciones">
                 <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
                 <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
-                ⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.
-            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.</div>
         </div>
 
-        <!-- LISTA DE MENSAJEROS -->
         <div id="listaMensajeros">
-            <div style="text-align:center;padding:30px;color:var(--text-muted);">
-                <div style="font-size:32px;margin-bottom:12px;">🛵</div>
-                Cargando mensajeros...
-            </div>
+            <div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🛵</div>Cargando mensajeros...</div>
         </div>
 
-        <!-- PEDIDOS PENDIENTES DE ASIGNAR -->
         <div class="seccion-pedidos" id="seccionPedidos">
-            <div class="titulo-seccion">
-                📦 Pedidos en preparación (pendientes de asignar)
-                <span class="badge" id="badgePedidos">0</span>
-            </div>
+            <div class="titulo-seccion">📦 Pedidos en preparación (pendientes de asignar)<span class="badge" id="badgePedidos">0</span></div>
             <div id="listaPedidosAsignar">
-                <div style="text-align:center;padding:20px;color:var(--text-muted);">
-                    <div style="font-size:28px;margin-bottom:8px;">🍽️</div>
-                    No hay pedidos listos para asignar
-                </div>
+                <div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">🍽️</div>No hay pedidos listos para asignar</div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3 id="modalTitulo">Detalle del mensajero</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div id="modalContenido"></div>
     </div>
 </div>
 
@@ -607,95 +240,20 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ============================================================
-    // TIPOS DE NEGOCIO Y ESTADOS
-    // ============================================================
     const TIPOS_NEGOCIO = {
-        'restaurante': {
-            label: '🍔 Restaurante',
-            estados: ['Pendiente', 'En cocina', 'En camino', 'Entregado'],
-            colores: ['yellow', 'blue', 'orange', 'green'],
-            estadoPreparacion: 'En cocina',
-            badgeClass: 'cocina'
-        },
-        'heladeria': {
-            label: '🍦 Heladería',
-            estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'],
-            colores: ['yellow', 'cyan', 'orange', 'green'],
-            estadoPreparacion: 'Preparando',
-            badgeClass: 'preparando'
-        },
-        'licoreria': {
-            label: '🍺 Licorería',
-            estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'],
-            colores: ['yellow', 'purple', 'orange', 'green'],
-            estadoPreparacion: 'En despacho',
-            badgeClass: 'despacho'
-        },
-        'tienda': {
-            label: '🛒 Tienda / Supermercado',
-            estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'],
-            colores: ['yellow', 'purple', 'orange', 'green'],
-            estadoPreparacion: 'En despacho',
-            badgeClass: 'despacho'
-        },
-        'domicilios': {
-            label: '🚗 Domicilios',
-            estados: ['Pendiente', 'Asignado', 'Recogido', 'Entregado'],
-            colores: ['yellow', 'blue', 'purple', 'green'],
-            estadoPreparacion: 'Asignado',
-            badgeClass: 'proceso'
-        },
-        'carniceria': {
-            label: '🥩 Carnicería',
-            estados: ['Pendiente', 'Cortando', 'Empacando', 'Entregado'],
-            colores: ['yellow', 'red', 'orange', 'green'],
-            estadoPreparacion: 'Cortando',
-            badgeClass: 'cortando'
-        },
-        'panaderia': {
-            label: '🥖 Panadería',
-            estados: ['Pendiente', 'Horneando', 'Empacando', 'Entregado'],
-            colores: ['yellow', 'orange', 'blue', 'green'],
-            estadoPreparacion: 'Horneando',
-            badgeClass: 'horneando'
-        },
-        'floristeria': {
-            label: '🌸 Floristería',
-            estados: ['Pendiente', 'Arreglando', 'En camino', 'Entregado'],
-            colores: ['yellow', 'pink', 'orange', 'green'],
-            estadoPreparacion: 'Arreglando',
-            badgeClass: 'arreglando'
-        },
-        'farmacia': {
-            label: '💊 Farmacia',
-            estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'],
-            colores: ['yellow', 'blue', 'orange', 'green'],
-            estadoPreparacion: 'Preparando',
-            badgeClass: 'preparando'
-        },
-        'otro': {
-            label: '📦 Otro',
-            estados: ['Pendiente', 'En proceso', 'En camino', 'Entregado'],
-            colores: ['yellow', 'blue', 'orange', 'green'],
-            estadoPreparacion: 'En proceso',
-            badgeClass: 'proceso'
-        }
+        'restaurante': { label: '🍔 Restaurante', estados: ['Pendiente', 'En cocina', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'En cocina', badgeClass: 'cocina' },
+        'heladeria': { label: '🍦 Heladería', estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'], colores: ['yellow', 'cyan', 'orange', 'green'], estadoPreparacion: 'Preparando', badgeClass: 'preparando' },
+        'licoreria': { label: '🍺 Licorería', estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'], colores: ['yellow', 'purple', 'orange', 'green'], estadoPreparacion: 'En despacho', badgeClass: 'despacho' },
+        'tienda': { label: '🛒 Tienda / Supermercado', estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'], colores: ['yellow', 'purple', 'orange', 'green'], estadoPreparacion: 'En despacho', badgeClass: 'despacho' },
+        'domicilios': { label: '🚗 Domicilios', estados: ['Pendiente', 'Asignado', 'Recogido', 'Entregado'], colores: ['yellow', 'blue', 'purple', 'green'], estadoPreparacion: 'Asignado', badgeClass: 'proceso' },
+        'carniceria': { label: '🥩 Carnicería', estados: ['Pendiente', 'Cortando', 'Empacando', 'Entregado'], colores: ['yellow', 'red', 'orange', 'green'], estadoPreparacion: 'Cortando', badgeClass: 'cortando' },
+        'panaderia': { label: '🥖 Panadería', estados: ['Pendiente', 'Horneando', 'Empacando', 'Entregado'], colores: ['yellow', 'orange', 'blue', 'green'], estadoPreparacion: 'Horneando', badgeClass: 'horneando' },
+        'floristeria': { label: '🌸 Floristería', estados: ['Pendiente', 'Arreglando', 'En camino', 'Entregado'], colores: ['yellow', 'pink', 'orange', 'green'], estadoPreparacion: 'Arreglando', badgeClass: 'arreglando' },
+        'farmacia': { label: '💊 Farmacia', estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'Preparando', badgeClass: 'preparando' },
+        'otro': { label: '📦 Otro', estados: ['Pendiente', 'En proceso', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'En proceso', badgeClass: 'proceso' }
     };
 
-    function getEstadoPreparacion(tipo) {
-        if (TIPOS_NEGOCIO[tipo]) {
-            return TIPOS_NEGOCIO[tipo].estadoPreparacion || 'En cocina';
-        }
-        return 'En cocina';
-    }
-
-    function getBadgeClass(tipo) {
-        if (TIPOS_NEGOCIO[tipo]) {
-            return TIPOS_NEGOCIO[tipo].badgeClass || 'cocina';
-        }
-        return 'cocina';
-    }
+    function getEstadoPreparacion(tipo) { return TIPOS_NEGOCIO[tipo]?.estadoPreparacion || 'En cocina'; }
 
     let todosLosMensajeros = [];
     let mensajerosFiltrados = [];
@@ -704,9 +262,6 @@
     let todosLosPedidos = [];
     let tiendasCache = {};
 
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
     function iniciarSesion() {
         const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('password').value;
@@ -752,30 +307,19 @@
         }
     });
 
-    // ============================================================
-    // INICIALIZAR PANEL
-    // ============================================================
     async function inicializarPanel() {
         await cargarTiendas();
         await cargarMensajeros();
         await escucharPedidosParaAsignar();
     }
 
-    // ============================================================
-    // CARGAR TIENDAS
-    // ============================================================
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
-            snap.forEach(doc => {
-                tiendasCache[doc.id] = doc.data();
-            });
+            snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
         } catch (e) { console.error(e); }
     }
 
-    // ============================================================
-    // CARGAR MENSAJEROS
-    // ============================================================
     function cargarMensajeros() {
         if (listenerMensajeros) listenerMensajeros();
         listenerMensajeros = db.collection('usuarios')
@@ -786,22 +330,15 @@
                     const data = doc.data();
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === doc.id && 
-                        (p.estado === 'Asignado' || p.estado === 'En camino')
+                        (p.estado === 'Asignado' || p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido')
                     );
-                    todosLosMensajeros.push({ 
-                        uid: doc.id, 
-                        ...data,
-                        ocupado: tienePedidoActivo 
-                    });
+                    todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
                 });
                 filtrarMensajeros();
                 actualizarEstadisticas();
             }, err => { toast('❌ Error al cargar mensajeros', 'error'); });
     }
 
-    // ============================================================
-    // ESCUCHAR PEDIDOS PARA ASIGNAR
-    // ============================================================
     function escucharPedidosParaAsignar() {
         if (listenerPedidosAsignar) listenerPedidosAsignar();
         
@@ -841,9 +378,6 @@
         });
     }
 
-    // ============================================================
-    // FILTRAR MENSAJEROS
-    // ============================================================
     function filtrarMensajeros() {
         const estado = document.getElementById('filtroEstado').value;
         const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
@@ -867,9 +401,6 @@
 
     function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
 
-    // ============================================================
-    // RENDERIZAR MENSAJEROS
-    // ============================================================
     function renderizarMensajeros() {
         const container = document.getElementById('listaMensajeros');
         if (mensajerosFiltrados.length === 0) {
@@ -908,31 +439,21 @@
         container.innerHTML = html;
     }
 
-    // ============================================================
-    // RENDERIZAR PEDIDOS PARA ASIGNAR
-    // ============================================================
     function renderizarPedidosAsignar() {
         const container = document.getElementById('listaPedidosAsignar');
         const badge = document.getElementById('badgePedidos');
         
-        // Filtrar pedidos en estado de preparación sin mensajero asignado
         const pedidosPendientes = todosLosPedidos.filter(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const tipoNegocio = tienda.tipoNegocio || 'restaurante';
             const estadoPrep = getEstadoPreparacion(tipoNegocio);
-            const badgeClass = getBadgeClass(tipoNegocio);
             return p.estado === estadoPrep && !p.mensajeroId;
         });
         
         badge.textContent = pedidosPendientes.length;
         
         if (pedidosPendientes.length === 0) {
-            container.innerHTML = `
-                <div style="text-align:center;padding:20px;color:var(--text-muted);">
-                    <div style="font-size:28px;margin-bottom:8px;">✅</div>
-                    No hay pedidos listos para asignar
-                </div>
-            `;
+            container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos listos para asignar</div>`;
             return;
         }
         
@@ -943,8 +464,6 @@
             const tienda = tiendasCache[p.tiendaId] || {};
             const nombreTienda = tienda.nombre || 'Tienda';
             const tipoNegocio = tienda.tipoNegocio || 'restaurante';
-            const estadoPrep = getEstadoPreparacion(tipoNegocio);
-            const badgeClass = getBadgeClass(tipoNegocio);
             const cliente = p.cliente || {};
             const total = p.total || 0;
             const fechaStr = formatearFecha(p.fecha);
@@ -955,12 +474,7 @@
                     let nombreItem = item.nombre || 'Producto';
                     if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
                     const subtotal = item.total || (item.precio * item.cantidad) || 0;
-                    itemsHtml += `
-                        <div class="item">
-                            <span>${nombreItem} x${item.cantidad || 1}</span>
-                            <span>$${subtotal.toLocaleString('es-CO')}</span>
-                        </div>
-                    `;
+                    itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
                 });
                 if (p.items.length > 3) {
                     itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
@@ -976,22 +490,11 @@
                 opcionesMensajeros = `<option value="">⚠️ No hay mensajeros disponibles</option>`;
             }
             
-            const badgeLabels = {
-                'cocina': { label: '👨‍🍳 En cocina', class: 'cocina' },
-                'despacho': { label: '📦 En despacho', class: 'despacho' },
-                'preparando': { label: '⏳ Preparando', class: 'preparando' },
-                'cortando': { label: '🔪 Cortando', class: 'cortando' },
-                'horneando': { label: '🔥 Horneando', class: 'horneando' },
-                'arreglando': { label: '🌸 Arreglando', class: 'arreglando' },
-                'proceso': { label: '⚙️ En proceso', class: 'proceso' }
-            };
-            const badgeInfo = badgeLabels[badgeClass] || badgeLabels['cocina'];
-            
             html += `
                 <div class="pedido-asignar" id="pedido-${p.id}">
                     <div class="header">
                         <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
-                        <span class="preparacion-badge ${badgeInfo.class}">${badgeInfo.label}</span>
+                        <span class="estado-badge">👨‍🍳 Listo para asignar</span>
                     </div>
                     <div class="info-grid">
                         <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1003,14 +506,9 @@
                     </div>
                     ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
                     <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                    <div class="asignar-area">
-                        <select id="select-mensajero-${p.id}">
-                            ${opcionesMensajeros}
-                        </select>
-                        <button class="btn-success btn-sm" onclick="asignarPedidoMensajero('${p.id}','${p.tiendaId}')" ${mensajerosActivos.length === 0 ? 'disabled' : ''}>
-                            👤 Asignar pedido
-                        </button>
-                    </div>
+                    <button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;" ${mensajerosActivos.length === 0 ? 'disabled' : ''}>
+                        👤 Asignar mensajero
+                    </button>
                 </div>
             `;
         });
@@ -1020,17 +518,113 @@
     }
 
     // ============================================================
-    // ASIGNAR PEDIDO A MENSAJERO (DESDE ADMIN MENSAJEROS)
+    // MODAL DE ASIGNACIÓN (AHORA EN ADMIN MENSAJEROS)
     // ============================================================
-    async function asignarPedidoMensajero(pedidoId, tiendaId) {
-        const select = document.getElementById(`select-mensajero-${pedidoId}`);
+    let pedidoAsignacion = null;
+
+    function abrirModalAsignacion(pedidoId, tiendaId) {
+        const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+        if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        
+        pedidoAsignacion = { tiendaId, pedidoId };
+        
+        const tienda = tiendasCache[tiendaId] || {};
+        const nombreTienda = tienda.nombre || 'Tienda';
+        const cliente = pedido.cliente || {};
+        const total = pedido.total || 0;
+        const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && !m.ocupado
+        );
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'modalAsignacion';
+        modal.onclick = function(e) { if (e.target === this) cerrarModalAsignacion(); };
+        
+        let mensajerosOptions = '';
+        if (mensajerosDisponibles.length === 0) {
+            mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+        } else {
+            mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
+            mensajerosDisponibles.forEach(m => {
+                mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'} (Disponible)</option>`;
+            });
+        }
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📦 Asignar Pedido ${numero}</h3>
+                    <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
+                </div>
+                <div class="pedido-info-resumen">
+                    <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+                    <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                    <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+                    <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+                </div>
+                
+                <div class="opcion-asignacion" style="border-color: var(--blue);">
+                    <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
+                    <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+                    <div style="margin: 8px 0 4px 0;">
+                        <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                        <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                            ${mensajerosOptions}
+                        </select>
+                    </div>
+                    <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                            style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                            ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                        ✅ Asignar a este mensajero
+                    </button>
+                </div>
+                
+                <div class="opcion-asignacion" style="border-color: var(--yellow);">
+                    <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
+                    <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
+                    <div class="mensajeros-disponibles">
+                        📨 Mensajeros que recibirán la notificación: 
+                        <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                        ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
+                    </div>
+                    <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                            style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                            ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                        🔔 Notificar a todos los mensajeros
+                    </button>
+                </div>
+                
+                <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalAsignacion() {
+        const modal = document.getElementById('modalAsignacion');
+        if (modal) modal.remove();
+        document.body.style.overflow = '';
+        pedidoAsignacion = null;
+    }
+
+    async function asignarPedidoManual() {
+        const select = document.getElementById('selectMensajeroManual');
         if (!select) return;
         const mensajeroId = select.value;
+        
         if (!mensajeroId) {
-            toast('⚠️ Selecciona un mensajero para asignar el pedido', 'warn');
+            toast('⚠️ Selecciona un mensajero de la lista', 'warn');
             return;
         }
         
+        const { tiendaId, pedidoId } = pedidoAsignacion;
         const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
         const nombreMensajero = mensajero?.nombre || 'Mensajero';
         
@@ -1042,12 +636,13 @@
                 .update({
                     mensajeroId: mensajeroId,
                     nombreMensajero: nombreMensajero,
-                    estado: 'Asignado',
+                    estado: 'En camino al restaurante',
                     fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-                    asignadoPor: auth.currentUser?.email || 'Admin'
+                    asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
                 });
             
             toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
+            cerrarModalAsignacion();
             
             await cargarMensajeros();
             renderizarPedidosAsignar();
@@ -1058,15 +653,36 @@
         }
     }
 
-    // ============================================================
-    // ACTUALIZAR ESTADÍSTICAS
-    // ============================================================
+    async function notificarATodos() {
+        const { tiendaId, pedidoId } = pedidoAsignacion;
+        
+        try {
+            toast('⏳ Notificando mensajeros...', 'info');
+            
+            await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .update({
+                    estado: 'Listo para asignar',
+                    fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                    notificadoPor: auth.currentUser?.email || 'Admin'
+                });
+            
+            toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+            cerrarModalAsignacion();
+            
+            if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+            else mostrarPedidosPendientesGlobal();
+            
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
     function actualizarEstadisticas() {
         const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado).length;
         const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
         const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
         
-        // Pedidos pendientes de asignar (en estado de preparación sin mensajero)
         const pendientes = todosLosPedidos.filter(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const tipoNegocio = tienda.tipoNegocio || 'restaurante';
@@ -1074,7 +690,7 @@
             return p.estado === estadoPrep && !p.mensajeroId;
         }).length;
         
-        const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino').length;
+        const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
         
         document.getElementById('statActivos').textContent = activos;
         document.getElementById('statInactivos').textContent = inactivos;
@@ -1097,9 +713,6 @@
         badge.style.display = pendientes > 0 ? 'inline-block' : 'none';
     }
 
-    // ============================================================
-    // FORMATEAR FECHA
-    // ============================================================
     function formatearFecha(fecha) {
         if (!fecha) return '--/--/--';
         try {
@@ -1112,9 +725,6 @@
         } catch (e) { return '--/--/--'; }
     }
 
-    // ============================================================
-    // GESTIÓN DE MENSAJEROS
-    // ============================================================
     async function crearMensajero() {
         const email = document.getElementById('nuevoEmail').value.trim();
         const nombre = document.getElementById('nuevoNombre').value.trim();
@@ -1129,7 +739,7 @@
             const uid = result.user.uid;
             await db.collection('usuarios').doc(uid).set({
                 email, nombre, telefono: telefono || '',
-                mensajero: true, rol: 'mensajero', activo: true,
+                mensajero: true, rol: 'mensajero', activo: true, conectado: false,
                 creadoEn: firebase.firestore.FieldValue.serverTimestamp()
             });
             await result.user.sendEmailVerification();
@@ -1188,6 +798,7 @@
             <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? (ocupado ? 'var(--orange)' : 'var(--green)') : 'var(--red)'}">${activo ? (ocupado ? '🟠 Ocupado' : '🟢 Activo') : '🔴 Inactivo'}</span></div>
             <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
             <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
+            <div class="info-row"><span class="label">🔌 Conexión</span><span class="value" style="color:${mensajero.conectado ? 'var(--green)' : 'var(--red)'}">${mensajero.conectado ? '🟢 Conectado' : '🔴 Desconectado'}</span></div>
         `;
         if (mensajero.activadoEn) html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
         if (mensajero.desactivadoEn) html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
@@ -1203,9 +814,6 @@
         document.body.style.overflow = '';
     }
 
-    // ============================================================
-    // TOAST
-    // ============================================================
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
@@ -1217,9 +825,6 @@
         return el;
     }
 
-    // ============================================================
-    // EXPONER FUNCIONES
-    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.crearMensajero = crearMensajero;
@@ -1230,8 +835,11 @@
     window.eliminarMensajero = eliminarMensajero;
     window.verDetalle = verDetalle;
     window.cerrarModal = cerrarModal;
-    window.asignarPedidoMensajero = asignarPedidoMensajero;
     window.toast = toast;
+    window.abrirModalAsignacion = abrirModalAsignacion;
+    window.cerrarModalAsignacion = cerrarModalAsignacion;
+    window.asignarPedidoManual = asignarPedidoManual;
+    window.notificarATodos = notificarATodos;
 </script>
 </body>
 </html>
