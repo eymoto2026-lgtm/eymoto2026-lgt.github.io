@@ -1,496 +1,143 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EyMoto - Panel Mensajero (V2)</title>
-    <!-- Estilos mejorados para una mejor experiencia -->
+    <title>EyMoto - Panel Mensajero</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
-            --yellow: #FFD600;
-            --yellow-dim: #e6c200;
-            --green: #00C853;
-            --green-bg: rgba(0,200,83,0.12);
-            --blue: #00B0FF;
-            --blue-bg: rgba(0,176,255,0.12);
-            --red: #FF3D00;
-            --red-bg: rgba(255,61,0,0.12);
-            --orange: #FF6900;
-            --orange-bg: rgba(255,105,0,0.12);
-            --surface: #141414;
-            --surface2: #1e1e1e;
-            --surface3: #252525;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text-muted: #888;
-            --radius: 10px;
+            --yellow: #FFD600; --yellow-dim: #e6c200; --green: #00C853; --green-bg: rgba(0,200,83,0.12);
+            --blue: #00B0FF; --blue-bg: rgba(0,176,255,0.12); --red: #FF3D00; --red-bg: rgba(255,61,0,0.12);
+            --orange: #FF6900; --orange-bg: rgba(255,105,0,0.12);
+            --surface: #141414; --surface2: #1e1e1e; --surface3: #252525; --border: #2e2e2e; --border2: #3a3a3a;
+            --text-muted: #888; --radius: 10px;
         }
-        input, select, button {
-            font-family: inherit;
-            font-size: 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border2);
-            background: var(--surface3);
-            color: #fff;
-            padding: 11px 14px;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color .2s, background .2s;
-        }
+        input, select, button { font-family: inherit; font-size: 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; padding: 11px 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color .2s; }
         input:focus, select:focus { border-color: var(--yellow); }
-        select option { background: #1e1e1e; }
-        button {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: background .15s, transform .1s;
-        }
+        button { background: var(--yellow); color: #1a1a2e; font-weight: 700; border: none; cursor: pointer; transition: background .15s, transform .1s; }
         button:hover { background: var(--yellow-dim); }
         button:active { transform: scale(.98); }
         .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
-        .btn-danger { background: #c0392b; color: #fff; }
-        .btn-danger:hover { background: #a93226; }
-        .btn-success { background: #00C853; color: #fff; }
-        .btn-success:hover { background: #00b748; }
-        .btn-info { background: #0288d1; color: #fff; }
-        .btn-info:hover { background: #0277bd; }
+        .btn-danger { background: #c0392b; color: #fff; } .btn-danger:hover { background: #a93226; }
+        .btn-success { background: #00C853; color: #fff; } .btn-success:hover { background: #00b748; }
+        .btn-info { background: #0288d1; color: #fff; } .btn-info:hover { background: #0277bd; }
         .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
-        .btn-tomar {
-            background: var(--green);
-            color: #fff;
-            font-weight: 800;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-            margin-top: 6px;
-        }
+        .btn-tomar { background: var(--green); color: #fff; font-weight: 800; padding: 10px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 6px; }
         .btn-tomar:hover { background: #00b748; transform: scale(1.02); }
         .btn-tomar:active { transform: scale(0.97); }
         .btn-tomar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        /* Botón Conectar/Desconectar mejorado */
-        .btn-conectar {
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-weight: 800;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-conectar.conectado {
-            background: var(--green);
-            color: #fff;
-        }
-        .btn-conectar.conectado:hover {
-            background: #00b748;
-            transform: scale(1.02);
-        }
-        .btn-conectar.desconectado {
-            background: var(--red);
-            color: #fff;
-        }
-        .btn-conectar.desconectado:hover {
-            background: #c0392b;
-            transform: scale(1.02);
-        }
-        .btn-conectar:active { transform: scale(0.95); }
-        .btn-conectar .estado-indicador {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 1.5s infinite;
-        }
-        .btn-conectar.conectado .estado-indicador {
-            background: #00ff88;
-            box-shadow: 0 0 10px #00ff88;
-        }
-        .btn-conectar.desconectado .estado-indicador {
-            background: #ff4444;
-            box-shadow: 0 0 10px #ff4444;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
         .hidden { display: none !important; }
 
-        header {
-            background: #0d0d0d;
-            border-bottom: 1px solid var(--border);
-            padding: 13px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-        }
-        header .brand {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 900;
-            font-size: 14px;
-            padding: 5px 14px;
-            border-radius: 20px;
-        }
+        .btn-conectar { padding: 8px 20px; border-radius: 25px; font-weight: 800; font-size: 13px; border: none; cursor: pointer; transition: all 0.3s ease; width: auto; display: flex; align-items: center; gap: 8px; }
+        .btn-conectar.conectado { background: var(--green); color: #fff; }
+        .btn-conectar.conectado:hover { background: #00b748; transform: scale(1.02); }
+        .btn-conectar.desconectado { background: var(--red); color: #fff; }
+        .btn-conectar.desconectado:hover { background: #c0392b; transform: scale(1.02); }
+        .btn-conectar:active { transform: scale(0.95); }
+        .btn-conectar .estado-indicador { width: 10px; height: 10px; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        .btn-conectar.conectado .estado-indicador { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+        .btn-conectar.desconectado .estado-indicador { background: #ff4444; box-shadow: 0 0 10px #ff4444; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+
+        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+        header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
-        .header-badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 7px;
-            border-radius: 10px;
-            display: none;
-        }
+        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; }
 
         .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
 
-        #loginBox {
-            max-width: 420px;
-            margin: 60px auto;
-            padding: 32px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
-        #loginBox .brand {
-            display: inline-block;
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-size: 26px;
-            font-weight: 900;
-            padding: 10px 24px;
-            border-radius: 30px;
-        }
+        #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+        #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
         #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
         #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
 
-        /* Recordatorio mejorado */
-        .recordatorio {
-            background: var(--yellow-bg);
-            border: 2px solid var(--yellow);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: none;
-            align-items: flex-start;
-            gap: 12px;
-            animation: slideDown 0.5s ease;
-        }
+        .recordatorio { background: var(--yellow-bg); border: 2px solid var(--yellow); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: none; align-items: flex-start; gap: 12px; animation: slideDown 0.5s ease; }
         .recordatorio .icono { font-size: 28px; }
         .recordatorio .contenido { flex: 1; }
         .recordatorio .contenido h3 { color: var(--yellow); font-size: 15px; margin-bottom: 4px; }
         .recordatorio .contenido p { color: #ddd; font-size: 13px; line-height: 1.5; }
-        .recordatorio .contenido .btn-recordatorio {
-            background: var(--yellow);
-            color: #1a1a2e;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 8px;
-            width: auto;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        .recordatorio .contenido .btn-recordatorio:hover {
-            background: var(--yellow-dim);
-            transform: scale(1.02);
-        }
-        .recordatorio .cerrar-recordatorio {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 4px;
-            width: auto;
-        }
+        .recordatorio .contenido .btn-recordatorio { background: var(--yellow); color: #1a1a2e; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 8px; width: auto; font-size: 12px; transition: all 0.2s; }
+        .recordatorio .contenido .btn-recordatorio:hover { background: var(--yellow-dim); transform: scale(1.02); }
+        .recordatorio .cerrar-recordatorio { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 0 4px; width: auto; }
         .recordatorio .cerrar-recordatorio:hover { color: #fff; }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 18px;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
         .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
         .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
         .stat-card.c-yellow .val { color: var(--yellow); }
         .stat-card.c-blue .val { color: var(--blue); }
         .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-green .val { color: var(--green); }
-        .stat-card.c-red .val { color: var(--red); }
 
         .kanban-wrap { overflow-x: auto; padding-bottom: 6px; }
-        .kanban {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            min-height: 340px;
-        }
-        .kanban-col {
-            background: var(--surface2);
-            border-radius: 12px;
-            padding: 14px;
-            min-height: 200px;
-        }
-        .kanban-col-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
-        }
+        .kanban { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 340px; }
+        .kanban-col { background: var(--surface2); border-radius: 12px; padding: 14px; min-height: 200px; }
+        .kanban-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
         .col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .kanban-col-header h4 { font-size: 13px; font-weight: 700; flex: 1; }
-        .col-count {
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--surface3);
-            color: var(--text-muted);
-            padding: 2px 7px;
-            border-radius: 8px;
-        }
+        .col-count { font-size: 11px; font-weight: 700; background: var(--surface3); color: var(--text-muted); padding: 2px 7px; border-radius: 8px; }
         .dot-yellow { background: var(--yellow); }
         .dot-blue { background: var(--blue); }
         .dot-green { background: var(--green); }
         .dot-orange { background: var(--orange); }
-        .empty-col {
-            text-align: center;
-            padding: 30px 10px;
-            color: var(--text-muted);
-            font-size: 12px;
-        }
+        .empty-col { text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 12px; }
         .empty-col .ico { font-size: 28px; display: block; margin-bottom: 8px; opacity: .4; }
 
-        /* Tarjetas de pedido mejoradas */
-        .pedido-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 10px;
-            animation: slideIn .22s ease;
-            transition: all 0.3s ease;
-        }
+        .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; animation: slideIn .22s ease; transition: all 0.3s ease; }
         .pedido-card:hover { border-color: var(--yellow); }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .pedido-card .pedido-tienda {
-            font-size: 14px;
-            font-weight: 900;
-            color: var(--yellow);
-            margin-bottom: 4px;
-        }
-        .pedido-card .pedido-titulo {
-            font-size: 13px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid var(--border);
-        }
-        .pedido-card .pedido-cliente {
-            background: var(--surface2);
-            border-radius: 8px;
-            padding: 8px 10px;
-            margin: 4px 0;
-            font-size: 12px;
-            line-height: 1.8;
-        }
-        .pedido-card .pedido-cliente .label {
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-        .pedido-card .pedido-total {
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--green);
-            text-align: right;
-            margin: 6px 0 4px 0;
-        }
-        .pedido-card .estado-badge {
-            display: inline-block;
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 4px;
-        }
-        .estado-badge.asignado { background: var(--blue-bg); color: var(--blue); }
-        .estado-badge.en-camino { background: var(--orange-bg); color: var(--orange); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .pedido-card .pedido-tienda { font-size: 14px; font-weight: 900; color: var(--yellow); margin-bottom: 4px; }
+        .pedido-card .pedido-titulo { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .pedido-card .pedido-cliente { background: var(--surface2); border-radius: 8px; padding: 8px 10px; margin: 4px 0; font-size: 12px; line-height: 1.8; }
+        .pedido-card .pedido-cliente .label { color: var(--text-muted); font-weight: 600; }
+        .pedido-card .pedido-total { font-size: 15px; font-weight: 800; color: var(--green); text-align: right; margin: 6px 0 4px 0; }
+        .pedido-card .estado-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 4px; }
+        .estado-badge.restaurante { background: var(--orange-bg); color: var(--orange); }
+        .estado-badge.recogiendo { background: var(--blue-bg); color: var(--blue); }
+        .estado-badge.camino { background: var(--yellow-bg); color: var(--yellow); }
         .estado-badge.entregado { background: var(--green-bg); color: var(--green); }
         .estado-badge.cancelado { background: var(--red-bg); color: var(--red); }
-        .pedido-card .btn-detalle {
-            background: var(--surface3);
-            color: var(--text-muted);
-            border: 1px solid var(--border2);
-            padding: 6px 12px;
-            border-radius: 6px;
-            width: 100%;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-            margin-top: 4px;
-        }
-        .pedido-card .btn-detalle:hover {
-            background: var(--surface2);
-            border-color: var(--yellow);
-            color: #fff;
-        }
+        .pedido-card .btn-detalle { background: var(--surface3); color: var(--text-muted); border: 1px solid var(--border2); padding: 6px 12px; border-radius: 6px; width: 100%; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; margin-top: 4px; }
+        .pedido-card .btn-detalle:hover { background: var(--surface2); border-color: var(--yellow); color: #fff; }
 
-        #toastWrap {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-        .toast {
-            background: #1e1e1e;
-            border: 1px solid var(--border2);
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0,0,0,.5);
-            animation: toastIn .3s ease;
-            pointer-events: auto;
-            max-width: 380px;
-            cursor: pointer;
-        }
+        .btn-accion-mensajero { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
+        .btn-accion-mensajero:hover { transform: scale(1.02); }
+        .btn-accion-mensajero:active { transform: scale(0.97); }
+        .btn-accion-mensajero.llegue { background: var(--orange); color: #fff; }
+        .btn-accion-mensajero.llegue:hover { background: #e65c00; }
+        .btn-accion-mensajero.camino { background: var(--yellow); color: #1a1a2e; }
+        .btn-accion-mensajero.camino:hover { background: var(--yellow-dim); }
+        .btn-accion-mensajero.entregar { background: var(--green); color: #fff; }
+        .btn-accion-mensajero.entregar:hover { background: #00b748; }
+
+        #toastWrap { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        .toast { background: #1e1e1e; border: 1px solid var(--border2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: toastIn .3s ease; pointer-events: auto; max-width: 380px; cursor: pointer; }
         .toast.t-success { border-left: 3px solid var(--green); }
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .toast-fade { animation: toastOut .3s ease forwards; }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px); }
-        }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.92);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
         .modal.active { display: flex; }
-        .modal .modal-content {
-            background: #1e1e1e;
-            border-radius: 20px;
-            max-width: 500px;
-            width: 100%;
-            padding: 24px;
-            border: 1px solid var(--yellow);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
+        .modal .modal-content { background: #1e1e1e; border-radius: 20px; max-width: 500px; width: 100%; padding: 24px; border: 1px solid var(--yellow); max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
         .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
-        .modal .modal-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-        }
+        .modal .modal-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
         .modal .modal-close:hover { color: var(--red); }
-        .modal .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border);
-        }
+        .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
         .modal .info-row .label { color: var(--text-muted); }
         .modal .info-row .value { color: #fff; font-weight: 500; }
-
-        .mapa-simulado {
-            background: var(--surface2);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid var(--border);
-            margin: 12px 0;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .mapa-simulado .icono { font-size: 36px; margin-bottom: 4px; }
-        .mapa-simulado .texto { color: var(--text-muted); font-size: 13px; }
 
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -529,7 +176,6 @@
     </header>
 
     <div class="wrap">
-        <!-- RECORDATORIO -->
         <div class="recordatorio" id="recordatorioBienvenida">
             <div class="icono">🛵</div>
             <div class="contenido">
@@ -542,14 +188,13 @@
 
         <div class="stats-grid">
             <div class="stat-card c-yellow"><div class="val" id="statDisponibles">0</div><div class="lbl">Disponibles</div></div>
-            <div class="stat-card c-blue"><div class="val" id="statAsignados">0</div><div class="lbl">Asignados</div></div>
-            <div class="stat-card c-orange"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+            <div class="stat-card c-orange"><div class="val" id="statRestaurante">0</div><div class="lbl">En camino al restaurante</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statRecogiendo">0</div><div class="lbl">Recogiendo pedido</div></div>
             <div class="stat-card c-green"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados hoy</div></div>
         </div>
 
         <div class="kanban-wrap">
             <div class="kanban">
-                <!-- COLUMNA 1: PEDIDOS DISPONIBLES -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-yellow"></div>
@@ -561,7 +206,6 @@
                     </div>
                 </div>
 
-                <!-- COLUMNA 2: MIS PEDIDOS -->
                 <div class="kanban-col">
                     <div class="kanban-col-header">
                         <div class="col-dot dot-blue"></div>
@@ -593,9 +237,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-    // ============================================================
-    // CONFIGURACIÓN FIREBASE
-    // ============================================================
     const firebaseConfig = {
         apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
         authDomain: "eymotocomidas.firebaseapp.com",
@@ -608,9 +249,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // ============================================================
-    // GLOBALS
-    // ============================================================
     let mensajeroId = null;
     let nombreMensajero = '';
     let tiendasCache = {};
@@ -621,9 +259,6 @@
     let recordatorioMostrado = false;
     let listenersActivos = [];
 
-    // ============================================================
-    // AUTENTICACIÓN
-    // ============================================================
     async function verificarRolMensajero() {
         const user = auth.currentUser;
         if (!user) return null;
@@ -679,9 +314,6 @@
         }
     });
 
-    // ============================================================
-    // INICIALIZAR PANEL
-    // ============================================================
     async function inicializarPanel() {
         const info = await verificarRolMensajero();
         if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
@@ -705,17 +337,11 @@
         toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
-    // ============================================================
-    // CERRAR RECORDATORIO
-    // ============================================================
     function cerrarRecordatorio() {
         document.getElementById('recordatorioBienvenida').style.display = 'none';
         toast('Recordatorio cerrado', 'info', 1500);
     }
 
-    // ============================================================
-    // CARGAR ESTADO DE CONEXIÓN
-    // ============================================================
     async function cargarEstadoConexion() {
         if (!mensajeroId) return;
         try {
@@ -777,9 +403,6 @@
         }
     }
 
-    // ============================================================
-    // CARGAR TIENDAS
-    // ============================================================
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
@@ -792,9 +415,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // ============================================================
-    // ESCUCHAR PEDIDOS (SOLUCIÓN: 'Listo para asignar' es visible)
-    // ============================================================
     function escucharPedidosMensajero() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
         listenersActivos = [];
@@ -805,7 +425,7 @@
         }
 
         tiendasIds.forEach(tiendaId => {
-            // Escuchar pedidos "Listo para asignar" (el estado correcto)
+            // Pedidos disponibles ("Listo para asignar")
             const unsubDisponibles = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -814,12 +434,10 @@
                     const disponibles = [];
                     snap.forEach(doc => {
                         const data = doc.data();
-                        // No mostrar pedidos que ya tienen mensajero
                         if (!data.mensajeroId) {
                             disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
                         }
                     });
-                    // Actualizar la lista global de disponibles
                     const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
                     todosDisponibles = [...otrosDisponibles, ...disponibles];
                     renderizarDisponibles();
@@ -829,7 +447,7 @@
                     console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
 
-            // Escuchar pedidos asignados al mensajero
+            // Mis pedidos
             const unsubMios = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -853,12 +471,9 @@
             listenersActivos.push(unsubMios);
         });
 
-        console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos "Listo para asignar"`);
+        console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
     }
 
-    // ============================================================
-    // TOMAR PEDIDO
-    // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroId) {
             toast('⚠️ No estás autenticado como mensajero', 'error');
@@ -885,23 +500,85 @@
             await docRef.update({
                 mensajeroId: mensajeroId,
                 nombreMensajero: nombreMensajero,
-                estado: 'Asignado',
+                estado: 'En camino al restaurante',
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
             });
-            toast('✅ Pedido tomado con éxito', 'success');
+            toast('✅ Pedido tomado con éxito. Dirígete al restaurante.', 'success');
         } catch (error) {
             toast('❌ Error al tomar el pedido: ' + error.message, 'error');
         }
     }
 
     // ============================================================
-    // RENDERIZAR DISPONIBLES (CORREGIDO)
+    // ACCIONES DEL MENSAJERO (FLUJO CORRECTO)
     // ============================================================
+    async function llegueAlRestaurante(pedidoId, tiendaId) {
+        try {
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            await docRef.update({
+                estado: 'Recogiendo pedido',
+                fechaLlegadaRestaurante: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('✅ Has llegado al restaurante. Recogiendo pedido...', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    async function pedidoEnCamino(pedidoId, tiendaId) {
+        try {
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            await docRef.update({
+                estado: 'En camino',
+                fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('🛵 Pedido en camino al cliente', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    async function entregarPedidoMensajero(pedidoId, tiendaId) {
+        try {
+            const docRef = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+            const data = doc.data();
+            if (data.mensajeroId !== mensajeroId) {
+                toast('⚠️ Este pedido no te pertenece', 'error');
+                return;
+            }
+            await docRef.update({
+                estado: 'Entregado',
+                fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('✅ Pedido entregado correctamente', 'success');
+        } catch (e) {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
     function renderizarDisponibles() {
         const container = document.getElementById('colDisponibles');
         const contador = document.getElementById('cntDisponibles');
         
-        // Filtrar pedidos que no tienen mensajero asignado
         const disponiblesMostrar = mensajeroConectado ? todosDisponibles.filter(p => !p.mensajeroId) : [];
         contador.textContent = disponiblesMostrar.length;
 
@@ -947,15 +624,12 @@
         container.innerHTML = html;
     }
 
-    // ============================================================
-    // RENDERIZAR MIS PEDIDOS
-    // ============================================================
     function renderizarMisPedidos() {
         const container = document.getElementById('colMios');
         const contador = document.getElementById('cntMios');
         const pedidosOrdenados = [...todosMisPedidos].sort((a, b) => {
-            const orden = { 'Asignado': 0, 'En camino': 1, 'Entregado': 2, 'Cancelado': 3 };
-            return (orden[a.estado] || 4) - (orden[b.estado] || 4);
+            const orden = { 'En camino al restaurante': 0, 'Recogiendo pedido': 1, 'En camino': 2, 'Entregado': 3, 'Cancelado': 4 };
+            return (orden[a.estado] || 5) - (orden[b.estado] || 5);
         });
         contador.textContent = pedidosOrdenados.length;
 
@@ -972,11 +646,21 @@
             const total = p.total || 0;
             const direccionTienda = tienda.direccion || 'Dirección no especificada';
             
-            let estadoBadge = 'asignado';
-            let estadoLabel = 'Asignado';
-            if (p.estado === 'En camino') { estadoBadge = 'en-camino'; estadoLabel = 'En camino'; }
-            else if (p.estado === 'Entregado') { estadoBadge = 'entregado'; estadoLabel = 'Entregado'; }
-            else if (p.estado === 'Cancelado') { estadoBadge = 'cancelado'; estadoLabel = 'Cancelado'; }
+            let estadoBadge = 'restaurante';
+            let estadoLabel = 'En camino al restaurante';
+            if (p.estado === 'Recogiendo pedido') { estadoBadge = 'recogiendo'; estadoLabel = 'Recogiendo pedido'; }
+            else if (p.estado === 'En camino') { estadoBadge = 'camino'; estadoLabel = 'En camino al cliente'; }
+            else if (p.estado === 'Entregado') { estadoBadge = 'entregado'; estadoLabel = '✅ Entregado'; }
+            else if (p.estado === 'Cancelado') { estadoBadge = 'cancelado'; estadoLabel = '❌ Cancelado'; }
+
+            let botonesAccion = '';
+            if (p.estado === 'En camino al restaurante') {
+                botonesAccion = `<button class="btn-accion-mensajero llegue" onclick="window.llegueAlRestaurante('${p.id}','${p.tiendaId}')">🏪 Llegué al restaurante</button>`;
+            } else if (p.estado === 'Recogiendo pedido') {
+                botonesAccion = `<button class="btn-accion-mensajero camino" onclick="window.pedidoEnCamino('${p.id}','${p.tiendaId}')">🛵 Pedido en camino</button>`;
+            } else if (p.estado === 'En camino') {
+                botonesAccion = `<button class="btn-accion-mensajero entregar" onclick="window.entregarPedidoMensajero('${p.id}','${p.tiendaId}')">✅ Entregar</button>`;
+            }
 
             html += `
                 <div class="pedido-card">
@@ -989,63 +673,14 @@
                     </div>
                     <div class="pedido-total">💰 $${total.toLocaleString('es-CO')}</div>
                     <span class="estado-badge ${estadoBadge}">${estadoLabel}</span>
+                    ${botonesAccion}
                     <button class="btn-detalle" onclick="window.verDetallePedido('${p.id}','${p.tiendaId}')">📋 Ver Detalle</button>
-                    ${p.estado === 'Asignado' ? `<button class="btn-tomar" onclick="window.iniciarEntregaMensajero('${p.id}','${p.tiendaId}')" style="background:var(--orange);">🛵 Iniciar Entrega</button>` : ''}
-                    ${p.estado === 'En camino' ? `<button class="btn-tomar" onclick="window.entregarPedidoMensajero('${p.id}','${p.tiendaId}')" style="background:var(--green);">✅ Entregar</button>` : ''}
                 </div>
             `;
         });
         container.innerHTML = html;
     }
 
-    // ============================================================
-    // ACCIONES DEL MENSAJERO SOBRE SUS PEDIDOS
-    // ============================================================
-    async function iniciarEntregaMensajero(pedidoId, tiendaId) {
-        try {
-            const docRef = db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId);
-            const doc = await docRef.get();
-            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-            const data = doc.data();
-            if (data.mensajeroId !== mensajeroId) {
-                toast('⚠️ Este pedido no te pertenece', 'error');
-                return;
-            }
-            await docRef.update({
-                estado: 'En camino',
-                fechaInicioEntrega: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            toast('🛵 Pedido en camino', 'success');
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
-    async function entregarPedidoMensajero(pedidoId, tiendaId) {
-        try {
-            const docRef = db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId);
-            const doc = await docRef.get();
-            if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
-            const data = doc.data();
-            if (data.mensajeroId !== mensajeroId) {
-                toast('⚠️ Este pedido no te pertenece', 'error');
-                return;
-            }
-            await docRef.update({
-                estado: 'Entregado',
-                fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            toast('✅ Pedido entregado correctamente', 'success');
-        } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
-    // ============================================================
-    // VER DETALLE DEL PEDIDO
-    // ============================================================
     function verDetallePedido(pedidoId, tiendaId) {
         const pedido = [...todosDisponibles, ...todosMisPedidos].find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
@@ -1079,11 +714,6 @@
             <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--yellow);">
                 <div class="info-row"><span style="font-weight:700;">💰 TOTAL</span><span style="font-weight:800;color:var(--green);font-size:18px;">$${(pedido.total || 0).toLocaleString('es-CO')}</span></div>
             </div>
-            <div class="mapa-simulado">
-                <div class="icono">📍</div>
-                <div class="texto">${cliente.direccion || 'Dirección no especificada'}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${pedido.estado === 'En camino' ? '🛵 Mensajero en camino' : pedido.estado === 'Entregado' ? '✅ Pedido entregado' : '⏳ Esperando asignación'}</div>
-            </div>
         `;
         document.getElementById('modalTitulo').textContent = `📋 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
         document.getElementById('modalContenido').innerHTML = html;
@@ -1097,17 +727,14 @@
         document.body.style.overflow = '';
     }
 
-    // ============================================================
-    // ESTADÍSTICAS
-    // ============================================================
     function actualizarEstadisticas() {
         const disponiblesMostrados = mensajeroConectado ? todosDisponibles.filter(p => !p.mensajeroId).length : 0;
         document.getElementById('statDisponibles').textContent = disponiblesMostrados;
-        const asignados = todosMisPedidos.filter(p => p.estado === 'Asignado').length;
-        const enCamino = todosMisPedidos.filter(p => p.estado === 'En camino').length;
+        const enRestaurante = todosMisPedidos.filter(p => p.estado === 'En camino al restaurante').length;
+        const recogiendo = todosMisPedidos.filter(p => p.estado === 'Recogiendo pedido').length;
         const entregados = todosMisPedidos.filter(p => p.estado === 'Entregado').length;
-        document.getElementById('statAsignados').textContent = asignados;
-        document.getElementById('statEnCamino').textContent = enCamino;
+        document.getElementById('statRestaurante').textContent = enRestaurante;
+        document.getElementById('statRecogiendo').textContent = recogiendo;
         document.getElementById('statEntregados').textContent = entregados;
     }
 
@@ -1118,9 +745,6 @@
         badge.style.display = disponibles > 0 ? 'inline-block' : 'none';
     }
 
-    // ============================================================
-    // FORMATEAR FECHA
-    // ============================================================
     function formatearFecha(fecha) {
         if (!fecha) return '--/--/--';
         try {
@@ -1132,13 +756,9 @@
         } catch (e) { return '--/--/--'; }
     }
 
-    // ============================================================
-    // TOAST
-    // ============================================================
     function toast(msg, type = 'info', dur = 4000) {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
-        if (!wrap) { console.log(msg); return; }
         const el = document.createElement('div');
         el.className = `toast t-${type}`;
         el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
@@ -1147,13 +767,11 @@
         return el;
     }
 
-    // ============================================================
-    // EXPONER FUNCIONES
-    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.tomarPedido = tomarPedido;
-    window.iniciarEntregaMensajero = iniciarEntregaMensajero;
+    window.llegueAlRestaurante = llegueAlRestaurante;
+    window.pedidoEnCamino = pedidoEnCamino;
     window.entregarPedidoMensajero = entregarPedidoMensajero;
     window.verDetallePedido = verDetallePedido;
     window.cerrarModal = cerrarModal;
@@ -1162,10 +780,6 @@
     window.activarConexionDesdeRecordatorio = activarConexionDesdeRecordatorio;
     window.actualizarBotonConexion = actualizarBotonConexion;
     window.cerrarRecordatorio = cerrarRecordatorio;
-
-    console.log('✅ Panel de mensajero V2 cargado correctamente');
-    console.log('📢 Escuchando pedidos en estado "Listo para asignar"');
-    console.log('🔌 Control de conexión activado');
 </script>
 </body>
 </html>
