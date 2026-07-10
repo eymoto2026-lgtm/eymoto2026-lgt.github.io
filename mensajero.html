@@ -646,7 +646,7 @@
     let listenersActivos = [];
 
     // ============================================================
-    // SONIDO EYMOTO ORIGINAL (SINTÉTICO + VOZ + MOTOR)
+    // SONIDO EYMOTO ORIGINAL (MOTOR + SILBIDOS + VOZ)
     // ============================================================
     function sonidoEyMotoOriginal() {
         try {
@@ -858,26 +858,31 @@
     // INICIALIZAR PANEL
     // ============================================================
     async function inicializarPanel() {
-        const info = await verificarRolMensajero();
-        if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
-        mensajeroId = info.uid;
-        nombreMensajero = info.nombre || 'Mensajero';
-        document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
-        document.getElementById('recordatorioNombre').textContent = nombreMensajero;
-        
-        await cargarEstadoConexion();
-        await cargarTiendas();
-        escucharPedidosMensajero();
-        
-        if (!mensajeroConectado && !recordatorioMostrado) {
-            document.getElementById('recordatorioBienvenida').style.display = 'flex';
-            recordatorioMostrado = true;
-            toast('🛵 Recuerda conectarte para recibir pedidos', 'warn', 5000);
-        } else if (mensajeroConectado) {
-            document.getElementById('recordatorioBienvenida').style.display = 'none';
+        try {
+            const info = await verificarRolMensajero();
+            if (!info) { toast('⛔ No tienes permisos de mensajero', 'error'); setTimeout(() => logout(), 2000); return; }
+            mensajeroId = info.uid;
+            nombreMensajero = info.nombre || 'Mensajero';
+            document.getElementById('nombreMensajero').textContent = '🛵 ' + nombreMensajero;
+            document.getElementById('recordatorioNombre').textContent = nombreMensajero;
+            
+            await cargarEstadoConexion();
+            await cargarTiendas();
+            escucharPedidosMensajero();
+            
+            if (!mensajeroConectado && !recordatorioMostrado) {
+                document.getElementById('recordatorioBienvenida').style.display = 'flex';
+                recordatorioMostrado = true;
+                toast('🛵 Recuerda conectarte para recibir pedidos', 'warn', 5000);
+            } else if (mensajeroConectado) {
+                document.getElementById('recordatorioBienvenida').style.display = 'none';
+            }
+            
+            toast('✅ Panel de mensajero cargado', 'success', 2000);
+        } catch (error) {
+            console.error('❌ Error al inicializar panel:', error);
+            toast('❌ Error al cargar el panel', 'error');
         }
-        
-        toast('✅ Panel de mensajero cargado', 'success', 2000);
     }
 
     function cerrarRecordatorio() {
@@ -971,66 +976,84 @@
         }
 
         tiendasIds.forEach(tiendaId => {
-            const unsubDisponibles = db.collection('tiendas')
-                .doc(tiendaId)
-                .collection('pedidos')
-                .where('estado', '==', 'Listo para asignar')
-                .onSnapshot(snap => {
-                    const disponibles = [];
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        if (!data.mensajeroId) {
-                            disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
+            try {
+                // Pedidos disponibles ("Listo para asignar")
+                const unsubDisponibles = db.collection('tiendas')
+                    .doc(tiendaId)
+                    .collection('pedidos')
+                    .where('estado', '==', 'Listo para asignar')
+                    .onSnapshot(snap => {
+                        try {
+                            const disponibles = [];
+                            snap.forEach(doc => {
+                                const data = doc.data();
+                                if (!data.mensajeroId) {
+                                    disponibles.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                                }
+                            });
+                            
+                            snap.docChanges().forEach(change => {
+                                try {
+                                    if (change.type === 'added') {
+                                        const data = change.doc.data();
+                                        const pedidoId = change.doc.id;
+                                        if (!data.mensajeroId) {
+                                            const tienda = tiendasCache[tiendaId] || {};
+                                            const nombreTienda = tienda.nombre || 'Tienda';
+                                            const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
+                                            
+                                            // ===== REPRODUCIR SONIDO EYMOTO ORIGINAL =====
+                                            sonidoEyMotoOriginal();
+                                            
+                                            toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} disponible`, 'new', 8000);
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.error('Error procesando cambio de pedido:', err);
+                                }
+                            });
+                            
+                            const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
+                            todosDisponibles = [...otrosDisponibles, ...disponibles];
+                            renderizarDisponibles();
+                            actualizarEstadisticas();
+                            actualizarHeaderBadge();
+                        } catch (err) {
+                            console.error('Error en snapshot de disponibles:', err);
                         }
+                    }, err => {
+                        console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                     });
-                    
-                    snap.docChanges().forEach(change => {
-                        if (change.type === 'added') {
-                            const data = change.doc.data();
-                            const pedidoId = change.doc.id;
-                            if (!data.mensajeroId) {
-                                const tienda = tiendasCache[tiendaId] || {};
-                                const nombreTienda = tienda.nombre || 'Tienda';
-                                const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
-                                
-                                // ===== REPRODUCIR SONIDO EYMOTO ORIGINAL =====
-                                sonidoEyMotoOriginal();
-                                
-                                toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} disponible`, 'new', 8000);
-                            }
+
+                // Mis pedidos
+                const unsubMios = db.collection('tiendas')
+                    .doc(tiendaId)
+                    .collection('pedidos')
+                    .where('mensajeroId', '==', mensajeroId)
+                    .onSnapshot(snap => {
+                        try {
+                            const misPedidos = [];
+                            snap.forEach(doc => {
+                                const data = doc.data();
+                                misPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                            });
+                            const otrosMios = todosMisPedidos.filter(p => p.tiendaId !== tiendaId);
+                            todosMisPedidos = [...otrosMios, ...misPedidos];
+                            renderizarMisPedidos();
+                            actualizarEstadisticas();
+                            actualizarHeaderBadge();
+                        } catch (err) {
+                            console.error('Error en snapshot de mis pedidos:', err);
                         }
+                    }, err => {
+                        console.error(`Error escuchando mis pedidos en tienda ${tiendaId}:`, err);
                     });
-                    
-                    const otrosDisponibles = todosDisponibles.filter(p => p.tiendaId !== tiendaId);
-                    todosDisponibles = [...otrosDisponibles, ...disponibles];
-                    renderizarDisponibles();
-                    actualizarEstadisticas();
-                    actualizarHeaderBadge();
-                }, err => {
-                    console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
-                });
 
-            const unsubMios = db.collection('tiendas')
-                .doc(tiendaId)
-                .collection('pedidos')
-                .where('mensajeroId', '==', mensajeroId)
-                .onSnapshot(snap => {
-                    const misPedidos = [];
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        misPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
-                    });
-                    const otrosMios = todosMisPedidos.filter(p => p.tiendaId !== tiendaId);
-                    todosMisPedidos = [...otrosMios, ...misPedidos];
-                    renderizarMisPedidos();
-                    actualizarEstadisticas();
-                    actualizarHeaderBadge();
-                }, err => {
-                    console.error(`Error escuchando mis pedidos en tienda ${tiendaId}:`, err);
-                });
-
-            listenersActivos.push(unsubDisponibles);
-            listenersActivos.push(unsubMios);
+                listenersActivos.push(unsubDisponibles);
+                listenersActivos.push(unsubMios);
+            } catch (err) {
+                console.error(`Error configurando listeners para tienda ${tiendaId}:`, err);
+            }
         });
 
         console.log(`📢 Escuchando ${tiendasIds.length} tiendas para pedidos`);
@@ -1372,6 +1395,7 @@
     console.log('✅ Panel de mensajero cargado correctamente');
     console.log('🔊 Sonido EyMoto Original integrado (motor + silbidos + voz)');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
+    console.log('🔄 Manejo de errores de Firebase mejorado');
 </script>
 </body>
 </html>
