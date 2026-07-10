@@ -213,7 +213,7 @@
         }
         .estados-acciones button {
             flex: 1;
-            min-width: 80px;
+            min-width: 100px;
             padding: 10px 12px;
             font-size: 12px;
             border-radius: 8px;
@@ -267,7 +267,7 @@
 
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
-            .estados-acciones button { min-width: 60px; font-size: 10px; padding: 8px; }
+            .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
         }
     </style>
 </head>
@@ -330,13 +330,15 @@
     // ============================================================
     class SonidoEyMoto {
         constructor() {
+            // 🔥 CAMBIA ESTA URL POR TU SONIDO PREFERIDO
+            this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
             this.audio = new Audio();
-            this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // URL de ejemplo
             this.cargado = false;
             this.reproduciendo = false;
+            this.intervalo = null;
+            this.pedidoActual = null;
         }
 
-        // Configurar URL del sonido
         configurarSonido(url) {
             if (url) {
                 this.audioUrl = url;
@@ -344,7 +346,6 @@
             this.cargarSonido();
         }
 
-        // Cargar el sonido
         cargarSonido() {
             try {
                 this.audio = new Audio(this.audioUrl);
@@ -358,36 +359,30 @@
             }
         }
 
-        // Reproducir sonido (una vez)
         reproducir() {
             try {
                 if (!this.cargado) {
                     this.cargarSonido();
                 }
-                // Clonar el audio para poder reproducir múltiples veces
                 const audioClone = new Audio(this.audioUrl);
                 audioClone.volume = 0.8;
                 audioClone.play().catch(e => {
                     console.debug('⚠️ Error reproduciendo audio:', e.message);
+                    this.fallbackBeep();
                 });
                 this.reproduciendo = true;
-                console.log('🔊 Reproduciendo sonido de notificación');
             } catch (e) {
                 console.debug('⚠️ Error:', e.message);
-                // Fallback: sonido simple con Web Audio
                 this.fallbackBeep();
             }
         }
 
-        // Reproducir sonido en bucle (cada 5 segundos)
-        notificacionContinua(pedidoId, callback) {
+        notificacionContinua(pedidoId) {
             this.pedidoActual = pedidoId;
             this.reproduciendo = true;
             
-            // Reproducir inmediatamente
             this.reproducir();
             
-            // Configurar intervalo
             if (this.intervalo) {
                 clearInterval(this.intervalo);
             }
@@ -401,7 +396,6 @@
             }, 5000);
         }
 
-        // Detener sonido
         detener() {
             this.reproduciendo = false;
             this.pedidoActual = null;
@@ -409,10 +403,8 @@
                 clearInterval(this.intervalo);
                 this.intervalo = null;
             }
-            console.log('⏹️ Sonido detenido');
         }
 
-        // Fallback con Web Audio
         fallbackBeep() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -504,7 +496,6 @@
     }
 
     function cerrarSesion() {
-        // Detener cualquier notificación activa
         sonidoEyMoto.detener();
         pedidosNotificando = {};
         
@@ -767,6 +758,9 @@
         container.innerHTML = html;
     }
 
+    // ============================================================
+    // RENDERIZAR CARD CON BOTONES SEGÚN ESTADO
+    // ============================================================
     function renderizarPedidoCard(pedido) {
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
@@ -797,16 +791,85 @@
             });
         }
         
-        // Botones según estado actual
+        // 🎯 BOTONES SEGÚN ESTADO ACTUAL
         let botonesHtml = '';
+        
         if (estado !== 'Entregado' && estado !== 'Cancelado') {
+            switch(estado) {
+                case 'Listo para asignar':
+                    // Solo mostrar botón para tomar pedido
+                    botonesHtml = `
+                        <div class="estados-acciones">
+                            <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
+                                ✅ TOMAR PEDIDO
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'En camino al restaurante':
+                    // Siguiente paso: Recogiendo pedido
+                    botonesHtml = `
+                        <div class="estados-acciones">
+                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
+                                📦 RECOGER PEDIDO
+                            </button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
+                                ❌ Cancelar
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'Recogiendo pedido':
+                    // Siguiente paso: En camino a destino
+                    botonesHtml = `
+                        <div class="estados-acciones">
+                            <button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">
+                                🚗 IR A ENTREGAR
+                            </button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
+                                ❌ Cancelar
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'En camino':
+                    // Último paso: Entregar
+                    botonesHtml = `
+                        <div class="estados-acciones">
+                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
+                                ✅ ENTREGAR PEDIDO
+                            </button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
+                                ❌ Cancelar
+                            </button>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    // Estado desconocido - mostrar opciones básicas
+                    botonesHtml = `
+                        <div class="estados-acciones">
+                            <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">
+                                🛵 En camino
+                            </button>
+                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
+                                📦 Recogiendo
+                            </button>
+                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
+                                ✅ Entregar
+                            </button>
+                        </div>
+                    `;
+            }
+        } else {
+            // Pedido finalizado
             botonesHtml = `
-                <div class="estados-acciones">
-                    ${estado !== 'En camino al restaurante' ? `<button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">🛵 En camino</button>` : ''}
-                    ${estado !== 'Recogiendo pedido' ? `<button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 Recogiendo</button>` : ''}
-                    ${estado !== 'En camino' ? `<button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">🚗 En camino</button>` : ''}
-                    <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ Entregar</button>
-                    <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
+                <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">
+                    ✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado
                 </div>
             `;
         }
@@ -833,6 +896,62 @@
     }
 
     // ============================================================
+    // TOMAR PEDIDO
+    // ============================================================
+    async function tomarPedido(pedidoId, tiendaId) {
+        if (!mensajeroUid) {
+            toast('⚠️ No has iniciado sesión', 'error');
+            return;
+        }
+        
+        try {
+            const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
+            const doc = await docRef.get();
+            
+            if (!doc.exists) {
+                toast('⚠️ El pedido ya no existe', 'warn');
+                return;
+            }
+            
+            const data = doc.data();
+            if (data.mensajeroId) {
+                toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
+                const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                if (index !== -1) {
+                    misPedidos.splice(index, 1);
+                    if (pedidosNotificando[pedidoId]) {
+                        sonidoEyMoto.detener();
+                        delete pedidosNotificando[pedidoId];
+                    }
+                    renderizarPedidos();
+                }
+                return;
+            }
+            
+            toast('⏳ Tomando pedido...', 'info');
+            
+            await docRef.update({
+                mensajeroId: mensajeroUid,
+                nombreMensajero: mensajeroData?.nombre || 'Mensajero',
+                estado: 'En camino al restaurante',
+                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            if (pedidosNotificando[pedidoId]) {
+                sonidoEyMoto.detener();
+                delete pedidosNotificando[pedidoId];
+            }
+            
+            sonidoEyMoto.reproducir();
+            toast('✅ Pedido tomado exitosamente', 'success', 3000);
+            
+        } catch (e) {
+            console.error('Error tomando pedido:', e);
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ============================================================
     // CAMBIAR ESTADO DEL PEDIDO
     // ============================================================
     async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
@@ -852,9 +971,7 @@
                 [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Reproducir sonido de confirmación
             sonidoEyMoto.reproducir();
-            
             toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
             
         } catch (e) {
@@ -894,6 +1011,7 @@
     // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.cerrarSesion = cerrarSesion;
+    window.tomarPedido = tomarPedido;
     window.cambiarEstado = cambiarEstado;
     window.toast = toast;
 
