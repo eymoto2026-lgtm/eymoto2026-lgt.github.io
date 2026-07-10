@@ -2560,7 +2560,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO (CORREGIDO CON PAGO)
+// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2651,7 +2651,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const esPagoPendiente = estadoPago === 'pendiente';
     const esPendientePago = estado === 'Pendiente pago';
     
-    // Si es pago digital pendiente y está en estado "Pendiente", mostrar como "Pendiente pago"
     let mostrarPendientePago = false;
     if (esPagoDigital && esPagoPendiente && estado === estadosNegocio[0]) {
         mostrarPendientePago = true;
@@ -2707,7 +2706,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         });
     }
     
-    // ===== BADGE DE PAGO =====
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
@@ -2717,13 +2715,11 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     
-    // ===== 1. BOTONES DE CONFIRMACIÓN DE PAGO =====
     let btnPago = '';
     if (mostrarPendientePago || esPendientePago) {
         btnPago = `
@@ -2744,7 +2740,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== 2. BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE NORMAL) =====
+    // === BOTÓN PARA PASAR A COCINA (SOLO EN PENDIENTE NORMAL) ===
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar' && !mostrarPendientePago && !esPendientePago) {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -2764,7 +2760,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // ===== 3. BOTÓN "SERVICIO LISTO" (SOLO EN COCINA) =====
+    // === BOTÓN "SERVICIO LISTO" (SOLO EN COCINA) - SIN ABRIR VENTANAS ===
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2773,7 +2769,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== 4. BOTÓN AVANZAR EN OTROS ESTADOS =====
+    // === BOTÓN AVANZAR EN OTROS ESTADOS ===
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2786,7 +2782,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // ===== 5. BOTÓN RETROCEDER =====
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
     if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== 'Pendiente pago') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
@@ -2794,17 +2789,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // ===== 6. BOTÓN CANCELAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // ===== 7. BOTÓN EDITAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
-    // ===== 8. BOTONES FINALES =====
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2812,7 +2804,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // ===== MENSAJE "LISTO PARA ASIGNAR" =====
     if (estado === 'Listo para asignar' && !tieneMensajero) {
         acciones += `
             <div style="background:var(--green-bg);color:var(--green);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:12px;">
@@ -2821,7 +2812,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== INFORMACIÓN DEL MENSAJERO =====
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         const asignadoPor = p.asignadoPor || 'Sistema';
@@ -2891,7 +2881,6 @@ function mostrarPedidosPendientesGlobal() {
             const metodoPago = data.metodoPago || 'efectivo';
             const estadoPago = data.estadoPago || 'pendiente';
             
-            // Detectar pago pendiente
             if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && 
                 estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
                 estado = 'Pendiente pago';
@@ -3029,7 +3018,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     
-    // Botones de pago
     if (esPendientePago) {
         acciones += `
             <div style="background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:8px;margin:4px 0;">
@@ -3049,7 +3037,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         `;
     }
     
-    // Botón avanzar a cocina
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && !esPendientePago) {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -3066,7 +3053,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         }
     }
     
-    // Botón "Servicio Listo"
+    // === BOTÓN "SERVICIO LISTO" - SIN ABRIR VENTANAS ===
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -3175,7 +3162,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// FUNCIONES DE PAGO - CONFIRMAR Y RECHAZAR
+// FUNCIONES DE PAGO
 // ============================================================
 async function confirmarPago(tiendaId, pedidoId) {
     if (!confirm('✅ ¿Confirmar que has recibido el pago de este pedido?')) return;
@@ -3261,7 +3248,7 @@ async function rechazarPago(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA - MEJORADA)
+// FUNCIÓN MARCAR SERVICIO LISTO - CORREGIDA (SIN ABRIR VENTANAS)
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3305,7 +3292,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // Cambiar el estado a "Listo para asignar"
+        // ===== CAMBIAR EL ESTADO A "Listo para asignar" =====
         await docRef.update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3314,49 +3301,13 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         
         toast('✅ Pedido marcado como "Listo para asignar"', 'success');
         
-        // ===== ABRIR EL PANEL DE MENSAJEROS CON EL PEDIDO =====
-        const urlBase = window.location.origin + window.location.pathname;
-        const nombreArchivo = urlBase.split('/').pop();
-        let urlMensajeros;
+        // ===== NOTIFICAR AL ADMIN MENSAJEROS (EN TIEMPO REAL) =====
+        // El Admin Mensajeros escucha los cambios en Firestore
+        // y mostrará el pedido automáticamente cuando cambie a "Listo para asignar"
         
-        // Determinar el nombre del archivo del panel mensajero
-        if (nombreArchivo.includes('admin')) {
-            urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
-        } else {
-            urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
-        }
+        toast('📢 Los mensajeros disponibles han sido notificados', 'info', 4000);
         
-        const linkCompleto = `${urlMensajeros}?asignar=${pedidoId}&tienda=${tiendaId}`;
-        
-        console.log('🔗 Abriendo panel mensajeros:', linkCompleto);
-        
-        // === INTENTAR ABRIR EN NUEVA VENTANA ===
-        const ventanaMensajeros = window.open(linkCompleto, '_blank', 'width=1200,height=800');
-        
-        if (ventanaMensajeros) {
-            toast('📋 Abriendo panel de mensajeros para asignar el pedido', 'info', 4000);
-        } else {
-            // === SI LA VENTANA FUE BLOQUEADA, MOSTRAR ALTERNATIVAS ===
-            toast('⚠️ Permite ventanas emergentes para abrir el panel de mensajeros', 'warn', 3000);
-            
-            // Opción 1: Abrir en la misma ventana
-            if (confirm('¿No se pudo abrir la ventana emergente. ¿Quieres abrir el panel de mensajeros en esta misma pestaña?')) {
-                window.location.href = linkCompleto;
-                return;
-            }
-            
-            // Opción 2: Copiar enlace al portapapeles
-            try {
-                await navigator.clipboard.writeText(linkCompleto);
-                toast('📋 Enlace copiado al portapapeles. Ábrelo manualmente en una nueva pestaña.', 'info', 5000);
-            } catch(e) {
-                // Opción 3: Mostrar el enlace en la consola y en un toast largo
-                toast(`📋 Enlace: ${linkCompleto}`, 'info', 8000);
-                console.log('🔗 Enlace para asignar:', linkCompleto);
-            }
-        }
-        
-        // Actualizar la vista actual
+        // ===== ACTUALIZAR LA VISTA ACTUAL =====
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
@@ -3370,7 +3321,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO (CON VERIFICACIÓN DE PAGO)
+// ADMIN CAMBIA ESTADO
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -3402,8 +3353,24 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
+        // Si el pedido ya tiene mensajero, solo permitir cancelar o avanzar
         if (data.mensajeroId && nuevoEstado !== 'Cancelado') {
-            toast('⚠️ Este pedido ya está asignado a un mensajero. Solo puedes cancelarlo.', 'warn');
+            const estadosMensajero = ['En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado'];
+            if (!estadosMensajero.includes(nuevoEstado)) {
+                toast('⚠️ Este pedido ya está asignado a un mensajero. Solo puedes cambiar estados de entrega.', 'warn');
+                return;
+            }
+        }
+        
+        // NO permitir volver a "Pendiente" desde estados avanzados
+        if (data.estado === 'Listo para asignar' && nuevoEstado === 'Pendiente') {
+            toast('⚠️ No puedes volver a "Pendiente" desde "Listo para asignar"', 'warn');
+            return;
+        }
+        
+        const estadosAvanzados = ['En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado'];
+        if (estadosAvanzados.includes(data.estado) && nuevoEstado === 'Pendiente') {
+            toast('⚠️ No puedes volver a "Pendiente" desde este estado', 'warn');
             return;
         }
         
@@ -3423,8 +3390,11 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             detenerAlarmaGlobal(pedidoId);
         }
         
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
         
     } catch(e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -3494,7 +3464,9 @@ function iniciarEscuchaGlobal() {
                         }
                     });
                     
-                    if (!tiendaSeleccionada) mostrarPedidosPendientesGlobal();
+                    if (!tiendaSeleccionada) {
+                        mostrarPedidosPendientesGlobal();
+                    }
                 }, err => { console.error(`Error escuchando tienda ${tiendaId}:`, err); });
             
             listenersTiendas[tiendaId] = unsubscribe;
@@ -3887,6 +3859,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📍 Dirección de locales agregada');
     console.log('💳 Confirmación de pago integrada');
     console.log('🔧 Botón de corrección de pedidos atascados agregado');
+    console.log('🚫 Prevención de retroceso a "Pendiente" implementada');
+    console.log('🚫 NO se abren ventanas al marcar "Servicio Listo"');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
