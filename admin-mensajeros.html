@@ -141,6 +141,31 @@
         .pedido-info-resumen .value { color: #fff; font-weight: 500; }
         .sin-mensajeros { text-align: center; padding: 30px; color: var(--text-muted); }
         .sin-mensajeros .icono { font-size: 48px; display: block; margin-bottom: 12px; }
+        
+        /* ✅ INDICADOR DE AUTO-REFRESCO */
+        .auto-refresh-indicator {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface2);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        .auto-refresh-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            display: inline-block;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -161,6 +186,10 @@
         <h1>Administración de Mensajeros</h1>
         <span class="spacer"></span>
         <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span class="auto-refresh-indicator">
+            <span class="dot"></span>
+            Auto-refresh activo
+        </span>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <span class="header-badge" id="headerBadge">0</span>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
@@ -251,7 +280,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO - CON CONTROL POR PEDIDO
+// 🎵 SISTEMA DE SONIDO
 // ============================================================
 class SonidoEyMoto {
     constructor() {
@@ -477,7 +506,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// 🔥 ESCUCHAR PEDIDOS EN TIEMPO REAL - CON DETENCIÓN DE SONIDO
+// 🔥 ESCUCHAR PEDIDOS EN TIEMPO REAL CON AUTO-REFRESCO
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -502,10 +531,10 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
-                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO/CANCELADO → DETENER SONIDO INMEDIATAMENTE
+                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO/CANCELADO → DETENER SONIDO
                                 if (tieneMensajero || esEntregado) {
                                     if (sonidoEyMoto.estaSonando(pedidoId)) {
-                                        console.log(`🔇 [ADMIN] Pedido ${pedidoId} asignado a ${data.mensajeroId || 'alguien'}, DETENIENDO sonido`);
+                                        console.log(`🔇 [ADMIN] Pedido ${pedidoId} asignado, DETENIENDO sonido`);
                                         sonidoEyMoto.detenerNotificacion(pedidoId);
                                     }
                                 }
@@ -806,6 +835,10 @@ function cerrarModalAsignacion() {
     document.body.style.overflow = '';
     pedidoAsignacion = null;
 }
+
+// ============================================================
+// 🔥 ASIGNAR PEDIDO CON AUTO-REFRESCO
+// ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
     if (!select) return;
@@ -833,13 +866,24 @@ async function asignarPedidoManual() {
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
             });
-        // 🔥 DETENER SONIDO INMEDIATAMENTE DESPUÉS DE ASIGNAR
+        
+        // 🔥 DETENER SONIDO
         if (sonidoEyMoto.estaSonando(pedidoId)) {
             console.log(`🔇 [ASIGNAR] Pedido ${pedidoId} asignado manualmente, DETENIENDO sonido`);
             sonidoEyMoto.detenerNotificacion(pedidoId);
         }
+        
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
+        
+        // 🔥 AUTO-REFRESCO: Recargar pedidos después de 1 segundo
+        setTimeout(() => {
+            console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
+            recargarPedidos();
+            // También recargar mensajeros para actualizar su estado (ocupado)
+            recargarMensajeros();
+        }, 1000);
+        
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
@@ -851,6 +895,10 @@ async function asignarPedidoManual() {
         }
     }
 }
+
+// ============================================================
+// NOTIFICAR A TODOS
+// ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -873,6 +921,13 @@ async function notificarATodos() {
         sonidoEyMoto.iniciarNotificacion(pedidoId);
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
+        
+        // 🔥 AUTO-REFRESCO después de notificar
+        setTimeout(() => {
+            console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
+            recargarPedidos();
+        }, 1000);
+        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
     }
@@ -1037,7 +1092,8 @@ window.notificarATodos = notificarATodos;
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('🔧 Manejo de errores de Firebase mejorado');
 console.log('🔄 Reconexión automática activada');
-console.log('🔇 Control de sonido por pedido individual - El sonido se detiene al asignar');
+console.log('🔇 Control de sonido por pedido individual');
+console.log('🔄 Auto-refresco activado al asignar pedidos');
 </script>
 </body>
 </html>
