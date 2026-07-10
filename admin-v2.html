@@ -1037,7 +1037,7 @@ function detenerAlarmaGlobal(pedidoId) {
 }
 
 // ============================================================
-// FUNCIÓN CORREGIR PEDIDOS ATASCADOS (NUEVA)
+// FUNCIÓN CORREGIR PEDIDOS ATASCADOS
 // ============================================================
 async function corregirPedidosAtascados() {
     if (!confirm('🔧 ¿Corregir pedidos atascados en "Listo para asignar" con mensajero asignado?')) return;
@@ -1067,7 +1067,6 @@ async function corregirPedidosAtascados() {
                     const data = pedidoDoc.data();
                     const pedidoId = pedidoDoc.id;
                     
-                    // Si tiene mensajero asignado, corregir el estado
                     if (data.mensajeroId) {
                         await db.collection('tiendas')
                             .doc(tiendaId)
@@ -1107,7 +1106,6 @@ async function corregirPedidosAtascados() {
         
         console.log(`📊 Resumen: ${pedidosCorregidos} corregidos, ${pedidosEncontrados} encontrados, ${errores} errores`);
         
-        // Refrescar la vista
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
@@ -1401,7 +1399,6 @@ async function inicializarPanel() {
         iniciarEscuchaGlobal();
         toast('✅ Panel de administración cargado correctamente', 'success', 2000);
         
-        // Cargar mensajeros después de un momento
         setTimeout(() => {
             cargarMensajerosAdmin();
         }, 3000);
@@ -3264,7 +3261,7 @@ async function rechazarPago(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA)
+// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA - MEJORADA)
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3282,6 +3279,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
         
+        // Verificar que esté en el estado correcto (segundo estado: En cocina)
         const estadoCocina = estadosNegocio[1];
         
         if (!estadoCocina) {
@@ -3299,7 +3297,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // Verificar que el pago esté confirmado si es digital
+        // Verificar pago si es necesario
         const metodoPago = data.metodoPago || 'efectivo';
         const estadoPago = data.estadoPago || 'pagado';
         if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago !== 'pagado') {
@@ -3307,6 +3305,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
+        // Cambiar el estado a "Listo para asignar"
         await docRef.update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3315,26 +3314,54 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         
         toast('✅ Pedido marcado como "Listo para asignar"', 'success');
         
+        // ===== ABRIR EL PANEL DE MENSAJEROS CON EL PEDIDO =====
         const urlBase = window.location.origin + window.location.pathname;
-        const urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
+        const nombreArchivo = urlBase.split('/').pop();
+        let urlMensajeros;
+        
+        // Determinar el nombre del archivo del panel mensajero
+        if (nombreArchivo.includes('admin')) {
+            urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
+        } else {
+            urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
+        }
+        
         const linkCompleto = `${urlMensajeros}?asignar=${pedidoId}&tienda=${tiendaId}`;
         
+        console.log('🔗 Abriendo panel mensajeros:', linkCompleto);
+        
+        // === INTENTAR ABRIR EN NUEVA VENTANA ===
         const ventanaMensajeros = window.open(linkCompleto, '_blank', 'width=1200,height=800');
         
         if (ventanaMensajeros) {
             toast('📋 Abriendo panel de mensajeros para asignar el pedido', 'info', 4000);
         } else {
+            // === SI LA VENTANA FUE BLOQUEADA, MOSTRAR ALTERNATIVAS ===
+            toast('⚠️ Permite ventanas emergentes para abrir el panel de mensajeros', 'warn', 3000);
+            
+            // Opción 1: Abrir en la misma ventana
+            if (confirm('¿No se pudo abrir la ventana emergente. ¿Quieres abrir el panel de mensajeros en esta misma pestaña?')) {
+                window.location.href = linkCompleto;
+                return;
+            }
+            
+            // Opción 2: Copiar enlace al portapapeles
             try {
                 await navigator.clipboard.writeText(linkCompleto);
-                toast('📋 Enlace copiado al portapapeles. Ábrelo en el panel de mensajeros', 'info', 5000);
+                toast('📋 Enlace copiado al portapapeles. Ábrelo manualmente en una nueva pestaña.', 'info', 5000);
             } catch(e) {
-                toast('⚠️ Permite ventanas emergentes o copia el enlace manualmente', 'warn', 5000);
+                // Opción 3: Mostrar el enlace en la consola y en un toast largo
+                toast(`📋 Enlace: ${linkCompleto}`, 'info', 8000);
                 console.log('🔗 Enlace para asignar:', linkCompleto);
             }
         }
         
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
+        // Actualizar la vista actual
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
         
     } catch (e) {
         console.error('Error en marcarServicioListo:', e);
