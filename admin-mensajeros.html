@@ -251,14 +251,13 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO
+// 🎵 SISTEMA DE SONIDO - CON CONTROL POR PEDIDO
 // ============================================================
 class SonidoEyMoto {
     constructor() {
         this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
         this.audio = new Audio();
         this.cargado = false;
-        this.reproduciendo = false;
         this.intervalos = {};
         this.pedidosActivos = {};
         this.cargarSonido();
@@ -281,7 +280,7 @@ class SonidoEyMoto {
     }
     iniciarNotificacion(pedidoId) {
         if (this.pedidosActivos[pedidoId]) return;
-        console.log(`🔔 Iniciando notificación para pedido: ${pedidoId}`);
+        console.log(`🔔 [SONIDO] Iniciando notificación para pedido: ${pedidoId}`);
         this.pedidosActivos[pedidoId] = true;
         this.reproducir();
         this.intervalos[pedidoId] = setInterval(() => {
@@ -290,10 +289,18 @@ class SonidoEyMoto {
         }, 5000);
     }
     detenerNotificacion(pedidoId) {
-        if (!pedidoId) { Object.keys(this.pedidosActivos).forEach(id => { this.detenerNotificacion(id); }); return; }
-        console.log(`⏹️ Deteniendo notificación para pedido: ${pedidoId}`);
-        delete this.pedidosActivos[pedidoId];
-        if (this.intervalos[pedidoId]) { clearInterval(this.intervalos[pedidoId]); delete this.intervalos[pedidoId]; }
+        if (!pedidoId) { 
+            Object.keys(this.pedidosActivos).forEach(id => { this.detenerNotificacion(id); }); 
+            return; 
+        }
+        if (this.pedidosActivos[pedidoId]) {
+            console.log(`⏹️ [SONIDO] DETENIENDO notificación para pedido: ${pedidoId}`);
+            delete this.pedidosActivos[pedidoId];
+            if (this.intervalos[pedidoId]) { 
+                clearInterval(this.intervalos[pedidoId]); 
+                delete this.intervalos[pedidoId]; 
+            }
+        }
     }
     estaSonando(pedidoId) { return this.pedidosActivos[pedidoId] === true; }
     fallbackBeep() {
@@ -470,16 +477,18 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ESCUCHAR PEDIDOS EN TIEMPO REAL - CON CONTROL DE SONIDO
+// 🔥 ESCUCHAR PEDIDOS EN TIEMPO REAL - CON DETENCIÓN DE SONIDO
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
+    
     db.collection('tiendas').get().then(snap => {
         snap.forEach(doc => {
             const tiendaId = doc.id;
+            
             try {
                 const unsubscribe = db.collection('tiendas').doc(tiendaId)
                     .collection('pedidos')
@@ -493,13 +502,27 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
+                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO/CANCELADO → DETENER SONIDO INMEDIATAMENTE
+                                if (tieneMensajero || esEntregado) {
+                                    if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                        console.log(`🔇 [ADMIN] Pedido ${pedidoId} asignado a ${data.mensajeroId || 'alguien'}, DETENIENDO sonido`);
+                                        sonidoEyMoto.detenerNotificacion(pedidoId);
+                                    }
+                                }
+                                
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (!existe) {
                                             const tienda = tiendasCache[tiendaId] || {};
                                             const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
-                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
+                                            todosLosPedidos.push({ 
+                                                id: pedidoId, 
+                                                tiendaId: tiendaId, 
+                                                ...data,
+                                                _nuevo: true 
+                                            });
+                                            
                                             if (!sonidoEyMoto.estaSonando(pedidoId)) {
                                                 sonidoEyMoto.iniciarNotificacion(pedidoId);
                                                 toast(`🛵 Nuevo pedido ${numero} disponible`, 'new', 5000);
@@ -508,17 +531,24 @@ function escucharPedidosEnTiempoReal() {
                                     } else if (tieneMensajero) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (!existe) {
-                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                            todosLosPedidos.push({ 
+                                                id: pedidoId, 
+                                                tiendaId: tiendaId, 
+                                                ...data
+                                            });
                                         }
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    
+                                    // 🔥 SI EL PEDIDO CAMBIÓ A TENER MENSAJERO → DETENER SONIDO
                                     if (tieneMensajero || esEntregado) {
                                         if (sonidoEyMoto.estaSonando(pedidoId)) {
-                                            console.log(`🔇 Pedido ${pedidoId} ya no está disponible, deteniendo sonido`);
+                                            console.log(`🔇 [ADMIN] Pedido ${pedidoId} modificado a ${data.estado}, DETENIENDO sonido`);
                                             sonidoEyMoto.detenerNotificacion(pedidoId);
                                         }
                                     }
+                                    
                                     if (estaDisponible) {
                                         if (!sonidoEyMoto.estaSonando(pedidoId)) {
                                             const tienda = tiendasCache[tiendaId] || {};
@@ -527,19 +557,19 @@ function escucharPedidosEnTiempoReal() {
                                             toast(`🛵 Pedido ${numero} disponible`, 'new', 4000);
                                         }
                                     }
+                                    
                                     if (index !== -1) {
                                         todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                     } else if (tieneMensajero || estaDisponible) {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                     }
-                                    if (data.mensajeroId && sonidoEyMoto.estaSonando(pedidoId)) {
-                                        sonidoEyMoto.detenerNotificacion(pedidoId);
-                                    }
+                                    
                                 } else if (change.type === 'removed') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
                                         if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                            console.log(`🔇 [ADMIN] Pedido ${pedidoId} eliminado, DETENIENDO sonido`);
                                             sonidoEyMoto.detenerNotificacion(pedidoId);
                                         }
                                     }
@@ -548,9 +578,11 @@ function escucharPedidosEnTiempoReal() {
                                 console.error('Error procesando cambio de pedido:', err);
                             }
                         });
+                        
                         renderizarPedidosAsignar();
                         actualizarEstadisticas();
                         actualizarHeaderBadge();
+                        
                     }, err => { 
                         console.error(`Error escuchando pedidos en tienda ${tiendaId}:`, err);
                         setTimeout(() => {
@@ -559,6 +591,7 @@ function escucharPedidosEnTiempoReal() {
                             }
                         }, 5000);
                     });
+                
                 if (!window._listenersPedidos) window._listenersPedidos = [];
                 window._listenersPedidos.push(unsubscribe);
             } catch (err) {
@@ -800,7 +833,11 @@ async function asignarPedidoManual() {
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
             });
-        if (sonidoEyMoto.estaSonando(pedidoId)) { sonidoEyMoto.detenerNotificacion(pedidoId); }
+        // 🔥 DETENER SONIDO INMEDIATAMENTE DESPUÉS DE ASIGNAR
+        if (sonidoEyMoto.estaSonando(pedidoId)) {
+            console.log(`🔇 [ASIGNAR] Pedido ${pedidoId} asignado manualmente, DETENIENDO sonido`);
+            sonidoEyMoto.detenerNotificacion(pedidoId);
+        }
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
     } catch (e) {
@@ -1000,7 +1037,7 @@ window.notificarATodos = notificarATodos;
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('🔧 Manejo de errores de Firebase mejorado');
 console.log('🔄 Reconexión automática activada');
-console.log('🔇 Control de sonido por pedido individual');
+console.log('🔇 Control de sonido por pedido individual - El sonido se detiene al asignar');
 </script>
 </body>
 </html>
