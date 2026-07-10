@@ -6,417 +6,11 @@
     <title>Panel Mensajero - EyMoto</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
-        }
-        :root {
-            --yellow: #FFD600;
-            --yellow-dim: #e6c200;
-            --green: #00C853;
-            --green-bg: rgba(0,200,83,0.12);
-            --blue: #00B0FF;
-            --blue-bg: rgba(0,176,255,0.12);
-            --red: #FF3D00;
-            --red-bg: rgba(255,61,0,0.12);
-            --orange: #FF6900;
-            --orange-bg: rgba(255,105,0,0.12);
-            --purple: #9B59B6;
-            --purple-bg: rgba(155,89,182,0.12);
-            --surface: #141414;
-            --surface2: #1e1e1e;
-            --surface3: #252525;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text-muted: #888;
-            --radius: 10px;
-        }
-        button {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 700;
-            border: none;
-            padding: 12px 20px;
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: background .15s, transform .1s;
-            font-size: 14px;
-            width: 100%;
-        }
-        button:hover { background: var(--yellow-dim); }
-        button:active { transform: scale(.98); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-sm { padding: 8px 14px; font-size: 12px; width: auto; }
-        .btn-danger { background: #c0392b; color: #fff; }
-        .btn-danger:hover { background: #a93226; }
-        .btn-success { background: var(--green); color: #fff; }
-        .btn-success:hover { background: #00b748; }
-        .btn-info { background: var(--blue); color: #fff; }
-        .btn-info:hover { background: #0277bd; }
-        .btn-warning { background: var(--orange); color: #fff; }
-        .btn-warning:hover { background: #e65c00; }
-        .btn-purple { background: var(--purple); color: #fff; }
-        .btn-purple:hover { background: #7d3c98; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-        .btn-ghost:hover { background: var(--surface3); }
-        .hidden { display: none !important; }
-
-        header {
-            background: #0d0d0d;
-            border-bottom: 1px solid var(--border);
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        header .brand {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 900;
-            font-size: 14px;
-            padding: 5px 14px;
-            border-radius: 20px;
-        }
-        header h1 { font-size: 15px; font-weight: 600; }
-        header .spacer { flex: 1; }
-        header .estado {
-            font-size: 12px;
-            padding: 4px 12px;
-            border-radius: 12px;
-            background: var(--green-bg);
-            color: var(--green);
-            cursor: pointer;
-            transition: all 0.3s;
-            user-select: none;
-        }
-        header .estado:hover {
-            transform: scale(1.05);
-        }
-        header .estado.desconectado {
-            background: var(--red-bg);
-            color: var(--red);
-        }
-
-        .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-        #loginBox {
-            max-width: 400px;
-            margin: 60px auto;
-            padding: 32px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
-        #loginBox .brand {
-            display: inline-block;
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-size: 26px;
-            font-weight: 900;
-            padding: 10px 24px;
-            border-radius: 30px;
-        }
-        #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
-        #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
-        .login-logo { text-align: center; margin-bottom: 28px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .form-group input {
-            width: 100%;
-            padding: 11px 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border2);
-            background: var(--surface3);
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-        .form-group input:focus { border-color: var(--yellow); }
-
-        /* SECCIÓN DE PEDIDOS DISPONIBLES */
-        .seccion-pedidos {
-            margin-bottom: 20px;
-        }
-        .seccion-pedidos .titulo {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .seccion-pedidos .titulo .badge-count {
-            background: var(--red);
-            color: #fff;
-            font-size: 12px;
-            padding: 2px 10px;
-            border-radius: 20px;
-        }
-
-        .pedido-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border-left: 4px solid var(--yellow);
-            transition: all 0.3s;
-        }
-        .pedido-card.disponible {
-            border-left-color: var(--green);
-            animation: pulseDisponible 2s ease-in-out infinite;
-        }
-        @keyframes pulseDisponible {
-            0%, 100% { border-color: var(--green); }
-            50% { border-color: var(--yellow); }
-        }
-        .pedido-card .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .pedido-card .header .numero {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--yellow);
-        }
-        .badge-estado {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        .badge-estado.disponible { background: var(--green); color: #1a1a2e; }
-        .badge-estado.pendiente { background: var(--yellow); color: #1a1a2e; }
-        .badge-estado.camino { background: var(--blue); color: #fff; }
-        .badge-estado.recogido { background: var(--purple); color: #fff; }
-        .badge-estado.entregado { background: var(--green); color: #fff; }
-        .badge-estado.cancelado { background: var(--red); color: #fff; }
-        
-        .pedido-card .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 16px;
-            font-size: 13px;
-            margin: 6px 0;
-        }
-        .pedido-card .info-grid .label { color: var(--text-muted); }
-        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
-        .pedido-card .total {
-            text-align: right;
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--green);
-            margin-top: 6px;
-        }
-        .pedido-card .items {
-            background: var(--surface2);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 8px 0;
-            font-size: 12px;
-        }
-        .pedido-card .items .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .pedido-card .items .item:last-child { border-bottom: none; }
-        
-        .estados-acciones {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-        .estados-acciones button {
-            flex: 1;
-            min-width: 100px;
-            padding: 10px 12px;
-            font-size: 12px;
-            border-radius: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-        .empty-state .icono { font-size: 48px; display: block; margin-bottom: 12px; }
-
-        /* Modal de confirmación */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal-box {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        .modal-box h3 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-        .modal-box p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        .modal-box .acciones {
-            display: flex;
-            gap: 10px;
-        }
-        .modal-box .acciones button {
-            flex: 1;
-        }
-
-        #toastWrap {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-        .toast {
-            background: #1e1e1e;
-            border: 1px solid var(--border2);
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0,0,0,.5);
-            animation: toastIn .3s ease;
-            pointer-events: auto;
-            max-width: 380px;
-            cursor: pointer;
-        }
-        .toast.t-success { border-left: 3px solid var(--green); }
-        .toast.t-error { border-left: 3px solid var(--red); }
-        .toast.t-info { border-left: 3px solid var(--blue); }
-        .toast.t-warn { border-left: 3px solid var(--yellow); }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .toast-fade { animation: toastOut .3s ease forwards; }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px); }
-        }
-
-        @media (max-width: 600px) {
-            .pedido-card .info-grid { grid-template-columns: 1fr; }
-            .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
-        }
+        /* ... (todo tu CSS existente) ... */
     </style>
 </head>
 <body>
-
-<!-- Modal de confirmación -->
-<div class="modal-overlay" id="modalConfirmacion">
-    <div class="modal-box">
-        <h3 id="modalTitulo">⚠️ Cambiar estado</h3>
-        <p id="modalMensaje">¿Estás seguro de que quieres cambiar tu estado?</p>
-        <div class="acciones">
-            <button class="btn-ghost" onclick="cerrarModalConfirmacion()">Cancelar</button>
-            <button id="btnConfirmarAccion" class="btn-danger">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<div id="toastWrap"></div>
-
-<div id="loginBox">
-    <div class="login-logo"><span class="brand">EyMoto</span></div>
-    <h2>Panel Mensajero</h2>
-    <p class="sub">Recibe y gestiona tus pedidos</p>
-    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="tu@email.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
-    <button onclick="iniciarSesion()">Ingresar</button>
-    <p id="loginMsg"></p>
-</div>
-
-<div id="panel" class="hidden">
-    <header>
-        <span class="brand">EyMoto</span>
-        <h1>Mis Pedidos</h1>
-        <span class="spacer"></span>
-        <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
-        <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">
-            🟢 Conectado
-        </span>
-        <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
-    </header>
-
-    <div class="wrap">
-        <!-- Sección de pedidos disponibles -->
-        <div class="seccion-pedidos">
-            <div class="titulo">
-                📦 Pedidos Disponibles
-                <span class="badge-count" id="contadorDisponibles">0</span>
-            </div>
-            <div id="listaPedidosDisponibles">
-                <div class="empty-state">
-                    <span class="icono">✅</span>
-                    <p>No hay pedidos disponibles</p>
-                    <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección de mis pedidos activos -->
-        <div class="seccion-pedidos">
-            <div class="titulo">
-                🛵 Mis Pedidos Activos
-                <span class="badge-count" id="contadorMisPedidos" style="background:var(--blue);">0</span>
-            </div>
-            <div id="listaMisPedidos">
-                <div class="empty-state">
-                    <span class="icono">📭</span>
-                    <p>No tienes pedidos activos</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- ... (todo tu HTML existente) ... -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -439,7 +33,7 @@
     const db = firebase.firestore();
 
     // ============================================================
-    // 🎵 SISTEMA DE SONIDO
+    // 🎵 SISTEMA DE SONIDO MEJORADO
     // ============================================================
     class SonidoEyMoto {
         constructor() {
@@ -447,8 +41,8 @@
             this.audio = new Audio();
             this.cargado = false;
             this.reproduciendo = false;
-            this.intervalo = null;
-            this.pedidoActual = null;
+            this.intervalos = {};
+            this.pedidosActivos = {};
             this.cargarSonido();
         }
 
@@ -458,7 +52,6 @@
                 this.audio.preload = 'auto';
                 this.audio.addEventListener('canplaythrough', () => {
                     this.cargado = true;
-                    console.log('✅ Sonido cargado correctamente');
                 });
                 this.audio.load();
             } catch (e) {
@@ -473,36 +66,44 @@
                 const audioClone = new Audio(this.audioUrl);
                 audioClone.volume = 0.8;
                 audioClone.play().catch(e => {
-                    console.debug('⚠️ Error reproduciendo audio:', e.message);
                     this.fallbackBeep();
                 });
-                this.reproduciendo = true;
             } catch (e) {
                 this.fallbackBeep();
             }
         }
 
-        notificacionContinua(pedidoId) {
-            this.pedidoActual = pedidoId;
-            this.reproduciendo = true;
+        iniciarNotificacion(pedidoId) {
+            if (this.pedidosActivos[pedidoId]) return;
+            console.log(`🔔 Iniciando notificación para pedido: ${pedidoId}`);
+            this.pedidosActivos[pedidoId] = true;
             this.reproducir();
-            if (this.intervalo) clearInterval(this.intervalo);
-            this.intervalo = setInterval(() => {
-                if (this.reproduciendo && this.pedidoActual === pedidoId) {
+            this.intervalos[pedidoId] = setInterval(() => {
+                if (this.pedidosActivos[pedidoId]) {
                     this.reproducir();
                 } else {
-                    this.detener();
+                    this.detenerNotificacion(pedidoId);
                 }
             }, 5000);
         }
 
-        detener() {
-            this.reproduciendo = false;
-            this.pedidoActual = null;
-            if (this.intervalo) {
-                clearInterval(this.intervalo);
-                this.intervalo = null;
+        detenerNotificacion(pedidoId) {
+            if (!pedidoId) {
+                Object.keys(this.pedidosActivos).forEach(id => {
+                    this.detenerNotificacion(id);
+                });
+                return;
             }
+            console.log(`⏹️ Deteniendo notificación para pedido: ${pedidoId}`);
+            delete this.pedidosActivos[pedidoId];
+            if (this.intervalos[pedidoId]) {
+                clearInterval(this.intervalos[pedidoId]);
+                delete this.intervalos[pedidoId];
+            }
+        }
+
+        estaSonando(pedidoId) {
+            return this.pedidosActivos[pedidoId] === true;
         }
 
         fallbackBeep() {
@@ -539,10 +140,8 @@
     let pedidosListener = null;
     let tiendasCache = {};
     let todosLosPedidos = [];
-    let misPedidos = [];
     let listenerActivo = false;
     let timeoutReconexion = null;
-    let pedidosNotificando = {};
     let mensajeroConectado = true;
     let accionPendiente = null;
 
@@ -554,75 +153,41 @@
         const pass = document.getElementById('password').value;
         const msg = document.getElementById('loginMsg');
         msg.textContent = '';
-        
-        if (!email || !pass) {
-            msg.textContent = '❌ Completa todos los campos.';
-            return;
-        }
-        
+        if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
         auth.signInWithEmailAndPassword(email, pass)
             .then(async (userCredential) => {
                 const user = userCredential.user;
                 const doc = await db.collection('usuarios').doc(user.uid).get();
-                
-                if (!doc.exists) {
-                    await auth.signOut();
-                    msg.textContent = '⛔ Usuario no registrado como mensajero.';
-                    return;
-                }
-                
+                if (!doc.exists) { await auth.signOut(); msg.textContent = '⛔ Usuario no registrado como mensajero.'; return; }
                 const data = doc.data();
-                if (data.mensajero !== true) {
-                    await auth.signOut();
-                    msg.textContent = '⛔ No tienes permisos de mensajero.';
-                    return;
-                }
-                
+                if (data.mensajero !== true) { await auth.signOut(); msg.textContent = '⛔ No tienes permisos de mensajero.'; return; }
                 mensajeroUid = user.uid;
                 mensajeroData = data;
                 mensajeroConectado = data.conectado !== false;
-                
                 document.getElementById('loginBox').classList.add('hidden');
                 document.getElementById('panel').classList.remove('hidden');
                 document.getElementById('mensajeroInfo').textContent = '👤 ' + (data.nombre || email);
-                
                 actualizarIndicadorConexion();
-                
                 await db.collection('usuarios').doc(user.uid).update({
                     conectado: mensajeroConectado,
                     ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
                 await inicializarPanel();
             })
-            .catch(e => {
-                console.error('Error de login:', e);
-                msg.textContent = '❌ Credenciales incorrectas.';
-            });
+            .catch(e => { console.error('Error de login:', e); msg.textContent = '❌ Credenciales incorrectas.'; });
     }
 
     function cerrarSesion() {
-        sonidoEyMoto.detener();
-        pedidosNotificando = {};
-        
+        sonidoEyMoto.detenerNotificacion();
         if (mensajeroUid) {
             db.collection('usuarios').doc(mensajeroUid).update({
                 conectado: false,
                 ultimaDesconexion: firebase.firestore.FieldValue.serverTimestamp()
             }).catch(() => {});
         }
-        
-        if (pedidosListener) {
-            try { pedidosListener(); } catch(e) {}
-            pedidosListener = null;
-        }
+        if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
         listenerActivo = false;
-        
-        if (timeoutReconexion) {
-            clearTimeout(timeoutReconexion);
-            timeoutReconexion = null;
-        }
-        
+        if (timeoutReconexion) { clearTimeout(timeoutReconexion); timeoutReconexion = null; }
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -638,12 +203,9 @@
         } else {
             document.getElementById('loginBox').classList.remove('hidden');
             document.getElementById('panel').classList.add('hidden');
-            if (pedidosListener) {
-                try { pedidosListener(); } catch(e) {}
-                pedidosListener = null;
-            }
+            if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
             listenerActivo = false;
-            sonidoEyMoto.detener();
+            sonidoEyMoto.detenerNotificacion();
         }
     });
 
@@ -652,40 +214,28 @@
     // ============================================================
     function toggleEstadoConexion() {
         if (!mensajeroUid) return;
-        
         const nuevoEstado = !mensajeroConectado;
-        
         mostrarModalConfirmacion(
             nuevoEstado ? '🟢 Conectar' : '🔴 Desconectar',
             nuevoEstado ? '¿Quieres conectarte y recibir pedidos?' : '¿Quieres desconectarte y no recibir más pedidos?',
-            () => {
-                ejecutarCambioConexion(nuevoEstado);
-            }
+            () => { ejecutarCambioConexion(nuevoEstado); }
         );
     }
 
     function ejecutarCambioConexion(nuevoEstado) {
         mensajeroConectado = nuevoEstado;
-        
         db.collection('usuarios').doc(mensajeroUid).update({
             conectado: nuevoEstado,
             [`${nuevoEstado ? 'conectado' : 'desconectado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             actualizarIndicadorConexion();
-            
             if (nuevoEstado) {
                 toast('🟢 Te has conectado. Recibirás pedidos.', 'success', 3000);
-                if (!listenerActivo) {
-                    escucharPedidos();
-                }
+                if (!listenerActivo) { escucharPedidos(); }
             } else {
                 toast('🔴 Te has desconectado. No recibirás pedidos.', 'warn', 3000);
-                sonidoEyMoto.detener();
-                pedidosNotificando = {};
-                if (pedidosListener) {
-                    try { pedidosListener(); } catch(e) {}
-                    pedidosListener = null;
-                }
+                sonidoEyMoto.detenerNotificacion();
+                if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
                 listenerActivo = false;
                 renderizarPedidos();
             }
@@ -702,11 +252,9 @@
         if (mensajeroConectado) {
             estadoEl.textContent = '🟢 Conectado';
             estadoEl.className = 'estado';
-            estadoEl.title = 'Haz clic para desconectarte';
         } else {
             estadoEl.textContent = '🔴 Desconectado';
             estadoEl.className = 'estado desconectado';
-            estadoEl.title = 'Haz clic para conectarte';
         }
     }
 
@@ -718,12 +266,8 @@
         document.getElementById('modalMensaje').textContent = mensaje;
         document.getElementById('modalConfirmacion').classList.add('active');
         accionPendiente = onConfirm;
-        const btnConfirmar = document.getElementById('btnConfirmarAccion');
-        btnConfirmar.onclick = function() {
-            if (accionPendiente) {
-                accionPendiente();
-                accionPendiente = null;
-            }
+        document.getElementById('btnConfirmarAccion').onclick = function() {
+            if (accionPendiente) { accionPendiente(); accionPendiente = null; }
             cerrarModalConfirmacion();
         };
     }
@@ -744,10 +288,8 @@
                 mensajeroConectado = data.conectado !== false;
                 actualizarIndicadorConexion();
             }
-            
             await cargarTiendas();
             await escucharPedidos();
-            
             toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
             console.log('✅ Panel de mensajero cargado correctamente');
         } catch (error) {
@@ -760,29 +302,17 @@
     async function cargarTiendas() {
         try {
             const snap = await db.collection('tiendas').get();
-            snap.forEach(doc => {
-                tiendasCache[doc.id] = doc.data();
-            });
+            snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
             console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
-        } catch (e) {
-            console.error('Error cargando tiendas:', e);
-        }
+        } catch (e) { console.error('Error cargando tiendas:', e); }
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS - MUESTRA TODOS LOS PEDIDOS
+    // ESCUCHAR PEDIDOS - CON CONTROL DE SONIDO
     // ============================================================
     function escucharPedidos() {
-        if (pedidosListener) {
-            try { pedidosListener(); } catch(e) {}
-            pedidosListener = null;
-        }
-        
-        if (!mensajeroUid) {
-            console.warn('⚠️ No hay mensajero UID para escuchar pedidos');
-            return;
-        }
-        
+        if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
+        if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
         listenerActivo = true;
         
         db.collection('tiendas').get()
@@ -796,76 +326,69 @@
                         .collection('pedidos')
                         .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                         .onSnapshot(snapshot => {
-                            if (!listenerActivo) return;
+                            if (!listenerActivo || !mensajeroConectado) return;
                             
                             snapshot.docChanges().forEach(change => {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
+                                const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
+                                const esParaMi = data.mensajeroId === mensajeroUid;
                                 
-                                // Guardar todos los pedidos
                                 if (change.type === 'added') {
-                                    const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (!existe) {
-                                        todosLosPedidos.push({
-                                            id: pedidoId,
-                                            tiendaId: tiendaId,
-                                            ...data
-                                        });
-                                        
-                                        // Si está disponible y el mensajero está conectado, sonar notificación
-                                        const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
-                                        if (estaDisponible && mensajeroConectado && !pedidosNotificando[pedidoId]) {
-                                            pedidosNotificando[pedidoId] = true;
-                                            sonidoEyMoto.notificacionContinua(pedidoId);
-                                            const tienda = tiendasCache[tiendaId] || {};
-                                            toast(`🛵 Nuevo pedido de ${tienda.nombre || 'Tienda'}`, 'success', 5000);
+                                    if (estaDisponible) {
+                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (!existe) {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                            // ✅ INICIAR SONIDO SOLO SI ESTÁ DISPONIBLE
+                                            if (!sonidoEyMoto.estaSonando(pedidoId)) {
+                                                sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                                const tienda = tiendasCache[tiendaId] || {};
+                                                toast(`🛵 Nuevo pedido de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                            }
                                         }
-                                        
-                                        renderizarPedidos();
+                                    } else if (esParaMi) {
+                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (!existe) {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        }
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    
+                                    // ✅ SI EL PEDIDO YA TIENE MENSAJERO O ESTÁ ENTREGADO, DETENER SONIDO
+                                    if (data.mensajeroId || data.estado === 'Entregado' || data.estado === 'Cancelado') {
+                                        if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                            console.log(`🔇 Pedido ${pedidoId} ya no está disponible, deteniendo sonido`);
+                                            sonidoEyMoto.detenerNotificacion(pedidoId);
+                                        }
+                                    }
+                                    
+                                    // ✅ SI EL PEDIDO ESTÁ DISPONIBLE Y NO ESTÁ SONANDO, INICIAR SONIDO
+                                    if (estaDisponible && !sonidoEyMoto.estaSonando(pedidoId)) {
+                                        sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                        toast('🔔 Pedido disponible - ¡Tómalo!', 'info', 3000);
+                                    }
+                                    
                                     if (index !== -1) {
-                                        todosLosPedidos[index] = {
-                                            id: pedidoId,
-                                            tiendaId: tiendaId,
-                                            ...data
-                                        };
-                                    } else {
-                                        todosLosPedidos.push({
-                                            id: pedidoId,
-                                            tiendaId: tiendaId,
-                                            ...data
-                                        });
+                                        todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                    } else if (esParaMi || estaDisponible) {
+                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                     }
                                     
-                                    // Detener notificación si el pedido ya fue tomado
-                                    if (data.mensajeroId && pedidosNotificando[pedidoId]) {
-                                        sonidoEyMoto.detener();
-                                        delete pedidosNotificando[pedidoId];
+                                    // ✅ SI EL PEDIDO FUE TOMADO POR OTRO, DETENER SONIDO
+                                    if (data.mensajeroId && data.mensajeroId !== mensajeroUid && sonidoEyMoto.estaSonando(pedidoId)) {
+                                        sonidoEyMoto.detenerNotificacion(pedidoId);
                                     }
-                                    
-                                    // Si está disponible y el mensajero está conectado, iniciar notificación
-                                    const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
-                                    if (estaDisponible && mensajeroConectado && !pedidosNotificando[pedidoId]) {
-                                        pedidosNotificando[pedidoId] = true;
-                                        sonidoEyMoto.notificacionContinua(pedidoId);
-                                    }
-                                    
-                                    renderizarPedidos();
                                 } else if (change.type === 'removed') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
-                                        if (pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detener();
-                                            delete pedidosNotificando[pedidoId];
+                                        if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                            sonidoEyMoto.detenerNotificacion(pedidoId);
                                         }
-                                        renderizarPedidos();
                                     }
                                 }
                             });
-                            
                             renderizarPedidos();
                         }, err => {
                             console.warn(`⚠️ Error en listener:`, err.message);
@@ -903,84 +426,58 @@
     }
 
     // ============================================================
-    // RENDERIZAR PEDIDOS - SEPARADO EN DISPONIBLES Y MIS PEDIDOS
+    // RENDERIZAR PEDIDOS
     // ============================================================
     function renderizarPedidos() {
-        // Si está desconectado, mostrar mensaje
         if (!mensajeroConectado) {
             document.getElementById('listaPedidosDisponibles').innerHTML = `
-                <div class="empty-state">
-                    <span class="icono">🔴</span>
-                    <p>Estás desconectado</p>
-                    <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte</span>
-                </div>
+                <div class="empty-state"><span class="icono">🔴</span><p>Estás desconectado</p>
+                <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte</span></div>
             `;
             document.getElementById('listaMisPedidos').innerHTML = `
-                <div class="empty-state">
-                    <span class="icono">🔴</span>
-                    <p>Desconectado</p>
-                </div>
+                <div class="empty-state"><span class="icono">🔴</span><p>Desconectado</p></div>
             `;
             document.getElementById('contadorDisponibles').textContent = '0';
             document.getElementById('contadorMisPedidos').textContent = '0';
             return;
         }
         
-        // ✅ PEDIDOS DISPONIBLES (para tomar)
         const disponibles = todosLosPedidos.filter(p => 
             p.estado === 'Listo para asignar' && !p.mensajeroId
         );
-        
-        // ✅ MIS PEDIDOS ACTIVOS (asignados a mí)
         const misPedidosActivos = todosLosPedidos.filter(p => 
-            p.mensajeroId === mensajeroUid && 
-            p.estado !== 'Entregado' && 
-            p.estado !== 'Cancelado'
+            p.mensajeroId === mensajeroUid && p.estado !== 'Entregado' && p.estado !== 'Cancelado'
         );
         
-        // Actualizar contadores
         document.getElementById('contadorDisponibles').textContent = disponibles.length;
         document.getElementById('contadorMisPedidos').textContent = misPedidosActivos.length;
         
-        // Renderizar pedidos disponibles
+        // Renderizar disponibles
         const containerDisponibles = document.getElementById('listaPedidosDisponibles');
         if (disponibles.length === 0) {
             containerDisponibles.innerHTML = `
-                <div class="empty-state">
-                    <span class="icono">✅</span>
-                    <p>No hay pedidos disponibles</p>
-                    <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span>
-                </div>
+                <div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p>
+                <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span></div>
             `;
         } else {
             let html = '';
-            disponibles.forEach(p => {
-                html += renderizarPedidoCard(p, true);
-            });
+            disponibles.forEach(p => { html += renderizarPedidoCard(p, true); });
             containerDisponibles.innerHTML = html;
         }
         
-        // Renderizar mis pedidos activos
+        // Renderizar mis pedidos
         const containerMisPedidos = document.getElementById('listaMisPedidos');
         if (misPedidosActivos.length === 0) {
             containerMisPedidos.innerHTML = `
-                <div class="empty-state">
-                    <span class="icono">📭</span>
-                    <p>No tienes pedidos activos</p>
-                </div>
+                <div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div>
             `;
         } else {
             let html = '';
-            misPedidosActivos.forEach(p => {
-                html += renderizarPedidoCard(p, false);
-            });
+            misPedidosActivos.forEach(p => { html += renderizarPedidoCard(p, false); });
             containerMisPedidos.innerHTML = html;
         }
     }
 
-    // ============================================================
-    // RENDERIZAR CARD
-    // ============================================================
     function renderizarPedidoCard(pedido, disponible) {
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
@@ -1011,70 +508,51 @@
         }
         
         let botonesHtml = '';
+        // ✅ INDICADOR DE SONIDO ACTIVO
+        const sonidoActivo = sonidoEyMoto.estaSonando(pedido.id);
+        const indicadorSonido = sonidoActivo ? '🔊' : '';
         
         if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
-            // ✅ BOTÓN PARA TOMAR PEDIDO
             botonesHtml = `
                 <div class="estados-acciones">
                     <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
-                        ✅ TOMAR PEDIDO
+                        ✅ TOMAR PEDIDO ${indicadorSonido}
                     </button>
                 </div>
+                ${sonidoActivo ? `<div style="font-size:10px;color:var(--green);margin-top:4px;text-align:center;">🔊 Sonando notificación...</div>` : ''}
             `;
         } else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
-            // ✅ BOTONES PARA MIS PEDIDOS
             switch(estado) {
                 case 'En camino al restaurante':
                     botonesHtml = `
                         <div class="estados-acciones">
-                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
-                                📦 RECOGER PEDIDO
-                            </button>
-                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
-                                ❌ Cancelar
-                            </button>
+                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 RECOGER PEDIDO</button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
                         </div>
                     `;
                     break;
-                    
                 case 'Recogiendo pedido':
                     botonesHtml = `
                         <div class="estados-acciones">
-                            <button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">
-                                🚗 IR A ENTREGAR
-                            </button>
-                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
-                                ❌ Cancelar
-                            </button>
+                            <button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">🚗 IR A ENTREGAR</button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
                         </div>
                     `;
                     break;
-                    
                 case 'En camino':
                     botonesHtml = `
                         <div class="estados-acciones">
-                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
-                                ✅ ENTREGAR PEDIDO
-                            </button>
-                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">
-                                ❌ Cancelar
-                            </button>
+                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ ENTREGAR PEDIDO</button>
+                            <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
                         </div>
                     `;
                     break;
-                    
                 default:
                     botonesHtml = `
                         <div class="estados-acciones">
-                            <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">
-                                🛵 En camino
-                            </button>
-                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
-                                📦 Recogiendo
-                            </button>
-                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
-                                ✅ Entregar
-                            </button>
+                            <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">🛵 En camino</button>
+                            <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 Recogiendo</button>
+                            <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ Entregar</button>
                         </div>
                     `;
             }
@@ -1091,7 +569,7 @@
         return `
             <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
                 <div class="header">
-                    <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
+                    <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()} ${indicadorSonido}</span>
                     <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
                 </div>
                 <div class="info-grid">
@@ -1113,43 +591,26 @@
     // TOMAR PEDIDO
     // ============================================================
     async function tomarPedido(pedidoId, tiendaId) {
-        if (!mensajeroUid) {
-            toast('⚠️ No has iniciado sesión', 'error');
-            return;
-        }
-        
-        if (!mensajeroConectado) {
-            toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn');
-            return;
-        }
+        if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
+        if (!mensajeroConectado) { toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn'); return; }
         
         try {
             const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
-            
-            if (!doc.exists) {
-                toast('⚠️ El pedido ya no existe', 'warn');
-                return;
-            }
-            
+            if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
             const data = doc.data();
             if (data.mensajeroId) {
                 toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-                // Actualizar lista local
+                if (sonidoEyMoto.estaSonando(pedidoId)) {
+                    sonidoEyMoto.detenerNotificacion(pedidoId);
+                }
                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                if (index !== -1) {
-                    todosLosPedidos[index] = { ...todosLosPedidos[index], ...data };
-                }
-                if (pedidosNotificando[pedidoId]) {
-                    sonidoEyMoto.detener();
-                    delete pedidosNotificando[pedidoId];
-                }
+                if (index !== -1) { todosLosPedidos[index] = { ...todosLosPedidos[index], ...data }; }
                 renderizarPedidos();
                 return;
             }
             
             toast('⏳ Tomando pedido...', 'info');
-            
             await docRef.update({
                 mensajeroId: mensajeroUid,
                 nombreMensajero: mensajeroData?.nombre || 'Mensajero',
@@ -1157,11 +618,10 @@
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            if (pedidosNotificando[pedidoId]) {
-                sonidoEyMoto.detener();
-                delete pedidosNotificando[pedidoId];
+            // ✅ DETENER SONIDO AL TOMAR EL PEDIDO
+            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                sonidoEyMoto.detenerNotificacion(pedidoId);
             }
-            
             sonidoEyMoto.reproducir();
             toast('✅ Pedido tomado exitosamente', 'success', 3000);
             
@@ -1175,26 +635,24 @@
     // CAMBIAR ESTADO DEL PEDIDO
     // ============================================================
     async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
-        if (!mensajeroUid) {
-            toast('⚠️ No has iniciado sesión', 'error');
-            return;
-        }
-        
-        if (!mensajeroConectado) {
-            toast('⚠️ Estás desconectado. Conéctate para gestionar pedidos.', 'warn');
-            return;
-        }
-        
+        if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
+        if (!mensajeroConectado) { toast('⚠️ Estás desconectado. Conéctate para gestionar pedidos.', 'warn'); return; }
         if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) return;
         
         try {
             const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
-            
             await docRef.update({
                 estado: nuevoEstado,
                 ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
                 [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
             });
+            
+            // ✅ DETENER SONIDO SI EL PEDIDO FUE ENTREGADO O CANCELADO
+            if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
+                if (sonidoEyMoto.estaSonando(pedidoId)) {
+                    sonidoEyMoto.detenerNotificacion(pedidoId);
+                }
+            }
             
             sonidoEyMoto.reproducir();
             toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
@@ -1221,7 +679,7 @@
     }
 
     function toast(msg, type = 'info', dur = 4000) {
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
         const wrap = document.getElementById('toastWrap');
         const el = document.createElement('div');
         el.className = `toast t-${type}`;
@@ -1244,6 +702,7 @@
     window.toast = toast;
 
     console.log('✅ Panel de mensajero cargado correctamente');
+    console.log('🔇 Control de sonido por pedido individual');
 </script>
 </body>
 </html>
