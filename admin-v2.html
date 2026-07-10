@@ -151,6 +151,13 @@ header .spacer{flex:1}
 .pedido-card.r-baking{border-color:var(--orange)}
 .pedido-card.r-arranging{border-color:var(--pink)}
 .pedido-card.r-listo{border-color:var(--green);box-shadow:0 0 20px rgba(0,200,83,0.2);}
+.pedido-card.r-pago{border-color:var(--orange);border-style:dashed;animation:pulsePago 2s ease-in-out infinite;}
+
+@keyframes pulsePago {
+    0% { border-color: var(--orange); box-shadow: 0 0 0 0 rgba(255,105,0,0.3); }
+    50% { border-color: var(--yellow); box-shadow: 0 0 20px 5px rgba(255,105,0,0.15); }
+    100% { border-color: var(--orange); box-shadow: 0 0 0 0 rgba(255,105,0,0.3); }
+}
 
 .pedido-tienda{font-size:14px;font-weight:900;color:var(--yellow);margin-bottom:6px;}
 .pedido-titulo{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
@@ -177,15 +184,18 @@ header .spacer{flex:1}
 .btn-estado-custom{background:var(--surface3);color:#fff;border:1px solid var(--border2);font-size:11px;padding:8px;border-radius:7px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
 .btn-estado-custom:hover{background:var(--surface2);border-color:var(--yellow);}
 
-.btn-pago-confirmar{background:var(--green-bg);color:var(--green);border:1px solid var(--green);font-size:11px;padding:6px;border-radius:6px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-pago-confirmar{background:var(--green-bg);color:var(--green);border:2px solid var(--green);font-weight:800;width:100%;padding:10px;border-radius:8px;cursor:pointer;transition:all 0.2s;}
 .btn-pago-confirmar:hover{background:var(--green);color:#000;}
-.btn-pago-rechazar{background:var(--red-bg);color:var(--red);border:1px solid var(--red);font-size:11px;padding:6px;border-radius:6px;width:100%;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.btn-pago-confirmar:active{transform:scale(0.97);}
+.btn-pago-rechazar{background:var(--red-bg);color:var(--red);border:2px solid var(--red);font-weight:800;width:100%;padding:10px;border-radius:8px;cursor:pointer;transition:all 0.2s;}
 .btn-pago-rechazar:hover{background:var(--red);color:#fff;}
+.btn-pago-rechazar:active{transform:scale(0.97);}
 
 .badge-pago{display:inline-block;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:700;margin-top:4px;}
 .badge-pago.pagado{background:var(--green-bg);color:var(--green);}
 .badge-pago.pendiente{background:var(--yellow-bg);color:var(--yellow);}
 .badge-pago.rechazado{background:var(--red-bg);color:var(--red);}
+.badge-pago.pendiente-pago{background:var(--orange-bg);color:var(--orange);}
 
 .pedido-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .pedido-header h3{font-size:17px;font-weight:700}
@@ -898,6 +908,10 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
         return { columna: 'col-P', contador: 'Listo para asignar' };
     }
     
+    if (estado === 'Pendiente pago') {
+        return { columna: 'col-P', contador: 'Pendiente pago' };
+    }
+    
     if (estadoIndex === -1) {
         return { columna: 'col-P', contador: 'Pendiente' };
     }
@@ -906,8 +920,7 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
         case 0: return { columna: 'col-P', contador: 'Pendiente' };
         case 1: return { columna: 'col-C', contador: 'En Preparacion' };
         case 2: return { columna: 'col-M', contador: 'En Camino' };
-        case 3: 
-        default: return { columna: 'col-E', contador: 'Entregado' };
+        case 3: default: return { columna: 'col-E', contador: 'Entregado' };
     }
 }
 
@@ -915,6 +928,7 @@ function obtenerColorClase(estado, tipoNegocio) {
     if (estado === 'Cancelado') return 'r-cancel';
     if (estado === 'Listo para asignar') return 'r-listo';
     if (estado === 'Entregado') return 'r-done';
+    if (estado === 'Pendiente pago') return 'r-pago';
     
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
@@ -2450,7 +2464,7 @@ function probarAltavoz() {
 }
 
 // ============================================================
-// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO (CORREGIDO)
+// PEDIDOS - CON ESTADOS SEGÚN TIPO DE NEGOCIO (CORREGIDO CON PAGO)
 // ============================================================
 function cambiarTiendaSeleccionada() {
     const selector = document.getElementById('filtroTienda');
@@ -2482,6 +2496,7 @@ function escucharPedidosDeTienda(tiendaId) {
             counts['Cancelado'] = 0;
             counts['Asignado'] = 0;
             counts['Listo para asignar'] = 0;
+            counts['Pendiente pago'] = 0;
             
             snap.forEach(doc => { 
                 renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio); 
@@ -2492,8 +2507,7 @@ function escucharPedidosDeTienda(tiendaId) {
             const cntM = document.getElementById('cnt-M');
             const cntE = document.getElementById('cnt-E');
             
-            // Pendientes: incluye "Pendiente" y "Listo para asignar"
-            const totalPendientes = (counts[estadosNegocio[0]] || 0) + (counts['Listo para asignar'] || 0);
+            const totalPendientes = (counts[estadosNegocio[0]] || 0) + (counts['Listo para asignar'] || 0) + (counts['Pendiente pago'] || 0);
             if (cntP) cntP.textContent = totalPendientes;
             if (cntC) cntC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
             if (cntM) cntM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
@@ -2517,7 +2531,7 @@ function escucharPedidosDeTienda(tiendaId) {
                 hb.style.display = pend > 0 ? 'inline-block' : 'none';
             }
             
-            if (counts[estadosNegocio[0]] === 0 && counts['Listo para asignar'] === 0) { 
+            if (counts[estadosNegocio[0]] === 0 && counts['Listo para asignar'] === 0 && counts['Pendiente pago'] === 0) { 
                 detenerAlarmaGlobal();
                 pedidosPendientes.clear(); 
             }
@@ -2528,13 +2542,25 @@ function escucharPedidosDeTienda(tiendaId) {
 function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio) {
     const p = doc.data();
     const pid = doc.id;
-    const estado = p.estado || estadosNegocio[0] || 'Pendiente';
+    let estado = p.estado || estadosNegocio[0] || 'Pendiente';
+    const metodoPago = p.metodoPago || 'efectivo';
+    const estadoPago = p.estadoPago || 'pendiente';
     
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const tieneMensajero = p.mensajeroId ? true : false;
     
-    const esListoParaAsignar = estado === 'Listo para asignar';
+    // Detectar si es pago digital pendiente
+    const esPagoDigital = (metodoPago === 'nequi' || metodoPago === 'daviplata');
+    const esPagoPendiente = estadoPago === 'pendiente';
+    const esPendientePago = estado === 'Pendiente pago';
+    
+    // Si es pago digital pendiente y está en estado "Pendiente", mostrar como "Pendiente pago"
+    let mostrarPendientePago = false;
+    if (esPagoDigital && esPagoPendiente && estado === estadosNegocio[0]) {
+        mostrarPendientePago = true;
+        estado = 'Pendiente pago';
+    }
     
     if (estado === 'Entregado' || estado === 'Cancelado') {
         detenerAlarmaGlobal(pid);
@@ -2544,6 +2570,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     
     if (estado === 'Listo para asignar') {
         counts['Listo para asignar'] = (counts['Listo para asignar'] || 0) + 1;
+    } else if (estado === 'Pendiente pago') {
+        counts['Pendiente pago'] = (counts['Pendiente pago'] || 0) + 1;
     } else if (counts[estado] !== undefined) {
         counts[estado]++;
     } else if (estado === 'Cancelado') {
@@ -2571,8 +2599,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     
     const num = p.numeroPedido || '#--';
     const cliente = p.cliente || {};
-    const metodoPago = p.metodoPago || 'efectivo';
-    const estadoPago = p.estadoPago || 'pendiente';
     const totalPedido = p.total || 0;
     
     let itemsHtml = '';
@@ -2585,42 +2611,45 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         });
     }
     
+    // ===== BADGE DE PAGO =====
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
-        const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
+        const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente-pago');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
     } else {
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
+    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     
+    // ===== 1. BOTONES DE CONFIRMACIÓN DE PAGO =====
     let btnPago = '';
-    
-    if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
+    if (mostrarPendientePago || esPendientePago) {
         btnPago = `
-            <button class="btn-pago-confirmar" onclick="window.confirmarPago('${tiendaId}','${pid}')">✅ Confirmar pago</button>
-            <button class="btn-pago-rechazar" onclick="window.rechazarPago('${tiendaId}','${pid}')">✕ Rechazar pago</button>
-        `;
-    }
-    
-    // ===== BOTÓN "SERVICIO LISTO" - SOLO APARECE EN EL SEGUNDO ESTADO (En cocina) =====
-    // El segundo estado es estadosNegocio[1]
-    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
-        acciones += `
-            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
-                ✅ Servicio Listo (Notificar Mensajeros)
+            <div style="background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:8px;margin:4px 0;">
+                <div style="font-size:11px;color:var(--yellow);text-align:center;font-weight:700;">
+                    💳 PAGO PENDIENTE (${metodoPago.toUpperCase()})
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:2px;">
+                    Esperando confirmación del comprobante de pago
+                </div>
+            </div>
+            <button class="btn-pago-confirmar" onclick="window.confirmarPago('${tiendaId}','${pid}')">
+                ✅ Confirmar Pago
+            </button>
+            <button class="btn-pago-rechazar" onclick="window.rechazarPago('${tiendaId}','${pid}')">
+                ✕ Rechazar Pago
             </button>
         `;
     }
     
-    // ===== BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE) =====
-    // Esto permite pasar de "Pendiente" a "En cocina" (el segundo estado)
-    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
+    // ===== 2. BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE NORMAL) =====
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar' && !mostrarPendientePago && !esPendientePago) {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
             let icono = '▶';
@@ -2639,7 +2668,16 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // ===== BOTONES PARA AVANZAR EN OTROS ESTADOS =====
+    // ===== 3. BOTÓN "SERVICIO LISTO" (SOLO EN COCINA) =====
+    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+        acciones += `
+            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                ✅ Servicio Listo (Notificar Mensajeros)
+            </button>
+        `;
+    }
+    
+    // ===== 4. BOTÓN AVANZAR EN OTROS ESTADOS =====
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2652,25 +2690,25 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // ===== BOTÓN RETROCEDER =====
+    // ===== 5. BOTÓN RETROCEDER =====
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== 'Pendiente pago') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
             ↩️ ${estadoAnterior}
         </button>`;
     }
     
-    // ===== BOTÓN CANCELAR =====
+    // ===== 6. BOTÓN CANCELAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // ===== BOTÓN EDITAR =====
+    // ===== 7. BOTÓN EDITAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
-    // ===== BOTONES FINALES =====
+    // ===== 8. BOTONES FINALES =====
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2695,7 +2733,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     }
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = estado === 'Listo para asignar' ? 'r-listo' : ringClass;
+    const claseExtra = estado === 'Listo para asignar' ? 'r-listo' : (estado === 'Pendiente pago' ? 'r-pago' : ringClass);
     
     const card = document.createElement('div');
     card.className = `pedido-card ${claseExtra}`;
@@ -2703,12 +2741,20 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         card.style.borderColor = 'var(--green)';
         card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
     }
+    
+    let estadoDisplay = estado;
+    if (estado === 'Pendiente pago') {
+        estadoDisplay = '⏳ Pendiente de Pago';
+    } else if (estado === 'Listo para asignar') {
+        estadoDisplay = '🔔 LISTO PARA ASIGNAR';
+    }
+    
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:${estado === 'Listo para asignar' ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">
-            📌 ${estado === 'Listo para asignar' ? '🔔 LISTO PARA ASIGNAR' : estado}
+        <div style="font-size:12px;color:${estado === 'Listo para asignar' ? 'var(--green)' : (estado === 'Pendiente pago' ? 'var(--orange)' : 'var(--yellow)')};margin-bottom:6px;font-weight:700;">
+            📌 ${estadoDisplay}
         </div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -2733,7 +2779,8 @@ function mostrarPedidosPendientesGlobal() {
     resetKanban();
     
     const counts = {
-        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0, 'Listo para asignar': 0
+        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 
+        'Cancelado': 0, 'Asignado': 0, 'Listo para asignar': 0, 'Pendiente pago': 0
     };
     
     Object.keys(todosLosPedidos).forEach(tiendaId => {
@@ -2744,7 +2791,15 @@ function mostrarPedidosPendientesGlobal() {
         const pedidos = todosLosPedidos[tiendaId] || [];
         pedidos.forEach(pedido => {
             const data = pedido.data;
-            const estado = data.estado || estadosNegocio[0] || 'Pendiente';
+            let estado = data.estado || estadosNegocio[0] || 'Pendiente';
+            const metodoPago = data.metodoPago || 'efectivo';
+            const estadoPago = data.estadoPago || 'pendiente';
+            
+            // Detectar pago pendiente
+            if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && 
+                estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
+                estado = 'Pendiente pago';
+            }
             
             if (estado === 'Entregado' || estado === 'Cancelado') {
                 detenerAlarmaGlobal(pedido.id);
@@ -2763,6 +2818,8 @@ function mostrarPedidosPendientesGlobal() {
                 counts['Asignado'] = (counts['Asignado'] || 0) + 1;
             } else if (estado === 'Listo para asignar') {
                 counts['Listo para asignar'] = (counts['Listo para asignar'] || 0) + 1;
+            } else if (estado === 'Pendiente pago') {
+                counts['Pendiente pago'] = (counts['Pendiente pago'] || 0) + 1;
             } else if (estadosNegocio.indexOf(estado) === 0) {
                 counts['Pendiente']++;
             } else if (estadosNegocio.indexOf(estado) === 1) {
@@ -2775,7 +2832,7 @@ function mostrarPedidosPendientesGlobal() {
         });
     });
     
-    const totalPendientes = counts['Pendiente'] + counts['Listo para asignar'];
+    const totalPendientes = counts['Pendiente'] + counts['Listo para asignar'] + counts['Pendiente pago'];
     
     const cntP = document.getElementById('cnt-P');
     const cntC = document.getElementById('cnt-C');
@@ -2813,16 +2870,26 @@ function mostrarPedidosPendientesGlobal() {
 function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const p = doc.data();
     const pid = doc.id;
-    const estado = p.estado || 'Pendiente';
+    let estado = p.estado || 'Pendiente';
+    const metodoPago = p.metodoPago || 'efectivo';
+    const estadoPago = p.estadoPago || 'pendiente';
     
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const tieneMensajero = p.mensajeroId ? true : false;
+    
+    let esPendientePago = false;
+    if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && 
+        estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
+        esPendientePago = true;
+        estado = 'Pendiente pago';
+    }
+    
     const esListoParaAsignar = estado === 'Listo para asignar';
     
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = esListoParaAsignar ? 'r-listo' : ringClass;
+    const claseExtra = esListoParaAsignar ? 'r-listo' : (esPendientePago ? 'r-pago' : ringClass);
     
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) {
@@ -2841,8 +2908,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const num = p.numeroPedido || '#--';
     const cliente = p.cliente || {};
     const totalPedido = p.total || 0;
-    const metodoPago = p.metodoPago || 'efectivo';
-    const estadoPago = p.estadoPago || 'pendiente';
     
     let itemsHtml = '';
     if (p.items && p.items.length > 0) {
@@ -2857,7 +2922,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     let badgePago = '';
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
-        const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
+        const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente-pago');
         badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
     } else {
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
@@ -2868,17 +2933,28 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     
-    // ===== BOTÓN "SERVICIO LISTO" - SOLO EN SEGUNDO ESTADO =====
-    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+    // Botones de pago
+    if (esPendientePago) {
         acciones += `
-            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
-                ✅ Servicio Listo (Notificar Mensajeros)
+            <div style="background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:8px;margin:4px 0;">
+                <div style="font-size:11px;color:var(--yellow);text-align:center;font-weight:700;">
+                    💳 PAGO PENDIENTE (${metodoPago.toUpperCase()})
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:2px;">
+                    Esperando confirmación del comprobante de pago
+                </div>
+            </div>
+            <button class="btn-pago-confirmar" onclick="window.confirmarPago('${tiendaId}','${pid}')">
+                ✅ Confirmar Pago
+            </button>
+            <button class="btn-pago-rechazar" onclick="window.rechazarPago('${tiendaId}','${pid}')">
+                ✕ Rechazar Pago
             </button>
         `;
     }
     
-    // ===== BOTÓN AVANZAR A "En cocina" (SOLO EN PENDIENTE) =====
-    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
+    // Botón avanzar a cocina
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && !esPendientePago) {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
             let icono = '▶';
@@ -2892,6 +2968,15 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
                 ${icono} ${primerSiguiente}
             </button>`;
         }
+    }
+    
+    // Botón "Servicio Listo"
+    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+        acciones += `
+            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                ✅ Servicio Listo (Notificar Mensajeros)
+            </button>
+        `;
     }
     
     if (esListoParaAsignar && !tieneMensajero) {
@@ -2908,7 +2993,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         acciones += `<div style="color:var(--blue);font-size:12px;text-align:center;">🛵 Asignado a: ${nombreMensajero} (${asignadoPor})</div>`;
     }
     
-    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1] && estado !== 'Pendiente pago') {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
         if (labelLower.includes('camino')) iconoSiguiente = '🛵';
@@ -2921,17 +3006,17 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     }
     
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+    if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== 'Pendiente pago') {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
             ↩️ ${estadoAnterior}
         </button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== 'Pendiente pago') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1] && estado !== 'Pendiente pago') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
@@ -2948,12 +3033,25 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         card.style.borderColor = 'var(--green)';
         card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
     }
+    if (esPendientePago) {
+        card.style.borderColor = 'var(--orange)';
+        card.style.borderStyle = 'dashed';
+        card.style.animation = 'pulsePago 2s ease-in-out infinite';
+    }
+    
+    let estadoDisplay = estado;
+    if (estado === 'Pendiente pago') {
+        estadoDisplay = '⏳ Pendiente de Pago';
+    } else if (estado === 'Listo para asignar') {
+        estadoDisplay = '🔔 LISTO PARA ASIGNAR';
+    }
+    
     card.innerHTML = `
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:${esListoParaAsignar ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">
-            📌 ${esListoParaAsignar ? '🔔 LISTO PARA ASIGNAR' : estado}
+        <div style="font-size:12px;color:${estado === 'Listo para asignar' ? 'var(--green)' : (estado === 'Pendiente pago' ? 'var(--orange)' : 'var(--yellow)')};margin-bottom:6px;font-weight:700;">
+            📌 ${estadoDisplay}
         </div>
         ${badgePago}
         <div class="pedido-cliente">
@@ -2981,6 +3079,92 @@ function resetKanban() {
 }
 
 // ============================================================
+// FUNCIONES DE PAGO - CONFIRMAR Y RECHAZAR
+// ============================================================
+async function confirmarPago(tiendaId, pedidoId) {
+    if (!confirm('✅ ¿Confirmar que has recibido el pago de este pedido?')) return;
+    try {
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        
+        if (data.estadoPago === 'pagado') {
+            toast('⚠️ Este pago ya fue confirmado', 'warn');
+            return;
+        }
+        
+        await docRef.update({
+            estadoPago: 'pagado',
+            fechaPago: firebase.firestore.FieldValue.serverTimestamp(),
+            pagadoPor: auth.currentUser?.email || 'Admin',
+            estado: data.estado === 'Pendiente pago' ? 'Pendiente' : data.estado
+        });
+        
+        toast('✅ Pago confirmado. El pedido ya puede pasar a cocina.', 'success', 4000);
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al confirmar pago:', error);
+        toast('❌ Error al confirmar pago: ' + error.message, 'error');
+    }
+}
+
+async function rechazarPago(tiendaId, pedidoId) {
+    if (!confirm('❌ ¿Rechazar el pago de este pedido? El pedido será cancelado.')) return;
+    try {
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        
+        if (data.estadoPago === 'pagado') {
+            toast('⚠️ Este pago ya fue confirmado, no se puede rechazar', 'warn');
+            return;
+        }
+        
+        await docRef.update({
+            estadoPago: 'rechazado',
+            estado: 'Cancelado',
+            fechaRechazo: firebase.firestore.FieldValue.serverTimestamp(),
+            rechazadoPor: auth.currentUser?.email || 'Admin',
+            motivoRechazo: 'Pago no recibido / Rechazado por el administrador'
+        });
+        
+        toast('⛔ Pago rechazado. El pedido ha sido cancelado.', 'error', 4000);
+        
+        detenerAlarmaGlobal(pedidoId);
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al rechazar pago:', error);
+        toast('❌ Error al rechazar pago: ' + error.message, 'error');
+    }
+}
+
+// ============================================================
 // FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA)
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
@@ -2999,7 +3183,6 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
         
-        // ===== VERIFICAR QUE ESTÉ EN EL SEGUNDO ESTADO (En cocina) =====
         const estadoCocina = estadosNegocio[1];
         
         if (!estadoCocina) {
@@ -3017,7 +3200,14 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // ===== CAMBIAR EL ESTADO A "Listo para asignar" =====
+        // Verificar que el pago esté confirmado si es digital
+        const metodoPago = data.metodoPago || 'efectivo';
+        const estadoPago = data.estadoPago || 'pagado';
+        if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago !== 'pagado') {
+            toast('⚠️ El pago no ha sido confirmado. Primero confirma el pago.', 'warn');
+            return;
+        }
+        
         await docRef.update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3026,7 +3216,6 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         
         toast('✅ Pedido marcado como "Listo para asignar"', 'success');
         
-        // ===== ABRIR EL MODAL DE ASIGNACIÓN EN EL PANEL DE MENSAJEROS =====
         const urlBase = window.location.origin + window.location.pathname;
         const urlMensajeros = urlBase.replace(/[^/]*$/, 'mensajero.html');
         const linkCompleto = `${urlMensajeros}?asignar=${pedidoId}&tienda=${tiendaId}`;
@@ -3045,7 +3234,6 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             }
         }
         
-        // Actualizar la vista actual
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
         
@@ -3056,7 +3244,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO
+// ADMIN CAMBIA ESTADO (CON VERIFICACIÓN DE PAGO)
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -3074,6 +3262,17 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         
         if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
             toast('⚠️ Este pedido ya está finalizado', 'warn');
+            return;
+        }
+        
+        // Verificar pago antes de pasar a cocina
+        const metodoPago = data.metodoPago || 'efectivo';
+        const estadoPago = data.estadoPago || 'pagado';
+        if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && 
+            estadoPago !== 'pagado' && 
+            nuevoEstado !== 'Cancelado' && 
+            nuevoEstado !== 'Pendiente pago') {
+            toast('⚠️ Este pedido tiene pago pendiente. Confirma el pago primero.', 'warn', 4000);
             return;
         }
         
@@ -3107,31 +3306,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     }
 }
 
-async function confirmarPago(tiendaId, pedidoId) {
-    if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
-    try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({ estadoPago: 'pagado', fechaPago: firebase.firestore.FieldValue.serverTimestamp() });
-        toast('✅ Pago confirmado. El pedido está listo para preparar.', 'success');
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
-async function rechazarPago(tiendaId, pedidoId) {
-    if (!confirm('¿Rechazar el pago de este pedido?')) return;
-    try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({ estadoPago: 'rechazado', estado: 'Cancelado' });
-        toast('⛔ Pago rechazado. El pedido fue cancelado.', 'error');
-        detenerAlarmaGlobal(pedidoId);
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
-    } catch(e) { toast('Error: ' + e.message, 'error'); }
-}
-
 async function eliminarPedido(tiendaId, pedidoId) {
     if (!confirm('¿Remover este pedido?')) return;
     try {
@@ -3155,7 +3329,6 @@ function iniciarEscuchaGlobal() {
         snap.forEach(doc => {
             const tiendaId = doc.id;
             const tiendaData = doc.data();
-            const nombreTienda = tiendaData.nombre || tiendaId;
             tiendasCache[tiendaId] = tiendaData;
             
             const unsubscribe = db.collection('tiendas').doc(tiendaId)
@@ -3183,13 +3356,13 @@ function iniciarEscuchaGlobal() {
                             if (data.estado === estadoPendiente && !data.mensajeroId) {
                                 const cliente = data.cliente?.nombre || 'Cliente';
                                 const total = data.total || 0;
-                                notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId);
+                                notificarNuevoPedido(tiendaData.nombre || tiendaId, cliente, total, tiendaId, pedidoId);
                             }
                         } else if (change.type === 'modified') {
                             const data = change.doc.data();
                             const pedidoId = change.doc.id;
                             
-                            if (data.mensajeroId || data.estado === 'Asignado') {
+                            if (data.mensajeroId || data.estado === 'Asignado' || data.estado === 'En camino') {
                                 detenerAlarmaGlobal(pedidoId);
                             }
                         }
@@ -3263,11 +3436,22 @@ async function cargarEstado() {
         counts['Cancelado'] = 0;
         counts['Asignado'] = 0;
         counts['Listo para asignar'] = 0;
+        counts['Pendiente pago'] = 0;
         snap.forEach(doc => {
             const p = doc.data();
-            const estado = p.estado || estados[0] || 'Pendiente';
+            let estado = p.estado || estados[0] || 'Pendiente';
+            const metodoPago = p.metodoPago || 'efectivo';
+            const estadoPago = p.estadoPago || 'pendiente';
+            
+            if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && 
+                estadoPago === 'pendiente' && estado === estados[0]) {
+                estado = 'Pendiente pago';
+            }
+            
             if (estado === 'Listo para asignar') {
                 counts['Listo para asignar']++;
+            } else if (estado === 'Pendiente pago') {
+                counts['Pendiente pago']++;
             } else if (counts[estado] !== undefined) {
                 counts[estado]++;
             } else if (estado === 'Cancelado') {
@@ -3280,7 +3464,7 @@ async function cargarEstado() {
         const resPreparacion = document.getElementById('resPreparacion');
         const resCamino = document.getElementById('resCamino');
         const resEntregado = document.getElementById('resEntregado');
-        if (resPendiente) resPendiente.textContent = (counts[estados[0]] || 0) + (counts['Listo para asignar'] || 0);
+        if (resPendiente) resPendiente.textContent = (counts[estados[0]] || 0) + (counts['Listo para asignar'] || 0) + (counts['Pendiente pago'] || 0);
         if (resPreparacion) resPreparacion.textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
         if (resCamino) resCamino.textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
         if (resEntregado) resEntregado.textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
@@ -3575,6 +3759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('📍 Dirección de locales agregada');
+    console.log('💳 Confirmación de pago integrada');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
