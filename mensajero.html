@@ -170,6 +170,30 @@
             display: none;
         }
 
+        /* Botón para probar sonido */
+        .btn-probar-sonido {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-probar-sonido:hover {
+            background: var(--blue);
+            color: #fff;
+        }
+        .btn-probar-sonido:active {
+            transform: scale(0.95);
+        }
+
         .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
 
         #loginBox {
@@ -519,6 +543,9 @@
         <span class="brand">EyMoto</span>
         <h1>Panel de Mensajero</h1>
         <span class="spacer"></span>
+        <button class="btn-probar-sonido" onclick="probarSonidoEyMoto()">
+            🔊 Probar Sonido
+        </button>
         <span id="nombreMensajero" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
         <button class="btn-conectar desconectado" id="btnConectar" onclick="window.toggleConexion()">
             <span class="estado-indicador"></span>
@@ -619,58 +646,133 @@
     let listenersActivos = [];
 
     // ============================================================
-    // SONIDO EYMOTO MEJORADO - 3 TONOS CON VIBRATO
+    // SONIDO EYMOTO ORIGINAL (SINTÉTICO + VOZ + MOTOR)
     // ============================================================
-    function sonidoEyMotoMejorado() {
+    function sonidoEyMotoOriginal() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
             
-            // ===== SECUENCIA DE 3 TONOS =====
-            const secuencia = [
-                { freq: 587, dur: 0.12, vol: 0.25 }, // Re
-                { freq: 740, dur: 0.12, vol: 0.25 }, // Mi
-                { freq: 880, dur: 0.25, vol: 0.30 }  // La
-            ];
+            const now = ctx.currentTime;
             
-            secuencia.forEach((nota, i) => {
-                const t = i * 0.15;
-                
-                // Oscilador principal
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = nota.freq;
-                osc.type = 'sine';
-                
-                // Agregar vibrato (modulación de frecuencia)
-                const vibrato = ctx.createOscillator();
-                const vibratoGain = ctx.createGain();
-                vibrato.connect(vibratoGain);
-                vibratoGain.connect(osc.frequency);
-                vibrato.frequency.value = 5; // Hz
-                vibratoGain.gain.value = 8;  // Hz de desviación
-                vibrato.start(ctx.currentTime + t);
-                vibrato.stop(ctx.currentTime + t + nota.dur + 0.05);
-                
-                // Envolvente de volumen (ataque y caída suave)
-                gain.gain.setValueAtTime(0.001, ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(nota.vol, ctx.currentTime + t + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + nota.dur);
-                
-                osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + nota.dur + 0.05);
-            });
+            // ===== 1. SONIDO DE MOTO ARRANCANDO =====
+            // Oscilador para el motor (vibración grave)
+            const motorOsc = ctx.createOscillator();
+            const motorGain = ctx.createGain();
+            motorOsc.connect(motorGain);
+            motorGain.connect(ctx.destination);
+            motorOsc.frequency.value = 80;
+            motorOsc.type = 'sawtooth';
+            motorGain.gain.setValueAtTime(0.01, now);
+            motorGain.gain.exponentialRampToValueAtTime(0.15, now + 0.05);
+            motorGain.gain.exponentialRampToValueAtTime(0.08, now + 0.3);
+            motorGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+            motorOsc.start(now);
+            motorOsc.stop(now + 0.65);
             
-            // Vibración en móviles (patrón de 3 vibraciones)
+            // Ruido para el motor
+            const bufferSize = ctx.sampleRate * 0.4;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.15));
+            }
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseGain = ctx.createGain();
+            noise.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
+            noiseGain.gain.setValueAtTime(0.01, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.3, now + 0.05);
+            noiseGain.gain.exponentialRampToValueAtTime(0.05, now + 0.4);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+            noise.start(now);
+            noise.stop(now + 0.65);
+            
+            // ===== 2. SILBIDO 1 (0.65s) =====
+            setTimeout(() => {
+                try {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = 1200;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.25);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.45);
+                } catch(e) {}
+            }, 650);
+            
+            // ===== 3. VOZ "EY MOTO" (0.95s) =====
+            setTimeout(() => {
+                if ('speechSynthesis' in window) {
+                    try {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance('Ey Moto');
+                        utterance.lang = 'es-ES';
+                        utterance.rate = 0.7;
+                        utterance.pitch = 1.1;
+                        utterance.volume = 0.9;
+                        
+                        const voces = window.speechSynthesis.getVoices();
+                        const vozEspañol = voces.find(v => v.lang.startsWith('es'));
+                        if (vozEspañol) utterance.voice = vozEspañol;
+                        
+                        window.speechSynthesis.speak(utterance);
+                    } catch(e) {}
+                }
+            }, 950);
+            
+            // ===== 4. SILBIDO 2 (1.6s) =====
+            setTimeout(() => {
+                try {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = 1300;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.4);
+                } catch(e) {}
+            }, 1600);
+            
+            // ===== 5. VOZ "EY MOTO" (1.9s) =====
+            setTimeout(() => {
+                if ('speechSynthesis' in window) {
+                    try {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance('Ey Moto');
+                        utterance.lang = 'es-ES';
+                        utterance.rate = 0.7;
+                        utterance.pitch = 1.1;
+                        utterance.volume = 0.9;
+                        
+                        const voces = window.speechSynthesis.getVoices();
+                        const vozEspañol = voces.find(v => v.lang.startsWith('es'));
+                        if (vozEspañol) utterance.voice = vozEspañol;
+                        
+                        window.speechSynthesis.speak(utterance);
+                    } catch(e) {}
+                }
+            }, 1900);
+            
+            // Vibración (opcional)
             if (navigator.vibrate) {
-                navigator.vibrate([80, 50, 80, 50, 150]);
+                navigator.vibrate([100, 50, 100, 50, 150, 50, 100]);
             }
             
         } catch(e) {
-            console.log('🔇 Error en sonido EyMoto:', e);
-            // Fallback simple si falla el sonido principal
+            console.log('🔇 Error en sonido EyMoto Original:', e);
+            // Sonido de respaldo simple
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (ctx.state === 'suspended') ctx.resume();
@@ -684,9 +786,14 @@
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
                 osc.start(ctx.currentTime);
                 osc.stop(ctx.currentTime + 0.25);
-                if (navigator.vibrate) navigator.vibrate(100);
             } catch(e2) {}
         }
+    }
+
+    // ===== FUNCIÓN PARA PROBAR EL SONIDO =====
+    function probarSonidoEyMoto() {
+        sonidoEyMotoOriginal();
+        toast('🔊 Probando sonido EyMoto...', 'info', 2000);
     }
 
     // ============================================================
@@ -852,7 +959,7 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS (CON SONIDO EYMOTO MEJORADO)
+    // ESCUCHAR PEDIDOS (CON SONIDO EYMOTO ORIGINAL)
     // ============================================================
     function escucharPedidosMensajero() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
@@ -864,7 +971,6 @@
         }
 
         tiendasIds.forEach(tiendaId => {
-            // Pedidos disponibles ("Listo para asignar")
             const unsubDisponibles = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -878,7 +984,6 @@
                         }
                     });
                     
-                    // Detectar nuevos pedidos agregados
                     snap.docChanges().forEach(change => {
                         if (change.type === 'added') {
                             const data = change.doc.data();
@@ -888,10 +993,9 @@
                                 const nombreTienda = tienda.nombre || 'Tienda';
                                 const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
                                 
-                                // ===== REPRODUCIR SONIDO EYMOTO MEJORADO =====
-                                sonidoEyMotoMejorado();
+                                // ===== REPRODUCIR SONIDO EYMOTO ORIGINAL =====
+                                sonidoEyMotoOriginal();
                                 
-                                // Mostrar notificación
                                 toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} disponible`, 'new', 8000);
                             }
                         }
@@ -906,7 +1010,6 @@
                     console.error(`Error escuchando disponibles en tienda ${tiendaId}:`, err);
                 });
 
-            // Mis pedidos
             const unsubMios = db.collection('tiendas')
                 .doc(tiendaId)
                 .collection('pedidos')
@@ -1263,10 +1366,11 @@
     window.activarConexionDesdeRecordatorio = activarConexionDesdeRecordatorio;
     window.actualizarBotonConexion = actualizarBotonConexion;
     window.cerrarRecordatorio = cerrarRecordatorio;
-    window.sonidoEyMotoMejorado = sonidoEyMotoMejorado;
+    window.sonidoEyMotoOriginal = sonidoEyMotoOriginal;
+    window.probarSonidoEyMoto = probarSonidoEyMoto;
 
     console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('🔊 Sonido EyMoto Mejorado (3 tonos con vibrato) integrado');
+    console.log('🔊 Sonido EyMoto Original integrado (motor + silbidos + voz)');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
 </script>
 </body>
