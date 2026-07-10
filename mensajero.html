@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Mensajero - EyMoto</title>
-    <!-- ✅ FAVICON CORREGIDO -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
         * {
@@ -29,6 +28,8 @@
             --red-bg: rgba(255,61,0,0.12);
             --orange: #FF6900;
             --orange-bg: rgba(255,105,0,0.12);
+            --purple: #9B59B6;
+            --purple-bg: rgba(155,89,182,0.12);
             --surface: #141414;
             --surface2: #1e1e1e;
             --surface3: #252525;
@@ -59,10 +60,12 @@
         .btn-success:hover { background: #00b748; }
         .btn-info { background: var(--blue); color: #fff; }
         .btn-info:hover { background: #0277bd; }
+        .btn-warning { background: var(--orange); color: #fff; }
+        .btn-warning:hover { background: #e65c00; }
+        .btn-purple { background: var(--purple); color: #fff; }
+        .btn-purple:hover { background: #7d3c98; }
         .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
-        .btn-outline { background: transparent; border: 2px solid var(--yellow); color: var(--yellow); }
-        .btn-outline:hover { background: var(--yellow); color: #1a1a2e; }
         .hidden { display: none !important; }
 
         header {
@@ -93,19 +96,6 @@
             border-radius: 12px;
             background: var(--green-bg);
             color: var(--green);
-        }
-        .header-badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 10px;
-            animation: parpadeo 1s ease-in-out infinite;
-        }
-        @keyframes parpadeo {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
         }
 
         .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -152,25 +142,7 @@
             padding: 16px;
             margin-bottom: 12px;
             border-left: 4px solid var(--yellow);
-            animation: slideIn 0.3s ease;
             transition: all 0.3s;
-        }
-        .pedido-card.nuevo {
-            border-left-color: var(--green);
-            animation: pulseNuevo 1.5s ease-in-out infinite;
-        }
-        .pedido-card.asignado {
-            border-left-color: var(--green);
-            opacity: 0.5;
-        }
-        @keyframes pulseNuevo {
-            0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
-            50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); }
-            100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         .pedido-card .header {
             display: flex;
@@ -189,15 +161,19 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
-            background: var(--blue-bg);
-            color: var(--blue);
         }
-        .pedido-card .header .badge.disponible { 
-            background: var(--green-bg); 
-            color: var(--green);
-            animation: parpadeo 1s ease-in-out infinite;
+        .badge-estado {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
         }
-        .pedido-card .header .badge.asignado { background: var(--orange-bg); color: var(--orange); }
+        .badge-estado.pendiente { background: var(--yellow); color: #1a1a2e; }
+        .badge-estado.camino { background: var(--blue); color: #fff; }
+        .badge-estado.recogido { background: var(--purple); color: #fff; }
+        .badge-estado.entregado { background: var(--green); color: #fff; }
+        .badge-estado.cancelado { background: var(--red); color: #fff; }
+        
         .pedido-card .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -228,12 +204,20 @@
             border-bottom: 1px solid var(--border);
         }
         .pedido-card .items .item:last-child { border-bottom: none; }
-        .pedido-card .acciones {
+        
+        .estados-acciones {
             display: flex;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
         }
-        .pedido-card .acciones button { flex: 1; }
+        .estados-acciones button {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
 
         .empty-state {
             text-align: center;
@@ -272,11 +256,6 @@
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { 
-            border-left: 3px solid var(--yellow); 
-            border-top-color: var(--yellow);
-            animation: toastIn 0.3s ease, parpadeo 1s ease-in-out infinite 0.3s;
-        }
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
@@ -288,7 +267,7 @@
 
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
-            .pedido-card .acciones { flex-direction: column; }
+            .estados-acciones button { min-width: 60px; font-size: 10px; padding: 8px; }
         }
     </style>
 </head>
@@ -313,7 +292,6 @@
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
         <span class="estado" id="estadoConexion">🟢 Conectado</span>
-        <span class="header-badge" id="notificacionBadge" style="display:none;">🔔</span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -348,335 +326,109 @@
     const db = firebase.firestore();
 
     // ============================================================
-    // 🏍️ SISTEMA DE SONIDO PERSONALIZADO EYMOTO
+    // 🎵 SISTEMA DE SONIDO DESDE URL
     // ============================================================
     class SonidoEyMoto {
         constructor() {
-            this.ctx = null;
-            this.inicializado = false;
-            this.reproduciendo = false;
-            this.timers = [];
-            this.intervalo = null;
-            this.pedidoActual = null;
-        }
-
-        // Inicializar contexto de audio
-        iniciar() {
-            try {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
-                this.inicializado = true;
-                return true;
-            } catch (e) {
-                console.debug('⚠️ Audio no disponible:', e.message);
-                return false;
-            }
-        }
-
-        // Limpiar timers
-        limpiarTimers() {
-            this.timers.forEach(timer => {
-                try { clearTimeout(timer); } catch(e) {}
-            });
-            this.timers = [];
-            
-            if (this.intervalo) {
-                try { clearInterval(this.intervalo); } catch(e) {}
-                this.intervalo = null;
-            }
+            this.audio = new Audio();
+            this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // URL de ejemplo
+            this.cargado = false;
             this.reproduciendo = false;
         }
 
-        // Generar un tono simple
-        tono(frecuencia, duracion, volumen = 0.2, tipo = 'sine') {
-            try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') return null;
+        // Configurar URL del sonido
+        configurarSonido(url) {
+            if (url) {
+                this.audioUrl = url;
+            }
+            this.cargarSonido();
+        }
 
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                
-                osc.frequency.value = frecuencia;
-                osc.type = tipo;
-                
-                gain.gain.setValueAtTime(0, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(volumen, this.ctx.currentTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
-                
-                osc.start(this.ctx.currentTime);
-                osc.stop(this.ctx.currentTime + duracion);
-                
-                return osc;
+        // Cargar el sonido
+        cargarSonido() {
+            try {
+                this.audio = new Audio(this.audioUrl);
+                this.audio.preload = 'auto';
+                this.audio.load();
+                this.cargado = true;
+                console.log('🎵 Sonido cargado desde URL:', this.audioUrl);
             } catch (e) {
-                return null;
+                console.warn('⚠️ Error cargando sonido:', e.message);
+                this.cargado = false;
             }
         }
 
-        // 🏍️ Sonido de MOTO ENCENDIENDO
-        sonidoMotoEncendido() {
+        // Reproducir sonido (una vez)
+        reproducir() {
             try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') return;
-
-                const frecuencias = [80, 120, 160, 200, 250, 300, 350, 400];
-                frecuencias.forEach((freq, i) => {
-                    const t = i * 0.035;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.frequency.value = freq;
-                    osc.type = 'sawtooth';
-                    const vol = 0.05 + (i / frecuencias.length) * 0.1;
-                    gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
-                    gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + t + 0.01);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
-                    osc.start(this.ctx.currentTime + t);
-                    osc.stop(this.ctx.currentTime + t + 0.2);
-                });
-
-                setTimeout(() => {
-                    try {
-                        for (let i = 0; i < 8; i++) {
-                            const freq = 300 + (i * 50);
-                            const t = i * 0.025;
-                            const osc = this.ctx.createOscillator();
-                            const gain = this.ctx.createGain();
-                            osc.connect(gain);
-                            gain.connect(this.ctx.destination);
-                            osc.frequency.value = freq;
-                            osc.type = 'sawtooth';
-                            gain.gain.setValueAtTime(0.08, this.ctx.currentTime + t);
-                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.08);
-                            osc.start(this.ctx.currentTime + t);
-                            osc.stop(this.ctx.currentTime + t + 0.1);
-                        }
-                    } catch (e) {}
-                }, 300);
-            } catch (e) {}
-        }
-
-        // 🔊 CHIFLIDO
-        chiflido(duracion = 0.3, frecuencia = 1800) {
-            try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') return;
-
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.frequency.value = frecuencia;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
-                osc.start(this.ctx.currentTime);
-                osc.stop(this.ctx.currentTime + duracion);
-
-                setTimeout(() => {
-                    try {
-                        const osc2 = this.ctx.createOscillator();
-                        const gain2 = this.ctx.createGain();
-                        osc2.connect(gain2);
-                        gain2.connect(this.ctx.destination);
-                        osc2.frequency.value = frecuencia * 1.5;
-                        osc2.type = 'sine';
-                        gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                        gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.8);
-                        osc2.start(this.ctx.currentTime + 0.02);
-                        osc2.stop(this.ctx.currentTime + duracion * 0.8);
-                    } catch (e) {}
-                }, 20);
-            } catch (e) {}
-        }
-
-        // 🗣️ VOZ "EyMoto"
-        vozEyMoto() {
-            try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') return;
-
-                const notasEy = [
-                    { freq: 440, dur: 0.12, vol: 0.15 },
-                    { freq: 520, dur: 0.15, vol: 0.15 }
-                ];
-                notasEy.forEach((nota, i) => {
-                    const t = i * 0.1;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.frequency.value = nota.freq;
-                    osc.type = 'sine';
-                    gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
-                    gain.gain.linearRampToValueAtTime(nota.vol, this.ctx.currentTime + t + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + nota.dur);
-                    osc.start(this.ctx.currentTime + t);
-                    osc.stop(this.ctx.currentTime + t + nota.dur);
-                });
-
-                setTimeout(() => {
-                    try {
-                        const notasMoto = [
-                            { freq: 330, dur: 0.15, vol: 0.12 },
-                            { freq: 280, dur: 0.2, vol: 0.12 },
-                            { freq: 220, dur: 0.15, vol: 0.1 }
-                        ];
-                        notasMoto.forEach((nota, i) => {
-                            const t = i * 0.12 + 0.25;
-                            const osc = this.ctx.createOscillator();
-                            const gain = this.ctx.createGain();
-                            osc.connect(gain);
-                            gain.connect(this.ctx.destination);
-                            osc.frequency.value = nota.freq;
-                            osc.type = 'sine';
-                            gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
-                            gain.gain.linearRampToValueAtTime(nota.vol, this.ctx.currentTime + t + 0.02);
-                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + nota.dur);
-                            osc.start(this.ctx.currentTime + t);
-                            osc.stop(this.ctx.currentTime + t + nota.dur);
-                        });
-                    } catch (e) {}
-                }, 200);
-            } catch (e) {}
-        }
-
-        // 🎵 SECUENCIA COMPLETA DE NOTIFICACIÓN (una vez)
-        secuenciaCompleta() {
-            try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') {
-                    this.fallbackBeep();
-                    return;
+                if (!this.cargado) {
+                    this.cargarSonido();
                 }
-
-                // 1. Moto encendiendo
-                this.sonidoMotoEncendido();
-
-                // 2. Chiflido #1
-                const timer1 = setTimeout(() => {
-                    this.chiflido(0.35, 2000);
-                }, 500);
-                this.timers.push(timer1);
-
-                // 3. Voz "EyMoto"
-                const timer2 = setTimeout(() => {
-                    this.vozEyMoto();
-                }, 950);
-                this.timers.push(timer2);
-
-                // 4. Chiflido #2
-                const timer3 = setTimeout(() => {
-                    this.chiflido(0.4, 2200);
-                }, 1450);
-                this.timers.push(timer3);
-
-                // 5. Aceleración final
-                const timer4 = setTimeout(() => {
-                    try {
-                        for (let i = 0; i < 5; i++) {
-                            const freq = 200 + (i * 60);
-                            const t = i * 0.04;
-                            const osc = this.ctx.createOscillator();
-                            const gain = this.ctx.createGain();
-                            osc.connect(gain);
-                            gain.connect(this.ctx.destination);
-                            osc.frequency.value = freq;
-                            osc.type = 'sawtooth';
-                            gain.gain.setValueAtTime(0.06, this.ctx.currentTime + t + 1.8);
-                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.08 + 1.8);
-                            osc.start(this.ctx.currentTime + t + 1.8);
-                            osc.stop(this.ctx.currentTime + t + 0.1 + 1.8);
-                        }
-                    } catch (e) {}
-                }, 1800);
-                this.timers.push(timer4);
-
+                // Clonar el audio para poder reproducir múltiples veces
+                const audioClone = new Audio(this.audioUrl);
+                audioClone.volume = 0.8;
+                audioClone.play().catch(e => {
+                    console.debug('⚠️ Error reproduciendo audio:', e.message);
+                });
+                this.reproduciendo = true;
+                console.log('🔊 Reproduciendo sonido de notificación');
             } catch (e) {
+                console.debug('⚠️ Error:', e.message);
+                // Fallback: sonido simple con Web Audio
                 this.fallbackBeep();
             }
         }
 
-        // 🔔 NOTIFICACIÓN CONTINUA (se repite hasta que se tome el pedido)
-        notificacionContinua(pedidoId) {
-            // Limpiar cualquier notificación anterior
-            this.limpiarTimers();
-            
+        // Reproducir sonido en bucle (cada 5 segundos)
+        notificacionContinua(pedidoId, callback) {
             this.pedidoActual = pedidoId;
             this.reproduciendo = true;
             
-            console.log('🔔 Iniciando notificación continua para pedido:', pedidoId);
+            // Reproducir inmediatamente
+            this.reproducir();
             
-            // Mostrar badge de notificación
-            const badge = document.getElementById('notificacionBadge');
-            badge.style.display = 'inline-block';
+            // Configurar intervalo
+            if (this.intervalo) {
+                clearInterval(this.intervalo);
+            }
             
-            // Reproducir primera secuencia inmediatamente
-            this.secuenciaCompleta();
-            
-            // Configurar intervalo para repetir cada 5 segundos
             this.intervalo = setInterval(() => {
                 if (this.reproduciendo && this.pedidoActual === pedidoId) {
-                    // Verificar si el pedido sigue disponible
-                    const pedidoAunDisponible = misPedidos.some(p => 
-                        p.id === pedidoId && 
-                        p.estado === 'Listo para asignar' && 
-                        !p.mensajeroId
-                    );
-                    
-                    if (pedidoAunDisponible) {
-                        console.log('🔔 Repitiendo notificación para pedido:', pedidoId);
-                        this.secuenciaCompleta();
-                        
-                        // Mostrar toast recordatorio
-                        toast('🔔 Pedido disponible - ¡Tómalo ya!', 'new', 3000);
-                    } else {
-                        // El pedido ya fue tomado, detener
-                        console.log('✅ Pedido tomado, deteniendo notificación:', pedidoId);
-                        this.detenerNotificacion();
-                    }
+                    this.reproducir();
                 } else {
-                    this.detenerNotificacion();
+                    this.detener();
                 }
             }, 5000);
         }
 
-        // Detener notificación
-        detenerNotificacion() {
-            console.log('⏹️ Deteniendo notificación');
-            this.limpiarTimers();
+        // Detener sonido
+        detener() {
             this.reproduciendo = false;
             this.pedidoActual = null;
-            
-            const badge = document.getElementById('notificacionBadge');
-            badge.style.display = 'none';
+            if (this.intervalo) {
+                clearInterval(this.intervalo);
+                this.intervalo = null;
+            }
+            console.log('⏹️ Sonido detenido');
         }
 
-        // Fallback
+        // Fallback con Web Audio
         fallbackBeep() {
             try {
-                if (!this.inicializado) this.iniciar();
-                if (!this.ctx || this.ctx.state !== 'running') return;
-                
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
                 [800, 1000, 1200].forEach((freq, i) => {
-                    const t = i * 0.15;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
                     osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                    gain.connect(ctx.destination);
                     osc.frequency.value = freq;
                     osc.type = 'sine';
-                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime + t);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
-                    osc.start(this.ctx.currentTime + t);
-                    osc.stop(this.ctx.currentTime + t + 0.2);
+                    const t = i * 0.15;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.2);
                 });
             } catch (e) {}
         }
@@ -712,8 +464,6 @@
             msg.textContent = '❌ Completa todos los campos.';
             return;
         }
-        
-        sonidoEyMoto.iniciar();
         
         auth.signInWithEmailAndPassword(email, pass)
             .then(async (userCredential) => {
@@ -755,7 +505,7 @@
 
     function cerrarSesion() {
         // Detener cualquier notificación activa
-        sonidoEyMoto.detenerNotificacion();
+        sonidoEyMoto.detener();
         pedidosNotificando = {};
         
         if (mensajeroUid) {
@@ -796,7 +546,7 @@
                 pedidosListener = null;
             }
             listenerActivo = false;
-            sonidoEyMoto.detenerNotificacion();
+            sonidoEyMoto.detener();
         }
     });
 
@@ -809,8 +559,6 @@
             await escucharPedidos();
             toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
             console.log('✅ Panel de mensajero cargado correctamente');
-            console.log('🏍️ Sonido EyMoto integrado - Notificaciones continuas');
-            console.log('📢 Escuchando pedidos disponibles en tiempo real');
         } catch (error) {
             console.error('❌ Error al inicializar panel:', error);
             toast('❌ Error al cargar el panel', 'error');
@@ -857,7 +605,7 @@
                     const unsubscribe = db.collection('tiendas')
                         .doc(tiendaId)
                         .collection('pedidos')
-                        .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino'])
+                        .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                         .onSnapshot(snapshot => {
                             if (!listenerActivo) return;
                             
@@ -867,15 +615,14 @@
                                 
                                 const esParaMi = data.mensajeroId === mensajeroUid;
                                 const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
+                                const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
                                 if (!esParaMi && !estaDisponible) {
-                                    // Si estaba en mi lista y ya no es mío, remover
                                     const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         misPedidos.splice(index, 1);
-                                        // Detener notificación si estaba sonando
                                         if (pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detenerNotificacion();
+                                            sonidoEyMoto.detener();
                                             delete pedidosNotificando[pedidoId];
                                         }
                                         renderizarPedidos();
@@ -889,20 +636,15 @@
                                         const pedido = {
                                             id: pedidoId,
                                             tiendaId: tiendaId,
-                                            ...data,
-                                            _nuevo: true
+                                            ...data
                                         };
                                         misPedidos.push(pedido);
                                         
-                                        // 🎵 INICIAR NOTIFICACIÓN CONTINUA
                                         if (estaDisponible && !pedidosNotificando[pedidoId]) {
                                             pedidosNotificando[pedidoId] = true;
                                             sonidoEyMoto.notificacionContinua(pedidoId);
-                                            
-                                            // Mostrar toast
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            const nombreTienda = tienda.nombre || 'Tienda';
-                                            toast(`🛵 NUEVO PEDIDO de ${nombreTienda} - ¡Tómalo YA!`, 'new', 5000);
+                                            toast(`🛵 Nuevo pedido de ${tienda.nombre || 'Tienda'}`, 'success', 5000);
                                         }
                                         
                                         renderizarPedidos();
@@ -910,13 +652,11 @@
                                 } else if (change.type === 'modified') {
                                     const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // Si el pedido ya fue tomado por otro mensajero
                                     if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
                                         if (index !== -1) {
                                             misPedidos.splice(index, 1);
-                                            // Detener notificación
                                             if (pedidosNotificando[pedidoId]) {
-                                                sonidoEyMoto.detenerNotificacion();
+                                                sonidoEyMoto.detener();
                                                 delete pedidosNotificando[pedidoId];
                                             }
                                             renderizarPedidos();
@@ -924,26 +664,22 @@
                                         return;
                                     }
                                     
-                                    // Si es para mí o sigue disponible
                                     if (esParaMi || estaDisponible) {
                                         if (index !== -1) {
                                             misPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                         } else {
-                                            misPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
+                                            misPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         }
                                         
-                                        // Si está disponible y no está sonando, iniciar notificación
                                         if (estaDisponible && !pedidosNotificando[pedidoId]) {
                                             pedidosNotificando[pedidoId] = true;
                                             sonidoEyMoto.notificacionContinua(pedidoId);
-                                            toast('🔔 Pedido disponible - ¡Tómalo YA!', 'new', 3000);
+                                            toast('🔔 Pedido disponible - ¡Tómalo!', 'info', 3000);
                                         }
                                         
-                                        // Si ya fue tomado por mí, detener notificación
-                                        if (esParaMi && pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detenerNotificacion();
+                                        if ((esParaMi || esEntregado) && pedidosNotificando[pedidoId]) {
+                                            sonidoEyMoto.detener();
                                             delete pedidosNotificando[pedidoId];
-                                            toast('✅ Pedido tomado por ti', 'success', 3000);
                                         }
                                         
                                         renderizarPedidos();
@@ -953,7 +689,7 @@
                                     if (index !== -1) {
                                         misPedidos.splice(index, 1);
                                         if (pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detenerNotificacion();
+                                            sonidoEyMoto.detener();
                                             delete pedidosNotificando[pedidoId];
                                         }
                                         renderizarPedidos();
@@ -961,13 +697,11 @@
                                 }
                             });
                         }, err => {
-                            console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
+                            console.warn(`⚠️ Error en listener:`, err.message);
                             if (listenerActivo) {
                                 clearTimeout(timeoutReconexion);
                                 timeoutReconexion = setTimeout(() => {
                                     console.log('🔄 Reintentando conexión...');
-                                    document.getElementById('estadoConexion').textContent = '🔄 Reconectando...';
-                                    document.getElementById('estadoConexion').style.color = 'var(--orange)';
                                     escucharPedidos();
                                 }, 5000);
                             }
@@ -993,7 +727,7 @@
                 clearTimeout(timeoutReconexion);
                 timeoutReconexion = setTimeout(() => {
                     if (listenerActivo) {
-                        console.log('🔄 Reintentando conexión a Firestore...');
+                        console.log('🔄 Reintentando conexión...');
                         document.getElementById('estadoConexion').textContent = '🔄 Reconectando...';
                         document.getElementById('estadoConexion').style.color = 'var(--orange)';
                         escucharPedidos();
@@ -1008,18 +742,17 @@
     function renderizarPedidos() {
         const container = document.getElementById('listaPedidos');
         
-        const disponibles = misPedidos.filter(p => 
-            p.estado === 'Listo para asignar' && !p.mensajeroId
-        );
-        const misPedidosAsignados = misPedidos.filter(p => 
-            p.mensajeroId === mensajeroUid && p.estado !== 'Entregado'
+        const misPedidosActivos = misPedidos.filter(p => 
+            p.mensajeroId === mensajeroUid && 
+            p.estado !== 'Entregado' && 
+            p.estado !== 'Cancelado'
         );
         
-        if (disponibles.length === 0 && misPedidosAsignados.length === 0) {
+        if (misPedidosActivos.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="icono">✅</span>
-                    <p>No hay pedidos disponibles</p>
+                    <p>No tienes pedidos activos</p>
                     <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span>
                 </div>
             `;
@@ -1027,54 +760,62 @@
         }
         
         let html = '';
-        
-        if (disponibles.length > 0) {
-            html += `<h3 style="color:var(--yellow);margin:12px 0 8px 0;font-size:14px;animation:parpadeo 1s ease-in-out infinite;">🔔 Pedidos disponibles (${disponibles.length})</h3>`;
-            disponibles.forEach(p => {
-                html += renderizarPedidoCard(p, true);
-            });
-        }
-        
-        if (misPedidosAsignados.length > 0) {
-            html += `<h3 style="color:var(--blue);margin:16px 0 8px 0;font-size:14px;">🛵 Mis pedidos (${misPedidosAsignados.length})</h3>`;
-            misPedidosAsignados.forEach(p => {
-                html += renderizarPedidoCard(p, false);
-            });
-        }
+        misPedidosActivos.forEach(p => {
+            html += renderizarPedidoCard(p);
+        });
         
         container.innerHTML = html;
     }
 
-    function renderizarPedidoCard(pedido, disponible) {
+    function renderizarPedidoCard(pedido) {
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = pedido.cliente || {};
         const total = pedido.total || 0;
         const fechaStr = formatearFecha(pedido.fecha);
-        const esNuevo = pedido._nuevo === true;
+        const estado = pedido.estado || 'Pendiente';
+        
+        // Colores según estado
+        let estadoColor = '';
+        let estadoLabel = estado;
+        switch(estado) {
+            case 'Listo para asignar': estadoColor = 'pendiente'; estadoLabel = '🔔 Pendiente'; break;
+            case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
+            case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
+            case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
+            case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
+            case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
+            default: estadoColor = 'pendiente'; estadoLabel = '📋 ' + estado;
+        }
         
         let itemsHtml = '';
         if (pedido.items && pedido.items.length > 0) {
-            pedido.items.slice(0, 3).forEach(item => {
+            pedido.items.forEach(item => {
                 const nombre = item.nombre || 'Producto';
                 const subtotal = item.total || (item.precio * item.cantidad) || 0;
                 itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
             });
-            if (pedido.items.length > 3) {
-                itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${pedido.items.length - 3} más...</div>`;
-            }
         }
         
-        const claseNuevo = esNuevo ? 'nuevo' : '';
-        const estadoBadge = disponible ? 
-            '<span class="badge disponible">🔔 DISPONIBLE</span>' : 
-            `<span class="badge asignado">🛵 ${pedido.estado || 'Asignado'}</span>`;
+        // Botones según estado actual
+        let botonesHtml = '';
+        if (estado !== 'Entregado' && estado !== 'Cancelado') {
+            botonesHtml = `
+                <div class="estados-acciones">
+                    ${estado !== 'En camino al restaurante' ? `<button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">🛵 En camino</button>` : ''}
+                    ${estado !== 'Recogiendo pedido' ? `<button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 Recogiendo</button>` : ''}
+                    ${estado !== 'En camino' ? `<button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">🚗 En camino</button>` : ''}
+                    <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ Entregar</button>
+                    <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
+                </div>
+            `;
+        }
         
         return `
-            <div class="pedido-card ${claseNuevo}" id="pedido-${pedido.id}">
+            <div class="pedido-card" id="pedido-${pedido.id}">
                 <div class="header">
-                    <span class="numero">🛵 ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}</span>
-                    ${estadoBadge}
+                    <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
+                    <span class="badge badge-estado ${estadoColor}">${estadoLabel}</span>
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1086,80 +827,39 @@
                 </div>
                 ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
                 <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                ${disponible ? `
-                    <div class="acciones">
-                        <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
-                            ✅ TOMAR PEDIDO AHORA
-                        </button>
-                    </div>
-                ` : `
-                    <div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">
-                        🕐 Estado: ${pedido.estado || 'En proceso'}
-                    </div>
-                `}
+                ${botonesHtml}
             </div>
         `;
     }
 
     // ============================================================
-    // TOMAR PEDIDO
+    // CAMBIAR ESTADO DEL PEDIDO
     // ============================================================
-    async function tomarPedido(pedidoId, tiendaId) {
+    async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
         if (!mensajeroUid) {
             toast('⚠️ No has iniciado sesión', 'error');
             return;
         }
         
+        if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) return;
+        
         try {
             const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
-            const doc = await docRef.get();
-            
-            if (!doc.exists) {
-                toast('⚠️ El pedido ya no existe', 'warn');
-                return;
-            }
-            
-            const data = doc.data();
-            if (data.mensajeroId) {
-                toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-                const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                if (index !== -1) {
-                    misPedidos.splice(index, 1);
-                    if (pedidosNotificando[pedidoId]) {
-                        sonidoEyMoto.detenerNotificacion();
-                        delete pedidosNotificando[pedidoId];
-                    }
-                    renderizarPedidos();
-                }
-                return;
-            }
-            
-            toast('⏳ Tomando pedido...', 'info');
             
             await docRef.update({
-                mensajeroId: mensajeroUid,
-                nombreMensajero: mensajeroData?.nombre || 'Mensajero',
-                estado: 'En camino al restaurante',
-                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+                estado: nuevoEstado,
+                ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
+                [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Detener notificación continua
-            if (pedidosNotificando[pedidoId]) {
-                sonidoEyMoto.detenerNotificacion();
-                delete pedidosNotificando[pedidoId];
-            }
+            // Reproducir sonido de confirmación
+            sonidoEyMoto.reproducir();
             
-            // Sonido de confirmación
-            sonidoEyMoto.chiflido(0.3, 2000);
-            toast('✅ Pedido tomado exitosamente', 'success', 3000);
+            toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
             
         } catch (e) {
-            console.error('Error tomando pedido:', e);
-            if (e.code === 'not-found' || e.message.includes('no such document')) {
-                toast('⚠️ El pedido ya no existe', 'warn');
-            } else {
-                toast('❌ Error: ' + e.message, 'error');
-            }
+            console.error('Error actualizando estado:', e);
+            toast('❌ Error: ' + e.message, 'error');
         }
     }
 
@@ -1179,7 +879,7 @@
     }
 
     function toast(msg, type = 'info', dur = 4000) {
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
         const wrap = document.getElementById('toastWrap');
         const el = document.createElement('div');
         el.className = `toast t-${type}`;
@@ -1194,12 +894,10 @@
     // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.cerrarSesion = cerrarSesion;
-    window.tomarPedido = tomarPedido;
+    window.cambiarEstado = cambiarEstado;
     window.toast = toast;
 
     console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('🏍️ Sonido EyMoto integrado - Notificaciones continuas');
-    console.log('📢 Escuchando pedidos disponibles en tiempo real');
 </script>
 </body>
 </html>
