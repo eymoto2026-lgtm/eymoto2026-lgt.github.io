@@ -101,6 +101,11 @@
             font-weight: 800;
             padding: 3px 8px;
             border-radius: 10px;
+            animation: parpadeo 1s ease-in-out infinite;
+        }
+        @keyframes parpadeo {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -152,7 +157,7 @@
         }
         .pedido-card.nuevo {
             border-left-color: var(--green);
-            animation: pulseNuevo 1.5s ease-in-out 3;
+            animation: pulseNuevo 1.5s ease-in-out infinite;
         }
         .pedido-card.asignado {
             border-left-color: var(--green);
@@ -187,7 +192,11 @@
             background: var(--blue-bg);
             color: var(--blue);
         }
-        .pedido-card .header .badge.disponible { background: var(--green-bg); color: var(--green); }
+        .pedido-card .header .badge.disponible { 
+            background: var(--green-bg); 
+            color: var(--green);
+            animation: parpadeo 1s ease-in-out infinite;
+        }
         .pedido-card .header .badge.asignado { background: var(--orange-bg); color: var(--orange); }
         .pedido-card .info-grid {
             display: grid;
@@ -263,7 +272,11 @@
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); }
+        .toast.t-new { 
+            border-left: 3px solid var(--yellow); 
+            border-top-color: var(--yellow);
+            animation: toastIn 0.3s ease, parpadeo 1s ease-in-out infinite 0.3s;
+        }
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
@@ -300,6 +313,7 @@
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
         <span class="estado" id="estadoConexion">🟢 Conectado</span>
+        <span class="header-badge" id="notificacionBadge" style="display:none;">🔔</span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -334,39 +348,344 @@
     const db = firebase.firestore();
 
     // ============================================================
-    // CONFIGURACIÓN DE AUDIO - USANDO WEB AUDIO API (SIN ARCHIVOS)
+    // 🏍️ SISTEMA DE SONIDO PERSONALIZADO EYMOTO
     // ============================================================
-    function reproducirSonido(frecuencias = [600, 800, 1000], duracion = 0.15) {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            
-            frecuencias.forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'sine';
-                const t = i * 0.12;
-                gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + duracion);
-                osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + duracion);
+    class SonidoEyMoto {
+        constructor() {
+            this.ctx = null;
+            this.inicializado = false;
+            this.reproduciendo = false;
+            this.timers = [];
+            this.intervalo = null;
+            this.pedidoActual = null;
+        }
+
+        // Inicializar contexto de audio
+        iniciar() {
+            try {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+                this.inicializado = true;
+                return true;
+            } catch (e) {
+                console.debug('⚠️ Audio no disponible:', e.message);
+                return false;
+            }
+        }
+
+        // Limpiar timers
+        limpiarTimers() {
+            this.timers.forEach(timer => {
+                try { clearTimeout(timer); } catch(e) {}
             });
-        } catch (e) {
-            // Silenciosamente ignorar errores de audio
-            console.debug('Audio no disponible:', e.message);
+            this.timers = [];
+            
+            if (this.intervalo) {
+                try { clearInterval(this.intervalo); } catch(e) {}
+                this.intervalo = null;
+            }
+            this.reproduciendo = false;
+        }
+
+        // Generar un tono simple
+        tono(frecuencia, duracion, volumen = 0.2, tipo = 'sine') {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') return null;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.frequency.value = frecuencia;
+                osc.type = tipo;
+                
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(volumen, this.ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
+                
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + duracion);
+                
+                return osc;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 🏍️ Sonido de MOTO ENCENDIENDO
+        sonidoMotoEncendido() {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') return;
+
+                const frecuencias = [80, 120, 160, 200, 250, 300, 350, 400];
+                frecuencias.forEach((freq, i) => {
+                    const t = i * 0.035;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sawtooth';
+                    const vol = 0.05 + (i / frecuencias.length) * 0.1;
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
+                    gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + t + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
+                    osc.start(this.ctx.currentTime + t);
+                    osc.stop(this.ctx.currentTime + t + 0.2);
+                });
+
+                setTimeout(() => {
+                    try {
+                        for (let i = 0; i < 8; i++) {
+                            const freq = 300 + (i * 50);
+                            const t = i * 0.025;
+                            const osc = this.ctx.createOscillator();
+                            const gain = this.ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.ctx.destination);
+                            osc.frequency.value = freq;
+                            osc.type = 'sawtooth';
+                            gain.gain.setValueAtTime(0.08, this.ctx.currentTime + t);
+                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.08);
+                            osc.start(this.ctx.currentTime + t);
+                            osc.stop(this.ctx.currentTime + t + 0.1);
+                        }
+                    } catch (e) {}
+                }, 300);
+            } catch (e) {}
+        }
+
+        // 🔊 CHIFLIDO
+        chiflido(duracion = 0.3, frecuencia = 1800) {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.value = frecuencia;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + duracion);
+
+                setTimeout(() => {
+                    try {
+                        const osc2 = this.ctx.createOscillator();
+                        const gain2 = this.ctx.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(this.ctx.destination);
+                        osc2.frequency.value = frecuencia * 1.5;
+                        osc2.type = 'sine';
+                        gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.8);
+                        osc2.start(this.ctx.currentTime + 0.02);
+                        osc2.stop(this.ctx.currentTime + duracion * 0.8);
+                    } catch (e) {}
+                }, 20);
+            } catch (e) {}
+        }
+
+        // 🗣️ VOZ "EyMoto"
+        vozEyMoto() {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') return;
+
+                const notasEy = [
+                    { freq: 440, dur: 0.12, vol: 0.15 },
+                    { freq: 520, dur: 0.15, vol: 0.15 }
+                ];
+                notasEy.forEach((nota, i) => {
+                    const t = i * 0.1;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.frequency.value = nota.freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
+                    gain.gain.linearRampToValueAtTime(nota.vol, this.ctx.currentTime + t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + nota.dur);
+                    osc.start(this.ctx.currentTime + t);
+                    osc.stop(this.ctx.currentTime + t + nota.dur);
+                });
+
+                setTimeout(() => {
+                    try {
+                        const notasMoto = [
+                            { freq: 330, dur: 0.15, vol: 0.12 },
+                            { freq: 280, dur: 0.2, vol: 0.12 },
+                            { freq: 220, dur: 0.15, vol: 0.1 }
+                        ];
+                        notasMoto.forEach((nota, i) => {
+                            const t = i * 0.12 + 0.25;
+                            const osc = this.ctx.createOscillator();
+                            const gain = this.ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.ctx.destination);
+                            osc.frequency.value = nota.freq;
+                            osc.type = 'sine';
+                            gain.gain.setValueAtTime(0, this.ctx.currentTime + t);
+                            gain.gain.linearRampToValueAtTime(nota.vol, this.ctx.currentTime + t + 0.02);
+                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + nota.dur);
+                            osc.start(this.ctx.currentTime + t);
+                            osc.stop(this.ctx.currentTime + t + nota.dur);
+                        });
+                    } catch (e) {}
+                }, 200);
+            } catch (e) {}
+        }
+
+        // 🎵 SECUENCIA COMPLETA DE NOTIFICACIÓN (una vez)
+        secuenciaCompleta() {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') {
+                    this.fallbackBeep();
+                    return;
+                }
+
+                // 1. Moto encendiendo
+                this.sonidoMotoEncendido();
+
+                // 2. Chiflido #1
+                const timer1 = setTimeout(() => {
+                    this.chiflido(0.35, 2000);
+                }, 500);
+                this.timers.push(timer1);
+
+                // 3. Voz "EyMoto"
+                const timer2 = setTimeout(() => {
+                    this.vozEyMoto();
+                }, 950);
+                this.timers.push(timer2);
+
+                // 4. Chiflido #2
+                const timer3 = setTimeout(() => {
+                    this.chiflido(0.4, 2200);
+                }, 1450);
+                this.timers.push(timer3);
+
+                // 5. Aceleración final
+                const timer4 = setTimeout(() => {
+                    try {
+                        for (let i = 0; i < 5; i++) {
+                            const freq = 200 + (i * 60);
+                            const t = i * 0.04;
+                            const osc = this.ctx.createOscillator();
+                            const gain = this.ctx.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.ctx.destination);
+                            osc.frequency.value = freq;
+                            osc.type = 'sawtooth';
+                            gain.gain.setValueAtTime(0.06, this.ctx.currentTime + t + 1.8);
+                            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.08 + 1.8);
+                            osc.start(this.ctx.currentTime + t + 1.8);
+                            osc.stop(this.ctx.currentTime + t + 0.1 + 1.8);
+                        }
+                    } catch (e) {}
+                }, 1800);
+                this.timers.push(timer4);
+
+            } catch (e) {
+                this.fallbackBeep();
+            }
+        }
+
+        // 🔔 NOTIFICACIÓN CONTINUA (se repite hasta que se tome el pedido)
+        notificacionContinua(pedidoId) {
+            // Limpiar cualquier notificación anterior
+            this.limpiarTimers();
+            
+            this.pedidoActual = pedidoId;
+            this.reproduciendo = true;
+            
+            console.log('🔔 Iniciando notificación continua para pedido:', pedidoId);
+            
+            // Mostrar badge de notificación
+            const badge = document.getElementById('notificacionBadge');
+            badge.style.display = 'inline-block';
+            
+            // Reproducir primera secuencia inmediatamente
+            this.secuenciaCompleta();
+            
+            // Configurar intervalo para repetir cada 5 segundos
+            this.intervalo = setInterval(() => {
+                if (this.reproduciendo && this.pedidoActual === pedidoId) {
+                    // Verificar si el pedido sigue disponible
+                    const pedidoAunDisponible = misPedidos.some(p => 
+                        p.id === pedidoId && 
+                        p.estado === 'Listo para asignar' && 
+                        !p.mensajeroId
+                    );
+                    
+                    if (pedidoAunDisponible) {
+                        console.log('🔔 Repitiendo notificación para pedido:', pedidoId);
+                        this.secuenciaCompleta();
+                        
+                        // Mostrar toast recordatorio
+                        toast('🔔 Pedido disponible - ¡Tómalo ya!', 'new', 3000);
+                    } else {
+                        // El pedido ya fue tomado, detener
+                        console.log('✅ Pedido tomado, deteniendo notificación:', pedidoId);
+                        this.detenerNotificacion();
+                    }
+                } else {
+                    this.detenerNotificacion();
+                }
+            }, 5000);
+        }
+
+        // Detener notificación
+        detenerNotificacion() {
+            console.log('⏹️ Deteniendo notificación');
+            this.limpiarTimers();
+            this.reproduciendo = false;
+            this.pedidoActual = null;
+            
+            const badge = document.getElementById('notificacionBadge');
+            badge.style.display = 'none';
+        }
+
+        // Fallback
+        fallbackBeep() {
+            try {
+                if (!this.inicializado) this.iniciar();
+                if (!this.ctx || this.ctx.state !== 'running') return;
+                
+                [800, 1000, 1200].forEach((freq, i) => {
+                    const t = i * 0.15;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
+                    osc.start(this.ctx.currentTime + t);
+                    osc.stop(this.ctx.currentTime + t + 0.2);
+                });
+            } catch (e) {}
         }
     }
 
-    function sonidoNuevoPedido() {
-        reproducirSonido([600, 800, 1000, 1200], 0.15);
-    }
-
-    function sonidoPedidoAsignado() {
-        reproducirSonido([800, 1000], 0.2);
-    }
+    // ============================================================
+    // INSTANCIA DEL SONIDO
+    // ============================================================
+    const sonidoEyMoto = new SonidoEyMoto();
 
     // ============================================================
     // VARIABLES GLOBALES
@@ -378,6 +697,7 @@
     let misPedidos = [];
     let listenerActivo = false;
     let timeoutReconexion = null;
+    let pedidosNotificando = {};
 
     // ============================================================
     // FUNCIONES DE AUTENTICACIÓN
@@ -392,6 +712,8 @@
             msg.textContent = '❌ Completa todos los campos.';
             return;
         }
+        
+        sonidoEyMoto.iniciar();
         
         auth.signInWithEmailAndPassword(email, pass)
             .then(async (userCredential) => {
@@ -418,7 +740,6 @@
                 document.getElementById('panel').classList.remove('hidden');
                 document.getElementById('mensajeroInfo').textContent = '👤 ' + (data.nombre || email);
                 
-                // Actualizar estado de conexión
                 await db.collection('usuarios').doc(user.uid).update({
                     conectado: true,
                     ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
@@ -433,6 +754,10 @@
     }
 
     function cerrarSesion() {
+        // Detener cualquier notificación activa
+        sonidoEyMoto.detenerNotificacion();
+        pedidosNotificando = {};
+        
         if (mensajeroUid) {
             db.collection('usuarios').doc(mensajeroUid).update({
                 conectado: false,
@@ -471,6 +796,7 @@
                 pedidosListener = null;
             }
             listenerActivo = false;
+            sonidoEyMoto.detenerNotificacion();
         }
     });
 
@@ -483,12 +809,11 @@
             await escucharPedidos();
             toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
             console.log('✅ Panel de mensajero cargado correctamente');
-            console.log('🔊 Sonido personalizado de EyMoto integrado');
+            console.log('🏍️ Sonido EyMoto integrado - Notificaciones continuas');
             console.log('📢 Escuchando pedidos disponibles en tiempo real');
         } catch (error) {
             console.error('❌ Error al inicializar panel:', error);
             toast('❌ Error al cargar el panel', 'error');
-            // Reintentar después de 5 segundos
             setTimeout(inicializarPanel, 5000);
         }
     }
@@ -506,7 +831,7 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS (CON RECONEXIÓN AUTOMÁTICA)
+    // ESCUCHAR PEDIDOS
     // ============================================================
     function escucharPedidos() {
         if (pedidosListener) {
@@ -523,13 +848,10 @@
         document.getElementById('estadoConexion').textContent = '🟢 Conectado';
         document.getElementById('estadoConexion').style.color = 'var(--green)';
         
-        // Obtener todas las tiendas y escuchar sus pedidos
         db.collection('tiendas').get()
             .then(snap => {
                 const tiendas = snap.docs.map(doc => doc.id);
                 console.log(`📢 Escuchando ${tiendas.length} tiendas para pedidos`);
-                
-                let listenersActivos = 0;
                 
                 tiendas.forEach(tiendaId => {
                     const unsubscribe = db.collection('tiendas')
@@ -543,11 +865,23 @@
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
                                 
-                                // Solo mostrar pedidos que son para este mensajero O están disponibles
                                 const esParaMi = data.mensajeroId === mensajeroUid;
                                 const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
                                 
-                                if (!esParaMi && !estaDisponible) return;
+                                if (!esParaMi && !estaDisponible) {
+                                    // Si estaba en mi lista y ya no es mío, remover
+                                    const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    if (index !== -1) {
+                                        misPedidos.splice(index, 1);
+                                        // Detener notificación si estaba sonando
+                                        if (pedidosNotificando[pedidoId]) {
+                                            sonidoEyMoto.detenerNotificacion();
+                                            delete pedidosNotificando[pedidoId];
+                                        }
+                                        renderizarPedidos();
+                                    }
+                                    return;
+                                }
                                 
                                 if (change.type === 'added') {
                                     const existe = misPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -560,53 +894,74 @@
                                         };
                                         misPedidos.push(pedido);
                                         
-                                        // Sonido para nuevo pedido
-                                        if (estaDisponible) {
-                                            sonidoNuevoPedido();
-                                            toast('🛵 Nuevo pedido disponible para tomar', 'new', 5000);
-                                        } else if (esParaMi) {
-                                            sonidoPedidoAsignado();
-                                            toast('📦 Pedido asignado a ti', 'success', 4000);
+                                        // 🎵 INICIAR NOTIFICACIÓN CONTINUA
+                                        if (estaDisponible && !pedidosNotificando[pedidoId]) {
+                                            pedidosNotificando[pedidoId] = true;
+                                            sonidoEyMoto.notificacionContinua(pedidoId);
+                                            
+                                            // Mostrar toast
+                                            const tienda = tiendasCache[tiendaId] || {};
+                                            const nombreTienda = tienda.nombre || 'Tienda';
+                                            toast(`🛵 NUEVO PEDIDO de ${nombreTienda} - ¡Tómalo YA!`, 'new', 5000);
                                         }
                                         
                                         renderizarPedidos();
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (index !== -1) {
-                                        // Si el pedido ya no es para mí y no está disponible, removerlo
-                                        if (!esParaMi && !estaDisponible) {
+                                    
+                                    // Si el pedido ya fue tomado por otro mensajero
+                                    if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
+                                        if (index !== -1) {
                                             misPedidos.splice(index, 1);
+                                            // Detener notificación
+                                            if (pedidosNotificando[pedidoId]) {
+                                                sonidoEyMoto.detenerNotificacion();
+                                                delete pedidosNotificando[pedidoId];
+                                            }
                                             renderizarPedidos();
-                                            return;
+                                        }
+                                        return;
+                                    }
+                                    
+                                    // Si es para mí o sigue disponible
+                                    if (esParaMi || estaDisponible) {
+                                        if (index !== -1) {
+                                            misPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                        } else {
+                                            misPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                         }
                                         
-                                        misPedidos[index] = {
-                                            id: pedidoId,
-                                            tiendaId: tiendaId,
-                                            ...data
-                                        };
-                                        renderizarPedidos();
-                                    } else if (esParaMi || estaDisponible) {
-                                        misPedidos.push({
-                                            id: pedidoId,
-                                            tiendaId: tiendaId,
-                                            ...data,
-                                            _nuevo: true
-                                        });
+                                        // Si está disponible y no está sonando, iniciar notificación
+                                        if (estaDisponible && !pedidosNotificando[pedidoId]) {
+                                            pedidosNotificando[pedidoId] = true;
+                                            sonidoEyMoto.notificacionContinua(pedidoId);
+                                            toast('🔔 Pedido disponible - ¡Tómalo YA!', 'new', 3000);
+                                        }
+                                        
+                                        // Si ya fue tomado por mí, detener notificación
+                                        if (esParaMi && pedidosNotificando[pedidoId]) {
+                                            sonidoEyMoto.detenerNotificacion();
+                                            delete pedidosNotificando[pedidoId];
+                                            toast('✅ Pedido tomado por ti', 'success', 3000);
+                                        }
+                                        
                                         renderizarPedidos();
                                     }
                                 } else if (change.type === 'removed') {
                                     const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         misPedidos.splice(index, 1);
+                                        if (pedidosNotificando[pedidoId]) {
+                                            sonidoEyMoto.detenerNotificacion();
+                                            delete pedidosNotificando[pedidoId];
+                                        }
                                         renderizarPedidos();
                                     }
                                 }
                             });
                         }, err => {
                             console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
-                            // Reconexión automática
                             if (listenerActivo) {
                                 clearTimeout(timeoutReconexion);
                                 timeoutReconexion = setTimeout(() => {
@@ -618,13 +973,10 @@
                             }
                         });
                     
-                    listenersActivos++;
-                    // Guardar referencia para limpiar
                     if (!window._listeners) window._listeners = [];
                     window._listeners.push(unsubscribe);
                 });
                 
-                // Guardar el listener principal
                 pedidosListener = () => {
                     listenerActivo = false;
                     if (window._listeners) {
@@ -638,7 +990,6 @@
                 document.getElementById('estadoConexion').textContent = '🔴 Error de conexión';
                 document.getElementById('estadoConexion').style.color = 'var(--red)';
                 
-                // Reintentar después de 5 segundos
                 clearTimeout(timeoutReconexion);
                 timeoutReconexion = setTimeout(() => {
                     if (listenerActivo) {
@@ -657,7 +1008,6 @@
     function renderizarPedidos() {
         const container = document.getElementById('listaPedidos');
         
-        // Filtrar pedidos disponibles y asignados a mí
         const disponibles = misPedidos.filter(p => 
             p.estado === 'Listo para asignar' && !p.mensajeroId
         );
@@ -678,19 +1028,15 @@
         
         let html = '';
         
-        // Mostrar pedidos disponibles para tomar
         if (disponibles.length > 0) {
-            html += `<h3 style="color:var(--yellow);margin:12px 0 8px 0;font-size:14px;">📦 Pedidos disponibles (${disponibles.length})</h3>`;
-            
+            html += `<h3 style="color:var(--yellow);margin:12px 0 8px 0;font-size:14px;animation:parpadeo 1s ease-in-out infinite;">🔔 Pedidos disponibles (${disponibles.length})</h3>`;
             disponibles.forEach(p => {
                 html += renderizarPedidoCard(p, true);
             });
         }
         
-        // Mostrar mis pedidos asignados
         if (misPedidosAsignados.length > 0) {
             html += `<h3 style="color:var(--blue);margin:16px 0 8px 0;font-size:14px;">🛵 Mis pedidos (${misPedidosAsignados.length})</h3>`;
-            
             misPedidosAsignados.forEach(p => {
                 html += renderizarPedidoCard(p, false);
             });
@@ -721,7 +1067,7 @@
         
         const claseNuevo = esNuevo ? 'nuevo' : '';
         const estadoBadge = disponible ? 
-            '<span class="badge disponible">🔔 Disponible</span>' : 
+            '<span class="badge disponible">🔔 DISPONIBLE</span>' : 
             `<span class="badge asignado">🛵 ${pedido.estado || 'Asignado'}</span>`;
         
         return `
@@ -743,7 +1089,7 @@
                 ${disponible ? `
                     <div class="acciones">
                         <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
-                            ✅ Tomar Pedido
+                            ✅ TOMAR PEDIDO AHORA
                         </button>
                     </div>
                 ` : `
@@ -765,7 +1111,6 @@
         }
         
         try {
-            // Verificar que el pedido sigue disponible
             const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
             const doc = await docRef.get();
             
@@ -777,10 +1122,13 @@
             const data = doc.data();
             if (data.mensajeroId) {
                 toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-                // Remover de la lista local
                 const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                 if (index !== -1) {
                     misPedidos.splice(index, 1);
+                    if (pedidosNotificando[pedidoId]) {
+                        sonidoEyMoto.detenerNotificacion();
+                        delete pedidosNotificando[pedidoId];
+                    }
                     renderizarPedidos();
                 }
                 return;
@@ -795,7 +1143,14 @@
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            sonidoPedidoAsignado();
+            // Detener notificación continua
+            if (pedidosNotificando[pedidoId]) {
+                sonidoEyMoto.detenerNotificacion();
+                delete pedidosNotificando[pedidoId];
+            }
+            
+            // Sonido de confirmación
+            sonidoEyMoto.chiflido(0.3, 2000);
             toast('✅ Pedido tomado exitosamente', 'success', 3000);
             
         } catch (e) {
@@ -843,7 +1198,7 @@
     window.toast = toast;
 
     console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('🔊 Sonido personalizado de EyMoto integrado');
+    console.log('🏍️ Sonido EyMoto integrado - Notificaciones continuas');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
 </script>
 </body>
