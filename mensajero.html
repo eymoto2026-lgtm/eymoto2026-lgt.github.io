@@ -145,6 +145,27 @@
         }
         .form-group input:focus { border-color: var(--yellow); }
 
+        /* SECCIÓN DE PEDIDOS DISPONIBLES */
+        .seccion-pedidos {
+            margin-bottom: 20px;
+        }
+        .seccion-pedidos .titulo {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--yellow);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .seccion-pedidos .titulo .badge-count {
+            background: var(--red);
+            color: #fff;
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
         .pedido-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -153,6 +174,14 @@
             margin-bottom: 12px;
             border-left: 4px solid var(--yellow);
             transition: all 0.3s;
+        }
+        .pedido-card.disponible {
+            border-left-color: var(--green);
+            animation: pulseDisponible 2s ease-in-out infinite;
+        }
+        @keyframes pulseDisponible {
+            0%, 100% { border-color: var(--green); }
+            50% { border-color: var(--yellow); }
         }
         .pedido-card .header {
             display: flex;
@@ -166,18 +195,13 @@
             font-weight: 800;
             color: var(--yellow);
         }
-        .pedido-card .header .badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
         .badge-estado {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
         }
+        .badge-estado.disponible { background: var(--green); color: #1a1a2e; }
         .badge-estado.pendiente { background: var(--yellow); color: #1a1a2e; }
         .badge-estado.camino { background: var(--blue); color: #fff; }
         .badge-estado.recogido { background: var(--purple); color: #fff; }
@@ -356,7 +380,6 @@
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
-        <!-- 🔥 ESTADO CONECTADO/DESCONECTADO - CLIC PARA CAMBIAR -->
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">
             🟢 Conectado
         </span>
@@ -364,10 +387,32 @@
     </header>
 
     <div class="wrap">
-        <div id="listaPedidos">
-            <div class="empty-state">
-                <span class="icono">🛵</span>
-                <p>Cargando pedidos disponibles...</p>
+        <!-- Sección de pedidos disponibles -->
+        <div class="seccion-pedidos">
+            <div class="titulo">
+                📦 Pedidos Disponibles
+                <span class="badge-count" id="contadorDisponibles">0</span>
+            </div>
+            <div id="listaPedidosDisponibles">
+                <div class="empty-state">
+                    <span class="icono">✅</span>
+                    <p>No hay pedidos disponibles</p>
+                    <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de mis pedidos activos -->
+        <div class="seccion-pedidos">
+            <div class="titulo">
+                🛵 Mis Pedidos Activos
+                <span class="badge-count" id="contadorMisPedidos" style="background:var(--blue);">0</span>
+            </div>
+            <div id="listaMisPedidos">
+                <div class="empty-state">
+                    <span class="icono">📭</span>
+                    <p>No tienes pedidos activos</p>
+                </div>
             </div>
         </div>
     </div>
@@ -398,7 +443,6 @@
     // ============================================================
     class SonidoEyMoto {
         constructor() {
-            // 🔥 CAMBIA ESTA URL POR TU SONIDO
             this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
             this.audio = new Audio();
             this.cargado = false;
@@ -494,6 +538,7 @@
     let mensajeroData = null;
     let pedidosListener = null;
     let tiendasCache = {};
+    let todosLosPedidos = [];
     let misPedidos = [];
     let listenerActivo = false;
     let timeoutReconexion = null;
@@ -603,15 +648,13 @@
     });
 
     // ============================================================
-    // 🔥 TOGGLE CONECTADO/DESCONECTADO
+    // TOGGLE CONECTADO/DESCONECTADO
     // ============================================================
     function toggleEstadoConexion() {
         if (!mensajeroUid) return;
         
         const nuevoEstado = !mensajeroConectado;
-        const estadoTexto = nuevoEstado ? 'conectar' : 'desconectar';
         
-        // Mostrar modal de confirmación
         mostrarModalConfirmacion(
             nuevoEstado ? '🟢 Conectar' : '🔴 Desconectar',
             nuevoEstado ? '¿Quieres conectarte y recibir pedidos?' : '¿Quieres desconectarte y no recibir más pedidos?',
@@ -624,7 +667,6 @@
     function ejecutarCambioConexion(nuevoEstado) {
         mensajeroConectado = nuevoEstado;
         
-        // Actualizar en Firebase
         db.collection('usuarios').doc(mensajeroUid).update({
             conectado: nuevoEstado,
             [`${nuevoEstado ? 'conectado' : 'desconectado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
@@ -633,34 +675,23 @@
             
             if (nuevoEstado) {
                 toast('🟢 Te has conectado. Recibirás pedidos.', 'success', 3000);
-                // Reiniciar escucha de pedidos
                 if (!listenerActivo) {
                     escucharPedidos();
                 }
             } else {
                 toast('🔴 Te has desconectado. No recibirás pedidos.', 'warn', 3000);
-                // Detener sonidos y limpiar
                 sonidoEyMoto.detener();
                 pedidosNotificando = {};
-                // Detener listener
                 if (pedidosListener) {
                     try { pedidosListener(); } catch(e) {}
                     pedidosListener = null;
                 }
                 listenerActivo = false;
-                // Mostrar mensaje de desconectado
-                document.getElementById('listaPedidos').innerHTML = `
-                    <div class="empty-state">
-                        <span class="icono">🔴</span>
-                        <p>Estás desconectado</p>
-                        <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
-                    </div>
-                `;
+                renderizarPedidos();
             }
         }).catch(e => {
             console.error('Error actualizando estado:', e);
             toast('❌ Error al cambiar estado', 'error');
-            // Revertir
             mensajeroConectado = !nuevoEstado;
             actualizarIndicadorConexion();
         });
@@ -686,11 +717,7 @@
         document.getElementById('modalTitulo').textContent = titulo;
         document.getElementById('modalMensaje').textContent = mensaje;
         document.getElementById('modalConfirmacion').classList.add('active');
-        
-        // Guardar la acción a confirmar
         accionPendiente = onConfirm;
-        
-        // Configurar botón de confirmar
         const btnConfirmar = document.getElementById('btnConfirmarAccion');
         btnConfirmar.onclick = function() {
             if (accionPendiente) {
@@ -711,7 +738,6 @@
     // ============================================================
     async function inicializarPanel() {
         try {
-            // Cargar datos del usuario
             const doc = await db.collection('usuarios').doc(mensajeroUid).get();
             if (doc.exists) {
                 const data = doc.data();
@@ -720,19 +746,7 @@
             }
             
             await cargarTiendas();
-            
-            // Solo escuchar pedidos si está conectado
-            if (mensajeroConectado) {
-                await escucharPedidos();
-            } else {
-                document.getElementById('listaPedidos').innerHTML = `
-                    <div class="empty-state">
-                        <span class="icono">🔴</span>
-                        <p>Estás desconectado</p>
-                        <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
-                    </div>
-                `;
-            }
+            await escucharPedidos();
             
             toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
             console.log('✅ Panel de mensajero cargado correctamente');
@@ -756,15 +770,9 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS (SOLO SI ESTÁ CONECTADO)
+    // ESCUCHAR PEDIDOS - MUESTRA TODOS LOS PEDIDOS
     // ============================================================
     function escucharPedidos() {
-        // Si no está conectado, no escuchar
-        if (!mensajeroConectado) {
-            console.log('📢 Mensajero desconectado, no se escuchan pedidos');
-            return;
-        }
-        
         if (pedidosListener) {
             try { pedidosListener(); } catch(e) {}
             pedidosListener = null;
@@ -776,8 +784,6 @@
         }
         
         listenerActivo = true;
-        document.getElementById('estadoConexion').textContent = '🟢 Conectado';
-        document.getElementById('estadoConexion').className = 'estado';
         
         db.collection('tiendas').get()
             .then(snap => {
@@ -790,39 +796,25 @@
                         .collection('pedidos')
                         .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                         .onSnapshot(snapshot => {
-                            if (!listenerActivo || !mensajeroConectado) return;
+                            if (!listenerActivo) return;
                             
                             snapshot.docChanges().forEach(change => {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
                                 
-                                const esParaMi = data.mensajeroId === mensajeroUid;
-                                const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
-                                
-                                if (!esParaMi && !estaDisponible) {
-                                    const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (index !== -1) {
-                                        misPedidos.splice(index, 1);
-                                        if (pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detener();
-                                            delete pedidosNotificando[pedidoId];
-                                        }
-                                        renderizarPedidos();
-                                    }
-                                    return;
-                                }
-                                
+                                // Guardar todos los pedidos
                                 if (change.type === 'added') {
-                                    const existe = misPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (!existe) {
-                                        const pedido = {
+                                        todosLosPedidos.push({
                                             id: pedidoId,
                                             tiendaId: tiendaId,
                                             ...data
-                                        };
-                                        misPedidos.push(pedido);
+                                        });
                                         
-                                        if (estaDisponible && !pedidosNotificando[pedidoId]) {
+                                        // Si está disponible y el mensajero está conectado, sonar notificación
+                                        const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
+                                        if (estaDisponible && mensajeroConectado && !pedidosNotificando[pedidoId]) {
                                             pedidosNotificando[pedidoId] = true;
                                             sonidoEyMoto.notificacionContinua(pedidoId);
                                             const tienda = tiendasCache[tiendaId] || {};
@@ -832,44 +824,39 @@
                                         renderizarPedidos();
                                     }
                                 } else if (change.type === 'modified') {
-                                    const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    
-                                    if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
-                                        if (index !== -1) {
-                                            misPedidos.splice(index, 1);
-                                            if (pedidosNotificando[pedidoId]) {
-                                                sonidoEyMoto.detener();
-                                                delete pedidosNotificando[pedidoId];
-                                            }
-                                            renderizarPedidos();
-                                        }
-                                        return;
-                                    }
-                                    
-                                    if (esParaMi || estaDisponible) {
-                                        if (index !== -1) {
-                                            misPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                        } else {
-                                            misPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                        }
-                                        
-                                        if (estaDisponible && !pedidosNotificando[pedidoId]) {
-                                            pedidosNotificando[pedidoId] = true;
-                                            sonidoEyMoto.notificacionContinua(pedidoId);
-                                            toast('🔔 Pedido disponible - ¡Tómalo!', 'info', 3000);
-                                        }
-                                        
-                                        if ((esParaMi || data.estado === 'Entregado' || data.estado === 'Cancelado') && pedidosNotificando[pedidoId]) {
-                                            sonidoEyMoto.detener();
-                                            delete pedidosNotificando[pedidoId];
-                                        }
-                                        
-                                        renderizarPedidos();
-                                    }
-                                } else if (change.type === 'removed') {
-                                    const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
-                                        misPedidos.splice(index, 1);
+                                        todosLosPedidos[index] = {
+                                            id: pedidoId,
+                                            tiendaId: tiendaId,
+                                            ...data
+                                        };
+                                    } else {
+                                        todosLosPedidos.push({
+                                            id: pedidoId,
+                                            tiendaId: tiendaId,
+                                            ...data
+                                        });
+                                    }
+                                    
+                                    // Detener notificación si el pedido ya fue tomado
+                                    if (data.mensajeroId && pedidosNotificando[pedidoId]) {
+                                        sonidoEyMoto.detener();
+                                        delete pedidosNotificando[pedidoId];
+                                    }
+                                    
+                                    // Si está disponible y el mensajero está conectado, iniciar notificación
+                                    const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
+                                    if (estaDisponible && mensajeroConectado && !pedidosNotificando[pedidoId]) {
+                                        pedidosNotificando[pedidoId] = true;
+                                        sonidoEyMoto.notificacionContinua(pedidoId);
+                                    }
+                                    
+                                    renderizarPedidos();
+                                } else if (change.type === 'removed') {
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    if (index !== -1) {
+                                        todosLosPedidos.splice(index, 1);
                                         if (pedidosNotificando[pedidoId]) {
                                             sonidoEyMoto.detener();
                                             delete pedidosNotificando[pedidoId];
@@ -878,9 +865,11 @@
                                     }
                                 }
                             });
+                            
+                            renderizarPedidos();
                         }, err => {
                             console.warn(`⚠️ Error en listener:`, err.message);
-                            if (listenerActivo && mensajeroConectado) {
+                            if (listenerActivo) {
                                 clearTimeout(timeoutReconexion);
                                 timeoutReconexion = setTimeout(() => {
                                     console.log('🔄 Reintentando conexión...');
@@ -903,7 +892,7 @@
             })
             .catch(err => {
                 console.error('❌ Error obteniendo tiendas:', err);
-                if (listenerActivo && mensajeroConectado) {
+                if (listenerActivo) {
                     clearTimeout(timeoutReconexion);
                     timeoutReconexion = setTimeout(() => {
                         console.log('🔄 Reintentando conexión...');
@@ -914,52 +903,85 @@
     }
 
     // ============================================================
-    // RENDERIZAR PEDIDOS
+    // RENDERIZAR PEDIDOS - SEPARADO EN DISPONIBLES Y MIS PEDIDOS
     // ============================================================
     function renderizarPedidos() {
-        const container = document.getElementById('listaPedidos');
-        
         // Si está desconectado, mostrar mensaje
         if (!mensajeroConectado) {
-            container.innerHTML = `
+            document.getElementById('listaPedidosDisponibles').innerHTML = `
                 <div class="empty-state">
                     <span class="icono">🔴</span>
                     <p>Estás desconectado</p>
-                    <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
+                    <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte</span>
                 </div>
             `;
+            document.getElementById('listaMisPedidos').innerHTML = `
+                <div class="empty-state">
+                    <span class="icono">🔴</span>
+                    <p>Desconectado</p>
+                </div>
+            `;
+            document.getElementById('contadorDisponibles').textContent = '0';
+            document.getElementById('contadorMisPedidos').textContent = '0';
             return;
         }
         
-        const misPedidosActivos = misPedidos.filter(p => 
+        // ✅ PEDIDOS DISPONIBLES (para tomar)
+        const disponibles = todosLosPedidos.filter(p => 
+            p.estado === 'Listo para asignar' && !p.mensajeroId
+        );
+        
+        // ✅ MIS PEDIDOS ACTIVOS (asignados a mí)
+        const misPedidosActivos = todosLosPedidos.filter(p => 
             p.mensajeroId === mensajeroUid && 
             p.estado !== 'Entregado' && 
             p.estado !== 'Cancelado'
         );
         
-        if (misPedidosActivos.length === 0) {
-            container.innerHTML = `
+        // Actualizar contadores
+        document.getElementById('contadorDisponibles').textContent = disponibles.length;
+        document.getElementById('contadorMisPedidos').textContent = misPedidosActivos.length;
+        
+        // Renderizar pedidos disponibles
+        const containerDisponibles = document.getElementById('listaPedidosDisponibles');
+        if (disponibles.length === 0) {
+            containerDisponibles.innerHTML = `
                 <div class="empty-state">
                     <span class="icono">✅</span>
-                    <p>No tienes pedidos activos</p>
+                    <p>No hay pedidos disponibles</p>
                     <span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span>
                 </div>
             `;
-            return;
+        } else {
+            let html = '';
+            disponibles.forEach(p => {
+                html += renderizarPedidoCard(p, true);
+            });
+            containerDisponibles.innerHTML = html;
         }
         
-        let html = '';
-        misPedidosActivos.forEach(p => {
-            html += renderizarPedidoCard(p);
-        });
-        
-        container.innerHTML = html;
+        // Renderizar mis pedidos activos
+        const containerMisPedidos = document.getElementById('listaMisPedidos');
+        if (misPedidosActivos.length === 0) {
+            containerMisPedidos.innerHTML = `
+                <div class="empty-state">
+                    <span class="icono">📭</span>
+                    <p>No tienes pedidos activos</p>
+                </div>
+            `;
+        } else {
+            let html = '';
+            misPedidosActivos.forEach(p => {
+                html += renderizarPedidoCard(p, false);
+            });
+            containerMisPedidos.innerHTML = html;
+        }
     }
 
     // ============================================================
-    // RENDERIZAR CARD CON BOTONES SEGÚN ESTADO
+    // RENDERIZAR CARD
     // ============================================================
-    function renderizarPedidoCard(pedido) {
+    function renderizarPedidoCard(pedido, disponible) {
         const tienda = tiendasCache[pedido.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = pedido.cliente || {};
@@ -968,9 +990,9 @@
         const estado = pedido.estado || 'Pendiente';
         
         let estadoColor = '';
-        let estadoLabel = estado;
+        let estadoLabel = '';
         switch(estado) {
-            case 'Listo para asignar': estadoColor = 'pendiente'; estadoLabel = '🔔 Pendiente'; break;
+            case 'Listo para asignar': estadoColor = 'disponible'; estadoLabel = '🔔 DISPONIBLE'; break;
             case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
             case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
             case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
@@ -990,18 +1012,18 @@
         
         let botonesHtml = '';
         
-        if (estado !== 'Entregado' && estado !== 'Cancelado') {
+        if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
+            // ✅ BOTÓN PARA TOMAR PEDIDO
+            botonesHtml = `
+                <div class="estados-acciones">
+                    <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
+                        ✅ TOMAR PEDIDO
+                    </button>
+                </div>
+            `;
+        } else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
+            // ✅ BOTONES PARA MIS PEDIDOS
             switch(estado) {
-                case 'Listo para asignar':
-                    botonesHtml = `
-                        <div class="estados-acciones">
-                            <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
-                                ✅ TOMAR PEDIDO
-                            </button>
-                        </div>
-                    `;
-                    break;
-                    
                 case 'En camino al restaurante':
                     botonesHtml = `
                         <div class="estados-acciones">
@@ -1056,7 +1078,7 @@
                         </div>
                     `;
             }
-        } else {
+        } else if (estado === 'Entregado' || estado === 'Cancelado') {
             botonesHtml = `
                 <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">
                     ✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado
@@ -1064,11 +1086,13 @@
             `;
         }
         
+        const claseDisponible = disponible ? 'disponible' : '';
+        
         return `
-            <div class="pedido-card" id="pedido-${pedido.id}">
+            <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
                 <div class="header">
                     <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
-                    <span class="badge badge-estado ${estadoColor}">${estadoLabel}</span>
+                    <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1111,15 +1135,16 @@
             const data = doc.data();
             if (data.mensajeroId) {
                 toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-                const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                // Actualizar lista local
+                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                 if (index !== -1) {
-                    misPedidos.splice(index, 1);
-                    if (pedidosNotificando[pedidoId]) {
-                        sonidoEyMoto.detener();
-                        delete pedidosNotificando[pedidoId];
-                    }
-                    renderizarPedidos();
+                    todosLosPedidos[index] = { ...todosLosPedidos[index], ...data };
                 }
+                if (pedidosNotificando[pedidoId]) {
+                    sonidoEyMoto.detener();
+                    delete pedidosNotificando[pedidoId];
+                }
+                renderizarPedidos();
                 return;
             }
             
