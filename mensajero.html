@@ -170,54 +170,6 @@
             display: none;
         }
 
-        /* Selector de sonido en el header */
-        .selector-sonido {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--surface2);
-            padding: 4px 10px 4px 14px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-        }
-        .selector-sonido label {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin: 0;
-            text-transform: none;
-            letter-spacing: 0;
-        }
-        .selector-sonido select {
-            width: auto;
-            padding: 4px 8px;
-            font-size: 11px;
-            background: var(--surface3);
-            border: 1px solid var(--border2);
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            min-width: 100px;
-        }
-        .selector-sonido select:focus {
-            border-color: var(--yellow);
-        }
-        .btn-probar-sonido {
-            background: var(--blue-bg);
-            color: var(--blue);
-            border: 1px solid var(--blue);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: auto;
-        }
-        .btn-probar-sonido:hover {
-            background: var(--blue);
-            color: #fff;
-        }
-
         .wrap { max-width: 1200px; margin: 0 auto; padding: 22px 20px; }
 
         #loginBox {
@@ -545,8 +497,6 @@
             .kanban { grid-template-columns: 1fr; }
             header { padding: 10px 12px; }
             .btn-conectar { font-size: 11px; padding: 6px 14px; }
-            .selector-sonido { padding: 3px 8px 3px 10px; }
-            .selector-sonido select { min-width: 70px; font-size: 10px; padding: 2px 6px; }
         }
     </style>
 </head>
@@ -569,20 +519,6 @@
         <span class="brand">EyMoto</span>
         <h1>Panel de Mensajero</h1>
         <span class="spacer"></span>
-        
-        <!-- Selector de sonido personalizado -->
-        <div class="selector-sonido">
-            <label>🔊</label>
-            <select id="selectorSonido">
-                <option value="personalizado">🎵 EyMoto</option>
-                <option value="suave">🔔 Suave</option>
-                <option value="alerta">🚨 Alerta</option>
-                <option value="campana">🔔 Campanita</option>
-                <option value="dindon">🎵 Din-Don</option>
-            </select>
-            <button class="btn-probar-sonido" onclick="window.probarSonido()">▶ Probar</button>
-        </div>
-        
         <span id="nombreMensajero" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
         <button class="btn-conectar desconectado" id="btnConectar" onclick="window.toggleConexion()">
             <span class="estado-indicador"></span>
@@ -683,227 +619,75 @@
     let listenersActivos = [];
 
     // ============================================================
-    // SONIDOS PERSONALIZADOS
+    // SONIDO EYMOTO MEJORADO - 3 TONOS CON VIBRATO
     // ============================================================
-    
-    // URL de tu sonido personalizado desde Google Drive
-    const URL_SONIDO_PERSONALIZADO = 'https://drive.google.com/uc?export=download&id=1cZ1jdtEBow1AF3XWa_vNJ9D5Cuy9EyF8';
-    
-    // ===== SONIDO PRINCIPAL: PERSONALIZADO =====
-    function reproducirSonidoPersonalizado() {
-        try {
-            // Si ya tenemos el audio cargado en caché, lo reusamos
-            if (window.audioNotificacion) {
-                window.audioNotificacion.currentTime = 0;
-                window.audioNotificacion.play().catch(e => {
-                    console.warn('⚠️ Error reproduciendo audio en caché:', e);
-                    cargarYReproducirAudio();
-                });
-                return;
-            }
-            cargarYReproducirAudio();
-        } catch (e) {
-            console.warn('🔇 Error con audio personalizado, usando sonido sintético:', e);
-            sonidoFallback();
-        }
-    }
-
-    function cargarYReproducirAudio() {
-        try {
-            const audio = new Audio(URL_SONIDO_PERSONALIZADO);
-            audio.volume = 0.9;
-            audio.preload = 'auto';
-            
-            // Guardar en caché global para futuras reproducciones
-            window.audioNotificacion = audio;
-            
-            // Reproducir
-            audio.play().catch(e => {
-                console.warn('⚠️ Error al reproducir audio personalizado:', e);
-                sonidoFallback();
-            });
-        } catch (e) {
-            console.warn('⚠️ Error cargando audio:', e);
-            sonidoFallback();
-        }
-    }
-
-    // ===== SONIDOS DE RESPALDO =====
-    function sonidoFallback() {
+    function sonidoEyMotoMejorado() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
             
-            // Sonido "Ding" simple
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.frequency.value = 880;
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.25);
+            // ===== SECUENCIA DE 3 TONOS =====
+            const secuencia = [
+                { freq: 587, dur: 0.12, vol: 0.25 }, // Re
+                { freq: 740, dur: 0.12, vol: 0.25 }, // Mi
+                { freq: 880, dur: 0.25, vol: 0.30 }  // La
+            ];
             
-            // Segundo tono
-            setTimeout(() => {
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.frequency.value = 1100;
-                osc2.type = 'sine';
-                gain2.gain.setValueAtTime(0.25, ctx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-                osc2.start(ctx.currentTime);
-                osc2.stop(ctx.currentTime + 0.2);
-            }, 150);
-            
-        } catch(e) { console.log('🔇 Error en sonido de respaldo:', e); }
-    }
-
-    function sonidoSuave() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.frequency.value = 800;
-            osc1.type = 'sine';
-            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-            osc1.start(ctx.currentTime);
-            osc1.stop(ctx.currentTime + 0.2);
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.frequency.value = 1000;
-            osc2.type = 'sine';
-            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
-            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-            osc2.start(ctx.currentTime + 0.15);
-            osc2.stop(ctx.currentTime + 0.4);
-        } catch(e) {}
-    }
-
-    function sonidoAlerta() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            [880, 1100, 880, 1100].forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'square';
+            secuencia.forEach((nota, i) => {
                 const t = i * 0.15;
-                gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.1);
-                osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + 0.15);
-            });
-        } catch(e) {}
-    }
-
-    function sonidoCampanita() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            const notas = [523, 659, 784, 1047];
-            notas.forEach((freq, i) => {
+                
+                // Oscilador principal
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-                osc.frequency.value = freq;
+                osc.frequency.value = nota.freq;
                 osc.type = 'sine';
-                const t = i * 0.12;
-                gain.gain.setValueAtTime(0.2, ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                
+                // Agregar vibrato (modulación de frecuencia)
+                const vibrato = ctx.createOscillator();
+                const vibratoGain = ctx.createGain();
+                vibrato.connect(vibratoGain);
+                vibratoGain.connect(osc.frequency);
+                vibrato.frequency.value = 5; // Hz
+                vibratoGain.gain.value = 8;  // Hz de desviación
+                vibrato.start(ctx.currentTime + t);
+                vibrato.stop(ctx.currentTime + t + nota.dur + 0.05);
+                
+                // Envolvente de volumen (ataque y caída suave)
+                gain.gain.setValueAtTime(0.001, ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(nota.vol, ctx.currentTime + t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + nota.dur);
+                
                 osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + 0.2);
+                osc.stop(ctx.currentTime + t + nota.dur + 0.05);
             });
-        } catch(e) {}
-    }
-
-    function sonidoDinDon() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.frequency.value = 1200;
-            osc1.type = 'sine';
-            gain1.gain.setValueAtTime(0.25, ctx.currentTime);
-            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-            osc1.start(ctx.currentTime);
-            osc1.stop(ctx.currentTime + 0.25);
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.frequency.value = 400;
-            osc2.type = 'sine';
-            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.2);
-            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-            osc2.start(ctx.currentTime + 0.2);
-            osc2.stop(ctx.currentTime + 0.55);
-        } catch(e) {}
-    }
-
-    const TIPOS_SONIDO = {
-        personalizado: reproducirSonidoPersonalizado,
-        suave: sonidoSuave,
-        alerta: sonidoAlerta,
-        campana: sonidoCampanita,
-        dindon: sonidoDinDon
-    };
-
-    function getSonidoSeleccionado() {
-        const selector = document.getElementById('selectorSonido');
-        if (!selector) return reproducirSonidoPersonalizado;
-        return TIPOS_SONIDO[selector.value] || reproducirSonidoPersonalizado;
-    }
-
-    function reproducirSonidoMensajero() {
-        const sonido = getSonidoSeleccionado();
-        sonido();
-        // Vibración en móviles
-        if (navigator.vibrate) {
-            navigator.vibrate(100);
-        }
-    }
-
-    function probarSonido() {
-        reproducirSonidoMensajero();
-        toast('🔊 Probando sonido...', 'info', 1500);
-    }
-
-    // Cargar preferencia de sonido guardada
-    document.addEventListener('DOMContentLoaded', () => {
-        const selector = document.getElementById('selectorSonido');
-        if (selector) {
-            const guardado = localStorage.getItem('sonidoMensajero');
-            if (guardado && TIPOS_SONIDO[guardado]) {
-                selector.value = guardado;
+            
+            // Vibración en móviles (patrón de 3 vibraciones)
+            if (navigator.vibrate) {
+                navigator.vibrate([80, 50, 80, 50, 150]);
             }
-            selector.addEventListener('change', () => {
-                localStorage.setItem('sonidoMensajero', selector.value);
-                // Probar el sonido al cambiar
-                setTimeout(() => {
-                    reproducirSonidoMensajero();
-                    toast('🔊 Sonido actualizado', 'info', 1500);
-                }, 100);
-            });
+            
+        } catch(e) {
+            console.log('🔇 Error en sonido EyMoto:', e);
+            // Fallback simple si falla el sonido principal
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.25);
+                if (navigator.vibrate) navigator.vibrate(100);
+            } catch(e2) {}
         }
-    });
+    }
 
     // ============================================================
     // AUTENTICACIÓN
@@ -1068,7 +852,7 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS (CON SONIDO PERSONALIZADO)
+    // ESCUCHAR PEDIDOS (CON SONIDO EYMOTO MEJORADO)
     // ============================================================
     function escucharPedidosMensajero() {
         listenersActivos.forEach(unsub => { try { unsub(); } catch(e) {} });
@@ -1104,8 +888,8 @@
                                 const nombreTienda = tienda.nombre || 'Tienda';
                                 const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
                                 
-                                // ===== REPRODUCIR SONIDO PERSONALIZADO =====
-                                reproducirSonidoMensajero();
+                                // ===== REPRODUCIR SONIDO EYMOTO MEJORADO =====
+                                sonidoEyMotoMejorado();
                                 
                                 // Mostrar notificación
                                 toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} disponible`, 'new', 8000);
@@ -1479,11 +1263,10 @@
     window.activarConexionDesdeRecordatorio = activarConexionDesdeRecordatorio;
     window.actualizarBotonConexion = actualizarBotonConexion;
     window.cerrarRecordatorio = cerrarRecordatorio;
-    window.probarSonido = probarSonido;
-    window.reproducirSonidoMensajero = reproducirSonidoMensajero;
+    window.sonidoEyMotoMejorado = sonidoEyMotoMejorado;
 
     console.log('✅ Panel de mensajero cargado correctamente');
-    console.log('🔊 Sonido personalizado de EyMoto integrado');
+    console.log('🔊 Sonido EyMoto Mejorado (3 tonos con vibrato) integrado');
     console.log('📢 Escuchando pedidos disponibles en tiempo real');
 </script>
 </body>
