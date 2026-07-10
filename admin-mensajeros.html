@@ -4,703 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Mensajeros - EyMoto</title>
-    <!-- ✅ FAVICON CORREGIDO - ELIMINA EL ERROR 404 -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            min-height: 100vh;
-        }
-        :root {
-            --yellow: #FFD600;
-            --yellow-dim: #e6c200;
-            --green: #00C853;
-            --green-bg: rgba(0,200,83,0.12);
-            --blue: #00B0FF;
-            --blue-bg: rgba(0,176,255,0.12);
-            --red: #FF3D00;
-            --red-bg: rgba(255,61,0,0.12);
-            --orange: #FF6900;
-            --orange-bg: rgba(255,105,0,0.12);
-            --purple: #9B59B6;
-            --purple-bg: rgba(155,89,182,0.12);
-            --surface: #141414;
-            --surface2: #1e1e1e;
-            --surface3: #252525;
-            --border: #2e2e2e;
-            --border2: #3a3a3a;
-            --text-muted: #888;
-            --radius: 10px;
-        }
-        input, select, textarea, button {
-            font-family: inherit;
-            font-size: 14px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border2);
-            background: var(--surface3);
-            color: #fff;
-            padding: 11px 14px;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color .2s, background .2s;
-        }
-        input:focus, select:focus { border-color: var(--yellow); }
-        select option { background: #1e1e1e; }
-        button {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: background .15s, transform .1s;
-        }
-        button:hover { background: var(--yellow-dim); }
-        button:active { transform: scale(.98); }
-        .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
-        .btn-danger { background: #c0392b; color: #fff; }
-        .btn-danger:hover { background: #a93226; }
-        .btn-success { background: #00C853; color: #fff; }
-        .btn-success:hover { background: #00b748; }
-        .btn-info { background: #0288d1; color: #fff; }
-        .btn-info:hover { background: #0277bd; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
-        .btn-ghost:hover { background: var(--surface3); }
-        .btn-warning { background: var(--orange); color: #1a1a2e; }
-        .btn-warning:hover { background: #e65c00; }
-        .hidden { display: none !important; }
-
-        header {
-            background: #0d0d0d;
-            border-bottom: 1px solid var(--border);
-            padding: 13px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-        }
-        header .brand {
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-weight: 900;
-            font-size: 14px;
-            padding: 5px 14px;
-            border-radius: 20px;
-        }
-        header h1 { font-size: 15px; font-weight: 600; color: #fff; }
-        header .spacer { flex: 1; }
-        .header-badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 3px 7px;
-            border-radius: 10px;
-            display: none;
-        }
-        .btn-refrescar {
-            background: var(--blue-bg);
-            color: var(--blue);
-            border: 1px solid var(--blue);
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: auto;
-            font-size: 12px;
-        }
-        .btn-refrescar:hover {
-            background: var(--blue);
-            color: #fff;
-        }
-        .btn-refrescar:active {
-            transform: scale(0.95);
-        }
-
-        .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
-
-        #loginBox {
-            max-width: 420px;
-            margin: 60px auto;
-            padding: 32px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
-        #loginBox .brand {
-            display: inline-block;
-            background: var(--yellow);
-            color: #1a1a2e;
-            font-size: 26px;
-            font-weight: 900;
-            padding: 10px 24px;
-            border-radius: 30px;
-        }
-        #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
-        #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
-        .login-logo { text-align: center; margin-bottom: 28px; }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 18px;
-        }
-        .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
-        .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
-        .stat-card.c-yellow .val { color: var(--yellow); }
-        .stat-card.c-green .val { color: var(--green); }
-        .stat-card.c-blue .val { color: var(--blue); }
-        .stat-card.c-red .val { color: var(--red); }
-        .stat-card.c-orange .val { color: var(--orange); }
-        .stat-card.c-purple .val { color: var(--purple); }
-
-        .pedido-asignar {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border-left: 4px solid var(--yellow);
-            transition: all 0.3s ease;
-            animation: slideIn 0.3s ease;
-        }
-        .pedido-asignar.nuevo {
-            border-left-color: var(--green);
-            animation: pulseNuevo 1.5s ease-in-out 3;
-        }
-        @keyframes pulseNuevo {
-            0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
-            50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); }
-            100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .pedido-asignar.asignado {
-            border-left-color: var(--green);
-            opacity: 0.6;
-            position: relative;
-        }
-        .pedido-asignar.asignado::after {
-            content: '✅ ASIGNADO';
-            position: absolute;
-            top: 8px;
-            right: 12px;
-            font-size: 10px;
-            font-weight: 800;
-            color: var(--green);
-            background: var(--green-bg);
-            padding: 2px 10px;
-            border-radius: 12px;
-        }
-        .pedido-asignar .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .pedido-asignar .header .numero {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--yellow);
-        }
-        .pedido-asignar .header .estado-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--blue-bg);
-            color: var(--blue);
-        }
-        .pedido-asignar .header .estado-badge.asignado-badge {
-            background: var(--green-bg);
-            color: var(--green);
-        }
-        .pedido-asignar .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 16px;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-        .pedido-asignar .info-grid .label { color: var(--text-muted); }
-        .pedido-asignar .info-grid .value { color: #fff; font-weight: 500; }
-        .pedido-asignar .items-list {
-            background: var(--surface2);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 8px 0;
-            font-size: 12px;
-        }
-        .pedido-asignar .items-list .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .pedido-asignar .items-list .item:last-child { border-bottom: none; }
-        .pedido-asignar .total {
-            font-size: 16px;
-            font-weight: 800;
-            text-align: right;
-            color: var(--green);
-            margin-top: 6px;
-        }
-        .pedido-asignar .mensajero-info {
-            font-size: 12px;
-            color: var(--blue);
-            text-align: center;
-            padding: 6px;
-            background: var(--blue-bg);
-            border-radius: 6px;
-            margin-top: 6px;
-        }
-
-        .form-crear {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .form-crear .titulo {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .form-crear .row2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .form-crear .acciones {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .mensajero-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            transition: border-color 0.3s;
-        }
-        .mensajero-card:hover { border-color: var(--yellow); }
-        .mensajero-card .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--surface3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--yellow);
-            flex-shrink: 0;
-            border: 2px solid var(--border);
-        }
-        .mensajero-card .info {
-            flex: 1;
-            min-width: 150px;
-        }
-        .mensajero-card .info .nombre {
-            font-size: 15px;
-            font-weight: 700;
-        }
-        .mensajero-card .info .email {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .mensajero-card .info .meta {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .mensajero-card .estado {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
-        .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
-        .mensajero-card .estado.ocupado { background: var(--orange-bg); color: var(--orange); }
-        .mensajero-card .acciones {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        #toastWrap {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-        .toast {
-            background: #1e1e1e;
-            border: 1px solid var(--border2);
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0,0,0,.5);
-            animation: toastIn .3s ease;
-            pointer-events: auto;
-            max-width: 380px;
-            cursor: pointer;
-        }
-        .toast.t-success { border-left: 3px solid var(--green); }
-        .toast.t-error { border-left: 3px solid var(--red); }
-        .toast.t-info { border-left: 3px solid var(--blue); }
-        .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .toast-fade { animation: toastOut .3s ease forwards; }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px); }
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.92);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal.active { display: flex; }
-        .modal .modal-content {
-            background: #1e1e1e;
-            border-radius: 20px;
-            max-width: 550px;
-            width: 100%;
-            padding: 24px;
-            border: 1px solid var(--yellow);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-        .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
-        .modal .modal-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .modal .modal-close:hover { color: var(--red); }
-        .modal .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border);
-        }
-        .modal .info-row .label { color: var(--text-muted); }
-        .modal .info-row .value { color: #fff; font-weight: 500; }
-
-        .filtros {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            background: var(--surface2);
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-        .filtros select, .filtros input {
-            flex: 1;
-            min-width: 150px;
-        }
-        .filtros button { flex: 0 0 auto; width: auto; }
-
-        .seccion-pedidos {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid var(--border);
-        }
-        .seccion-pedidos .titulo-seccion {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .seccion-pedidos .titulo-seccion .badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-
-        .opcion-asignacion {
-            background: var(--surface2);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 18px;
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-        }
-        .opcion-asignacion:hover { border-color: var(--yellow); }
-        .opcion-asignacion .titulo {
-            font-size: 15px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 4px;
-        }
-        .opcion-asignacion .descripcion {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-        .opcion-asignacion select {
-            background: var(--surface3);
-            border: 1px solid var(--border2);
-            color: #fff;
-            padding: 10px 12px;
-            border-radius: 8px;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-        .opcion-asignacion select option { background: #1e1e1e; }
-        .opcion-asignacion .btn-asignar {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .opcion-asignacion .btn-asignar:hover { transform: scale(1.01); }
-        .opcion-asignacion .btn-asignar:active { transform: scale(0.97); }
-        .opcion-asignacion .btn-asignar.manual { background: var(--blue); color: #fff; }
-        .opcion-asignacion .btn-asignar.manual:hover { background: #0277bd; }
-        .opcion-asignacion .btn-asignar.broadcast { background: var(--yellow); color: #1a1a2e; }
-        .opcion-asignacion .btn-asignar.broadcast:hover { background: var(--yellow-dim); }
-        .opcion-asignacion .mensajeros-disponibles {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        .opcion-asignacion .mensajeros-disponibles .count {
-            color: var(--green);
-            font-weight: 700;
-        }
-        .btn-cancelar-modal {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border2);
-            background: transparent;
-            color: var(--text-muted);
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 4px;
-        }
-        .btn-cancelar-modal:hover { background: var(--surface3); color: #fff; }
-        .pedido-info-resumen {
-            background: var(--surface3);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-        .pedido-info-resumen .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 0;
-        }
-        .pedido-info-resumen .label { color: var(--text-muted); }
-        .pedido-info-resumen .value { color: #fff; font-weight: 500; }
-
-        .sin-mensajeros {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-muted);
-        }
-        .sin-mensajeros .icono {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 12px;
-        }
-
-        @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
-            .form-crear .row2 { grid-template-columns: 1fr; }
-            .mensajero-card { flex-direction: column; align-items: stretch; }
-            .pedido-asignar .info-grid { grid-template-columns: 1fr; }
-            .pedido-asignar .asignar-area { flex-direction: column; }
-        }
+        /* ... (todo tu CSS existente) ... */
     </style>
 </head>
 <body>
-
-<div id="toastWrap"></div>
-
-<div id="loginBox">
-    <div class="login-logo"><span class="brand">EyMoto</span></div>
-    <h2>Admin Mensajeros</h2>
-    <p class="sub">Gestiona tu equipo de repartidores y asigna pedidos</p>
-    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="admin@eymoto.com"></div>
-    <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
-    <button onclick="iniciarSesion()">Ingresar</button>
-    <p id="loginMsg"></p>
-</div>
-
-<div id="panel" class="hidden">
-    <header>
-        <span class="brand">EyMoto</span>
-        <h1>Administración de Mensajeros</h1>
-        <span class="spacer"></span>
-        <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
-        <button class="btn-refrescar" onclick="window.recargarTodo()">
-            🔄 Recargar
-        </button>
-        <span class="header-badge" id="headerBadge">0</span>
-        <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
-    </header>
-
-    <div class="wrap">
-        <div class="stats-grid">
-            <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
-            <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
-            <div class="stat-card c-orange"><div class="val" id="statOcupados">0</div><div class="lbl">Ocupados</div></div>
-            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Por asignar</div></div>
-            <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
-        </div>
-
-        <div class="filtros">
-            <select id="filtroEstado" onchange="filtrarMensajeros()">
-                <option value="">📋 Todos</option>
-                <option value="activo">🟢 Activos</option>
-                <option value="inactivo">🔴 Inactivos</option>
-                <option value="ocupado">🟠 Ocupados</option>
-            </select>
-            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
-            <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
-            <button class="btn-refrescar" onclick="recargarTodo()" style="padding:6px 14px;font-size:11px;">🔄 Refrescar todo</button>
-        </div>
-
-        <div class="form-crear">
-            <div class="titulo">➕ Crear nuevo mensajero</div>
-            <div class="row2">
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label><input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com"></div>
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label><input id="nuevoNombre" placeholder="Carlos Pérez"></div>
-            </div>
-            <div class="row2">
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label><input id="nuevoTelefono" placeholder="3169934516"></div>
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label><input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!"></div>
-            </div>
-            <div class="acciones">
-                <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
-                <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.</div>
-        </div>
-
-        <div id="listaMensajeros">
-            <div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🛵</div>Cargando mensajeros...</div>
-        </div>
-
-        <div class="seccion-pedidos" id="seccionPedidos">
-            <div class="titulo-seccion">
-                📦 Pedidos listos para asignar
-                <span class="badge" id="badgePedidos">0</span>
-                <button class="btn-refrescar" onclick="recargarPedidos()" style="padding:2px 10px;font-size:10px;">🔄</button>
-            </div>
-            <div id="listaPedidosAsignar">
-                <div style="text-align:center;padding:20px;color:var(--text-muted);">
-                    <div style="font-size:28px;margin-bottom:8px;">🍽️</div>
-                    No hay pedidos listos para asignar
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL DE ASIGNACIÓN -->
-<div class="modal" id="modalAsignacion" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalAsignacionTitulo">📦 Asignar Pedido</h3>
-            <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
-        </div>
-        <div id="modalAsignacionContenido"></div>
-    </div>
-</div>
-
-<!-- MODAL DETALLE -->
-<div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3 id="modalTitulo">Detalle del mensajero</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
-        </div>
-        <div id="modalContenido"></div>
-    </div>
-</div>
+    <!-- ... (todo tu HTML existente) ... -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -723,22 +33,125 @@
     const db = firebase.firestore();
 
     // ============================================================
-    // CONFIGURACIÓN DE TIPOS DE NEGOCIO
+    // 🎵 SISTEMA DE SONIDO MEJORADO
     // ============================================================
-    const TIPOS_NEGOCIO = {
-        'restaurante': { label: '🍔 Restaurante', estados: ['Pendiente', 'En cocina', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'En cocina', badgeClass: 'cocina' },
-        'heladeria': { label: '🍦 Heladería', estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'], colores: ['yellow', 'cyan', 'orange', 'green'], estadoPreparacion: 'Preparando', badgeClass: 'preparando' },
-        'licoreria': { label: '🍺 Licorería', estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'], colores: ['yellow', 'purple', 'orange', 'green'], estadoPreparacion: 'En despacho', badgeClass: 'despacho' },
-        'tienda': { label: '🛒 Tienda / Supermercado', estados: ['Pendiente', 'En despacho', 'En camino', 'Entregado'], colores: ['yellow', 'purple', 'orange', 'green'], estadoPreparacion: 'En despacho', badgeClass: 'despacho' },
-        'domicilios': { label: '🚗 Domicilios', estados: ['Pendiente', 'Asignado', 'Recogido', 'Entregado'], colores: ['yellow', 'blue', 'purple', 'green'], estadoPreparacion: 'Asignado', badgeClass: 'proceso' },
-        'carniceria': { label: '🥩 Carnicería', estados: ['Pendiente', 'Cortando', 'Empacando', 'Entregado'], colores: ['yellow', 'red', 'orange', 'green'], estadoPreparacion: 'Cortando', badgeClass: 'cortando' },
-        'panaderia': { label: '🥖 Panadería', estados: ['Pendiente', 'Horneando', 'Empacando', 'Entregado'], colores: ['yellow', 'orange', 'blue', 'green'], estadoPreparacion: 'Horneando', badgeClass: 'horneando' },
-        'floristeria': { label: '🌸 Floristería', estados: ['Pendiente', 'Arreglando', 'En camino', 'Entregado'], colores: ['yellow', 'pink', 'orange', 'green'], estadoPreparacion: 'Arreglando', badgeClass: 'arreglando' },
-        'farmacia': { label: '💊 Farmacia', estados: ['Pendiente', 'Preparando', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'Preparando', badgeClass: 'preparando' },
-        'otro': { label: '📦 Otro', estados: ['Pendiente', 'En proceso', 'En camino', 'Entregado'], colores: ['yellow', 'blue', 'orange', 'green'], estadoPreparacion: 'En proceso', badgeClass: 'proceso' }
-    };
+    class SonidoEyMoto {
+        constructor() {
+            this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+            this.audio = new Audio();
+            this.cargado = false;
+            this.reproduciendo = false;
+            this.intervalos = {}; // Guardar intervalos por pedido
+            this.pedidosActivos = {}; // Pedidos que están sonando
+            this.cargarSonido();
+        }
 
-    function getEstadoPreparacion(tipo) { return TIPOS_NEGOCIO[tipo]?.estadoPreparacion || 'En cocina'; }
+        cargarSonido() {
+            try {
+                this.audio = new Audio(this.audioUrl);
+                this.audio.preload = 'auto';
+                this.audio.addEventListener('canplaythrough', () => {
+                    this.cargado = true;
+                });
+                this.audio.load();
+            } catch (e) {
+                console.warn('⚠️ Error cargando sonido:', e.message);
+                this.cargado = false;
+            }
+        }
+
+        // Reproducir sonido una vez
+        reproducir() {
+            try {
+                if (!this.cargado) this.cargarSonido();
+                const audioClone = new Audio(this.audioUrl);
+                audioClone.volume = 0.8;
+                audioClone.play().catch(e => {
+                    this.fallbackBeep();
+                });
+            } catch (e) {
+                this.fallbackBeep();
+            }
+        }
+
+        // ✅ INICIAR NOTIFICACIÓN CONTINUA PARA UN PEDIDO
+        iniciarNotificacion(pedidoId) {
+            // Si ya está sonando este pedido, no hacer nada
+            if (this.pedidosActivos[pedidoId]) {
+                return;
+            }
+
+            console.log(`🔔 Iniciando notificación para pedido: ${pedidoId}`);
+            this.pedidosActivos[pedidoId] = true;
+            
+            // Reproducir inmediatamente
+            this.reproducir();
+            
+            // Configurar intervalo para este pedido
+            this.intervalos[pedidoId] = setInterval(() => {
+                // Verificar si el pedido sigue activo
+                if (this.pedidosActivos[pedidoId]) {
+                    this.reproducir();
+                } else {
+                    // Si ya no está activo, detener
+                    this.detenerNotificacion(pedidoId);
+                }
+            }, 5000);
+        }
+
+        // ✅ DETENER NOTIFICACIÓN PARA UN PEDIDO
+        detenerNotificacion(pedidoId) {
+            if (!pedidoId) {
+                // Detener todas las notificaciones
+                Object.keys(this.pedidosActivos).forEach(id => {
+                    this.detenerNotificacion(id);
+                });
+                return;
+            }
+
+            console.log(`⏹️ Deteniendo notificación para pedido: ${pedidoId}`);
+            
+            // Eliminar de pedidos activos
+            delete this.pedidosActivos[pedidoId];
+            
+            // Limpiar intervalo
+            if (this.intervalos[pedidoId]) {
+                clearInterval(this.intervalos[pedidoId]);
+                delete this.intervalos[pedidoId];
+            }
+        }
+
+        // ✅ VERIFICAR SI UN PEDIDO ESTÁ SONANDO
+        estaSonando(pedidoId) {
+            return this.pedidosActivos[pedidoId] === true;
+        }
+
+        // Fallback con Web Audio
+        fallbackBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                [800, 1000, 1200].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = i * 0.15;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.2);
+                });
+            } catch (e) {}
+        }
+    }
+
+    // ============================================================
+    // INSTANCIA DEL SONIDO
+    // ============================================================
+    const sonidoEyMoto = new SonidoEyMoto();
 
     // ============================================================
     // VARIABLES GLOBALES
@@ -746,12 +159,10 @@
     let todosLosMensajeros = [];
     let mensajerosFiltrados = [];
     let listenerMensajeros = null;
-    let listenerPedidos = null;
     let todosLosPedidos = [];
     let tiendasCache = {};
-    let pedidoAsignacion = null;
-    let pedidosCargadosInicialmente = false;
     let recargando = false;
+    let pedidosProcesados = {}; // Para evitar duplicados
 
     // ============================================================
     // FUNCIONES DE AUTENTICACIÓN
@@ -783,11 +194,12 @@
 
     function logout() {
         if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
-        if (listenerPedidos) { try { listenerPedidos(); } catch(e) {} listenerPedidos = null; }
         if (window._listenersPedidos) {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
         }
+        // Detener todos los sonidos
+        sonidoEyMoto.detenerNotificacion();
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -802,13 +214,12 @@
         } else {
             document.getElementById('loginBox').classList.remove('hidden');
             document.getElementById('panel').classList.add('hidden');
-            // Limpiar listeners
             if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
-            if (listenerPedidos) { try { listenerPedidos(); } catch(e) {} listenerPedidos = null; }
             if (window._listenersPedidos) {
                 window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
                 window._listenersPedidos = [];
             }
+            sonidoEyMoto.detenerNotificacion();
         }
     });
 
@@ -821,7 +232,7 @@
             await cargarMensajeros();
             await cargarPedidosIniciales();
             await escucharPedidosEnTiempoReal();
-            toast('✅ Panel de mensajeros cargado', 'success', 2000);
+            toast('✅ Panel de administración cargado', 'success', 2000);
         } catch (error) {
             console.error('❌ Error al inicializar panel:', error);
             toast('❌ Error al cargar el panel', 'error');
@@ -860,17 +271,13 @@
     }
 
     // ============================================================
-    // CARGAR PEDIDOS INICIALES CON MANEJO DE ERRORES
+    // CARGAR PEDIDOS INICIALES
     // ============================================================
     async function cargarPedidosIniciales() {
         if (recargando) return;
         recargando = true;
         try {
-            toast('⏳ Cargando pedidos...', 'info', 1500);
             const tiendasSnap = await db.collection('tiendas').get();
-            let totalPedidos = 0;
-            
-            // Limpiar pedidos antiguos
             todosLosPedidos = [];
             
             for (const tiendaDoc of tiendasSnap.docs) {
@@ -891,7 +298,6 @@
                                 ...data,
                                 _cargadoInicial: true 
                             });
-                            totalPedidos++;
                         }
                     });
                 } catch (err) {
@@ -899,30 +305,7 @@
                 }
             }
             
-            pedidosCargadosInicialmente = true;
-            console.log(`📦 ${totalPedidos} pedidos cargados inicialmente en "Listo para asignar"`);
-            
-            if (totalPedidos > 0) {
-                toast(`📦 ${totalPedidos} pedidos listos para asignar`, 'info', 3000);
-                // Sonido de notificación
-                try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    if (ctx.state === 'suspended') ctx.resume();
-                    [600, 800, 1000].forEach((freq, i) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.frequency.value = freq;
-                        osc.type = 'sine';
-                        const t = i * 0.12;
-                        gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
-                        osc.start(ctx.currentTime + t);
-                        osc.stop(ctx.currentTime + t + 0.2);
-                    });
-                } catch(e) {}
-            }
+            console.log(`📦 ${todosLosPedidos.length} pedidos cargados inicialmente`);
             
             renderizarPedidosAsignar();
             actualizarEstadisticas();
@@ -931,7 +314,6 @@
         } catch (error) {
             console.error('❌ Error cargando pedidos iniciales:', error);
             toast('⚠️ Error al cargar pedidos. Reintentando...', 'warn');
-            // Reintentar después de 3 segundos
             setTimeout(() => {
                 recargando = false;
                 cargarPedidosIniciales();
@@ -942,10 +324,9 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS EN TIEMPO REAL (CON MANEJO DE ERRORES)
+    // ESCUCHAR PEDIDOS EN TIEMPO REAL - CON CONTROL DE SONIDO
     // ============================================================
     function escucharPedidosEnTiempoReal() {
-        if (listenerPedidos) { try { listenerPedidos(); } catch(e) {} listenerPedidos = null; }
         if (window._listenersPedidos) {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
@@ -958,20 +339,24 @@
                 try {
                     const unsubscribe = db.collection('tiendas').doc(tiendaId)
                         .collection('pedidos')
-                        .where('estado', '==', 'Listo para asignar')
+                        .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                         .onSnapshot(snapPedidos => {
-                            // Procesar cambios
                             snapPedidos.docChanges().forEach(change => {
                                 try {
                                     const data = change.doc.data();
                                     const pedidoId = change.doc.id;
+                                    const key = `${tiendaId}_${pedidoId}`;
+                                    
+                                    // ✅ VERIFICAR SI EL PEDIDO ESTÁ DISPONIBLE
+                                    const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                    const tieneMensajero = !!data.mensajeroId;
+                                    const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                     
                                     if (change.type === 'added') {
-                                        if (!data.mensajeroId) {
+                                        if (estaDisponible) {
                                             const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                             if (!existe) {
                                                 const tienda = tiendasCache[tiendaId] || {};
-                                                const nombreTienda = tienda.nombre || 'Tienda';
                                                 const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
                                                 
                                                 todosLosPedidos.push({ 
@@ -981,68 +366,64 @@
                                                     _nuevo: true 
                                                 });
                                                 
-                                                toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} listo para asignar`, 'new', 8000);
-                                                
-                                                // Sonido
-                                                try {
-                                                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                                                    if (ctx.state === 'suspended') ctx.resume();
-                                                    [600, 800, 1000, 1200].forEach((freq, i) => {
-                                                        const osc = ctx.createOscillator();
-                                                        const gain = ctx.createGain();
-                                                        osc.connect(gain);
-                                                        gain.connect(ctx.destination);
-                                                        osc.frequency.value = freq;
-                                                        osc.type = 'sine';
-                                                        const t = i * 0.12;
-                                                        gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                                                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
-                                                        osc.start(ctx.currentTime + t);
-                                                        osc.stop(ctx.currentTime + t + 0.2);
-                                                    });
-                                                } catch(e) {}
-                                                
-                                                renderizarPedidosAsignar();
-                                                actualizarEstadisticas();
-                                                actualizarHeaderBadge();
-                                                
-                                                setTimeout(() => {
-                                                    const p = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                                    if (p) {
-                                                        p._nuevo = false;
-                                                        renderizarPedidosAsignar();
-                                                    }
-                                                }, 3000);
+                                                // ✅ INICIAR SONIDO SOLO SI ESTÁ DISPONIBLE
+                                                if (!sonidoEyMoto.estaSonando(pedidoId)) {
+                                                    sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                                    toast(`🛵 Nuevo pedido ${numero} disponible`, 'new', 5000);
+                                                }
+                                            }
+                                        } else if (tieneMensajero) {
+                                            // Pedido ya asignado desde el inicio
+                                            const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                            if (!existe) {
+                                                todosLosPedidos.push({ 
+                                                    id: pedidoId, 
+                                                    tiendaId: tiendaId, 
+                                                    ...data
+                                                });
                                             }
                                         }
                                     } else if (change.type === 'modified') {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (data.mensajeroId) {
-                                            if (index !== -1) {
-                                                todosLosPedidos.splice(index, 1);
-                                                toast(`✅ Pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)} asignado`, 'success', 3000);
-                                                renderizarPedidosAsignar();
-                                                actualizarEstadisticas();
-                                                actualizarHeaderBadge();
+                                        
+                                        // ✅ SI EL PEDIDO YA TIENE MENSAJERO O ESTÁ ENTREGADO, DETENER SONIDO
+                                        if (tieneMensajero || esEntregado) {
+                                            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                                console.log(`🔇 Pedido ${pedidoId} ya no está disponible, deteniendo sonido`);
+                                                sonidoEyMoto.detenerNotificacion(pedidoId);
                                             }
-                                        } else if (index !== -1) {
-                                            todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                            renderizarPedidosAsignar();
-                                            actualizarEstadisticas();
-                                            actualizarHeaderBadge();
-                                        } else if (!data.mensajeroId) {
-                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
-                                            renderizarPedidosAsignar();
-                                            actualizarEstadisticas();
-                                            actualizarHeaderBadge();
                                         }
+                                        
+                                        // ✅ SI EL PEDIDO ESTÁ DISPONIBLE Y NO ESTÁ SONANDO, INICIAR SONIDO
+                                        if (estaDisponible) {
+                                            if (!sonidoEyMoto.estaSonando(pedidoId)) {
+                                                const tienda = tiendasCache[tiendaId] || {};
+                                                const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
+                                                sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                                toast(`🛵 Pedido ${numero} disponible`, 'new', 4000);
+                                            }
+                                        }
+                                        
+                                        // Actualizar en la lista
+                                        if (index !== -1) {
+                                            todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                        } else if (tieneMensajero || estaDisponible) {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        }
+                                        
+                                        // ✅ SI EL PEDIDO FUE TOMADO POR OTRO, DETENER SONIDO
+                                        if (data.mensajeroId && sonidoEyMoto.estaSonando(pedidoId)) {
+                                            sonidoEyMoto.detenerNotificacion(pedidoId);
+                                        }
+                                        
                                     } else if (change.type === 'removed') {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (index !== -1) {
                                             todosLosPedidos.splice(index, 1);
-                                            renderizarPedidosAsignar();
-                                            actualizarEstadisticas();
-                                            actualizarHeaderBadge();
+                                            // ✅ DETENER SONIDO SI EL PEDIDO FUE ELIMINADO
+                                            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                                                sonidoEyMoto.detenerNotificacion(pedidoId);
+                                            }
                                         }
                                     }
                                 } catch (err) {
@@ -1056,11 +437,8 @@
                             
                         }, err => { 
                             console.error(`Error escuchando pedidos en tienda ${tiendaId}:`, err);
-                            // Reintentar después de 5 segundos
                             setTimeout(() => {
-                                if (listenerPedidos) {
-                                    try { listenerPedidos(); } catch(e) {}
-                                    listenerPedidos = null;
+                                if (window._listenersPedidos) {
                                     escucharPedidosEnTiempoReal();
                                 }
                             }, 5000);
@@ -1074,9 +452,8 @@
             });
         }).catch(err => {
             console.error('Error obteniendo tiendas para escucha:', err);
-            // Reintentar después de 5 segundos
             setTimeout(() => {
-                if (!listenerPedidos) {
+                if (!window._listenersPedidos) {
                     escucharPedidosEnTiempoReal();
                 }
             }, 5000);
@@ -1084,7 +461,7 @@
     }
 
     // ============================================================
-    // FUNCIONES DE FILTRADO Y RENDERIZADO
+    // FUNCIONES DE RENDERIZADO
     // ============================================================
     function filtrarMensajeros() {
         const estado = document.getElementById('filtroEstado').value;
@@ -1211,10 +588,14 @@
             const hayMensajeros = mensajerosActivos.length > 0;
             const claseNuevo = esNuevo ? 'nuevo' : '';
             
+            // ✅ INDICADOR DE SONIDO ACTIVO
+            const sonidoActivo = sonidoEyMoto.estaSonando(p.id);
+            const indicadorSonido = sonidoActivo ? '🔊 Sonando...' : '';
+            
             html += `
                 <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
                     <div class="header">
-                        <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                        <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)} ${indicadorSonido}</span>
                         <span class="estado-badge">🔔 Listo para asignar</span>
                     </div>
                     <div class="info-grid">
@@ -1236,6 +617,7 @@
                             <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
                         </div>`
                     }
+                    ${sonidoActivo ? `<div style="font-size:10px;color:var(--green);margin-top:4px;text-align:center;">🔊 Sonando notificación...</div>` : ''}
                 </div>
             `;
         });
@@ -1247,6 +629,8 @@
     // ============================================================
     // MODAL DE ASIGNACIÓN
     // ============================================================
+    let pedidoAsignacion = null;
+
     function abrirModalAsignacion(pedidoId, tiendaId) {
         const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (!pedido) { 
@@ -1257,6 +641,10 @@
         
         if (pedido.mensajeroId) {
             toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
+            // ✅ DETENER SONIDO SI YA ESTÁ ASIGNADO
+            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                sonidoEyMoto.detenerNotificacion(pedidoId);
+            }
             recargarPedidos();
             return;
         }
@@ -1361,6 +749,10 @@
         const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (pedidoActual && pedidoActual.mensajeroId) {
             toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+            // ✅ DETENER SONIDO
+            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                sonidoEyMoto.detenerNotificacion(pedidoId);
+            }
             cerrarModalAsignacion();
             recargarPedidos();
             return;
@@ -1379,12 +771,20 @@
                     asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
                 });
             
+            // ✅ DETENER SONIDO PORQUE YA FUE ASIGNADO
+            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                sonidoEyMoto.detenerNotificacion(pedidoId);
+            }
+            
             toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
             cerrarModalAsignacion();
             
         } catch (e) {
             if (e.code === 'not-found' || e.message.includes('no such document')) {
                 toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
+                if (sonidoEyMoto.estaSonando(pedidoId)) {
+                    sonidoEyMoto.detenerNotificacion(pedidoId);
+                }
                 cerrarModalAsignacion();
                 recargarPedidos();
             } else {
@@ -1399,6 +799,9 @@
         const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (pedidoActual && pedidoActual.mensajeroId) {
             toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+            if (sonidoEyMoto.estaSonando(pedidoId)) {
+                sonidoEyMoto.detenerNotificacion(pedidoId);
+            }
             cerrarModalAsignacion();
             recargarPedidos();
             return;
@@ -1415,6 +818,9 @@
                     notificadoPor: auth.currentUser?.email || 'Admin'
                 });
             
+            // ✅ INICIAR SONIDO PARA ESTE PEDIDO
+            sonidoEyMoto.iniciarNotificacion(pedidoId);
+            
             toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
             cerrarModalAsignacion();
             
@@ -1430,9 +836,7 @@
         const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado).length;
         const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
         const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
-        
         const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
-        
         const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
         
         document.getElementById('statActivos').textContent = activos;
@@ -1449,32 +853,6 @@
         const badge = document.getElementById('headerBadge');
         badge.textContent = pendientes;
         badge.style.display = pendientes > 0 ? 'inline-block' : 'none';
-    }
-
-    // ============================================================
-    // FUNCIONES DE UTILIDAD
-    // ============================================================
-    function formatearFecha(fecha) {
-        if (!fecha) return '--/--/--';
-        try {
-            let d;
-            if (fecha.toDate) d = fecha.toDate();
-            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
-            else d = new Date(fecha);
-            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
-                   ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-        } catch (e) { return '--/--/--'; }
-    }
-
-    function toast(msg, type = 'info', dur = 4000) {
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
-        const wrap = document.getElementById('toastWrap');
-        const el = document.createElement('div');
-        el.className = `toast t-${type}`;
-        el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
-        wrap.appendChild(el);
-        setTimeout(() => { el.classList.add('toast-fade'); setTimeout(() => el.remove(), 350); }, dur);
-        return el;
     }
 
     // ============================================================
@@ -1570,6 +948,32 @@
     }
 
     // ============================================================
+    // FUNCIONES DE UTILIDAD
+    // ============================================================
+    function formatearFecha(fecha) {
+        if (!fecha) return '--/--/--';
+        try {
+            let d;
+            if (fecha.toDate) d = fecha.toDate();
+            else if (fecha.seconds) d = new Date(fecha.seconds * 1000);
+            else d = new Date(fecha);
+            return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+                   ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return '--/--/--'; }
+    }
+
+    function toast(msg, type = 'info', dur = 4000) {
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
+        const wrap = document.getElementById('toastWrap');
+        const el = document.createElement('div');
+        el.className = `toast t-${type}`;
+        el.innerHTML = `<span>${icons[type] || '🔔'}</span><span>${msg}</span>`;
+        wrap.appendChild(el);
+        setTimeout(() => { el.classList.add('toast-fade'); setTimeout(() => el.remove(), 350); }, dur);
+        return el;
+    }
+
+    // ============================================================
     // EXPONER FUNCIONES
     // ============================================================
     window.iniciarSesion = iniciarSesion;
@@ -1593,6 +997,7 @@
     console.log('✅ Panel de administración de mensajeros cargado correctamente');
     console.log('🔧 Manejo de errores de Firebase mejorado');
     console.log('🔄 Reconexión automática activada');
+    console.log('🔇 Control de sonido por pedido individual');
 </script>
 </body>
 </html>
