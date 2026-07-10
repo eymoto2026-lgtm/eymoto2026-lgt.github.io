@@ -106,6 +106,25 @@
             border-radius: 10px;
             display: none;
         }
+        .btn-refrescar {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+            font-size: 12px;
+        }
+        .btn-refrescar:hover {
+            background: var(--blue);
+            color: #fff;
+        }
+        .btn-refrescar:active {
+            transform: scale(0.95);
+        }
 
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
 
@@ -159,6 +178,24 @@
             padding: 16px;
             margin-bottom: 12px;
             border-left: 4px solid var(--yellow);
+            transition: all 0.3s ease;
+        }
+        .pedido-asignar.asignado {
+            border-left-color: var(--green);
+            opacity: 0.6;
+            position: relative;
+        }
+        .pedido-asignar.asignado::after {
+            content: '✅ ASIGNADO';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--green);
+            background: var(--green-bg);
+            padding: 2px 10px;
+            border-radius: 12px;
         }
         .pedido-asignar .header {
             display: flex;
@@ -179,6 +216,10 @@
             font-weight: 700;
             background: var(--blue-bg);
             color: var(--blue);
+        }
+        .pedido-asignar .header .estado-badge.asignado-badge {
+            background: var(--green-bg);
+            color: var(--green);
         }
         .pedido-asignar .info-grid {
             display: grid;
@@ -208,6 +249,15 @@
             font-weight: 800;
             text-align: right;
             color: var(--green);
+            margin-top: 6px;
+        }
+        .pedido-asignar .mensajero-info {
+            font-size: 12px;
+            color: var(--blue);
+            text-align: center;
+            padding: 6px;
+            background: var(--blue-bg);
+            border-radius: 6px;
             margin-top: 6px;
         }
 
@@ -508,11 +558,23 @@
         .pedido-info-resumen .label { color: var(--text-muted); }
         .pedido-info-resumen .value { color: #fff; font-weight: 500; }
 
+        .sin-mensajeros {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        .sin-mensajeros .icono {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: 1fr 1fr 1fr; }
             .form-crear .row2 { grid-template-columns: 1fr; }
             .mensajero-card { flex-direction: column; align-items: stretch; }
             .pedido-asignar .info-grid { grid-template-columns: 1fr; }
+            .pedido-asignar .asignar-area { flex-direction: column; }
         }
     </style>
 </head>
@@ -536,6 +598,9 @@
         <h1>Administración de Mensajeros</h1>
         <span class="spacer"></span>
         <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <button class="btn-refrescar" onclick="window.recargarTodo()">
+            🔄 Recargar
+        </button>
         <span class="header-badge" id="headerBadge">0</span>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -558,6 +623,7 @@
             </select>
             <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
             <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
+            <button class="btn-refrescar" onclick="recargarTodo()" style="padding:6px 14px;font-size:11px;">🔄 Refrescar todo</button>
         </div>
 
         <div class="form-crear">
@@ -582,9 +648,16 @@
         </div>
 
         <div class="seccion-pedidos" id="seccionPedidos">
-            <div class="titulo-seccion">📦 Pedidos en preparación (pendientes de asignar)<span class="badge" id="badgePedidos">0</span></div>
+            <div class="titulo-seccion">
+                📦 Pedidos en preparación (pendientes de asignar)
+                <span class="badge" id="badgePedidos">0</span>
+                <button class="btn-refrescar" onclick="recargarPedidos()" style="padding:2px 10px;font-size:10px;">🔄</button>
+            </div>
             <div id="listaPedidosAsignar">
-                <div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">🍽️</div>No hay pedidos listos para asignar</div>
+                <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                    <div style="font-size:28px;margin-bottom:8px;">🍽️</div>
+                    No hay pedidos listos para asignar
+                </div>
             </div>
         </div>
     </div>
@@ -651,6 +724,7 @@
     let todosLosPedidos = [];
     let tiendasCache = {};
     let pedidoAsignacion = null;
+    let timeoutRecarga = null;
 
     function iniciarSesion() {
         const email = document.getElementById('email').value.trim();
@@ -680,6 +754,7 @@
     function logout() {
         if (listenerMensajeros) listenerMensajeros();
         if (listenerPedidosAsignar) listenerPedidosAsignar();
+        if (timeoutRecarga) clearTimeout(timeoutRecarga);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -743,21 +818,20 @@
                     .collection('pedidos')
                     .where('estado', '==', estadoPrep)
                     .onSnapshot(snapPedidos => {
-                        snapPedidos.docChanges().forEach(change => {
-                            if (change.type === 'added' || change.type === 'modified') {
-                                const data = change.doc.data();
-                                const pedidoId = change.doc.id;
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (index !== -1) {
-                                    todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                } else {
-                                    todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                }
-                                renderizarPedidosAsignar();
-                                actualizarEstadisticas();
-                                actualizarHeaderBadge();
+                        // Actualizar la lista de pedidos
+                        const pedidosActualizados = [];
+                        snapPedidos.forEach(doc => {
+                            const data = doc.data();
+                            // Solo mostrar pedidos que NO tengan mensajero asignado
+                            if (!data.mensajeroId) {
+                                pedidosActualizados.push({ id: doc.id, tiendaId: tiendaId, ...data });
                             }
                         });
+                        
+                        // Reemplazar los pedidos de esta tienda en la lista global
+                        const otrosPedidos = todosLosPedidos.filter(p => p.tiendaId !== tiendaId);
+                        todosLosPedidos = [...otrosPedidos, ...pedidosActualizados];
+                        
                         renderizarPedidosAsignar();
                         actualizarEstadisticas();
                         actualizarHeaderBadge();
@@ -789,7 +863,28 @@
         renderizarMensajeros();
     }
 
-    function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
+    function recargarMensajeros() { 
+        filtrarMensajeros(); 
+        toast('🔄 Mensajeros recargados', 'info', 1500); 
+    }
+
+    function recargarPedidos() {
+        renderizarPedidosAsignar();
+        actualizarEstadisticas();
+        actualizarHeaderBadge();
+        toast('🔄 Pedidos recargados', 'info', 1500);
+    }
+
+    function recargarTodo() {
+        toast('🔄 Recargando todo...', 'info', 2000);
+        cargarMensajeros();
+        renderizarPedidosAsignar();
+        actualizarEstadisticas();
+        actualizarHeaderBadge();
+        setTimeout(() => {
+            toast('✅ Todo recargado correctamente', 'success', 2000);
+        }, 1000);
+    }
 
     function renderizarMensajeros() {
         const container = document.getElementById('listaMensajeros');
@@ -833,6 +928,7 @@
         const container = document.getElementById('listaPedidosAsignar');
         const badge = document.getElementById('badgePedidos');
         
+        // Filtrar pedidos que están en estado de preparación SIN mensajero
         const pedidosPendientes = todosLosPedidos.filter(p => {
             const tienda = tiendasCache[p.tiendaId] || {};
             const tipoNegocio = tienda.tipoNegocio || 'restaurante';
@@ -843,7 +939,12 @@
         badge.textContent = pedidosPendientes.length;
         
         if (pedidosPendientes.length === 0) {
-            container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos listos para asignar</div>`;
+            container.innerHTML = `
+                <div style="text-align:center;padding:20px;color:var(--text-muted);">
+                    <div style="font-size:28px;margin-bottom:8px;">✅</div>
+                    No hay pedidos listos para asignar
+                </div>
+            `;
             return;
         }
         
@@ -870,6 +971,9 @@
                 }
             }
             
+            // Verificar si hay mensajeros disponibles
+            const hayMensajeros = mensajerosActivos.length > 0;
+            
             html += `
                 <div class="pedido-asignar" id="pedido-${p.id}">
                     <div class="header">
@@ -886,9 +990,15 @@
                     </div>
                     ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
                     <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                    <button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;" ${mensajerosActivos.length === 0 ? 'disabled' : ''}>
-                        👤 Asignar mensajero
-                    </button>
+                    ${hayMensajeros ? 
+                        `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">
+                            👤 Asignar mensajero
+                        </button>` :
+                        `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;">
+                            <span style="font-size:14px;">⚠️</span>
+                            <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
+                        </div>`
+                    }
                 </div>
             `;
         });
@@ -901,8 +1011,20 @@
     // MODAL DE ASIGNACIÓN
     // ============================================================
     function abrirModalAsignacion(pedidoId, tiendaId) {
+        // Buscar el pedido en la lista actual
         const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-        if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        if (!pedido) { 
+            toast('⚠️ Pedido no encontrado. Recargando...', 'warn');
+            recargarPedidos();
+            return; 
+        }
+        
+        // Verificar que el pedido siga sin mensajero
+        if (pedido.mensajeroId) {
+            toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
+            recargarPedidos();
+            return;
+        }
         
         pedidoAsignacion = { tiendaId, pedidoId };
         
@@ -1001,6 +1123,15 @@
         const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
         const nombreMensajero = mensajero?.nombre || 'Mensajero';
         
+        // Verificar nuevamente que el pedido no haya sido asignado
+        const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+        if (pedidoActual && pedidoActual.mensajeroId) {
+            toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+            cerrarModalAsignacion();
+            recargarPedidos();
+            return;
+        }
+        
         try {
             toast('⏳ Asignando pedido...', 'info');
             
@@ -1017,17 +1148,31 @@
             toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
             cerrarModalAsignacion();
             
-            await cargarMensajeros();
-            renderizarPedidosAsignar();
-            actualizarEstadisticas();
+            // Forzar recarga inmediata
+            await recargarDatosCompletos();
             
         } catch (e) {
-            toast('❌ Error: ' + e.message, 'error');
+            if (e.code === 'not-found' || e.message.includes('no such document')) {
+                toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
+                cerrarModalAsignacion();
+                recargarPedidos();
+            } else {
+                toast('❌ Error: ' + e.message, 'error');
+            }
         }
     }
 
     async function notificarATodos() {
         const { tiendaId, pedidoId } = pedidoAsignacion;
+        
+        // Verificar nuevamente que el pedido no haya sido asignado
+        const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+        if (pedidoActual && pedidoActual.mensajeroId) {
+            toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+            cerrarModalAsignacion();
+            recargarPedidos();
+            return;
+        }
         
         try {
             toast('⏳ Notificando mensajeros...', 'info');
@@ -1043,8 +1188,43 @@
             toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
             cerrarModalAsignacion();
             
+            // Forzar recarga inmediata
+            await recargarDatosCompletos();
+            
         } catch (e) {
             toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+
+    // ============================================================
+    // FUNCIÓN DE RECARGA COMPLETA (NUEVA)
+    // ============================================================
+    async function recargarDatosCompletos() {
+        try {
+            // Limpiar caché local
+            todosLosPedidos = [];
+            
+            // Recargar tiendas
+            await cargarTiendas();
+            
+            // Recargar mensajeros
+            cargarMensajeros();
+            
+            // Recargar pedidos
+            if (listenerPedidosAsignar) {
+                // Forzar una nueva escucha
+                await escucharPedidosParaAsignar();
+            }
+            
+            // Actualizar UI
+            renderizarPedidosAsignar();
+            actualizarEstadisticas();
+            actualizarHeaderBadge();
+            
+            console.log('🔄 Datos recargados completamente');
+            
+        } catch (e) {
+            console.error('❌ Error al recargar datos:', e);
         }
     }
 
@@ -1195,12 +1375,18 @@
         return el;
     }
 
+    // ============================================================
+    // EXPONER FUNCIONES
+    // ============================================================
     window.iniciarSesion = iniciarSesion;
     window.logout = logout;
     window.crearMensajero = crearMensajero;
     window.limpiarFormulario = limpiarFormulario;
     window.filtrarMensajeros = filtrarMensajeros;
     window.recargarMensajeros = recargarMensajeros;
+    window.recargarPedidos = recargarPedidos;
+    window.recargarTodo = recargarTodo;
+    window.recargarDatosCompletos = recargarDatosCompletos;
     window.toggleMensajero = toggleMensajero;
     window.eliminarMensajero = eliminarMensajero;
     window.verDetalle = verDetalle;
