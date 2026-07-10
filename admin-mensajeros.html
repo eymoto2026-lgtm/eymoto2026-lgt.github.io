@@ -179,6 +179,20 @@
             margin-bottom: 12px;
             border-left: 4px solid var(--yellow);
             transition: all 0.3s ease;
+            animation: slideIn 0.3s ease;
+        }
+        .pedido-asignar.nuevo {
+            border-left-color: var(--green);
+            animation: pulseNuevo 1.5s ease-in-out 3;
+        }
+        @keyframes pulseNuevo {
+            0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
+            50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); }
+            100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .pedido-asignar.asignado {
             border-left-color: var(--green);
@@ -377,6 +391,7 @@
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
+        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); }
         @keyframes toastIn {
             from { opacity: 0; transform: translateX(20px); }
             to { opacity: 1; transform: translateX(0); }
@@ -649,7 +664,7 @@
 
         <div class="seccion-pedidos" id="seccionPedidos">
             <div class="titulo-seccion">
-                📦 Pedidos en preparación (pendientes de asignar)
+                📦 Pedidos listos para asignar
                 <span class="badge" id="badgePedidos">0</span>
                 <button class="btn-refrescar" onclick="recargarPedidos()" style="padding:2px 10px;font-size:10px;">🔄</button>
             </div>
@@ -724,7 +739,7 @@
     let todosLosPedidos = [];
     let tiendasCache = {};
     let pedidoAsignacion = null;
-    let timeoutRecarga = null;
+    let ultimosPedidosNotificados = new Set();
 
     function iniciarSesion() {
         const email = document.getElementById('email').value.trim();
@@ -754,7 +769,6 @@
     function logout() {
         if (listenerMensajeros) listenerMensajeros();
         if (listenerPedidosAsignar) listenerPedidosAsignar();
-        if (timeoutRecarga) clearTimeout(timeoutRecarga);
         auth.signOut();
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -804,38 +818,116 @@
             }, err => { toast('❌ Error al cargar mensajeros', 'error'); });
     }
 
+    // ============================================================
+    // ESCUCHAR PEDIDOS "LISTO PARA ASIGNAR" (EN TIEMPO REAL)
+    // ============================================================
     function escucharPedidosParaAsignar() {
         if (listenerPedidosAsignar) listenerPedidosAsignar();
         
+        // Escuchar TODAS las tiendas
         db.collection('tiendas').get().then(snap => {
             snap.forEach(doc => {
                 const tiendaId = doc.id;
                 const tiendaData = doc.data();
                 const tipoNegocio = tiendaData.tipoNegocio || 'restaurante';
-                const estadoPrep = getEstadoPreparacion(tipoNegocio);
                 
+                // Escuchar SOLO pedidos en estado "Listo para asignar"
                 const unsubscribe = db.collection('tiendas').doc(tiendaId)
                     .collection('pedidos')
-                    .where('estado', '==', estadoPrep)
+                    .where('estado', '==', 'Listo para asignar')
                     .onSnapshot(snapPedidos => {
-                        // Actualizar la lista de pedidos
-                        const pedidosActualizados = [];
-                        snapPedidos.forEach(doc => {
-                            const data = doc.data();
-                            // Solo mostrar pedidos que NO tengan mensajero asignado
-                            if (!data.mensajeroId) {
-                                pedidosActualizados.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                        snapPedidos.docChanges().forEach(change => {
+                            const data = change.doc.data();
+                            const pedidoId = change.doc.id;
+                            
+                            if (change.type === 'added') {
+                                // NUEVO PEDIDO LLEGÓ - NOTIFICAR
+                                if (!data.mensajeroId) {
+                                    const tienda = tiendasCache[tiendaId] || {};
+                                    const nombreTienda = tienda.nombre || 'Tienda';
+                                    const numero = data.numeroPedido || '#' + pedidoId.slice(-6);
+                                    
+                                    // Mostrar toast de notificación
+                                    toast(`🛵 Nuevo pedido ${numero} de ${nombreTienda} listo para asignar`, 'new', 8000);
+                                    
+                                    // Reproducir sonido
+                                    try {
+                                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                        if (ctx.state === 'suspended') ctx.resume();
+                                        [600, 800, 1000, 1200].forEach((freq, i) => {
+                                            const osc = ctx.createOscillator();
+                                            const gain = ctx.createGain();
+                                            osc.connect(gain);
+                                            gain.connect(ctx.destination);
+                                            osc.frequency.value = freq;
+                                            osc.type = 'sine';
+                                            const t = i * 0.12;
+                                            gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                                            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                                            osc.start(ctx.currentTime + t);
+                                            osc.stop(ctx.currentTime + t + 0.2);
+                                        });
+                                    } catch(e) {}
+                                    
+                                    // Marcar como nuevo en la interfaz
+                                    const pedidoCompleto = { id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true };
+                                    
+                                    // Agregar a la lista global
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    if (index === -1) {
+                                        todosLosPedidos.push(pedidoCompleto);
+                                    } else {
+                                        todosLosPedidos[index] = pedidoCompleto;
+                                    }
+                                    
+                                    renderizarPedidosAsignar();
+                                    actualizarEstadisticas();
+                                    actualizarHeaderBadge();
+                                    
+                                    // Quitar la marca de "nuevo" después de 3 segundos
+                                    setTimeout(() => {
+                                        const p = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (p) {
+                                            p._nuevo = false;
+                                            renderizarPedidosAsignar();
+                                        }
+                                    }, 3000);
+                                }
+                            } else if (change.type === 'modified') {
+                                // Actualizar pedido existente
+                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                if (index !== -1) {
+                                    // Si el pedido fue asignado (tiene mensajero), eliminarlo de la lista
+                                    if (data.mensajeroId) {
+                                        todosLosPedidos.splice(index, 1);
+                                    } else {
+                                        todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                    }
+                                } else if (!data.mensajeroId) {
+                                    // Si no estaba y no tiene mensajero, agregarlo
+                                    todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                }
+                                renderizarPedidosAsignar();
+                                actualizarEstadisticas();
+                                actualizarHeaderBadge();
+                            } else if (change.type === 'removed') {
+                                // Eliminar pedido de la lista
+                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                if (index !== -1) {
+                                    todosLosPedidos.splice(index, 1);
+                                }
+                                renderizarPedidosAsignar();
+                                actualizarEstadisticas();
+                                actualizarHeaderBadge();
                             }
                         });
                         
-                        // Reemplazar los pedidos de esta tienda en la lista global
-                        const otrosPedidos = todosLosPedidos.filter(p => p.tiendaId !== tiendaId);
-                        todosLosPedidos = [...otrosPedidos, ...pedidosActualizados];
-                        
+                        // También actualizar si el snapshot cambió completamente
                         renderizarPedidosAsignar();
                         actualizarEstadisticas();
                         actualizarHeaderBadge();
                     }, err => { console.error('Error escuchando pedidos:', err); });
+                
                 if (!window._listenersPedidosAsignar) window._listenersPedidosAsignar = [];
                 window._listenersPedidosAsignar.push(unsubscribe);
             });
@@ -928,12 +1020,9 @@
         const container = document.getElementById('listaPedidosAsignar');
         const badge = document.getElementById('badgePedidos');
         
-        // Filtrar pedidos que están en estado de preparación SIN mensajero
+        // Filtrar pedidos en "Listo para asignar" SIN mensajero
         const pedidosPendientes = todosLosPedidos.filter(p => {
-            const tienda = tiendasCache[p.tiendaId] || {};
-            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
-            const estadoPrep = getEstadoPreparacion(tipoNegocio);
-            return p.estado === estadoPrep && !p.mensajeroId;
+            return p.estado === 'Listo para asignar' && !p.mensajeroId;
         });
         
         badge.textContent = pedidosPendientes.length;
@@ -957,6 +1046,7 @@
             const cliente = p.cliente || {};
             const total = p.total || 0;
             const fechaStr = formatearFecha(p.fecha);
+            const esNuevo = p._nuevo === true;
             
             let itemsHtml = '';
             if (p.items && p.items.length > 0) {
@@ -971,14 +1061,14 @@
                 }
             }
             
-            // Verificar si hay mensajeros disponibles
             const hayMensajeros = mensajerosActivos.length > 0;
+            const claseNuevo = esNuevo ? 'nuevo' : '';
             
             html += `
-                <div class="pedido-asignar" id="pedido-${p.id}">
+                <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
                     <div class="header">
                         <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
-                        <span class="estado-badge">👨‍🍳 Listo para asignar</span>
+                        <span class="estado-badge">🔔 Listo para asignar</span>
                     </div>
                     <div class="info-grid">
                         <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1148,8 +1238,7 @@
             toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
             cerrarModalAsignacion();
             
-            // Forzar recarga inmediata
-            await recargarDatosCompletos();
+            // El pedido se eliminará automáticamente de la lista gracias al listener en tiempo real
             
         } catch (e) {
             if (e.code === 'not-found' || e.message.includes('no such document')) {
@@ -1188,43 +1277,10 @@
             toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
             cerrarModalAsignacion();
             
-            // Forzar recarga inmediata
-            await recargarDatosCompletos();
+            // El pedido ya está en "Listo para asignar" y aparecerá en la lista
             
         } catch (e) {
             toast('❌ Error: ' + e.message, 'error');
-        }
-    }
-
-    // ============================================================
-    // FUNCIÓN DE RECARGA COMPLETA (NUEVA)
-    // ============================================================
-    async function recargarDatosCompletos() {
-        try {
-            // Limpiar caché local
-            todosLosPedidos = [];
-            
-            // Recargar tiendas
-            await cargarTiendas();
-            
-            // Recargar mensajeros
-            cargarMensajeros();
-            
-            // Recargar pedidos
-            if (listenerPedidosAsignar) {
-                // Forzar una nueva escucha
-                await escucharPedidosParaAsignar();
-            }
-            
-            // Actualizar UI
-            renderizarPedidosAsignar();
-            actualizarEstadisticas();
-            actualizarHeaderBadge();
-            
-            console.log('🔄 Datos recargados completamente');
-            
-        } catch (e) {
-            console.error('❌ Error al recargar datos:', e);
         }
     }
 
@@ -1233,12 +1289,7 @@
         const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
         const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
         
-        const pendientes = todosLosPedidos.filter(p => {
-            const tienda = tiendasCache[p.tiendaId] || {};
-            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
-            const estadoPrep = getEstadoPreparacion(tipoNegocio);
-            return p.estado === estadoPrep && !p.mensajeroId;
-        }).length;
+        const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
         
         const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
         
@@ -1252,12 +1303,7 @@
     }
 
     function actualizarHeaderBadge() {
-        const pendientes = todosLosPedidos.filter(p => {
-            const tienda = tiendasCache[p.tiendaId] || {};
-            const tipoNegocio = tienda.tipoNegocio || 'restaurante';
-            const estadoPrep = getEstadoPreparacion(tipoNegocio);
-            return p.estado === estadoPrep && !p.mensajeroId;
-        }).length;
+        const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
         const badge = document.getElementById('headerBadge');
         badge.textContent = pendientes;
         badge.style.display = pendientes > 0 ? 'inline-block' : 'none';
@@ -1365,7 +1411,7 @@
     }
 
     function toast(msg, type = 'info', dur = 4000) {
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
         const wrap = document.getElementById('toastWrap');
         const el = document.createElement('div');
         el.className = `toast t-${type}`;
@@ -1386,7 +1432,6 @@
     window.recargarMensajeros = recargarMensajeros;
     window.recargarPedidos = recargarPedidos;
     window.recargarTodo = recargarTodo;
-    window.recargarDatosCompletos = recargarDatosCompletos;
     window.toggleMensajero = toggleMensajero;
     window.eliminarMensajero = eliminarMensajero;
     window.verDetalle = verDetalle;
