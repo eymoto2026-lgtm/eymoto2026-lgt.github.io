@@ -96,6 +96,16 @@
             border-radius: 12px;
             background: var(--green-bg);
             color: var(--green);
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        header .estado:hover {
+            transform: scale(1.05);
+        }
+        header .estado.desconectado {
+            background: var(--red-bg);
+            color: var(--red);
         }
 
         .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -226,6 +236,49 @@
         }
         .empty-state .icono { font-size: 48px; display: block; margin-bottom: 12px; }
 
+        /* Modal de confirmación */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .modal-box h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        .modal-box p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .modal-box .acciones {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-box .acciones button {
+            flex: 1;
+        }
+
         #toastWrap {
             position: fixed;
             top: 16px;
@@ -273,6 +326,18 @@
 </head>
 <body>
 
+<!-- Modal de confirmación -->
+<div class="modal-overlay" id="modalConfirmacion">
+    <div class="modal-box">
+        <h3 id="modalTitulo">⚠️ Cambiar estado</h3>
+        <p id="modalMensaje">¿Estás seguro de que quieres cambiar tu estado?</p>
+        <div class="acciones">
+            <button class="btn-ghost" onclick="cerrarModalConfirmacion()">Cancelar</button>
+            <button id="btnConfirmarAccion" class="btn-danger">Confirmar</button>
+        </div>
+    </div>
+</div>
+
 <div id="toastWrap"></div>
 
 <div id="loginBox">
@@ -291,7 +356,10 @@
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
-        <span class="estado" id="estadoConexion">🟢 Conectado</span>
+        <!-- 🔥 ESTADO CONECTADO/DESCONECTADO - CLIC PARA CAMBIAR -->
+        <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">
+            🟢 Conectado
+        </span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -326,23 +394,17 @@
     const db = firebase.firestore();
 
     // ============================================================
-    // 🎵 SISTEMA DE SONIDO DESDE URL
+    // 🎵 SISTEMA DE SONIDO
     // ============================================================
     class SonidoEyMoto {
         constructor() {
-            // 🔥 CAMBIA ESTA URL POR TU SONIDO PREFERIDO
+            // 🔥 CAMBIA ESTA URL POR TU SONIDO
             this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
             this.audio = new Audio();
             this.cargado = false;
             this.reproduciendo = false;
             this.intervalo = null;
             this.pedidoActual = null;
-        }
-
-        configurarSonido(url) {
-            if (url) {
-                this.audioUrl = url;
-            }
             this.cargarSonido();
         }
 
@@ -350,9 +412,11 @@
             try {
                 this.audio = new Audio(this.audioUrl);
                 this.audio.preload = 'auto';
+                this.audio.addEventListener('canplaythrough', () => {
+                    this.cargado = true;
+                    console.log('✅ Sonido cargado correctamente');
+                });
                 this.audio.load();
-                this.cargado = true;
-                console.log('🎵 Sonido cargado desde URL:', this.audioUrl);
             } catch (e) {
                 console.warn('⚠️ Error cargando sonido:', e.message);
                 this.cargado = false;
@@ -361,9 +425,7 @@
 
         reproducir() {
             try {
-                if (!this.cargado) {
-                    this.cargarSonido();
-                }
+                if (!this.cargado) this.cargarSonido();
                 const audioClone = new Audio(this.audioUrl);
                 audioClone.volume = 0.8;
                 audioClone.play().catch(e => {
@@ -372,7 +434,6 @@
                 });
                 this.reproduciendo = true;
             } catch (e) {
-                console.debug('⚠️ Error:', e.message);
                 this.fallbackBeep();
             }
         }
@@ -380,13 +441,8 @@
         notificacionContinua(pedidoId) {
             this.pedidoActual = pedidoId;
             this.reproduciendo = true;
-            
             this.reproducir();
-            
-            if (this.intervalo) {
-                clearInterval(this.intervalo);
-            }
-            
+            if (this.intervalo) clearInterval(this.intervalo);
             this.intervalo = setInterval(() => {
                 if (this.reproduciendo && this.pedidoActual === pedidoId) {
                     this.reproducir();
@@ -442,6 +498,8 @@
     let listenerActivo = false;
     let timeoutReconexion = null;
     let pedidosNotificando = {};
+    let mensajeroConectado = true;
+    let accionPendiente = null;
 
     // ============================================================
     // FUNCIONES DE AUTENTICACIÓN
@@ -477,13 +535,16 @@
                 
                 mensajeroUid = user.uid;
                 mensajeroData = data;
+                mensajeroConectado = data.conectado !== false;
                 
                 document.getElementById('loginBox').classList.add('hidden');
                 document.getElementById('panel').classList.remove('hidden');
                 document.getElementById('mensajeroInfo').textContent = '👤 ' + (data.nombre || email);
                 
+                actualizarIndicadorConexion();
+                
                 await db.collection('usuarios').doc(user.uid).update({
-                    conectado: true,
+                    conectado: mensajeroConectado,
                     ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
@@ -542,12 +603,137 @@
     });
 
     // ============================================================
+    // 🔥 TOGGLE CONECTADO/DESCONECTADO
+    // ============================================================
+    function toggleEstadoConexion() {
+        if (!mensajeroUid) return;
+        
+        const nuevoEstado = !mensajeroConectado;
+        const estadoTexto = nuevoEstado ? 'conectar' : 'desconectar';
+        
+        // Mostrar modal de confirmación
+        mostrarModalConfirmacion(
+            nuevoEstado ? '🟢 Conectar' : '🔴 Desconectar',
+            nuevoEstado ? '¿Quieres conectarte y recibir pedidos?' : '¿Quieres desconectarte y no recibir más pedidos?',
+            () => {
+                ejecutarCambioConexion(nuevoEstado);
+            }
+        );
+    }
+
+    function ejecutarCambioConexion(nuevoEstado) {
+        mensajeroConectado = nuevoEstado;
+        
+        // Actualizar en Firebase
+        db.collection('usuarios').doc(mensajeroUid).update({
+            conectado: nuevoEstado,
+            [`${nuevoEstado ? 'conectado' : 'desconectado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            actualizarIndicadorConexion();
+            
+            if (nuevoEstado) {
+                toast('🟢 Te has conectado. Recibirás pedidos.', 'success', 3000);
+                // Reiniciar escucha de pedidos
+                if (!listenerActivo) {
+                    escucharPedidos();
+                }
+            } else {
+                toast('🔴 Te has desconectado. No recibirás pedidos.', 'warn', 3000);
+                // Detener sonidos y limpiar
+                sonidoEyMoto.detener();
+                pedidosNotificando = {};
+                // Detener listener
+                if (pedidosListener) {
+                    try { pedidosListener(); } catch(e) {}
+                    pedidosListener = null;
+                }
+                listenerActivo = false;
+                // Mostrar mensaje de desconectado
+                document.getElementById('listaPedidos').innerHTML = `
+                    <div class="empty-state">
+                        <span class="icono">🔴</span>
+                        <p>Estás desconectado</p>
+                        <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
+                    </div>
+                `;
+            }
+        }).catch(e => {
+            console.error('Error actualizando estado:', e);
+            toast('❌ Error al cambiar estado', 'error');
+            // Revertir
+            mensajeroConectado = !nuevoEstado;
+            actualizarIndicadorConexion();
+        });
+    }
+
+    function actualizarIndicadorConexion() {
+        const estadoEl = document.getElementById('estadoConexion');
+        if (mensajeroConectado) {
+            estadoEl.textContent = '🟢 Conectado';
+            estadoEl.className = 'estado';
+            estadoEl.title = 'Haz clic para desconectarte';
+        } else {
+            estadoEl.textContent = '🔴 Desconectado';
+            estadoEl.className = 'estado desconectado';
+            estadoEl.title = 'Haz clic para conectarte';
+        }
+    }
+
+    // ============================================================
+    // MODAL DE CONFIRMACIÓN
+    // ============================================================
+    function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
+        document.getElementById('modalTitulo').textContent = titulo;
+        document.getElementById('modalMensaje').textContent = mensaje;
+        document.getElementById('modalConfirmacion').classList.add('active');
+        
+        // Guardar la acción a confirmar
+        accionPendiente = onConfirm;
+        
+        // Configurar botón de confirmar
+        const btnConfirmar = document.getElementById('btnConfirmarAccion');
+        btnConfirmar.onclick = function() {
+            if (accionPendiente) {
+                accionPendiente();
+                accionPendiente = null;
+            }
+            cerrarModalConfirmacion();
+        };
+    }
+
+    function cerrarModalConfirmacion() {
+        document.getElementById('modalConfirmacion').classList.remove('active');
+        accionPendiente = null;
+    }
+
+    // ============================================================
     // INICIALIZAR PANEL
     // ============================================================
     async function inicializarPanel() {
         try {
+            // Cargar datos del usuario
+            const doc = await db.collection('usuarios').doc(mensajeroUid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                mensajeroConectado = data.conectado !== false;
+                actualizarIndicadorConexion();
+            }
+            
             await cargarTiendas();
-            await escucharPedidos();
+            
+            // Solo escuchar pedidos si está conectado
+            if (mensajeroConectado) {
+                await escucharPedidos();
+            } else {
+                document.getElementById('listaPedidos').innerHTML = `
+                    <div class="empty-state">
+                        <span class="icono">🔴</span>
+                        <p>Estás desconectado</p>
+                        <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
+                    </div>
+                `;
+            }
+            
             toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
             console.log('✅ Panel de mensajero cargado correctamente');
         } catch (error) {
@@ -570,9 +756,15 @@
     }
 
     // ============================================================
-    // ESCUCHAR PEDIDOS
+    // ESCUCHAR PEDIDOS (SOLO SI ESTÁ CONECTADO)
     // ============================================================
     function escucharPedidos() {
+        // Si no está conectado, no escuchar
+        if (!mensajeroConectado) {
+            console.log('📢 Mensajero desconectado, no se escuchan pedidos');
+            return;
+        }
+        
         if (pedidosListener) {
             try { pedidosListener(); } catch(e) {}
             pedidosListener = null;
@@ -585,7 +777,7 @@
         
         listenerActivo = true;
         document.getElementById('estadoConexion').textContent = '🟢 Conectado';
-        document.getElementById('estadoConexion').style.color = 'var(--green)';
+        document.getElementById('estadoConexion').className = 'estado';
         
         db.collection('tiendas').get()
             .then(snap => {
@@ -598,7 +790,7 @@
                         .collection('pedidos')
                         .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                         .onSnapshot(snapshot => {
-                            if (!listenerActivo) return;
+                            if (!listenerActivo || !mensajeroConectado) return;
                             
                             snapshot.docChanges().forEach(change => {
                                 const data = change.doc.data();
@@ -606,7 +798,6 @@
                                 
                                 const esParaMi = data.mensajeroId === mensajeroUid;
                                 const estaDisponible = !data.mensajeroId && data.estado === 'Listo para asignar';
-                                const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
                                 if (!esParaMi && !estaDisponible) {
                                     const index = misPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -668,7 +859,7 @@
                                             toast('🔔 Pedido disponible - ¡Tómalo!', 'info', 3000);
                                         }
                                         
-                                        if ((esParaMi || esEntregado) && pedidosNotificando[pedidoId]) {
+                                        if ((esParaMi || data.estado === 'Entregado' || data.estado === 'Cancelado') && pedidosNotificando[pedidoId]) {
                                             sonidoEyMoto.detener();
                                             delete pedidosNotificando[pedidoId];
                                         }
@@ -689,7 +880,7 @@
                             });
                         }, err => {
                             console.warn(`⚠️ Error en listener:`, err.message);
-                            if (listenerActivo) {
+                            if (listenerActivo && mensajeroConectado) {
                                 clearTimeout(timeoutReconexion);
                                 timeoutReconexion = setTimeout(() => {
                                     console.log('🔄 Reintentando conexión...');
@@ -712,18 +903,13 @@
             })
             .catch(err => {
                 console.error('❌ Error obteniendo tiendas:', err);
-                document.getElementById('estadoConexion').textContent = '🔴 Error de conexión';
-                document.getElementById('estadoConexion').style.color = 'var(--red)';
-                
-                clearTimeout(timeoutReconexion);
-                timeoutReconexion = setTimeout(() => {
-                    if (listenerActivo) {
+                if (listenerActivo && mensajeroConectado) {
+                    clearTimeout(timeoutReconexion);
+                    timeoutReconexion = setTimeout(() => {
                         console.log('🔄 Reintentando conexión...');
-                        document.getElementById('estadoConexion').textContent = '🔄 Reconectando...';
-                        document.getElementById('estadoConexion').style.color = 'var(--orange)';
                         escucharPedidos();
-                    }
-                }, 5000);
+                    }, 5000);
+                }
             });
     }
 
@@ -732,6 +918,18 @@
     // ============================================================
     function renderizarPedidos() {
         const container = document.getElementById('listaPedidos');
+        
+        // Si está desconectado, mostrar mensaje
+        if (!mensajeroConectado) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <span class="icono">🔴</span>
+                    <p>Estás desconectado</p>
+                    <span style="font-size:12px;color:var(--text-muted);">Haz clic en "🔴 Desconectado" para conectarte y recibir pedidos</span>
+                </div>
+            `;
+            return;
+        }
         
         const misPedidosActivos = misPedidos.filter(p => 
             p.mensajeroId === mensajeroUid && 
@@ -769,7 +967,6 @@
         const fechaStr = formatearFecha(pedido.fecha);
         const estado = pedido.estado || 'Pendiente';
         
-        // Colores según estado
         let estadoColor = '';
         let estadoLabel = estado;
         switch(estado) {
@@ -791,13 +988,11 @@
             });
         }
         
-        // 🎯 BOTONES SEGÚN ESTADO ACTUAL
         let botonesHtml = '';
         
         if (estado !== 'Entregado' && estado !== 'Cancelado') {
             switch(estado) {
                 case 'Listo para asignar':
-                    // Solo mostrar botón para tomar pedido
                     botonesHtml = `
                         <div class="estados-acciones">
                             <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
@@ -808,7 +1003,6 @@
                     break;
                     
                 case 'En camino al restaurante':
-                    // Siguiente paso: Recogiendo pedido
                     botonesHtml = `
                         <div class="estados-acciones">
                             <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
@@ -822,7 +1016,6 @@
                     break;
                     
                 case 'Recogiendo pedido':
-                    // Siguiente paso: En camino a destino
                     botonesHtml = `
                         <div class="estados-acciones">
                             <button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">
@@ -836,7 +1029,6 @@
                     break;
                     
                 case 'En camino':
-                    // Último paso: Entregar
                     botonesHtml = `
                         <div class="estados-acciones">
                             <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
@@ -850,7 +1042,6 @@
                     break;
                     
                 default:
-                    // Estado desconocido - mostrar opciones básicas
                     botonesHtml = `
                         <div class="estados-acciones">
                             <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">
@@ -866,7 +1057,6 @@
                     `;
             }
         } else {
-            // Pedido finalizado
             botonesHtml = `
                 <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">
                     ✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado
@@ -901,6 +1091,11 @@
     async function tomarPedido(pedidoId, tiendaId) {
         if (!mensajeroUid) {
             toast('⚠️ No has iniciado sesión', 'error');
+            return;
+        }
+        
+        if (!mensajeroConectado) {
+            toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn');
             return;
         }
         
@@ -960,6 +1155,11 @@
             return;
         }
         
+        if (!mensajeroConectado) {
+            toast('⚠️ Estás desconectado. Conéctate para gestionar pedidos.', 'warn');
+            return;
+        }
+        
         if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) return;
         
         try {
@@ -1013,6 +1213,9 @@
     window.cerrarSesion = cerrarSesion;
     window.tomarPedido = tomarPedido;
     window.cambiarEstado = cambiarEstado;
+    window.toggleEstadoConexion = toggleEstadoConexion;
+    window.mostrarModalConfirmacion = mostrarModalConfirmacion;
+    window.cerrarModalConfirmacion = cerrarModalConfirmacion;
     window.toast = toast;
 
     console.log('✅ Panel de mensajero cargado correctamente');
