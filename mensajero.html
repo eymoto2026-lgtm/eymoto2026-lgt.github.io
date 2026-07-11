@@ -103,6 +103,30 @@
         header .estado:hover { transform: scale(1.05); }
         header .estado.desconectado { background: var(--red-bg); color: var(--red); }
 
+        /* 🔄 INDICADOR AUTO-REFRESCO */
+        .auto-refresh-indicator {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--surface2);
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+        .auto-refresh-indicator .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            display: inline-block;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
         .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
         #loginBox {
@@ -300,7 +324,6 @@
         .motivacion-box .btn-conectar { background: var(--yellow); color: #1a1a2e; font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 50px; border: none; cursor: pointer; width: 100%; transition: all 0.3s; animation: pulseBtn 1.5s ease-in-out infinite; }
         @keyframes pulseBtn { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,214,0,0.4); } 50% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,214,0,0.2); } }
         .motivacion-box .btn-conectar:hover { background: var(--yellow-dim); transform: scale(1.05); }
-        .motivacion-box .btn-conectar:active { transform: scale(0.95); }
         .motivacion-box .btn-cerrar { background: transparent; color: var(--text-muted); font-size: 13px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.2s; }
         .motivacion-box .btn-cerrar:hover { background: var(--surface3); color: #fff; }
         .motivacion-box .estadisticas { display: flex; justify-content: center; gap: 20px; margin: 16px 0; font-size: 12px; color: var(--text-muted); }
@@ -438,6 +461,10 @@
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
+        <span class="auto-refresh-indicator">
+            <span class="dot"></span>
+            Auto-refresh activo
+        </span>
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -572,6 +599,7 @@ let timeoutReconexion = null;
 let mensajeroConectado = true;
 let accionPendiente = null;
 let motivacionMostrada = false;
+let mensajerosGlobal = [];
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -639,7 +667,7 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 function mostrarMotivacion() {
     const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
-    const mensajerosActivos = todosLosMensajeros?.filter(m => m.activo !== false && !m.ocupado)?.length || 0;
+    const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado)?.length || 0;
     document.getElementById('pedidosEsperando').textContent = pedidosDisponibles.length;
     document.getElementById('statActivosMotivacion').textContent = mensajerosActivos;
     document.getElementById('statPedidosMotivacion').textContent = pedidosDisponibles.length;
@@ -748,9 +776,11 @@ async function inicializarPanel() {
             actualizarIndicadorConexion();
         }
         await cargarTiendas();
+        await cargarMensajeros();
         await escucharPedidos();
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
+        console.log('🔄 Auto-refresco activado al tomar pedidos');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -763,6 +793,20 @@ async function cargarTiendas() {
         snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
         console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
     } catch (e) { console.error('Error cargando tiendas:', e); }
+}
+async function cargarMensajeros() {
+    try {
+        const snap = await db.collection('usuarios').where('mensajero', '==', true).get();
+        mensajerosGlobal = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            const tienePedidoActivo = todosLosPedidos.some(p => 
+                p.mensajeroId === doc.id && 
+                (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
+            );
+            mensajerosGlobal.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
+        });
+    } catch (e) { console.error('Error cargando mensajeros:', e); }
 }
 
 // ============================================================
@@ -1022,7 +1066,6 @@ function renderizarPedidoCard(pedido, disponible) {
                         <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">
                             📦 RECOGER PEDIDO
                         </button>
-                        <!-- 🔥 SIN BOTÓN DE CANCELAR -->
                     </div>
                 `;
                 break;
@@ -1032,7 +1075,6 @@ function renderizarPedidoCard(pedido, disponible) {
                         <button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">
                             🚗 IR A ENTREGAR
                         </button>
-                        <!-- 🔥 SIN BOTÓN DE CANCELAR -->
                     </div>
                 `;
                 break;
@@ -1042,7 +1084,6 @@ function renderizarPedidoCard(pedido, disponible) {
                         <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
                             ✅ ENTREGAR PEDIDO
                         </button>
-                        <!-- 🔥 SIN BOTÓN DE CANCELAR -->
                     </div>
                 `;
                 break;
@@ -1058,7 +1099,6 @@ function renderizarPedidoCard(pedido, disponible) {
                         <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">
                             ✅ Entregar
                         </button>
-                        <!-- 🔥 SIN BOTÓN DE CANCELAR -->
                     </div>
                 `;
         }
@@ -1096,7 +1136,7 @@ function renderizarPedidoCard(pedido, disponible) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO - CON DETENCIÓN DE SONIDO
+// ✅ TOMAR PEDIDO - CON AUTO-REFRESCO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1113,7 +1153,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         const data = doc.data();
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-            // 🔥 DETENER SONIDO SI OTRO LO TOMÓ
             if (sonidoEyMoto.estaSonando(pedidoId)) {
                 sonidoEyMoto.detenerNotificacion(pedidoId);
             }
@@ -1140,12 +1179,23 @@ async function tomarPedido(pedidoId, tiendaId) {
         sonidoEyMoto.reproducir(); // Sonido de confirmación
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
         
-        // 🔄 Actualizar lista inmediatamente
+        // 🔄 ACTUALIZAR LISTA INMEDIATAMENTE
         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (index !== -1) {
             todosLosPedidos[index] = { ...todosLosPedidos[index], mensajeroId: mensajeroUid, estado: 'En camino al restaurante' };
         }
         renderizarPedidos();
+        
+        // 🔄 AUTO-REFRESCO: Recargar todo después de 1.5 segundos
+        setTimeout(() => {
+            console.log('🔄 Auto-refresco: Recargando pedidos después de tomar pedido');
+            // Recargar pedidos
+            cargarPedidosCompletos();
+            // Recargar mensajeros
+            cargarMensajeros();
+            // Actualizar estadísticas
+            actualizarContadores();
+        }, 1500);
         
     } catch (e) {
         console.error('Error tomando pedido:', e);
@@ -1154,7 +1204,50 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 🔄 CAMBIAR ESTADO DEL PEDIDO - SIN CANCELAR
+// 🔄 FUNCIONES DE AUTO-REFRESCO
+// ============================================================
+async function cargarPedidosCompletos() {
+    try {
+        const tiendasSnap = await db.collection('tiendas').get();
+        const nuevosPedidos = [];
+        for (const tiendaDoc of tiendasSnap.docs) {
+            const tiendaId = tiendaDoc.id;
+            try {
+                const pedidosSnap = await db.collection('tiendas')
+                    .doc(tiendaId)
+                    .collection('pedidos')
+                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino'])
+                    .get();
+                pedidosSnap.forEach(doc => {
+                    const data = doc.data();
+                    // Solo agregar si es para mí o está disponible
+                    if (data.mensajeroId === mensajeroUid || !data.mensajeroId) {
+                        nuevosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                    }
+                });
+            } catch (err) {
+                console.warn(`⚠️ Error recargando pedidos de tienda ${tiendaId}:`, err);
+            }
+        }
+        todosLosPedidos = nuevosPedidos;
+        renderizarPedidos();
+        console.log(`🔄 Auto-refresco: ${todosLosPedidos.length} pedidos cargados`);
+    } catch (e) {
+        console.error('❌ Error en auto-refresco:', e);
+    }
+}
+
+async function actualizarContadores() {
+    try {
+        const disponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
+        const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid && p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+        document.getElementById('contadorDisponibles').textContent = disponibles.length;
+        document.getElementById('contadorMisPedidos').textContent = misPedidos.length;
+    } catch (e) {}
+}
+
+// ============================================================
+// 🔄 CAMBIAR ESTADO DEL PEDIDO - CON AUTO-REFRESCO
 // ============================================================
 async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1164,7 +1257,6 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
         return; 
     }
     
-    // 🔥 CONFIRMAR CAMBIO DE ESTADO (sin opción de cancelar)
     if (!confirm(`¿Confirmar cambio a "${nuevoEstado}"?`)) return;
     
     try {
@@ -1175,7 +1267,6 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
             [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // 🔥 DETENER SONIDO SI EL PEDIDO FUE ENTREGADO
         if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
             if (sonidoEyMoto.estaSonando(pedidoId)) {
                 sonidoEyMoto.detenerNotificacion(pedidoId);
@@ -1185,12 +1276,13 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
         sonidoEyMoto.reproducir();
         toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
         
-        // 🔄 Actualizar lista inmediatamente
-        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-        if (index !== -1) {
-            todosLosPedidos[index] = { ...todosLosPedidos[index], estado: nuevoEstado };
-        }
-        renderizarPedidos();
+        // 🔄 AUTO-REFRESCO después de cambiar estado
+        setTimeout(() => {
+            console.log('🔄 Auto-refresco: Recargando pedidos después de cambiar estado');
+            cargarPedidosCompletos();
+            cargarMensajeros();
+            actualizarContadores();
+        }, 1000);
         
     } catch (e) {
         console.error('Error actualizando estado:', e);
@@ -1241,6 +1333,7 @@ window.toast = toast;
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔇 El sonido se detiene al tomar el pedido');
 console.log('🚫 El mensajero NO puede cancelar pedidos');
+console.log('🔄 Auto-refresco activado al tomar pedidos y cambiar estados');
 console.log('🚀 Notificación motivacional activa para mensajeros desconectados');
 </script>
 </body>
