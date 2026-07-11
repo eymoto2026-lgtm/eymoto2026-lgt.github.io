@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Mensajeros - EyMoto</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
@@ -143,7 +143,7 @@
         .auto-refresh-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
         
-        /* 🔔 BADGE DE NOTIFICACIÓN PARA ADMIN MENSAJEROS */
+        /* 🔔 BADGE DE NOTIFICACIÓN */
         .notif-badge {
             background: var(--red);
             color: #fff;
@@ -154,6 +154,22 @@
             animation: pulse-badge 1s ease-in-out infinite;
         }
         @keyframes pulse-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        /* 📞 INDICADOR DE LLAMADA ENTRANTE */
+        .llamada-entrante {
+            background: var(--red);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            animation: llamada-pulse 0.8s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes llamada-pulse {
+            0%, 100% { background: var(--red); transform: scale(1); }
+            50% { background: #ff6b6b; transform: scale(1.05); }
+        }
         
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
@@ -269,79 +285,228 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO - SOLO PARA ADMIN MENSAJEROS
+// 📞 SISTEMA DE SONIDO - TELÉFONO REALISTA
 // ============================================================
-class SonidoEyMoto {
+class SonidoTelefono {
     constructor() {
-        this.audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-        this.audio = new Audio();
-        this.cargado = false;
+        this.ctx = null;
+        this.inicializado = false;
+        this.reproduciendo = false;
         this.intervalos = {};
         this.pedidosActivos = {};
-        this.cargarSonido();
+        this.audioContextIniciado = false;
     }
-    cargarSonido() {
+
+    // Inicializar contexto de audio (requiere interacción del usuario)
+    iniciarAudio() {
         try {
-            this.audio = new Audio(this.audioUrl);
-            this.audio.preload = 'auto';
-            this.audio.addEventListener('canplaythrough', () => { this.cargado = true; });
-            this.audio.load();
-        } catch (e) { console.warn('⚠️ Error cargando sonido:', e.message); this.cargado = false; }
-    }
-    reproducir() {
-        try {
-            if (!this.cargado) this.cargarSonido();
-            const audioClone = new Audio(this.audioUrl);
-            audioClone.volume = 0.8;
-            audioClone.play().catch(e => { this.fallbackBeep(); });
-        } catch (e) { this.fallbackBeep(); }
-    }
-    iniciarNotificacion(pedidoId) {
-        if (this.pedidosActivos[pedidoId]) return;
-        console.log(`🔔 [ADMIN MENSAJEROS] Nuevo pedido disponible para asignar: ${pedidoId}`);
-        this.pedidosActivos[pedidoId] = true;
-        this.reproducir();
-        this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId]) { this.reproducir(); } 
-            else { this.detenerNotificacion(pedidoId); }
-        }, 5000);
-    }
-    detenerNotificacion(pedidoId) {
-        if (!pedidoId) { 
-            Object.keys(this.pedidosActivos).forEach(id => { this.detenerNotificacion(id); }); 
-            return; 
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+            this.inicializado = true;
+            this.audioContextIniciado = true;
+            console.log('📞 Audio de teléfono inicializado');
+            return true;
+        } catch (e) {
+            console.warn('⚠️ Error inicializando audio:', e.message);
+            return false;
         }
+    }
+
+    // Generar tono de teléfono (440Hz + 480Hz)
+    tonoTelefono(duracion, volumen = 0.3) {
+        try {
+            if (!this.inicializado || !this.ctx || this.ctx.state !== 'running') {
+                if (!this.iniciarAudio()) return;
+            }
+
+            // Frecuencias del tono de teléfono estándar (EE.UU./Latinoamérica)
+            const frecuencias = [440, 480];
+            
+            frecuencias.forEach(freq => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(volumen * 0.7, this.ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
+                
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + duracion);
+            });
+
+            // Armónico para darle más cuerpo
+            setTimeout(() => {
+                try {
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(this.ctx.destination);
+                    osc2.frequency.value = 500;
+                    osc2.type = 'sine';
+                    gain2.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.6);
+                    osc2.start(this.ctx.currentTime + 0.02);
+                    osc2.stop(this.ctx.currentTime + duracion * 0.6);
+                } catch (e) {}
+            }, 20);
+
+        } catch (e) {
+            console.debug('⚠️ Error generando tono de teléfono:', e.message);
+        }
+    }
+
+    // 📞 SECUENCIA DE TELÉFONO SONANDO (2 segundos de tono, 2 segundos de silencio)
+    secuenciaTelefono() {
+        try {
+            if (!this.inicializado) this.iniciarAudio();
+            if (!this.ctx || this.ctx.state !== 'running') {
+                console.warn('⚠️ Audio no disponible');
+                return;
+            }
+
+            // Tono ON (2 segundos)
+            this.tonoTelefono(1.8, 0.35);
+            
+            // Pequeña pausa entre tonos
+            setTimeout(() => {
+                try {
+                    // Segundo tono más corto
+                    this.tonoTelefono(0.8, 0.3);
+                } catch (e) {}
+            }, 1900);
+
+        } catch (e) {
+            console.debug('⚠️ Error en secuencia de teléfono:', e.message);
+            this.fallbackBeep();
+        }
+    }
+
+    // 📞 LLAMADA COMPLETA (se repite mientras el pedido está disponible)
+    iniciarLlamada(pedidoId) {
+        if (this.pedidosActivos[pedidoId]) return;
+        
+        console.log(`📞 [ADMIN MENSAJEROS] 📞 LLAMADA ENTRANTE - Pedido: ${pedidoId}`);
+        
+        // Inicializar audio si no está hecho
+        if (!this.inicializado) this.iniciarAudio();
+        
+        this.pedidosActivos[pedidoId] = true;
+        this.reproduciendo = true;
+        
+        // Reproducir primera secuencia
+        this.secuenciaTelefono();
+        
+        // Configurar intervalo para repetir (4 segundos: 2s tono + 2s silencio)
+        this.intervalos[pedidoId] = setInterval(() => {
+            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
+                this.secuenciaTelefono();
+                
+                // Efecto visual: parpadeo en el header
+                const badge = document.getElementById('headerBadge');
+                if (badge) {
+                    badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
+                }
+            } else {
+                this.detenerLlamada(pedidoId);
+            }
+        }, 4000);
+    }
+
+    // 📞 DETENER LLAMADA
+    detenerLlamada(pedidoId) {
+        if (!pedidoId) {
+            // Detener todas las llamadas
+            Object.keys(this.pedidosActivos).forEach(id => {
+                this.detenerLlamada(id);
+            });
+            return;
+        }
+        
         if (this.pedidosActivos[pedidoId]) {
-            console.log(`⏹️ [ADMIN MENSAJEROS] Deteniendo notificación: ${pedidoId}`);
+            console.log(`📞 [ADMIN MENSAJEROS] 📞 LLAMADA FINALIZADA - Pedido: ${pedidoId}`);
             delete this.pedidosActivos[pedidoId];
-            if (this.intervalos[pedidoId]) { 
-                clearInterval(this.intervalos[pedidoId]); 
-                delete this.intervalos[pedidoId]; 
+            
+            if (this.intervalos[pedidoId]) {
+                clearInterval(this.intervalos[pedidoId]);
+                delete this.intervalos[pedidoId];
+            }
+            
+            // Verificar si quedan pedidos activos
+            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
+            if (!hayActivos) {
+                this.reproduciendo = false;
+                const badge = document.getElementById('headerBadge');
+                if (badge) {
+                    badge.style.animation = '';
+                }
             }
         }
     }
-    estaSonando(pedidoId) { return this.pedidosActivos[pedidoId] === true; }
-    fallbackBeep() {
+
+    // Esta sonando?
+    estaSonando(pedidoId) {
+        return this.pedidosActivos[pedidoId] === true;
+    }
+
+    // Sonido de confirmación (cuando se asigna)
+    sonidoConfirmacion() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            [800, 1000, 1200].forEach((freq, i) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+            if (!this.inicializado) this.iniciarAudio();
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            
+            // Tono de confirmación (subida)
+            [600, 800, 1000].forEach((freq, i) => {
+                const t = i * 0.1;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
                 osc.connect(gain);
-                gain.connect(ctx.destination);
+                gain.connect(this.ctx.destination);
                 osc.frequency.value = freq;
                 osc.type = 'sine';
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
+                osc.start(this.ctx.currentTime + t);
+                osc.stop(this.ctx.currentTime + t + 0.15);
+            });
+        } catch (e) {}
+    }
+
+    // Fallback con Web Audio
+    fallbackBeep() {
+        try {
+            if (!this.inicializado) this.iniciarAudio();
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            
+            [800, 1000, 1200].forEach((freq, i) => {
                 const t = i * 0.15;
-                gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
-                osc.start(ctx.currentTime + t);
-                osc.stop(ctx.currentTime + t + 0.2);
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
+                osc.start(this.ctx.currentTime + t);
+                osc.stop(this.ctx.currentTime + t + 0.2);
             });
         } catch (e) {}
     }
 }
-const sonidoEyMoto = new SonidoEyMoto();
+
+// ============================================================
+// INSTANCIA DEL SONIDO
+// ============================================================
+const sonidoTelefono = new SonidoTelefono();
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -352,6 +517,7 @@ let listenerMensajeros = null;
 let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
+let notificacionActiva = false;
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -362,6 +528,10 @@ function iniciarSesion() {
     const msg = document.getElementById('loginMsg');
     msg.textContent = '';
     if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
+    
+    // Inicializar audio al hacer clic
+    sonidoTelefono.iniciarAudio();
+    
     auth.signInWithEmailAndPassword(email, pass)
         .then(async (userCredential) => {
             const user = userCredential.user;
@@ -386,7 +556,7 @@ function logout() {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
-    sonidoEyMoto.detenerNotificacion();
+    sonidoTelefono.detenerLlamada();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
@@ -405,7 +575,7 @@ auth.onAuthStateChanged(user => {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
         }
-        sonidoEyMoto.detenerNotificacion();
+        sonidoTelefono.detenerLlamada();
     }
 });
 
@@ -419,6 +589,7 @@ async function inicializarPanel() {
         await cargarPedidosIniciales();
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
+        console.log('📞 Sistema de notificación por teléfono activo');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -466,7 +637,6 @@ async function cargarPedidosIniciales() {
         for (const tiendaDoc of tiendasSnap.docs) {
             const tiendaId = tiendaDoc.id;
             try {
-                // 🔥 SOLO pedidos "Listo para asignar" (marcados por admin general)
                 const pedidosSnap = await db.collection('tiendas')
                     .doc(tiendaId)
                     .collection('pedidos')
@@ -474,7 +644,6 @@ async function cargarPedidosIniciales() {
                     .get();
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
-                    // 🔥 SOLO si NO tienen mensajero asignado
                     if (!data.mensajeroId) {
                         todosLosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data, _cargadoInicial: true });
                     }
@@ -497,7 +666,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// 🔥 ESCUCHAR PEDIDOS - SOLO ADMIN MENSAJEROS RECIBE NOTIFICACIÓN
+// 📞 ESCUCHAR PEDIDOS - CON SONIDO DE TELÉFONO
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -522,21 +691,40 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
-                                // 🔥 SOLO EL ADMIN MENSAJEROS RECIBE NOTIFICACIÓN
+                                // 📞 SI EL PEDIDO ESTÁ DISPONIBLE → INICIAR LLAMADA
                                 if (estaDisponible) {
-                                    // Sonido y notificación solo para el admin de mensajeros
-                                    if (!sonidoEyMoto.estaSonando(pedidoId)) {
-                                        sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                    if (!sonidoTelefono.estaSonando(pedidoId)) {
                                         const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`🛵 NUEVO PEDIDO de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
+                                        sonidoTelefono.iniciarLlamada(pedidoId);
+                                        notificacionActiva = true;
+                                        toast(`📞 LLAMADA ENTRANTE - Nuevo pedido de ${tienda.nombre || 'Tienda'}`, 'new', 8000);
+                                        
+                                        // Mostrar badge animado
+                                        const badge = document.getElementById('headerBadge');
+                                        if (badge) {
+                                            badge.style.display = 'inline-block';
+                                            badge.textContent = '📞';
+                                            badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
+                                        }
                                     }
                                 }
                                 
-                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER SONIDO
+                                // 📞 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER LLAMADA
                                 if (tieneMensajero || esEntregado) {
-                                    if (sonidoEyMoto.estaSonando(pedidoId)) {
-                                        console.log(`🔇 Pedido ${pedidoId} asignado/entregado, deteniendo sonido`);
-                                        sonidoEyMoto.detenerNotificacion(pedidoId);
+                                    if (sonidoTelefono.estaSonando(pedidoId)) {
+                                        console.log(`📞 Pedido ${pedidoId} asignado/entregado, finalizando llamada`);
+                                        sonidoTelefono.detenerLlamada(pedidoId);
+                                        
+                                        // Verificar si quedan pedidos activos
+                                        const hayActivos = Object.keys(sonidoTelefono.pedidosActivos).length > 0;
+                                        if (!hayActivos) {
+                                            notificacionActiva = false;
+                                            const badge = document.getElementById('headerBadge');
+                                            if (badge) {
+                                                badge.style.display = 'none';
+                                                badge.style.animation = '';
+                                            }
+                                        }
                                     }
                                 }
                                 
@@ -544,7 +732,6 @@ function escucharPedidosEnTiempoReal() {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (!existe) {
-                                            const tienda = tiendasCache[tiendaId] || {};
                                             todosLosPedidos.push({ 
                                                 id: pedidoId, 
                                                 tiendaId: tiendaId, 
@@ -565,19 +752,19 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // Si el pedido fue asignado, detener sonido
+                                    // 📞 Si el pedido fue asignado, detener llamada
                                     if (tieneMensajero || esEntregado) {
-                                        if (sonidoEyMoto.estaSonando(pedidoId)) {
-                                            sonidoEyMoto.detenerNotificacion(pedidoId);
+                                        if (sonidoTelefono.estaSonando(pedidoId)) {
+                                            sonidoTelefono.detenerLlamada(pedidoId);
                                         }
                                     }
                                     
-                                    // Si está disponible, notificar al admin
+                                    // 📞 Si está disponible, iniciar llamada
                                     if (estaDisponible) {
-                                        if (!sonidoEyMoto.estaSonando(pedidoId)) {
-                                            sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                        if (!sonidoTelefono.estaSonando(pedidoId)) {
+                                            sonidoTelefono.iniciarLlamada(pedidoId);
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            toast(`🛵 Pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)} disponible para asignar`, 'new', 5000);
+                                            toast(`📞 LLAMADA ENTRANTE - Pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)}`, 'new', 5000);
                                         }
                                     }
                                     
@@ -591,8 +778,8 @@ function escucharPedidosEnTiempoReal() {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
-                                        if (sonidoEyMoto.estaSonando(pedidoId)) {
-                                            sonidoEyMoto.detenerNotificacion(pedidoId);
+                                        if (sonidoTelefono.estaSonando(pedidoId)) {
+                                            sonidoTelefono.detenerLlamada(pedidoId);
                                         }
                                     }
                                 }
@@ -730,8 +917,8 @@ function renderizarPedidosAsignar() {
         }
         const hayMensajeros = mensajerosActivos.length > 0;
         const claseNuevo = esNuevo ? 'nuevo' : '';
-        const sonidoActivo = sonidoEyMoto.estaSonando(p.id);
-        const indicadorSonido = sonidoActivo ? '🔊 Sonando...' : '';
+        const sonidoActivo = sonidoTelefono.estaSonando(p.id);
+        const indicadorSonido = sonidoActivo ? '📞 LLAMANDO...' : '';
         html += `
             <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
                 <div class="header">
@@ -752,7 +939,7 @@ function renderizarPedidosAsignar() {
                     `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">👤 Asignar mensajero</button>` :
                     `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;"><span style="font-size:14px;">⚠️</span><span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span></div>`
                 }
-                ${sonidoActivo ? `<div style="font-size:10px;color:var(--green);margin-top:4px;text-align:center;">🔊 Sonando notificación para admin...</div>` : ''}
+                ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">📞 Llamada entrante...</div>` : ''}
             </div>
         `;
     });
@@ -770,7 +957,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     if (!pedido) { toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); recargarPedidos(); return; }
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
-        if (sonidoEyMoto.estaSonando(pedidoId)) { sonidoEyMoto.detenerNotificacion(pedidoId); }
+        if (sonidoTelefono.estaSonando(pedidoId)) { sonidoTelefono.detenerLlamada(pedidoId); }
         recargarPedidos();
         return;
     }
@@ -830,7 +1017,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// 🔥 ASIGNAR PEDIDO - SOLO ADMIN MENSAJEROS PUEDE ASIGNAR
+// 📞 ASIGNAR PEDIDO - CON SONIDO DE CONFIRMACIÓN
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -843,7 +1030,7 @@ async function asignarPedidoManual() {
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoEyMoto.estaSonando(pedidoId)) { sonidoEyMoto.detenerNotificacion(pedidoId); }
+        if (sonidoTelefono.estaSonando(pedidoId)) { sonidoTelefono.detenerLlamada(pedidoId); }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -860,15 +1047,18 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros'
             });
         
-        // 🔥 DETENER SONIDO
-        if (sonidoEyMoto.estaSonando(pedidoId)) {
-            sonidoEyMoto.detenerNotificacion(pedidoId);
+        // 📞 DETENER LLAMADA
+        if (sonidoTelefono.estaSonando(pedidoId)) {
+            sonidoTelefono.detenerLlamada(pedidoId);
         }
+        
+        // 📞 SONIDO DE CONFIRMACIÓN
+        sonidoTelefono.sonidoConfirmacion();
         
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
-        // 🔥 AUTO-REFRESCO
+        // AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
             recargarPedidos();
@@ -878,7 +1068,7 @@ async function asignarPedidoManual() {
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
-            if (sonidoEyMoto.estaSonando(pedidoId)) { sonidoEyMoto.detenerNotificacion(pedidoId); }
+            if (sonidoTelefono.estaSonando(pedidoId)) { sonidoTelefono.detenerLlamada(pedidoId); }
             cerrarModalAsignacion();
             recargarPedidos();
         } else {
@@ -888,14 +1078,14 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 🔥 NOTIFICAR A TODOS LOS MENSAJEROS
+// 📞 NOTIFICAR A TODOS
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoEyMoto.estaSonando(pedidoId)) { sonidoEyMoto.detenerNotificacion(pedidoId); }
+        if (sonidoTelefono.estaSonando(pedidoId)) { sonidoTelefono.detenerLlamada(pedidoId); }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -911,11 +1101,10 @@ async function notificarATodos() {
                 notificacionEnviada: true
             });
         
-        // 🔥 El sonido ya está sonando para el admin, no iniciar otro
+        // La llamada ya está sonando, no iniciar otra
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         
-        // 🔥 AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
             recargarPedidos();
@@ -1051,7 +1240,7 @@ function formatearFecha(fecha) {
     } catch (e) { return '--/--/--'; }
 }
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '📞' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1083,6 +1272,7 @@ window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
+console.log('📞 Sonido de teléfono activo para notificaciones');
 console.log('🔔 El admin de mensajeros recibe notificaciones de pedidos listos');
 console.log('🔇 Los mensajeros SOLO reciben pedidos cuando el admin los asigna');
 console.log('🔄 Auto-refresco activado al asignar pedidos');
