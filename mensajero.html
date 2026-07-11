@@ -523,7 +523,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO (SOLO PARA PEDIDOS ASIGNADOS)
+// 🎵 SISTEMA DE SONIDO
 // ============================================================
 class SonidoEyMoto {
     constructor() {
@@ -837,19 +837,13 @@ function escucharPedidos() {
                             const data = change.doc.data();
                             const pedidoId = change.doc.id;
                             
-                            // 🔥 SOLO PEDIDOS QUE SON PARA ESTE MENSAJERO O QUE HAN SIDO NOTIFICADOS
                             const esParaMi = data.mensajeroId === mensajeroUid;
                             const fueNotificado = data.notificacionEnviada === true;
                             
-                            // 🔥 UN MENSAJERO SOLO PUEDE VER PEDIDOS QUE:
-                            // 1. Tienen su UID como mensajeroId (asignado directamente)
-                            // 2. O que han sido notificados a todos (notificacionEnviada = true)
-                            // 3. Y que NO estén entregados o cancelados
                             const esVisibleParaMi = (esParaMi || fueNotificado) && 
                                                      data.estado !== 'Entregado' && 
                                                      data.estado !== 'Cancelado';
                             
-                            // Si no es visible para mí, remover de la lista
                             if (!esVisibleParaMi) {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 if (index !== -1) {
@@ -862,7 +856,6 @@ function escucharPedidos() {
                                 return;
                             }
                             
-                            // 🔥 SI ES PARA MÍ O NOTIFICADO → INICIAR SONIDO
                             if (esParaMi || fueNotificado) {
                                 if (!sonidoEyMoto.estaSonando(pedidoId)) {
                                     sonidoEyMoto.iniciarNotificacion(pedidoId);
@@ -883,7 +876,6 @@ function escucharPedidos() {
                             } else if (change.type === 'modified') {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 
-                                // Si el pedido ya no es visible para mí, remover
                                 if (!esVisibleParaMi) {
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
@@ -895,7 +887,6 @@ function escucharPedidos() {
                                     return;
                                 }
                                 
-                                // Si el pedido fue entregado o cancelado, detener sonido
                                 if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
                                     if (sonidoEyMoto.estaSonando(pedidoId)) {
                                         sonidoEyMoto.detenerNotificacion(pedidoId);
@@ -980,21 +971,18 @@ function renderizarPedidos() {
         return;
     }
     
-    // 🔥 SOLO PEDIDOS VISIBLES PARA EL MENSAJERO
     const pedidosVisibles = todosLosPedidos.filter(p => 
         (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true) &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
     
-    // Pedidos disponibles para tomar (notificados pero sin mensajero)
     const disponibles = pedidosVisibles.filter(p => 
         p.estado === 'Listo para asignar' && 
         !p.mensajeroId && 
         p.notificacionEnviada === true
     );
     
-    // Mis pedidos activos (asignados a mí)
     const misPedidosActivos = pedidosVisibles.filter(p => 
         p.mensajeroId === mensajeroUid && 
         p.estado !== 'Entregado' && 
@@ -1070,7 +1058,6 @@ function renderizarPedidoCard(pedido, disponible) {
     const sonidoActivo = sonidoEyMoto.estaSonando(pedido.id);
     const indicadorSonido = sonidoActivo ? '🔊' : '';
     
-    // 🔥 PEDIDO DISPONIBLE → BOTÓN "TOMAR PEDIDO"
     if (estado === 'Listo para asignar' && !pedido.mensajeroId && pedido.notificacionEnviada === true) {
         botonesHtml = `
             <div class="estados-acciones">
@@ -1081,7 +1068,6 @@ function renderizarPedidoCard(pedido, disponible) {
             ${sonidoActivo ? `<div style="font-size:10px;color:var(--green);margin-top:4px;text-align:center;">🔊 Sonando notificación...</div>` : ''}
         `;
     } 
-    // 🔥 PEDIDO ASIGNADO A MÍ → BOTONES DE FLUJO (SIN CANCELAR)
     else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
         switch(estado) {
             case 'En camino al restaurante':
@@ -1127,7 +1113,6 @@ function renderizarPedidoCard(pedido, disponible) {
                 `;
         }
     } 
-    // 🔥 PEDIDO ENTREGADO O CANCELADO
     else if (estado === 'Entregado' || estado === 'Cancelado') {
         botonesHtml = `
             <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">
@@ -1160,7 +1145,7 @@ function renderizarPedidoCard(pedido, disponible) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO - CON AUTO-REFRESCO
+// ✅ TOMAR PEDIDO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1191,25 +1176,23 @@ async function tomarPedido(pedidoId, tiendaId) {
             mensajeroId: mensajeroUid,
             nombreMensajero: mensajeroData?.nombre || 'Mensajero',
             estado: 'En camino al restaurante',
-            fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp()
+            fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
+            notificacionEnviada: false  // 🔥 Ya no es "notificado a todos", es asignado a uno
         });
         
-        // 🔥 DETENER SONIDO
         if (sonidoEyMoto.estaSonando(pedidoId)) {
             sonidoEyMoto.detenerNotificacion(pedidoId);
         }
         
-        sonidoEyMoto.reproducir(); // Sonido de confirmación
+        sonidoEyMoto.reproducir();
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
         
-        // 🔄 ACTUALIZAR LISTA
         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (index !== -1) {
             todosLosPedidos[index] = { ...todosLosPedidos[index], mensajeroId: mensajeroUid, estado: 'En camino al restaurante' };
         }
         renderizarPedidos();
         
-        // 🔄 AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de tomar pedido');
             cargarPedidosCompletos();
@@ -1240,7 +1223,6 @@ async function cargarPedidosCompletos() {
                     .get();
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
-                    // 🔥 SOLO pedidos que son para mí o notificados
                     if (data.mensajeroId === mensajeroUid || data.notificacionEnviada === true) {
                         nuevosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
                     }
@@ -1296,7 +1278,6 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
         sonidoEyMoto.reproducir();
         toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
         
-        // 🔄 AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de cambiar estado');
             cargarPedidosCompletos();
