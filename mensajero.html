@@ -232,7 +232,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO
+// 🎵 SISTEMA DE SONIDO - MEJORADO
 // ============================================================
 class SonidoEyMoto {
     constructor() {
@@ -545,7 +545,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - CON DETECCIÓN DE SONIDO
+// 📢 ESCUCHAR PEDIDOS
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -576,7 +576,7 @@ function escucharPedidos() {
                                                      data.estado !== 'Entregado' && 
                                                      data.estado !== 'Cancelado';
                             
-                            // 🔥 SI EL PEDIDO TIENE MENSAJERO → DETENER SONIDO INMEDIATAMENTE
+                            // 🔥 SI EL PEDIDO TIENE MENSAJERO → DETENER SONIDO
                             if (data.mensajeroId) {
                                 if (sonidoEyMoto.estaSonando(pedidoId)) {
                                     console.log(`🔇 Pedido ${pedidoId} tiene mensajero, DETENIENDO sonido`);
@@ -833,7 +833,7 @@ function renderizarPedidoCard(pedido, disponible) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO - CON DETENCIÓN DE SONIDO
+// ✅ TOMAR PEDIDO - CON AUTO-REFRESCO FORZADO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -852,8 +852,9 @@ async function tomarPedido(pedidoId, tiendaId) {
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
             sonidoEyMoto.detenerNotificacion(pedidoId);
-            const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-            if (index !== -1) { todosLosPedidos.splice(index, 1); }
+            
+            // 🔥 FORZAR REFRESCO DE LA LISTA
+            await cargarPedidosCompletos();
             renderizarPedidos();
             return;
         }
@@ -870,24 +871,24 @@ async function tomarPedido(pedidoId, tiendaId) {
         // 🔥 DETENER SONIDO INMEDIATAMENTE
         sonidoEyMoto.detenerNotificacion(pedidoId);
         
-        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-        if (index !== -1) {
-            todosLosPedidos[index] = { 
-                ...todosLosPedidos[index], 
-                mensajeroId: mensajeroUid, 
-                estado: 'En camino al restaurante',
-                notificacionEnviada: false
-            };
-        }
+        // 🔥 FORZAR AUTO-REFRESCO INMEDIATO - RECARGAR TODOS LOS PEDIDOS
+        await cargarPedidosCompletos();
         
+        // 🔥 ACTUALIZAR CONTADORES
+        await actualizarContadores();
+        
+        // 🔥 RENDERIZAR NUEVAMENTE
         renderizarPedidos();
+        
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
         
-        setTimeout(() => {
-            console.log('🔄 Auto-refresco: Recargando pedidos');
-            cargarPedidosCompletos();
-            cargarMensajeros();
-            actualizarContadores();
+        // 🔄 SEGUNDO AUTO-REFRESCO DESPUÉS DE 1.5 SEGUNDOS (POR SI ACASO)
+        setTimeout(async () => {
+            console.log('🔄 Auto-refresco adicional: Recargando pedidos');
+            await cargarPedidosCompletos();
+            await cargarMensajeros();
+            await actualizarContadores();
+            renderizarPedidos();
         }, 1500);
         
     } catch (e) {
@@ -909,10 +910,11 @@ async function cargarPedidosCompletos() {
                 const pedidosSnap = await db.collection('tiendas')
                     .doc(tiendaId)
                     .collection('pedidos')
-                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino'])
+                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                     .get();
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
+                    // Solo pedidos que son para mí o que han sido notificados
                     if (data.mensajeroId === mensajeroUid || data.notificacionEnviada === true) {
                         nuevosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
                     }
@@ -922,10 +924,11 @@ async function cargarPedidosCompletos() {
             }
         }
         todosLosPedidos = nuevosPedidos;
-        renderizarPedidos();
         console.log(`🔄 Auto-refresco: ${todosLosPedidos.length} pedidos cargados`);
+        return nuevosPedidos;
     } catch (e) {
         console.error('❌ Error en auto-refresco:', e);
+        return [];
     }
 }
 
@@ -965,14 +968,14 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
             }
         }
         
-        toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
+        // 🔥 AUTO-REFRESCO DESPUÉS DE CAMBIAR ESTADO
+        setTimeout(async () => {
+            await cargarPedidosCompletos();
+            await actualizarContadores();
+            renderizarPedidos();
+        }, 500);
         
-        setTimeout(() => {
-            console.log('🔄 Auto-refresco: Recargando pedidos después de cambiar estado');
-            cargarPedidosCompletos();
-            cargarMensajeros();
-            actualizarContadores();
-        }, 1000);
+        toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
         
     } catch (e) {
         console.error('Error actualizando estado:', e);
@@ -1022,6 +1025,7 @@ window.toast = toast;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔇 EL SONIDO SE DETIENE INMEDIATAMENTE AL TOMAR EL PEDIDO');
+console.log('🔄 AUTO-REFRESCO FORZADO AL TOMAR EL PEDIDO');
 console.log('🚫 SIN VENTANA DE CONFIRMACIÓN - CAMBIO INMEDIATO');
 </script>
 </body>
