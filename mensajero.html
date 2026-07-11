@@ -552,21 +552,36 @@ class SonidoEyMoto {
     }
     iniciarNotificacion(pedidoId) {
         if (this.pedidosActivos[pedidoId]) return;
-        console.log(`🔔 [MENSAJERO] Nuevo pedido asignado: ${pedidoId}`);
+        console.log(`🔔 [MENSAJERO] Nuevo pedido disponible: ${pedidoId}`);
         this.pedidosActivos[pedidoId] = true;
         this.reproducir();
         this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId]) { this.reproducir(); } 
-            else { this.detenerNotificacion(pedidoId); }
+            if (this.pedidosActivos[pedidoId]) { 
+                this.reproducir(); 
+            } else { 
+                this.detenerNotificacion(pedidoId); 
+            }
         }, 5000);
     }
     detenerNotificacion(pedidoId) {
-        if (!pedidoId) { Object.keys(this.pedidosActivos).forEach(id => { this.detenerNotificacion(id); }); return; }
-        console.log(`⏹️ [MENSAJERO] Deteniendo notificación: ${pedidoId}`);
-        delete this.pedidosActivos[pedidoId];
-        if (this.intervalos[pedidoId]) { clearInterval(this.intervalos[pedidoId]); delete this.intervalos[pedidoId]; }
+        if (!pedidoId) { 
+            Object.keys(this.pedidosActivos).forEach(id => { 
+                this.detenerNotificacion(id); 
+            }); 
+            return; 
+        }
+        if (this.pedidosActivos[pedidoId]) {
+            console.log(`⏹️ [MENSAJERO] DETENIENDO notificación: ${pedidoId}`);
+            delete this.pedidosActivos[pedidoId];
+            if (this.intervalos[pedidoId]) { 
+                clearInterval(this.intervalos[pedidoId]); 
+                delete this.intervalos[pedidoId]; 
+            }
+        }
     }
-    estaSonando(pedidoId) { return this.pedidosActivos[pedidoId] === true; }
+    estaSonando(pedidoId) { 
+        return this.pedidosActivos[pedidoId] === true; 
+    }
     fallbackBeep() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -784,6 +799,7 @@ async function inicializarPanel() {
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔔 Solo recibes pedidos cuando el admin te los asigna o notifica');
+        console.log('🔇 El sonido se detiene inmediatamente al tomar el pedido');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -844,6 +860,7 @@ function escucharPedidos() {
                                                      data.estado !== 'Entregado' && 
                                                      data.estado !== 'Cancelado';
                             
+                            // 🔥 SI NO ES VISIBLE, REMOVER Y DETENER SONIDO
                             if (!esVisibleParaMi) {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 if (index !== -1) {
@@ -856,6 +873,7 @@ function escucharPedidos() {
                                 return;
                             }
                             
+                            // 🔥 SI ES VISIBLE Y NO ESTÁ SONANDO, INICIAR SONIDO
                             if (esParaMi || fueNotificado) {
                                 if (!sonidoEyMoto.estaSonando(pedidoId)) {
                                     sonidoEyMoto.iniciarNotificacion(pedidoId);
@@ -876,6 +894,7 @@ function escucharPedidos() {
                             } else if (change.type === 'modified') {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 
+                                // 🔥 SI EL PEDIDO YA NO ES VISIBLE, REMOVER Y DETENER SONIDO
                                 if (!esVisibleParaMi) {
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
@@ -887,6 +906,7 @@ function escucharPedidos() {
                                     return;
                                 }
                                 
+                                // 🔥 SI EL PEDIDO FUE ENTREGADO O CANCELADO, DETENER SONIDO
                                 if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
                                     if (sonidoEyMoto.estaSonando(pedidoId)) {
                                         sonidoEyMoto.detenerNotificacion(pedidoId);
@@ -1145,7 +1165,7 @@ function renderizarPedidoCard(pedido, disponible) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO
+// ✅ TOMAR PEDIDO - CON DETENCIÓN DE SONIDO INMEDIATA
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1162,9 +1182,13 @@ async function tomarPedido(pedidoId, tiendaId) {
         const data = doc.data();
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
+            
+            // 🔥 DETENER SONIDO INMEDIATAMENTE SI OTRO LO TOMÓ
             if (sonidoEyMoto.estaSonando(pedidoId)) {
+                console.log(`🔇 Pedido ${pedidoId} tomado por otro, DETENIENDO sonido`);
                 sonidoEyMoto.detenerNotificacion(pedidoId);
             }
+            
             const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
             if (index !== -1) { todosLosPedidos[index] = { ...todosLosPedidos[index], ...data }; }
             renderizarPedidos();
@@ -1177,28 +1201,39 @@ async function tomarPedido(pedidoId, tiendaId) {
             nombreMensajero: mensajeroData?.nombre || 'Mensajero',
             estado: 'En camino al restaurante',
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-            notificacionEnviada: false  // 🔥 Ya no es "notificado a todos", es asignado a uno
+            notificacionEnviada: false
         });
         
+        // 🔥 DETENER SONIDO INMEDIATAMENTE AL TOMAR EL PEDIDO
         if (sonidoEyMoto.estaSonando(pedidoId)) {
+            console.log(`🔇 Pedido ${pedidoId} tomado por mí, DETENIENDO sonido`);
             sonidoEyMoto.detenerNotificacion(pedidoId);
         }
         
-        sonidoEyMoto.reproducir();
-        toast('✅ Pedido tomado exitosamente', 'success', 3000);
-        
+        // 🔥 ACTUALIZAR LISTA LOCAL INMEDIATAMENTE
         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
         if (index !== -1) {
-            todosLosPedidos[index] = { ...todosLosPedidos[index], mensajeroId: mensajeroUid, estado: 'En camino al restaurante' };
+            todosLosPedidos[index] = { 
+                ...todosLosPedidos[index], 
+                mensajeroId: mensajeroUid, 
+                estado: 'En camino al restaurante',
+                notificacionEnviada: false
+            };
         }
+        
+        // 🔥 RENDERIZAR INMEDIATAMENTE PARA QUE DESAPAREZCA DE DISPONIBLES
         renderizarPedidos();
         
+        sonidoEyMoto.reproducir(); // Sonido de confirmación (corto)
+        toast('✅ Pedido tomado exitosamente', 'success', 3000);
+        
+        // 🔄 AUTO-REFRESCO después de 1 segundo para sincronizar con Firebase
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de tomar pedido');
             cargarPedidosCompletos();
             cargarMensajeros();
             actualizarContadores();
-        }, 1500);
+        }, 1000);
         
     } catch (e) {
         console.error('Error tomando pedido:', e);
@@ -1333,7 +1368,7 @@ window.toast = toast;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔔 Los mensajeros SOLO reciben pedidos cuando el admin los asigna o notifica');
-console.log('🔇 El sonido se detiene al tomar el pedido');
+console.log('🔇 EL SONIDO SE DETIENE INMEDIATAMENTE AL TOMAR EL PEDIDO');
 console.log('🚫 El mensajero NO puede cancelar pedidos');
 console.log('🔄 Auto-refresco activado al tomar pedidos y cambiar estados');
 </script>
