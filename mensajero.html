@@ -232,7 +232,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🎵 SISTEMA DE SONIDO - MEJORADO
+// 🎵 SISTEMA DE SONIDO
 // ============================================================
 class SonidoEyMoto {
     constructor() {
@@ -592,31 +592,16 @@ function escucharPedidos() {
                                 }
                             }
                             
-                            if (!esVisibleParaMi) {
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (index !== -1) {
-                                    todosLosPedidos.splice(index, 1);
-                                    renderizarPedidos();
-                                }
-                                return;
-                            }
-                            
-                            if (esParaMi || fueNotificado) {
-                                if (!sonidoEyMoto.estaSonando(pedidoId)) {
-                                    sonidoEyMoto.iniciarNotificacion(pedidoId);
-                                    const tienda = tiendasCache[tiendaId] || {};
-                                    if (esParaMi) {
-                                        toast(`🛵 Pedido asignado a ti de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
-                                    } else {
+                            // 🔥 ACTUALIZAR LISTA LOCAL
+                            if (change.type === 'added') {
+                                if (esVisibleParaMi) {
+                                    const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    if (!existe) {
+                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        sonidoEyMoto.iniciarNotificacion(pedidoId);
+                                        const tienda = tiendasCache[tiendaId] || {};
                                         toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                     }
-                                }
-                            }
-                            
-                            if (change.type === 'added') {
-                                const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (!existe && esVisibleParaMi) {
-                                    todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                 }
                             } else if (change.type === 'modified') {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -700,6 +685,7 @@ function renderizarPedidos() {
         return;
     }
     
+    // 🔥 SOLO MOSTRAR PEDIDOS VISIBLES PARA EL MENSAJERO
     const pedidosVisibles = todosLosPedidos.filter(p => 
         (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true) &&
         p.estado !== 'Entregado' && 
@@ -865,7 +851,7 @@ async function tomarPedido(pedidoId, tiendaId) {
             nombreMensajero: mensajeroData?.nombre || 'Mensajero',
             estado: 'En camino al restaurante',
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-            notificacionEnviada: false
+            notificacionEnviada: false  // 🔥 Ya no es "notificado a todos", es asignado a uno
         });
         
         // 🔥 DETENER SONIDO INMEDIATAMENTE
@@ -898,7 +884,7 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 🔄 FUNCIONES DE AUTO-REFRESCO
+// 🔄 FUNCIONES DE AUTO-REFRESCO - CORREGIDAS
 // ============================================================
 async function cargarPedidosCompletos() {
     try {
@@ -907,16 +893,30 @@ async function cargarPedidosCompletos() {
         for (const tiendaDoc of tiendasSnap.docs) {
             const tiendaId = tiendaDoc.id;
             try {
+                // 🔥 OBTENER TODOS LOS PEDIDOS DE LA TIENDA
                 const pedidosSnap = await db.collection('tiendas')
                     .doc(tiendaId)
                     .collection('pedidos')
-                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
-                    .get();
+                    .get();  // 🔥 Sin filtro, obtener todos
+                    
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
-                    // Solo pedidos que son para mí o que han sido notificados
-                    if (data.mensajeroId === mensajeroUid || data.notificacionEnviada === true) {
-                        nuevosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
+                    const pedidoId = doc.id;
+                    
+                    // 🔥 SOLO pedidos que son para mí o que han sido notificados
+                    const esParaMi = data.mensajeroId === mensajeroUid;
+                    const fueNotificado = data.notificacionEnviada === true;
+                    const esVisible = (esParaMi || fueNotificado) && 
+                                     data.estado !== 'Entregado' && 
+                                     data.estado !== 'Cancelado';
+                    
+                    // 🔥 SI ES VISIBLE, AGREGAR A LA LISTA
+                    if (esVisible) {
+                        nuevosPedidos.push({ 
+                            id: pedidoId, 
+                            tiendaId: tiendaId, 
+                            ...data 
+                        });
                     }
                 });
             } catch (err) {
@@ -924,7 +924,7 @@ async function cargarPedidosCompletos() {
             }
         }
         todosLosPedidos = nuevosPedidos;
-        console.log(`🔄 Auto-refresco: ${todosLosPedidos.length} pedidos cargados`);
+        console.log(`🔄 Auto-refresco: ${todosLosPedidos.length} pedidos visibles cargados`);
         return nuevosPedidos;
     } catch (e) {
         console.error('❌ Error en auto-refresco:', e);
@@ -934,8 +934,16 @@ async function cargarPedidosCompletos() {
 
 async function actualizarContadores() {
     try {
-        const disponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId && p.notificacionEnviada === true);
-        const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid && p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+        const disponibles = todosLosPedidos.filter(p => 
+            p.estado === 'Listo para asignar' && 
+            !p.mensajeroId && 
+            p.notificacionEnviada === true
+        );
+        const misPedidos = todosLosPedidos.filter(p => 
+            p.mensajeroId === mensajeroUid && 
+            p.estado !== 'Entregado' && 
+            p.estado !== 'Cancelado'
+        );
         document.getElementById('contadorDisponibles').textContent = disponibles.length;
         document.getElementById('contadorMisPedidos').textContent = misPedidos.length;
     } catch (e) {}
