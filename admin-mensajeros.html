@@ -73,7 +73,6 @@
         .pedido-asignar .items-list .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
         .pedido-asignar .items-list .item:last-child { border-bottom: none; }
         .pedido-asignar .total { font-size: 16px; font-weight: 800; text-align: right; color: var(--green); margin-top: 6px; }
-        .pedido-asignar .mensajero-info { font-size: 12px; color: var(--blue); text-align: center; padding: 6px; background: var(--blue-bg); border-radius: 6px; margin-top: 6px; }
         .form-crear { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .form-crear .titulo { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .form-crear .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -142,23 +141,8 @@
         .auto-refresh-indicator { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
         .auto-refresh-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
-        
-        /* 📞 INDICADOR DE LLAMADA ENTRANTE */
-        .llamada-entrante {
-            background: var(--red);
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            animation: llamada-pulse 0.8s ease-in-out infinite;
-            display: inline-block;
-        }
-        @keyframes llamada-pulse {
-            0%, 100% { background: var(--red); transform: scale(1); }
-            50% { background: #ff6b6b; transform: scale(1.05); }
-        }
-        
+        .llamada-entrante { background: var(--red); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; animation: llamada-pulse 0.8s ease-in-out infinite; display: inline-block; }
+        @keyframes llamada-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -332,7 +316,6 @@ class SonidoAdmin {
         } catch (e) {}
     }
 
-    // 📞 INICIAR LLAMADA (SOLO ADMIN)
     iniciarLlamada(pedidoId) {
         if (this.pedidosActivos[pedidoId]) return;
         console.log(`📞 [ADMIN] 📞 LLAMADA ENTRANTE - Pedido: ${pedidoId}`);
@@ -353,7 +336,6 @@ class SonidoAdmin {
         }, 4000);
     }
 
-    // 📞 DETENER LLAMADA
     detenerLlamada(pedidoId) {
         if (!pedidoId) {
             Object.keys(this.pedidosActivos).forEach(id => { this.detenerLlamada(id); });
@@ -403,9 +385,6 @@ class SonidoAdmin {
     }
 }
 
-// ============================================================
-// INSTANCIA DEL SONIDO (SOLO ADMIN)
-// ============================================================
 const sonidoAdmin = new SonidoAdmin();
 
 // ============================================================
@@ -564,7 +543,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// 📞 ESCUCHAR PEDIDOS - SOLO ADMIN RECIBE NOTIFICACIÓN
+// 📞 ESCUCHAR PEDIDOS
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -589,7 +568,6 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
-                                // 📞 SOLO ADMIN RECIBE NOTIFICACIÓN DE PEDIDOS DISPONIBLES
                                 if (estaDisponible) {
                                     if (!sonidoAdmin.estaSonando(pedidoId)) {
                                         sonidoAdmin.iniciarLlamada(pedidoId);
@@ -598,7 +576,6 @@ function escucharPedidosEnTiempoReal() {
                                     }
                                 }
                                 
-                                // 📞 SI EL PEDIDO TIENE MENSAJERO → DETENER LLAMADA DEL ADMIN
                                 if (tieneMensajero || esEntregado) {
                                     if (sonidoAdmin.estaSonando(pedidoId)) {
                                         console.log(`📞 Pedido ${pedidoId} asignado, finalizando llamada del admin`);
@@ -920,21 +897,18 @@ async function asignarPedidoManual() {
                 nombreMensajero: nombreMensajero,
                 estado: 'En camino al restaurante',
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros'
+                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+                notificacionEnviada: false  // 🔥 Se asignó a uno específico
             });
         
-        // 📞 DETENER LLAMADA DEL ADMIN
         if (sonidoAdmin.estaSonando(pedidoId)) {
             sonidoAdmin.detenerLlamada(pedidoId);
         }
         
-        // 📞 SONIDO DE CONFIRMACIÓN
         sonidoAdmin.sonidoConfirmacion();
-        
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
-        // AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
             recargarPedidos();
@@ -954,7 +928,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS - LOS MENSAJEROS RECIBEN EL PEDIDO
+// 📢 NOTIFICAR A TODOS
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -974,10 +948,10 @@ async function notificarATodos() {
                 estado: 'Listo para asignar',
                 fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionEnviada: true
+                notificacionEnviada: true  // 🔥 Esto hace que los mensajeros lo vean
             });
         
-        // 📞 DETENER LLAMADA DEL ADMIN (ya se notificó a los mensajeros)
+        // 📞 DETENER LLAMADA DEL ADMIN
         if (sonidoAdmin.estaSonando(pedidoId)) {
             console.log(`📞 Pedido ${pedidoId} notificado a mensajeros, finalizando llamada del admin`);
             sonidoAdmin.detenerLlamada(pedidoId);
@@ -986,7 +960,6 @@ async function notificarATodos() {
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         
-        // AUTO-REFRESCO
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
             recargarPedidos();
