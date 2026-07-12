@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Mensajeros - EyMoto</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
@@ -37,7 +37,8 @@
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
-        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; }
+        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; animation: pulse-badge 0.5s ease-in-out infinite; }
+        @keyframes pulse-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         .btn-refrescar { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-refrescar:hover { background: var(--blue); color: #fff; }
         .btn-refrescar:active { transform: scale(0.95); }
@@ -66,6 +67,17 @@
         .pedido-asignar .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .pedido-asignar .header .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--blue-bg); color: var(--blue); }
         .pedido-asignar .header .estado-badge.asignado-badge { background: var(--green-bg); color: var(--green); }
+        .pedido-asignar .header .alarma-indicador { 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            background: var(--red); 
+            color: #fff; 
+            animation: alarma-pulse 0.8s ease-in-out infinite; 
+            display: inline-block;
+        }
+        @keyframes alarma-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
         .pedido-asignar .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin-bottom: 8px; }
         .pedido-asignar .info-grid .label { color: var(--text-muted); }
         .pedido-asignar .info-grid .value { color: #fff; font-weight: 500; }
@@ -73,6 +85,7 @@
         .pedido-asignar .items-list .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
         .pedido-asignar .items-list .item:last-child { border-bottom: none; }
         .pedido-asignar .total { font-size: 16px; font-weight: 800; text-align: right; color: var(--green); margin-top: 6px; }
+        .pedido-asignar .mensajero-info { font-size: 12px; color: var(--blue); text-align: center; padding: 6px; background: var(--blue-bg); border-radius: 6px; margin-top: 6px; }
         .form-crear { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .form-crear .titulo { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .form-crear .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -95,7 +108,7 @@
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); }
+        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); border-left-color: var(--red); animation: toastIn .3s ease, alarma-pulse 0.8s ease-in-out infinite 0.3s; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
@@ -167,7 +180,7 @@
             <span class="dot"></span>
             Auto-refresh activo
         </span>
-        <span class="header-badge" id="headerBadge">0</span>
+        <span class="header-badge" id="headerBadge">🔔 0</span>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -257,18 +270,20 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 📞 SISTEMA DE SONIDO - TELÉFONO (SOLO ADMIN)
+// ⏰ SISTEMA DE SONIDO - DESPERTADOR (RING RING)
 // ============================================================
-class SonidoAdmin {
+class SonidoDespertador {
     constructor() {
         this.ctx = null;
         this.inicializado = false;
-        this.reproduciendo = false;
         this.intervalos = {};
         this.pedidosActivos = {};
+        this.temporizadores = {};
         this.audioContextIniciado = false;
+        this.reproduciendo = false;
     }
 
+    // Inicializar contexto de audio
     iniciarAudio() {
         try {
             if (!this.ctx) {
@@ -280,94 +295,167 @@ class SonidoAdmin {
             this.inicializado = true;
             this.audioContextIniciado = true;
             return true;
-        } catch (e) { return false; }
+        } catch (e) { 
+            console.warn('⚠️ Error inicializando audio:', e.message);
+            return false; 
+        }
     }
 
-    tonoTelefono(duracion, volumen = 0.3) {
+    // ⏰ GENERAR TONO DE DESPERTADOR (RING RING)
+    tonoDespertador(frecuencia, duracion, volumen = 0.3) {
         try {
             if (!this.inicializado || !this.ctx || this.ctx.state !== 'running') {
                 if (!this.iniciarAudio()) return;
             }
-            const frecuencias = [440, 480];
-            frecuencias.forEach(freq => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(volumen * 0.7, this.ctx.currentTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
-                osc.start(this.ctx.currentTime);
-                osc.stop(this.ctx.currentTime + duracion);
-            });
-        } catch (e) {}
+
+            // Frecuencias del despertador: 800Hz y 1000Hz alternados
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.frequency.value = frecuencia;
+            osc.type = 'square'; // Sonido más agresivo como despertador
+            
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(volumen, this.ctx.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
+            
+            osc.start(this.ctx.currentTime);
+            osc.stop(this.ctx.currentTime + duracion);
+
+            // Agregar armónico para sonido más realista
+            setTimeout(() => {
+                try {
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(this.ctx.destination);
+                    osc2.frequency.value = frecuencia * 1.5;
+                    osc2.type = 'sine';
+                    gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.6);
+                    osc2.start(this.ctx.currentTime + 0.02);
+                    osc2.stop(this.ctx.currentTime + duracion * 0.6);
+                } catch (e) {}
+            }, 20);
+
+        } catch (e) {
+            console.debug('⚠️ Error generando tono de despertador:', e.message);
+        }
     }
 
-    secuenciaTelefono() {
+    // ⏰ SECUENCIA RING RING (0.4s tono, 0.2s silencio)
+    secuenciaRingRing() {
         try {
             if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            this.tonoTelefono(1.8, 0.35);
+            if (!this.ctx || this.ctx.state !== 'running') {
+                console.warn('⚠️ Audio no disponible');
+                return;
+            }
+
+            // RING 1 - 800Hz
+            this.tonoDespertador(800, 0.3, 0.35);
+            
+            // RING 2 - 1000Hz (después de 0.4s)
             setTimeout(() => {
-                try { this.tonoTelefono(0.8, 0.3); } catch (e) {}
-            }, 1900);
-        } catch (e) {}
+                try {
+                    this.tonoDespertador(1000, 0.3, 0.35);
+                } catch (e) {}
+            }, 400);
+
+            // RING 3 - 800Hz (después de 0.8s)
+            setTimeout(() => {
+                try {
+                    this.tonoDespertador(800, 0.3, 0.35);
+                } catch (e) {}
+            }, 800);
+
+            // RING 4 - 1000Hz (después de 1.2s)
+            setTimeout(() => {
+                try {
+                    this.tonoDespertador(1000, 0.3, 0.35);
+                } catch (e) {}
+            }, 1200);
+
+        } catch (e) {
+            console.debug('⚠️ Error en secuencia de despertador:', e.message);
+            this.fallbackBeep();
+        }
     }
 
-    iniciarLlamada(pedidoId) {
+    // ⏰ INICIAR DESPERTADOR
+    iniciarDespertador(pedidoId) {
         if (this.pedidosActivos[pedidoId]) return;
-        console.log(`📞 [ADMIN] 📞 LLAMADA ENTRANTE - Pedido: ${pedidoId}`);
+        
+        console.log(`⏰ [ADMIN] 🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
+        
         if (!this.inicializado) this.iniciarAudio();
+        
         this.pedidosActivos[pedidoId] = true;
         this.reproduciendo = true;
-        this.secuenciaTelefono();
+        
+        // Reproducir secuencia inmediatamente
+        this.secuenciaRingRing();
+        
+        // Configurar intervalo (se repite cada 2.5 segundos)
         this.intervalos[pedidoId] = setInterval(() => {
             if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
-                this.secuenciaTelefono();
-                const badge = document.getElementById('headerBadge');
-                if (badge) {
-                    badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
-                }
+                this.secuenciaRingRing();
             } else {
-                this.detenerLlamada(pedidoId);
+                this.detenerDespertador(pedidoId);
             }
-        }, 4000);
+        }, 2500);
     }
 
-    detenerLlamada(pedidoId) {
+    // ⏰ DETENER DESPERTADOR
+    detenerDespertador(pedidoId) {
         if (!pedidoId) {
-            Object.keys(this.pedidosActivos).forEach(id => { this.detenerLlamada(id); });
+            // Detener TODOS los despertadores
+            Object.keys(this.pedidosActivos).forEach(id => {
+                this.detenerDespertador(id);
+            });
             return;
         }
+        
         if (this.pedidosActivos[pedidoId]) {
-            console.log(`📞 [ADMIN] 📞 LLAMADA FINALIZADA - Pedido: ${pedidoId}`);
+            console.log(`⏰ [ADMIN] 🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
             delete this.pedidosActivos[pedidoId];
+            
             if (this.intervalos[pedidoId]) {
                 clearInterval(this.intervalos[pedidoId]);
                 delete this.intervalos[pedidoId];
             }
+            
+            if (this.temporizadores[pedidoId]) {
+                clearTimeout(this.temporizadores[pedidoId]);
+                delete this.temporizadores[pedidoId];
+            }
+            
+            // Verificar si quedan pedidos activos
             const hayActivos = Object.keys(this.pedidosActivos).length > 0;
             if (!hayActivos) {
                 this.reproduciendo = false;
                 const badge = document.getElementById('headerBadge');
                 if (badge) {
                     badge.style.animation = '';
-                    badge.textContent = '0';
+                    badge.textContent = '🔔 0';
                 }
             }
         }
     }
 
+    // ¿Está sonando?
     estaSonando(pedidoId) {
         return this.pedidosActivos[pedidoId] === true;
     }
 
+    // Sonido de confirmación (cuando se asigna)
     sonidoConfirmacion() {
         try {
             if (!this.inicializado) this.iniciarAudio();
             if (!this.ctx || this.ctx.state !== 'running') return;
+            
             [600, 800, 1000].forEach((freq, i) => {
                 const t = i * 0.1;
                 const osc = this.ctx.createOscillator();
@@ -383,9 +471,34 @@ class SonidoAdmin {
             });
         } catch (e) {}
     }
+
+    // Fallback con Web Audio
+    fallbackBeep() {
+        try {
+            if (!this.inicializado) this.iniciarAudio();
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            
+            [800, 1000, 800, 1000].forEach((freq, i) => {
+                const t = i * 0.4;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = 'square';
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.3);
+                osc.start(this.ctx.currentTime + t);
+                osc.stop(this.ctx.currentTime + t + 0.35);
+            });
+        } catch (e) {}
+    }
 }
 
-const sonidoAdmin = new SonidoAdmin();
+// ============================================================
+// INSTANCIA DEL SONIDO
+// ============================================================
+const sonidoDespertador = new SonidoDespertador();
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -408,7 +521,8 @@ function iniciarSesion() {
     msg.textContent = '';
     if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
     
-    sonidoAdmin.iniciarAudio();
+    // Inicializar audio al hacer clic
+    sonidoDespertador.iniciarAudio();
     
     auth.signInWithEmailAndPassword(email, pass)
         .then(async (userCredential) => {
@@ -434,7 +548,8 @@ function logout() {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
-    sonidoAdmin.detenerLlamada();
+    // ⏰ DETENER TODOS LOS DESPERTADORES
+    sonidoDespertador.detenerDespertador();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
@@ -453,7 +568,7 @@ auth.onAuthStateChanged(user => {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
         }
-        sonidoAdmin.detenerLlamada();
+        sonidoDespertador.detenerDespertador();
     }
 });
 
@@ -543,7 +658,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// 📞 ESCUCHAR PEDIDOS
+// ⏰ ESCUCHAR PEDIDOS - CON DESPERTADOR
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -568,18 +683,28 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
+                                // ⏰ SI EL PEDIDO ESTÁ DISPONIBLE → INICIAR DESPERTADOR
                                 if (estaDisponible) {
-                                    if (!sonidoAdmin.estaSonando(pedidoId)) {
-                                        sonidoAdmin.iniciarLlamada(pedidoId);
+                                    if (!sonidoDespertador.estaSonando(pedidoId)) {
+                                        sonidoDespertador.iniciarDespertador(pedidoId);
                                         const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`📞 LLAMADA ENTRANTE - Nuevo pedido de ${tienda.nombre || 'Tienda'}`, 'new', 8000);
+                                        toast(`⏰ ¡DESPERTADOR! Nuevo pedido de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
+                                        
+                                        // Actualizar badge
+                                        const badge = document.getElementById('headerBadge');
+                                        if (badge) {
+                                            badge.style.display = 'inline-block';
+                                            badge.textContent = '⏰ 🔔';
+                                            badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
+                                        }
                                     }
                                 }
                                 
+                                // ⏰ SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER DESPERTADOR
                                 if (tieneMensajero || esEntregado) {
-                                    if (sonidoAdmin.estaSonando(pedidoId)) {
-                                        console.log(`📞 Pedido ${pedidoId} asignado, finalizando llamada del admin`);
-                                        sonidoAdmin.detenerLlamada(pedidoId);
+                                    if (sonidoDespertador.estaSonando(pedidoId)) {
+                                        console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
+                                        sonidoDespertador.detenerDespertador(pedidoId);
                                     }
                                 }
                                 
@@ -607,17 +732,19 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
+                                    // ⏰ Si el pedido fue asignado, detener despertador
                                     if (tieneMensajero || esEntregado) {
-                                        if (sonidoAdmin.estaSonando(pedidoId)) {
-                                            sonidoAdmin.detenerLlamada(pedidoId);
+                                        if (sonidoDespertador.estaSonando(pedidoId)) {
+                                            sonidoDespertador.detenerDespertador(pedidoId);
                                         }
                                     }
                                     
+                                    // ⏰ Si está disponible, iniciar despertador
                                     if (estaDisponible) {
-                                        if (!sonidoAdmin.estaSonando(pedidoId)) {
-                                            sonidoAdmin.iniciarLlamada(pedidoId);
+                                        if (!sonidoDespertador.estaSonando(pedidoId)) {
+                                            sonidoDespertador.iniciarDespertador(pedidoId);
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            toast(`📞 LLAMADA ENTRANTE - Pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)}`, 'new', 5000);
+                                            toast(`⏰ Despertador activado para pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)}`, 'new', 5000);
                                         }
                                     }
                                     
@@ -631,8 +758,8 @@ function escucharPedidosEnTiempoReal() {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
-                                        if (sonidoAdmin.estaSonando(pedidoId)) {
-                                            sonidoAdmin.detenerLlamada(pedidoId);
+                                        if (sonidoDespertador.estaSonando(pedidoId)) {
+                                            sonidoDespertador.detenerDespertador(pedidoId);
                                         }
                                     }
                                 }
@@ -770,13 +897,13 @@ function renderizarPedidosAsignar() {
         }
         const hayMensajeros = mensajerosActivos.length > 0;
         const claseNuevo = esNuevo ? 'nuevo' : '';
-        const sonidoActivo = sonidoAdmin.estaSonando(p.id);
-        const indicadorSonido = sonidoActivo ? '📞 LLAMANDO...' : '';
+        const sonidoActivo = sonidoDespertador.estaSonando(p.id);
+        const indicadorSonido = sonidoActivo ? '⏰🔔' : '';
         html += `
             <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
                 <div class="header">
                     <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)} ${indicadorSonido}</span>
-                    <span class="estado-badge">🔔 Listo para asignar</span>
+                    ${sonidoActivo ? '<span class="alarma-indicador">⏰ DESPERTADOR ACTIVADO</span>' : '<span class="estado-badge">🔔 Listo para asignar</span>'}
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -792,7 +919,7 @@ function renderizarPedidosAsignar() {
                     `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">👤 Asignar mensajero</button>` :
                     `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;"><span style="font-size:14px;">⚠️</span><span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span></div>`
                 }
-                ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">📞 Llamada entrante...</div>` : ''}
+                ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">⏰🔔 Despertador sonando...</div>` : ''}
             </div>
         `;
     });
@@ -810,7 +937,9 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     if (!pedido) { toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); recargarPedidos(); return; }
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
-        if (sonidoAdmin.estaSonando(pedidoId)) { sonidoAdmin.detenerLlamada(pedidoId); }
+        if (sonidoDespertador.estaSonando(pedidoId)) { 
+            sonidoDespertador.detenerDespertador(pedidoId); 
+        }
         recargarPedidos();
         return;
     }
@@ -848,14 +977,18 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
                 <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">${mensajerosOptions}</select>
             </div>
-            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✅ Asignar a este mensajero</button>
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                ✅ Asignar a este mensajero
+            </button>
         </div>
         <div class="opcion-asignacion" style="border-color: var(--yellow);">
             <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
             <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
             <div class="mensajeros-disponibles">📨 Mensajeros que recibirán la notificación: <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span></div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.</div>
-            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>🔔 Notificar a todos los mensajeros</button>
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                🔔 Notificar a todos los mensajeros
+            </button>
         </div>
         <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
     `;
@@ -870,7 +1003,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// 📞 ASIGNAR PEDIDO - SOLO ADMIN PUEDE ASIGNAR
+// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -883,7 +1016,9 @@ async function asignarPedidoManual() {
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoAdmin.estaSonando(pedidoId)) { sonidoAdmin.detenerLlamada(pedidoId); }
+        if (sonidoDespertador.estaSonando(pedidoId)) { 
+            sonidoDespertador.detenerDespertador(pedidoId); 
+        }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -897,15 +1032,15 @@ async function asignarPedidoManual() {
                 nombreMensajero: nombreMensajero,
                 estado: 'En camino al restaurante',
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionEnviada: false  // 🔥 Se asignó a uno específico
+                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros'
             });
         
-        if (sonidoAdmin.estaSonando(pedidoId)) {
-            sonidoAdmin.detenerLlamada(pedidoId);
+        // ⏰ APAGAR DESPERTADOR
+        if (sonidoDespertador.estaSonando(pedidoId)) {
+            sonidoDespertador.detenerDespertador(pedidoId);
         }
         
-        sonidoAdmin.sonidoConfirmacion();
+        sonidoDespertador.sonidoConfirmacion();
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
@@ -918,7 +1053,9 @@ async function asignarPedidoManual() {
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
-            if (sonidoAdmin.estaSonando(pedidoId)) { sonidoAdmin.detenerLlamada(pedidoId); }
+            if (sonidoDespertador.estaSonando(pedidoId)) { 
+                sonidoDespertador.detenerDespertador(pedidoId); 
+            }
             cerrarModalAsignacion();
             recargarPedidos();
         } else {
@@ -928,14 +1065,16 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS
+// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoAdmin.estaSonando(pedidoId)) { sonidoAdmin.detenerLlamada(pedidoId); }
+        if (sonidoDespertador.estaSonando(pedidoId)) { 
+            sonidoDespertador.detenerDespertador(pedidoId); 
+        }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -948,13 +1087,13 @@ async function notificarATodos() {
                 estado: 'Listo para asignar',
                 fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionEnviada: true  // 🔥 Esto hace que los mensajeros lo vean
+                notificacionEnviada: true
             });
         
-        // 📞 DETENER LLAMADA DEL ADMIN
-        if (sonidoAdmin.estaSonando(pedidoId)) {
-            console.log(`📞 Pedido ${pedidoId} notificado a mensajeros, finalizando llamada del admin`);
-            sonidoAdmin.detenerLlamada(pedidoId);
+        // ⏰ APAGAR DESPERTADOR
+        if (sonidoDespertador.estaSonando(pedidoId)) {
+            console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
+            sonidoDespertador.detenerDespertador(pedidoId);
         }
         
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
@@ -989,8 +1128,20 @@ function actualizarEstadisticas() {
 function actualizarHeaderBadge() {
     const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
     const badge = document.getElementById('headerBadge');
-    badge.textContent = pendientes;
-    badge.style.display = pendientes > 0 ? 'inline-block' : 'none';
+    // Mostrar badge con ícono de despertador si hay pedidos
+    if (pendientes > 0) {
+        badge.style.display = 'inline-block';
+        // Verificar si algún pedido está sonando
+        let sonando = false;
+        todosLosPedidos.forEach(p => {
+            if (sonidoDespertador.estaSonando(p.id)) sonando = true;
+        });
+        badge.textContent = sonando ? '⏰🔔 ' + pendientes : '🔔 ' + pendientes;
+        badge.style.animation = sonando ? 'pulse-badge 0.5s ease-in-out infinite' : '';
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '🔔 0';
+    }
 }
 
 // ============================================================
@@ -1095,7 +1246,7 @@ function formatearFecha(fecha) {
     } catch (e) { return '--/--/--'; }
 }
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '📞' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '⏰' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1127,9 +1278,8 @@ window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
-console.log('📞 El admin recibe llamada de pedidos listos para asignar');
-console.log('🔔 Los mensajeros SOLO reciben pedidos cuando el admin notifica/asigna');
-console.log('🔇 El sonido del admin se detiene al notificar o asignar');
+console.log('⏰ Despertador activado para pedidos listos');
+console.log('🔇 El despertador se apaga al asignar o notificar');
 console.log('🔄 Auto-refresco activado al asignar pedidos');
 </script>
 </body>
