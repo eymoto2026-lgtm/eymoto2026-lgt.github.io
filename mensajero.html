@@ -252,7 +252,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SISTEMA DE SONIDO CON AUDIO MP3
+// ⏰ SISTEMA DE SONIDO (GENERADO POR CÓDIGO - NO NECESITA MP3)
 // ============================================================
 class SonidoDespertador {
     constructor() {
@@ -264,23 +264,6 @@ class SonidoDespertador {
         this.audioContextIniciado = false;
         this.reproduciendo = false;
         this.pedidosProcesados = new Set();
-        
-        // ✅ TU ARCHIVO MP3
-        this.audioUrl = './notificacion-ymoto.mp3';
-        
-        // ✅ CONFIGURACIÓN DEL AUDIO
-        this.audio = new Audio(this.audioUrl);
-        this.audio.preload = "auto";
-        this.audio.loop = false;
-        
-        // Verificar carga
-        this.audio.addEventListener('canplaythrough', () => {
-            console.log('✅ Audio cargado correctamente:', this.audioUrl);
-        });
-        
-        this.audio.addEventListener('error', (e) => {
-            console.error('❌ Error cargando audio:', e);
-        });
     }
 
     iniciarAudio() {
@@ -300,46 +283,42 @@ class SonidoDespertador {
         }
     }
 
+    // ✅ SONIDO DE NOTIFICACIÓN GENERADO POR CÓDIGO
     reproducir() {
-        try {
-            this.audio.pause();
-            this.audio.currentTime = 0;
-            this.audio.volume = 1.0;
-
-            this.audio.play().then(() => {
-                console.log('✅ Sonido reproducido correctamente');
-            }).catch(e => {
-                console.log("❌ Error reproduciendo audio:", e);
-                this.fallbackBeep();
-            });
-
-            // Vibrar teléfono
-            if ("vibrate" in navigator) {
-                navigator.vibrate([300, 150, 300, 150, 300]);
-            }
-
-        } catch (e) {
-            console.error(e);
-            this.fallbackBeep();
-        }
-    }
-
-    fallbackBeep() {
         try {
             if (!this.inicializado) this.iniciarAudio();
             if (!this.ctx || this.ctx.state !== 'running') return;
             
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.frequency.value = 880;
-            osc.type = 'square';
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-            osc.start(this.ctx.currentTime);
-            osc.stop(this.ctx.currentTime + 0.3);
-        } catch (e) {}
+            // Sonido tipo "ding-dong" de notificación
+            const notas = [
+                { freq: 800, dur: 0.15, tiempo: 0 },
+                { freq: 1000, dur: 0.15, tiempo: 0.15 },
+                { freq: 1200, dur: 0.2, tiempo: 0.30 }
+            ];
+            
+            notas.forEach(({freq, dur, tiempo}) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime + tiempo);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + tiempo + dur);
+                osc.start(this.ctx.currentTime + tiempo);
+                osc.stop(this.ctx.currentTime + tiempo + dur + 0.05);
+            });
+
+            // Vibración (Android)
+            if ("vibrate" in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 300]);
+            }
+
+            console.log('🔔 Sonido de notificación reproducido');
+
+        } catch (e) {
+            console.error('Error en sonido:', e);
+        }
     }
 
     secuenciaRingRing() {
@@ -1092,7 +1071,7 @@ window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido de notificación activado con MP3 personalizado');
+console.log('🔊 Sonido de notificación ACTIVADO (sin MP3)');
 console.log('📱 Vibración activada para dispositivos compatibles');
 console.log('🎨 Animación de nuevo pedido activada');
 </script>
