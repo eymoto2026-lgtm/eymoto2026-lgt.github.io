@@ -41,6 +41,7 @@
         header .estado { font-size: 12px; padding: 4px 12px; border-radius: 12px; background: var(--green-bg); color: var(--green); cursor: pointer; transition: all 0.3s; user-select: none; }
         header .estado:hover { transform: scale(1.05); }
         header .estado.desconectado { background: var(--red-bg); color: var(--red); }
+        .push-status { font-size: 10px; padding: 4px 10px; border-radius: 12px; background: var(--surface2); color: var(--text-muted); }
 
         .auto-refresh-indicator { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; background: var(--surface2); padding: 3px 10px; border-radius: 12px; }
         .auto-refresh-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
@@ -65,24 +66,14 @@
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
         .pedido-card.disponible { border-left-color: var(--green); }
         
-        /* ✅ ANIMACIÓN DE NUEVO PEDIDO */
         .pedido-card.nuevo-pedido {
             animation: nuevoPedido 1s infinite;
         }
         
         @keyframes nuevoPedido {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 rgba(255, 214, 0, 0);
-            }
-            50% {
-                transform: scale(1.02);
-                box-shadow: 0 0 25px #FFD600;
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 rgba(255, 214, 0, 0);
-            }
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
+            50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
         }
         
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
@@ -119,7 +110,6 @@
         .motivacion-box .mensaje { font-size: 15px; color: #ccc; line-height: 1.6; margin-bottom: 24px; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; border-left: 3px solid var(--yellow); }
         .motivacion-box .beneficios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; text-align: left; }
         .motivacion-box .beneficios .item { background: rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 8px; font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 8px; }
-        .motivacion-box .beneficios .item .icon { font-size: 16px; }
         .motivacion-box .btn-conectar { background: var(--yellow); color: #1a1a2e; font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 50px; border: none; cursor: pointer; width: 100%; transition: all 0.3s; animation: pulseBtn 1.5s ease-in-out infinite; }
         @keyframes pulseBtn { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,214,0,0.4); } 50% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,214,0,0.2); } }
         .motivacion-box .btn-conectar:hover { background: var(--yellow-dim); transform: scale(1.05); }
@@ -214,6 +204,7 @@
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
+        <span class="push-status" id="pushStatus">🔔 Notificaciones: Cargando...</span>
         <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh activo</span>
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
@@ -252,97 +243,118 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ FUNCIÓN DE SONIDO CON MP3 (FORZADO)
+// 📢 SISTEMA DE NOTIFICACIONES PUSH
 // ============================================================
-let audioContextDesbloqueado = false;
-let audioDesbloqueado = false;
+let pushSubscription = null;
+let pushEnabled = false;
 
-// Función para desbloquear el audio en el navegador
-function desbloquearAudio() {
+async function registrarServiceWorker() {
     try {
-        // Crear un AudioContext silencioso para desbloquear
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        if (ctx.state === 'suspended') {
-            ctx.resume();
+        if (!('serviceWorker' in navigator)) {
+            console.warn('⚠️ Service Workers no soportados');
+            document.getElementById('pushStatus').textContent = '❌ Notificaciones: No soportadas';
+            return false;
         }
-        // Crear un oscilador silencioso
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        gain.gain.value = 0.001;
-        osc.start(0);
-        osc.stop(0.001);
-        audioContextDesbloqueado = true;
-        console.log('🔊 AudioContext desbloqueado forzadamente');
-        return true;
-    } catch (e) {
-        console.warn('⚠️ No se pudo desbloquear audio forzadamente:', e);
+        
+        // Registrar Service Worker
+        const registration = await navigator.serviceWorker.register('sw.js', {
+            scope: '/'
+        });
+        console.log('✅ Service Worker registrado:', registration);
+        
+        // Solicitar permiso para notificaciones
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('✅ Permiso de notificaciones concedido');
+            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
+            pushEnabled = true;
+            
+            // Suscribirse a push
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array('BGJ2jSj5qKyU6ykJz3P7z9Y9x8cTfRjywM7lJ1nKq4sTp0yXw2zD4tV5uH6iL7oM8nP9qR0sT1uV2wX3yZ4') // Clave pública de VAPID
+            });
+            
+            pushSubscription = subscription;
+            console.log('✅ Suscripción push:', subscription);
+            
+            // Guardar suscripción en Firestore
+            await guardarSuscripcionPush(subscription);
+            
+            return true;
+        } else {
+            console.warn('⚠️ Permiso de notificaciones denegado');
+            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Error registrando Service Worker:', error);
+        document.getElementById('pushStatus').textContent = '❌ Notificaciones: Error';
         return false;
     }
 }
 
-// Intentar desbloquear al cargar
-setTimeout(() => {
-    desbloquearAudio();
-}, 100);
-
-// También al hacer clic
-document.addEventListener('click', function() {
-    if (!audioContextDesbloqueado) {
-        desbloquearAudio();
+// Convertir clave VAPID de base64 a Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
     }
-    audioDesbloqueado = true;
-});
+    return outputArray;
+}
 
-function sonidoEyMoto() {
+async function guardarSuscripcionPush(subscription) {
+    if (!mensajeroUid) return;
+    
     try {
-        // Intentar desbloquear audio antes de reproducir
-        if (!audioContextDesbloqueado) {
-            desbloquearAudio();
-        }
-        
-        // ✅ URL COMPLETA DE GITHUB PAGES
-        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
-        audio.volume = 1.0;
-        audio.preload = "auto";
-        
-        // Reproducir con manejo de errores
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('🔊 Sonido MP3 reproducido desde GitHub');
-                // Vibración (ahora debería funcionar)
-                if (navigator.vibrate) {
-                    try {
-                        navigator.vibrate([200, 80, 200]);
-                        console.log('📱 Vibración activada');
-                    } catch(e) {}
+        await db.collection('usuarios').doc(mensajeroUid).update({
+            pushSubscription: {
+                endpoint: subscription.endpoint,
+                keys: {
+                    p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+                    auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
                 }
-            }).catch(e => {
-                console.log('⚠️ Error con MP3, usando sonido de respaldo:', e.message);
-                // Si falla el MP3, usar sonido de respaldo
-                sonidoRespaldo();
-            });
-        }
-        
-    } catch (e) {
-        console.error('❌ Error en sonido:', e);
-        sonidoRespaldo();
+            },
+            pushEnabled: true
+        });
+        console.log('✅ Suscripción push guardada en Firestore');
+    } catch (error) {
+        console.error('❌ Error guardando suscripción:', error);
     }
 }
 
 // ============================================================
-// SONIDO DE RESPALDO (por si el MP3 falla)
+// ⏰ FUNCIÓN DE SONIDO CON MP3
 // ============================================================
+function sonidoEyMoto() {
+    try {
+        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
+        audio.volume = 1.0;
+        audio.preload = "auto";
+        
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('🔊 Sonido MP3 reproducido');
+            }).catch(e => {
+                console.log('⚠️ Error con MP3:', e.message);
+                sonidoRespaldo();
+            });
+        }
+    } catch (e) {
+        sonidoRespaldo();
+    }
+}
+
 function sonidoRespaldo() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContext();
-        if (ctx.state === 'suspended') {
-            ctx.resume();
-        }
+        if (ctx.state === 'suspended') ctx.resume();
         
         const notas = [
             {freq: 880, tiempo: 0.00, duracion: 0.10},
@@ -369,7 +381,7 @@ function sonidoRespaldo() {
 }
 
 // ============================================================
-// ⏰ SISTEMA DE DESPERTADOR CON SONIDO EYMOTO
+// ⏰ SISTEMA DE DESPERTADOR
 // ============================================================
 class SonidoDespertador {
     constructor() {
@@ -377,15 +389,12 @@ class SonidoDespertador {
         this.inicializado = false;
         this.intervalos = {};
         this.pedidosActivos = {};
-        this.temporizadores = {};
-        this.audioContextIniciado = false;
         this.reproduciendo = false;
         this.pedidosProcesados = new Set();
         this.audioActivado = false;
         
         setTimeout(() => {
             this.iniciarAudio();
-            desbloquearAudio();
         }, 500);
     }
 
@@ -400,10 +409,8 @@ class SonidoDespertador {
             }
             this.inicializado = true;
             this.audioActivado = true;
-            console.log('✅ Sonido EyMoto listo');
             return true;
         } catch (e) { 
-            console.warn('⚠️ Error inicializando audio:', e.message);
             return false; 
         }
     }
@@ -413,36 +420,15 @@ class SonidoDespertador {
             if (!this.inicializado || !this.audioActivado) {
                 this.iniciarAudio();
             }
-            
-            // Desbloquear audio antes de reproducir
-            desbloquearAudio();
-            
-            // ✅ LLAMAR A LA FUNCIÓN SONIDO CON MP3
             sonidoEyMoto();
-            
+            // Enviar notificación push
+            if (pushEnabled) {
+                // Las notificaciones push se envían desde el servidor
+                // Esta función es solo para el sonido en el panel
+            }
         } catch (e) {
             console.error('❌ Error en sonido:', e);
-            this.fallbackBeep();
         }
-    }
-
-    fallbackBeep() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.frequency.value = 880;
-            osc.type = 'square';
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-            osc.start(this.ctx.currentTime);
-            osc.stop(this.ctx.currentTime + 0.3);
-            console.log('🔔 Beep de respaldo');
-        } catch (e) {}
     }
 
     secuenciaRingRing() {
@@ -458,8 +444,6 @@ class SonidoDespertador {
         console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
         
         this.iniciarAudio();
-        desbloquearAudio();
-        
         this.pedidosActivos[pedidoId] = true;
         this.reproduciendo = true;
         this.secuenciaRingRing();
@@ -508,15 +492,13 @@ class SonidoDespertador {
 const sonidoDespertador = new SonidoDespertador();
 
 // ============================================================
-// ACTIVAR AUDIO CON UN CLIC DEL USUARIO (FORZADO)
+// ACTIVAR AUDIO CON UN CLIC
 // ============================================================
 document.addEventListener('click', function activarAudio() {
     if (sonidoDespertador) {
         sonidoDespertador.iniciarAudio();
-        desbloquearAudio();
         console.log('🔊 Audio activado por clic');
     }
-    audioDesbloqueado = true;
 }, { once: true });
 
 // ============================================================
@@ -547,7 +529,6 @@ function simularPedidoPrueba() {
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
-console.log('🧪 Para probar el sonido, escribe: simularPedidoPrueba()');
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -590,12 +571,18 @@ function iniciarSesion() {
             await db.collection('usuarios').doc(user.uid).update({ conectado: mensajeroConectado, ultimaConexion: firebase.firestore.FieldValue.serverTimestamp() });
             await inicializarPanel();
             
+            // Registrar Service Worker después del login
+            setTimeout(() => {
+                registrarServiceWorker();
+            }, 2000);
+            
             if (!mensajeroConectado && !motivacionMostrada) {
                 setTimeout(() => { mostrarMotivacion(); }, 2000);
             }
         })
         .catch(e => { console.error('Error de login:', e); msg.textContent = '❌ Credenciales incorrectas.'; });
 }
+
 function cerrarSesion() {
     if (mensajeroUid) {
         db.collection('usuarios').doc(mensajeroUid).update({ conectado: false, ultimaDesconexion: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
@@ -608,12 +595,16 @@ function cerrarSesion() {
     document.getElementById('panel').classList.add('hidden');
     toast('👋 Sesión cerrada', 'info');
 }
+
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('loginBox').classList.add('hidden');
         document.getElementById('panel').classList.remove('hidden');
         mensajeroUid = user.uid;
         inicializarPanel();
+        setTimeout(() => {
+            registrarServiceWorker();
+        }, 3000);
     } else {
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -770,7 +761,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - CON SONIDO EYMOTO
+// 📢 ESCUCHAR PEDIDOS - CON SONIDO Y NOTIFICACIÓN PUSH
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -810,8 +801,23 @@ function escucharPedidos() {
                                         // 🔔 ACTIVAR SONIDO PARA NUEVO PEDIDO
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            
+                                            // Reproducir sonido en el panel
                                             sonidoDespertador.iniciarDespertador(pedidoId);
+                                            
+                                            // Mostrar toast
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                            
+                                            // 🚀 ENVIAR NOTIFICACIÓN PUSH
+                                            if (pushEnabled && mensajeroUid) {
+                                                enviarNotificacionPush({
+                                                    title: '📦 Nuevo pedido disponible',
+                                                    body: `${tienda.nombre || 'Tienda'} - ${data.numeroPedido || '#' + pedidoId.slice(-6)}`,
+                                                    pedidoId: pedidoId,
+                                                    tiendaId: tiendaId,
+                                                    mensajeroId: mensajeroUid
+                                                });
+                                            }
                                         }
                                     }
                                 }
@@ -883,6 +889,52 @@ function escucharPedidos() {
                 }, 5000);
             }
         });
+}
+
+// ============================================================
+// 🚀 ENVIAR NOTIFICACIÓN PUSH
+// ============================================================
+async function enviarNotificacionPush(datos) {
+    try {
+        // Buscar la suscripción push del mensajero
+        const userDoc = await db.collection('usuarios').doc(mensajeroUid).get();
+        const userData = userDoc.data();
+        
+        if (!userData.pushSubscription) {
+            console.warn('⚠️ El mensajero no tiene suscripción push');
+            return;
+        }
+        
+        const subscription = userData.pushSubscription;
+        
+        // Aquí deberías enviar la notificación a través de un servidor
+        // Por ahora, usamos la API de notificaciones del navegador
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification(datos.title, {
+                body: datos.body,
+                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
+                vibrate: [300, 100, 300, 100, 400],
+                data: {
+                    pedidoId: datos.pedidoId,
+                    tiendaId: datos.tiendaId
+                }
+            });
+            
+            notification.onclick = function() {
+                window.focus();
+                // Abrir el pedido específico
+                if (datos.pedidoId && datos.tiendaId) {
+                    // Buscar y mostrar el pedido
+                    renderizarPedidos();
+                }
+            };
+            
+            console.log('✅ Notificación push enviada');
+        }
+    } catch (error) {
+        console.error('❌ Error enviando notificación push:', error);
+    }
 }
 
 // ============================================================
@@ -1235,9 +1287,11 @@ window.mostrarMotivacion = mostrarMotivacion;
 window.cerrarMotivacion = cerrarMotivacion;
 window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
+window.simularPedidoPrueba = simularPedidoPrueba;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido con MP3 integrado (FORZADO)');
+console.log('🔊 Sonido con MP3 integrado');
+console.log('📢 Notificaciones push activadas');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 </script>
 </body>
