@@ -3878,8 +3878,8 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
         
-        // ===== VERIFICAR QUE ESTÉ EN EL SEGUNDO ESTADO (En cocina) =====
-        const estadoCocina = estadosNegocio[1]; // Segundo estado: En cocina, Preparando, etc.
+        // Verificar que esté en el segundo estado (En cocina/Preparando/etc)
+        const estadoCocina = estadosNegocio[1];
         
         if (!estadoCocina) {
             toast('⚠️ No se pudo determinar el estado de cocina', 'error');
@@ -3896,39 +3896,35 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // ===== RECARGAR MENSAJEROS Y ABRIR MODAL =====
-        await cargarMensajerosAdmin();
+        // ===== 🔥 CAMBIAR ESTADO A "Listo para asignar" =====
+        await docRef.update({
+            estado: 'Listo para asignar',
+            fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+            notificadoPor: auth.currentUser?.email || 'Admin General'
+        });
         
-        // Verificar que haya mensajeros disponibles
-        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
-            m.activo !== false && m.conectado !== false && !m.ocupado
-        );
+        // ===== 🛑 ELIMINADA LA LLAMADA A abrirModalAsignacion() =====
+        // La ventana de asignación SOLO debe aparecer en el Admin Mensajeros
         
-        if (mensajerosDisponibles.length === 0) {
-            toast('⚠️ No hay mensajeros disponibles en este momento', 'warn', 4000);
-            // Preguntar si quiere poner el pedido en lista de espera
-            if (confirm('No hay mensajeros disponibles. ¿Quieres poner el pedido en "Listo para asignar" para que lo tomen cuando se conecten?')) {
-                await docRef.update({
-                    estado: 'Listo para asignar',
-                    fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
-                    notificadoPor: auth.currentUser?.email || 'Admin'
-                });
-                toast('📢 Pedido puesto en lista de espera. Los mensajeros lo verán cuando se conecten.', 'info', 4000);
-                if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-                else mostrarPedidosPendientesGlobal();
-            }
-            return;
+        // ===== NOTIFICAR AL ADMIN MENSAJEROS =====
+        toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
+        console.log(`📦 Pedido ${pedidoId} listo para asignar - Notificado al admin de mensajeros`);
+        
+        // ===== REFRESCAR LA VISTA =====
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
         }
         
-        // Si hay mensajeros disponibles, abrir el modal
-        abrirModalAsignacion(tiendaId, pedidoId);
+        // ===== RECARGAR MENSAJEROS (opcional) =====
+        cargarMensajerosAdmin();
         
     } catch (e) {
         console.error('Error en marcarServicioListo:', e);
         toast('❌ Error: ' + e.message, 'error');
     }
 }
-
 // ============================================================
 // INICIALIZAR
 // ============================================================
