@@ -594,7 +594,6 @@ function escucharPedidosEnTiempoReal() {
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
-                                // 🔥 INICIAR DESPERTADOR SI EL PEDIDO ESTÁ DISPONIBLE
                                 if (estaDisponible) {
                                     if (!sonidoDespertador.estaSonando(pedidoId)) {
                                         sonidoDespertador.iniciarDespertador(pedidoId);
@@ -610,7 +609,6 @@ function escucharPedidosEnTiempoReal() {
                                     }
                                 }
                                 
-                                // 🔥 DETENER DESPERTADOR SI EL PEDIDO YA TIENE MENSAJERO
                                 if (tieneMensajero || esEntregado) {
                                     if (sonidoDespertador.estaSonando(pedidoId)) {
                                         console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
@@ -830,7 +828,7 @@ function renderizarPedidosAsignar() {
 }
 
 // ============================================================
-// MODAL DE ASIGNACIÓN
+// ⏰ MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR INMEDIATAMENTE
 // ============================================================
 let pedidoAsignacion = null;
 function abrirModalAsignacion(pedidoId, tiendaId) {
@@ -844,6 +842,13 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         recargarPedidos();
         return;
     }
+    
+    // 🔥🔥🔥 APAGAR EL DESPERTADOR INMEDIATAMENTE AL ABRIR EL MODAL 🔥🔥🔥
+    if (sonidoDespertador.estaSonando(pedidoId)) {
+        console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al abrir modal - Pedido: ${pedidoId}`);
+        sonidoDespertador.detenerDespertador(pedidoId);
+    }
+    
     pedidoAsignacion = { tiendaId, pedidoId };
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
@@ -895,6 +900,10 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     `;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+    
+    // 🔥 ACTUALIZAR EL BADGE Y LA TARJETA PARA REFLEJAR QUE EL SONIDO SE APAGÓ
+    actualizarHeaderBadge();
+    renderizarPedidosAsignar();
 }
 function cerrarModalAsignacion() {
     const modal = document.getElementById('modalAsignacion');
@@ -936,7 +945,6 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: false
             });
-        // 🔥 DETENER DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) {
             sonidoDespertador.detenerDespertador(pedidoId);
         }
@@ -987,7 +995,6 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: true
             });
-        // 🔥 DETENER DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) {
             console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
             sonidoDespertador.detenerDespertador(pedidoId);
@@ -1171,7 +1178,7 @@ window.notificarATodos = notificarATodos;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('⏰ Despertador activado para pedidos listos');
-console.log('🔇 El despertador se apaga al asignar o notificar');
+console.log('🔇 El despertador se apaga al abrir el modal de asignación');
 console.log('🔄 Auto-refresco activado al asignar pedidos');
 </script>
 </body>
