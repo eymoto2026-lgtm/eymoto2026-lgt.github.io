@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Mensajero - EyMoto</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
@@ -161,7 +161,7 @@
 
 <div class="motivacion-overlay" id="motivacionOverlay">
     <div class="motivacion-box">
-        <span class="icono-grande">🏍️</span>
+        <span class="icono-grande">🛵</span>
         <h2>¡Conéctate y comienza a ganar!</h2>
         <p class="subtitulo">Tienes pedidos esperando por ti</p>
         <div class="mensaje">
@@ -199,7 +199,7 @@
 <div id="toastWrap"></div>
 
 <div id="loginBox">
-    <div class="login-logo"><span class="brand">🏍️ EyMoto</span></div>
+    <div class="login-logo"><span class="brand">EyMoto</span></div>
     <h2>Panel Mensajero</h2>
     <p class="sub">Recibe y gestiona tus pedidos</p>
     <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="tu@email.com"></div>
@@ -210,7 +210,7 @@
 
 <div id="panel" class="hidden">
     <header>
-        <span class="brand">🏍️ EyMoto</span>
+        <span class="brand">EyMoto</span>
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
@@ -252,7 +252,62 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SISTEMA DE SONIDO ESCANDALOSO CON MOTO Y VOZ
+// ⏰ FUNCIÓN DE SONIDO EYMOTO
+// ============================================================
+function sonidoEyMoto() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioContext();
+        
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const notas = [
+            {freq: 880, tiempo: 0.00, duracion: 0.10},
+            {freq: 1047, tiempo: 0.16, duracion: 0.10},
+            {freq: 1319, tiempo: 0.34, duracion: 0.28},
+            {freq: 1568, tiempo: 0.60, duracion: 0.45}
+        ];
+
+        notas.forEach(n => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.tiempo);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.tiempo);
+            gain.gain.exponentialRampToValueAtTime(
+                0.35,
+                ctx.currentTime + n.tiempo + 0.02
+            );
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                ctx.currentTime + n.tiempo + n.duracion
+            );
+
+            osc.start(ctx.currentTime + n.tiempo);
+            osc.stop(ctx.currentTime + n.tiempo + n.duracion);
+        });
+
+        if (navigator.vibrate) {
+            navigator.vibrate([200, 80, 200]);
+        }
+        
+        console.log('🔊 Sonido EyMoto reproducido');
+        
+    } catch (e) {
+        console.error('❌ Error en sonido:', e);
+    }
+}
+
+// ============================================================
+// ⏰ SISTEMA DE DESPERTADOR CON SONIDO EYMOTO
 // ============================================================
 class SonidoDespertador {
     constructor() {
@@ -266,7 +321,6 @@ class SonidoDespertador {
         this.pedidosProcesados = new Set();
         this.audioActivado = false;
         
-        // Intentar activar audio al cargar
         setTimeout(() => {
             this.iniciarAudio();
         }, 500);
@@ -279,11 +333,11 @@ class SonidoDespertador {
             }
             if (this.ctx.state === 'suspended') {
                 this.ctx.resume();
-                console.log('🔊 Motor de sonido encendido! 🏍️');
+                console.log('🔊 Audio activado');
             }
             this.inicializado = true;
             this.audioActivado = true;
-            console.log('✅ Audio de la moto listo para rugir!');
+            console.log('✅ Sonido EyMoto listo');
             return true;
         } catch (e) { 
             console.warn('⚠️ Error inicializando audio:', e.message);
@@ -291,145 +345,15 @@ class SonidoDespertador {
         }
     }
 
-    // ✅ SONIDO DE MOTO ARRANCANDO + NOTIFICACIÓN ESCANDALOSA
     reproducir() {
         try {
             if (!this.inicializado || !this.audioActivado) {
                 this.iniciarAudio();
             }
             
-            if (!this.ctx || this.ctx.state !== 'running') {
-                console.warn('⚠️ Motor apagado, encendiendo...');
-                this.iniciarAudio();
-                return;
-            }
+            // ✅ LLAMAR A LA FUNCIÓN SONIDO EYMOTO
+            sonidoEyMoto();
             
-            console.log('🏍️ ¡ARRANCA LA MOTO! 💨');
-            
-            // ============================================================
-            // 1. SONIDO DE MOTO ARRANCANDO (RUGIDO)
-            // ============================================================
-            
-            // Primera parte: Motor arrancando (sonido grave)
-            const motor1 = [
-                { freq: 80, dur: 0.3, tiempo: 0, vol: 0.6 },
-                { freq: 120, dur: 0.3, tiempo: 0.2, vol: 0.7 },
-                { freq: 150, dur: 0.4, tiempo: 0.4, vol: 0.8 }
-            ];
-            
-            motor1.forEach(({freq, dur, tiempo, vol}) => {
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.frequency.value = freq;
-                    osc.type = 'sawtooth'; // Sonido más agresivo como motor
-                    gain.gain.setValueAtTime(vol, this.ctx.currentTime + tiempo);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + tiempo + dur);
-                    osc.start(this.ctx.currentTime + tiempo);
-                    osc.stop(this.ctx.currentTime + tiempo + dur + 0.05);
-                } catch (e) {}
-            });
-            
-            // Segunda parte: Aceleración (subida de tono)
-            setTimeout(() => {
-                try {
-                    if (!this.ctx) return;
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.3);
-                    osc.type = 'sawtooth';
-                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-                    osc.start(this.ctx.currentTime);
-                    osc.stop(this.ctx.currentTime + 0.3);
-                } catch (e) {}
-            }, 500);
-            
-            // Tercera parte: Notificación "ding-dong" sobre el motor
-            setTimeout(() => {
-                try {
-                    if (!this.ctx) return;
-                    const notas = [
-                        { freq: 800, dur: 0.15, tiempo: 0, vol: 0.5 },
-                        { freq: 1000, dur: 0.15, tiempo: 0.1, vol: 0.5 },
-                        { freq: 1200, dur: 0.2, tiempo: 0.2, vol: 0.6 }
-                    ];
-                    notas.forEach(({freq, dur, tiempo, vol}) => {
-                        const osc = this.ctx.createOscillator();
-                        const gain = this.ctx.createGain();
-                        osc.connect(gain);
-                        gain.connect(this.ctx.destination);
-                        osc.frequency.value = freq;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(vol, this.ctx.currentTime + tiempo + 0.7);
-                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + tiempo + 0.7 + dur);
-                        osc.start(this.ctx.currentTime + tiempo + 0.7);
-                        osc.stop(this.ctx.currentTime + tiempo + 0.7 + dur + 0.05);
-                    });
-                } catch (e) {}
-            }, 100);
-
-            // ============================================================
-            // 2. VOZ ESCANDALOSA: "¡NUEVO PEDIDO! ¡ARRANCA LA MOTO!"
-            // ============================================================
-            setTimeout(() => {
-                try {
-                    if ('speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                        
-                        // Primera frase: "¡Nuevo pedido!"
-                        const mensaje1 = '¡Nuevo pedido!';
-                        const utterance1 = new SpeechSynthesisUtterance(mensaje1);
-                        utterance1.lang = 'es-ES';
-                        utterance1.rate = 0.8;
-                        utterance1.pitch = 1.3;
-                        utterance1.volume = 1.0;
-                        
-                        // Segunda frase: "¡Arranca la moto!"
-                        const mensaje2 = '¡Arranca la moto!';
-                        const utterance2 = new SpeechSynthesisUtterance(mensaje2);
-                        utterance2.lang = 'es-ES';
-                        utterance2.rate = 0.9;
-                        utterance2.pitch = 1.1;
-                        utterance2.volume = 1.0;
-                        
-                        // Buscar voz en español
-                        const voces = window.speechSynthesis.getVoices();
-                        const vozEspanol = voces.find(v => v.lang.startsWith('es') && v.name.includes('Google')) || 
-                                           voces.find(v => v.lang.startsWith('es'));
-                        
-                        if (vozEspanol) {
-                            utterance1.voice = vozEspanol;
-                            utterance2.voice = vozEspanol;
-                            console.log('🗣️ Usando voz:', vozEspanol.name);
-                        }
-                        
-                        // Reproducir una frase después de la otra
-                        window.speechSynthesis.speak(utterance1);
-                        setTimeout(() => {
-                            window.speechSynthesis.speak(utterance2);
-                        }, 800);
-                        
-                        console.log('🗣️ VOZ: "¡Nuevo pedido! ¡Arranca la moto!"');
-                    }
-                } catch (e) {
-                    console.error('❌ Error en voz:', e);
-                }
-            }, 600);
-
-            // ============================================================
-            // 3. VIBRACIÓN INTENSA (como motor vibrando)
-            // ============================================================
-            if ("vibrate" in navigator) {
-                navigator.vibrate([200, 50, 200, 50, 300, 100, 400]);
-                console.log('📱 ¡La moto está vibrando! 💨');
-            }
-
         } catch (e) {
             console.error('❌ Error en sonido:', e);
             this.fallbackBeep();
@@ -465,7 +389,7 @@ class SonidoDespertador {
             console.log(`⏰ Pedido ${pedidoId} ya fue procesado`);
             return;
         }
-        console.log(`🏍️ 🔔 ¡PEDIDO NUEVO! ¡ARRANCA LA MOTO! - Pedido: ${pedidoId}`);
+        console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
         
         this.iniciarAudio();
         
@@ -479,7 +403,7 @@ class SonidoDespertador {
             } else {
                 this.detenerDespertador(pedidoId);
             }
-        }, 12000);
+        }, 10000);
     }
 
     detenerDespertador(pedidoId) {
@@ -490,7 +414,7 @@ class SonidoDespertador {
             return;
         }
         if (this.pedidosActivos[pedidoId]) {
-            console.log(`🏍️ 🔇 MOTO APAGADA - Pedido: ${pedidoId}`);
+            console.log(`🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
             delete this.pedidosActivos[pedidoId];
             this.pedidosProcesados.add(pedidoId);
             if (this.intervalos[pedidoId]) {
@@ -522,7 +446,7 @@ const sonidoDespertador = new SonidoDespertador();
 document.addEventListener('click', function activarAudio() {
     if (sonidoDespertador) {
         sonidoDespertador.iniciarAudio();
-        console.log('🏍️ ¡Motor encendido por clic!');
+        console.log('🔊 Audio activado por clic');
     }
     document.removeEventListener('click', activarAudio);
 }, { once: true });
@@ -551,11 +475,11 @@ function simularPedidoPrueba() {
     sonidoDespertador.iniciarDespertador(pedidoFalso.id);
     renderizarPedidos();
     
-    toast('🏍️ ¡Nuevo pedido! ¡Arranca la moto!', 'new', 5000);
+    toast('🔔 Nuevo pedido de prueba', 'new', 5000);
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
-console.log('🏍️ Para probar el sonido de MOTO, escribe: simularPedidoPrueba()');
+console.log('🧪 Para probar el sonido, escribe: simularPedidoPrueba()');
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -748,7 +672,7 @@ async function inicializarPanel() {
         await escucharPedidos();
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🏍️ Sonido de MOTO configurado');
+        console.log('🔊 Sonido EyMoto configurado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -778,7 +702,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - CON SONIDO DE MOTO
+// 📢 ESCUCHAR PEDIDOS - CON SONIDO EYMOTO
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -815,11 +739,11 @@ function escucharPedidos() {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         const tienda = tiendasCache[tiendaId] || {};
                                         
-                                        // 🏍️ ACTIVAR SONIDO DE MOTO PARA NUEVO PEDIDO
+                                        // 🔔 ACTIVAR SONIDO PARA NUEVO PEDIDO
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
-                                            console.log(`🏍️ ¡NUEVO PEDIDO! ¡ARRANCA LA MOTO! - ${pedidoId}`);
+                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
                                             sonidoDespertador.iniciarDespertador(pedidoId);
-                                            toast(`🏍️ ¡Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}! ¡Arranca la moto!`, 'new', 5000);
+                                            toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                         }
                                     }
                                 }
@@ -1027,7 +951,7 @@ function renderizarPedidoCard(pedido, disponible) {
     return `
         <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
             <div class="header">
-                <span class="numero">🏍️ #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
+                <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
                 <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
             </div>
             <div class="info-grid">
@@ -1219,7 +1143,7 @@ function formatearFecha(fecha) {
     } catch (e) { return '--/--/--'; }
 }
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🏍️', motivacion: '💪' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🔔', motivacion: '💪' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1244,13 +1168,9 @@ window.cerrarMotivacion = cerrarMotivacion;
 window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
 
-console.log('🏍️ ¡PANEL DE MENSAJERO EYMOTO!');
-console.log('🔊 Sonido de MOTO activado - ¡Ruge como una moto!');
-console.log('🗣️ Voz: "¡Nuevo pedido! ¡Arranca la moto!"');
-console.log('📱 Vibración de motor activada');
-console.log('🎨 Animación de nuevo pedido activada');
+console.log('✅ Panel de mensajero cargado correctamente');
+console.log('🔊 Sonido EyMoto integrado');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
-console.log('🏍️ ¡A rodar! 💨');
 </script>
 </body>
 </html>
