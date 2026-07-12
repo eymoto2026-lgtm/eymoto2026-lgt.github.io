@@ -815,8 +815,13 @@ function renderizarPedidosAsignar() {
                 ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
                 <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
                 ${hayMensajeros ? 
-                    `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">👤 Asignar mensajero</button>` :
-                    `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;"><span style="font-size:14px;">⚠️</span><span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span></div>`
+                    `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">
+                        👤 Asignar mensajero
+                    </button>` :
+                    `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;">
+                        <span style="font-size:14px;">⚠️</span>
+                        <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
+                    </div>`
                 }
                 ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">⏰🔔 Despertador sonando...</div>` : ''}
             </div>
@@ -828,15 +833,23 @@ function renderizarPedidosAsignar() {
 }
 
 // ============================================================
-// ⏰ MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR INMEDIATAMENTE
+// ⏰ ABRIR MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR INMEDIATAMENTE
 // ============================================================
 let pedidoAsignacion = null;
 function abrirModalAsignacion(pedidoId, tiendaId) {
+    console.log(`🔍 abrirModalAsignacion llamado para pedido: ${pedidoId}`);
+    
     const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (!pedido) { toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); recargarPedidos(); return; }
+    if (!pedido) { 
+        toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); 
+        recargarPedidos(); 
+        return; 
+    }
+    
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
         if (sonidoDespertador.estaSonando(pedidoId)) { 
+            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         recargarPedidos();
@@ -847,6 +860,8 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     if (sonidoDespertador.estaSonando(pedidoId)) {
         console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al abrir modal - Pedido: ${pedidoId}`);
         sonidoDespertador.detenerDespertador(pedidoId);
+    } else {
+        console.log(`ℹ️ El pedido ${pedidoId} NO está sonando`);
     }
     
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -904,7 +919,15 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     // 🔥 ACTUALIZAR EL BADGE Y LA TARJETA PARA REFLEJAR QUE EL SONIDO SE APAGÓ
     actualizarHeaderBadge();
     renderizarPedidosAsignar();
+    
+    // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
+    if (!sonidoDespertador.estaSonando(pedidoId)) {
+        console.log(`✅ [ADMIN] Despertador APAGADO correctamente para pedido: ${pedidoId}`);
+    } else {
+        console.log(`❌ [ADMIN] El despertador SIGUE SONANDO para pedido: ${pedidoId}`);
+    }
 }
+
 function cerrarModalAsignacion() {
     const modal = document.getElementById('modalAsignacion');
     modal.style.display = 'none';
