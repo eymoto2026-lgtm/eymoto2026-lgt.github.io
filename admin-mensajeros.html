@@ -936,28 +936,44 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
+// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR INMEDIATAMENTE
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
     if (!select) return;
     const mensajeroId = select.value;
-    if (!mensajeroId) { toast('⚠️ Selecciona un mensajero de la lista', 'warn'); return; }
+    
+    if (!mensajeroId) {
+        toast('⚠️ Selecciona un mensajero de la lista', 'warn');
+        return;
+    }
+    
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) { 
+            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
     }
+    
     try {
         toast('⏳ Asignando pedido...', 'info');
+        
+        // 🔥🔥🔥 APAGAR EL DESPERTADOR ANTES DE LA ASIGNACIÓN 🔥🔥🔥
+        if (sonidoDespertador.estaSonando(pedidoId)) {
+            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al asignar - Pedido: ${pedidoId}`);
+            sonidoDespertador.detenerDespertador(pedidoId);
+        }
+        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -968,20 +984,31 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: false
             });
+        
+        // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
         if (sonidoDespertador.estaSonando(pedidoId)) {
+            console.log(`⏰ [ADMIN] ⚠️ El despertador SIGUE SONANDO, forzando detención - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
         }
+        
         sonidoDespertador.sonidoConfirmacion();
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
+        
+        // 🔥 ACTUALIZAR BADGE Y VISTA
+        actualizarHeaderBadge();
+        renderizarPedidosAsignar();
+        
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
             recargarPedidos();
             recargarMensajeros();
         }, 1000);
+        
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
+            // 🔥 APAGAR DESPERTADOR
             if (sonidoDespertador.estaSonando(pedidoId)) { 
                 sonidoDespertador.detenerDespertador(pedidoId); 
             }
@@ -994,22 +1021,33 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
+// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR INMEDIATAMENTE
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) { 
+            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
     }
+    
     try {
         toast('⏳ Notificando mensajeros...', 'info');
+        
+        // 🔥🔥🔥 APAGAR EL DESPERTADOR ANTES DE NOTIFICAR 🔥🔥🔥
+        if (sonidoDespertador.estaSonando(pedidoId)) {
+            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al notificar - Pedido: ${pedidoId}`);
+            sonidoDespertador.detenerDespertador(pedidoId);
+        }
+        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1018,18 +1056,31 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: true
             });
+        
+        // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
         if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
+            console.log(`⏰ [ADMIN] ⚠️ El despertador SIGUE SONANDO, forzando detención - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
         }
+        
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
+        
+        // 🔥 ACTUALIZAR BADGE Y VISTA
+        actualizarHeaderBadge();
+        renderizarPedidosAsignar();
+        
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
             recargarPedidos();
         }, 1000);
+        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
+        // 🔥 APAGAR DESPERTADOR EN CASO DE ERROR
+        if (sonidoDespertador.estaSonando(pedidoId)) { 
+            sonidoDespertador.detenerDespertador(pedidoId); 
+        }
     }
 }
 
