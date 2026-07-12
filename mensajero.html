@@ -252,25 +252,79 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ FUNCIÓN DE SONIDO CON MP3 (URL COMPLETA)
+// ⏰ FUNCIÓN DE SONIDO CON MP3 (FORZADO)
 // ============================================================
+let audioContextDesbloqueado = false;
+let audioDesbloqueado = false;
+
+// Función para desbloquear el audio en el navegador
+function desbloquearAudio() {
+    try {
+        // Crear un AudioContext silencioso para desbloquear
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        // Crear un oscilador silencioso
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0.001;
+        osc.start(0);
+        osc.stop(0.001);
+        audioContextDesbloqueado = true;
+        console.log('🔊 AudioContext desbloqueado forzadamente');
+        return true;
+    } catch (e) {
+        console.warn('⚠️ No se pudo desbloquear audio forzadamente:', e);
+        return false;
+    }
+}
+
+// Intentar desbloquear al cargar
+setTimeout(() => {
+    desbloquearAudio();
+}, 100);
+
+// También al hacer clic
+document.addEventListener('click', function() {
+    if (!audioContextDesbloqueado) {
+        desbloquearAudio();
+    }
+    audioDesbloqueado = true;
+});
+
 function sonidoEyMoto() {
     try {
+        // Intentar desbloquear audio antes de reproducir
+        if (!audioContextDesbloqueado) {
+            desbloquearAudio();
+        }
+        
         // ✅ URL COMPLETA DE GITHUB PAGES
         const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
         audio.volume = 1.0;
         audio.preload = "auto";
         
-        audio.play().then(() => {
-            console.log('🔊 Sonido MP3 reproducido desde GitHub');
-        }).catch(e => {
-            console.log('❌ Error con MP3, usando sonido de respaldo:', e);
-            sonidoRespaldo();
-        });
-
-        // Vibración
-        if (navigator.vibrate) {
-            navigator.vibrate([200, 80, 200]);
+        // Reproducir con manejo de errores
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('🔊 Sonido MP3 reproducido desde GitHub');
+                // Vibración (ahora debería funcionar)
+                if (navigator.vibrate) {
+                    try {
+                        navigator.vibrate([200, 80, 200]);
+                        console.log('📱 Vibración activada');
+                    } catch(e) {}
+                }
+            }).catch(e => {
+                console.log('⚠️ Error con MP3, usando sonido de respaldo:', e.message);
+                // Si falla el MP3, usar sonido de respaldo
+                sonidoRespaldo();
+            });
         }
         
     } catch (e) {
@@ -286,7 +340,9 @@ function sonidoRespaldo() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContext();
-        if (ctx.state === 'suspended') ctx.resume();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
         
         const notas = [
             {freq: 880, tiempo: 0.00, duracion: 0.10},
@@ -329,6 +385,7 @@ class SonidoDespertador {
         
         setTimeout(() => {
             this.iniciarAudio();
+            desbloquearAudio();
         }, 500);
     }
 
@@ -356,6 +413,9 @@ class SonidoDespertador {
             if (!this.inicializado || !this.audioActivado) {
                 this.iniciarAudio();
             }
+            
+            // Desbloquear audio antes de reproducir
+            desbloquearAudio();
             
             // ✅ LLAMAR A LA FUNCIÓN SONIDO CON MP3
             sonidoEyMoto();
@@ -398,6 +458,7 @@ class SonidoDespertador {
         console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
         
         this.iniciarAudio();
+        desbloquearAudio();
         
         this.pedidosActivos[pedidoId] = true;
         this.reproduciendo = true;
@@ -447,14 +508,15 @@ class SonidoDespertador {
 const sonidoDespertador = new SonidoDespertador();
 
 // ============================================================
-// ACTIVAR AUDIO CON UN CLIC DEL USUARIO
+// ACTIVAR AUDIO CON UN CLIC DEL USUARIO (FORZADO)
 // ============================================================
 document.addEventListener('click', function activarAudio() {
     if (sonidoDespertador) {
         sonidoDespertador.iniciarAudio();
+        desbloquearAudio();
         console.log('🔊 Audio activado por clic');
     }
-    document.removeEventListener('click', activarAudio);
+    audioDesbloqueado = true;
 }, { once: true });
 
 // ============================================================
@@ -1175,7 +1237,7 @@ window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido con MP3 integrado: notificacion-ymoto.mp3');
+console.log('🔊 Sonido con MP3 integrado (FORZADO)');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 </script>
 </body>
