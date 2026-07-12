@@ -3,22 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Mensajeros - EyMoto</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
+    <title>Admin General - EyMoto</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { background: #0a0a0a; color: #fff; min-height: 100vh; }
-        :root {
-            --yellow: #FFD600; --yellow-dim: #e6c200; --green: #00C853; --green-bg: rgba(0,200,83,0.12);
-            --blue: #00B0FF; --blue-bg: rgba(0,176,255,0.12); --red: #FF3D00; --red-bg: rgba(255,61,0,0.12);
-            --orange: #FF6900; --orange-bg: rgba(255,105,0,0.12); --purple: #9B59B6; --purple-bg: rgba(155,89,182,0.12);
-            --surface: #141414; --surface2: #1e1e1e; --surface3: #252525; --border: #2e2e2e; --border2: #3a3a3a;
-            --text-muted: #888; --radius: 10px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        input, select, textarea, button { font-family: inherit; font-size: 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; padding: 11px 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color .2s, background .2s; }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        :root {
+            --yellow: #FFD600;
+            --yellow-dim: #e6c200;
+            --green: #00C853;
+            --green-bg: rgba(0,200,83,0.12);
+            --blue: #00B0FF;
+            --blue-bg: rgba(0,176,255,0.12);
+            --red: #FF3D00;
+            --red-bg: rgba(255,61,0,0.12);
+            --orange: #FF6900;
+            --orange-bg: rgba(255,105,0,0.12);
+            --purple: #9B59B6;
+            --purple-bg: rgba(155,89,182,0.12);
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --surface3: #252525;
+            --border: #2e2e2e;
+            --border2: #3a3a3a;
+            --text-muted: #888;
+            --radius: 10px;
+        }
+        input, select, textarea, button {
+            font-family: inherit;
+            font-size: 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface3);
+            color: #fff;
+            padding: 11px 14px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color .2s, background .2s;
+        }
         input:focus, select:focus { border-color: var(--yellow); }
         select option { background: #1e1e1e; }
-        button { background: var(--yellow); color: #1a1a2e; font-weight: 700; border: none; cursor: pointer; transition: background .15s, transform .1s; }
+        button {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
         button:hover { background: var(--yellow-dim); }
         button:active { transform: scale(.98); }
         .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
@@ -33,15 +75,48 @@
         .btn-warning { background: var(--orange); color: #1a1a2e; }
         .btn-warning:hover { background: #e65c00; }
         .hidden { display: none !important; }
-        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
-        header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
+
+        header {
+            background: #0d0d0d;
+            border-bottom: 1px solid var(--border);
+            padding: 13px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+        header .brand {
+            background: var(--yellow);
+            color: #1a1a2e;
+            font-weight: 900;
+            font-size: 14px;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
-        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; animation: pulse-badge 0.5s ease-in-out infinite; }
-        @keyframes pulse-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        .btn-refrescar { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
-        .btn-refrescar:hover { background: var(--blue); color: #fff; }
-        .btn-refrescar:active { transform: scale(0.95); }
+        .btn-refrescar {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+            font-size: 12px;
+        }
+        .btn-refrescar:hover {
+            background: var(--blue);
+            color: #fff;
+        }
+        .btn-refrescar:active {
+            transform: scale(0.95);
+        }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
         #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
         #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
@@ -49,8 +124,19 @@
         #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
         .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
         .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
         .stat-card.c-yellow .val { color: var(--yellow); }
@@ -59,193 +145,390 @@
         .stat-card.c-red .val { color: var(--red); }
         .stat-card.c-orange .val { color: var(--orange); }
         .stat-card.c-purple .val { color: var(--purple); }
-        .pedido-asignar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s ease; animation: slideIn 0.3s ease; }
-        .pedido-asignar.nuevo { border-left-color: var(--green); animation: pulseNuevo 1.5s ease-in-out 3; }
-        @keyframes pulseNuevo { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } 50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        .pedido-asignar .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-        .pedido-asignar .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
-        .pedido-asignar .header .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--blue-bg); color: var(--blue); }
-        .pedido-asignar .header .estado-badge.asignado-badge { background: var(--green-bg); color: var(--green); }
-        .pedido-asignar .header .alarma-indicador { 
-            padding: 4px 12px; 
-            border-radius: 20px; 
-            font-size: 11px; 
-            font-weight: 700; 
-            background: var(--red); 
-            color: #fff; 
-            animation: alarma-pulse 0.8s ease-in-out infinite; 
-            display: inline-block;
+
+        .pedido-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--yellow);
+            transition: all 0.3s ease;
         }
-        @keyframes alarma-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
-        .pedido-asignar .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin-bottom: 8px; }
-        .pedido-asignar .info-grid .label { color: var(--text-muted); }
-        .pedido-asignar .info-grid .value { color: #fff; font-weight: 500; }
-        .pedido-asignar .items-list { background: var(--surface2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
-        .pedido-asignar .items-list .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
-        .pedido-asignar .items-list .item:last-child { border-bottom: none; }
-        .pedido-asignar .total { font-size: 16px; font-weight: 800; text-align: right; color: var(--green); margin-top: 6px; }
-        .pedido-asignar .mensajero-info { font-size: 12px; color: var(--blue); text-align: center; padding: 6px; background: var(--blue-bg); border-radius: 6px; margin-top: 6px; }
-        .form-crear { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .form-crear .titulo { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .form-crear .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .form-crear .acciones { display: flex; gap: 8px; margin-top: 12px; }
-        .mensajero-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; transition: border-color 0.3s; }
-        .mensajero-card:hover { border-color: var(--yellow); }
-        .mensajero-card .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--yellow); flex-shrink: 0; border: 2px solid var(--border); }
-        .mensajero-card .info { flex: 1; min-width: 150px; }
-        .mensajero-card .info .nombre { font-size: 15px; font-weight: 700; }
-        .mensajero-card .info .email { font-size: 12px; color: var(--text-muted); }
-        .mensajero-card .info .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-        .mensajero-card .estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
-        .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
-        .mensajero-card .estado.ocupado { background: var(--orange-bg); color: var(--orange); }
-        .mensajero-card .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
-        #toastWrap { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-        .toast { background: #1e1e1e; border: 1px solid var(--border2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: toastIn .3s ease; pointer-events: auto; max-width: 380px; cursor: pointer; }
+        .pedido-card.pendiente { border-left-color: var(--orange); }
+        .pedido-card.preparacion { border-left-color: var(--blue); }
+        .pedido-card.listo { border-left-color: var(--green); }
+        .pedido-card.entregado { border-left-color: var(--green); opacity: 0.6; }
+        .pedido-card.cancelado { border-left-color: var(--red); opacity: 0.5; }
+
+        .pedido-card .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .pedido-card .header .numero {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--yellow);
+        }
+        .pedido-card .header .badge-estado {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-estado.pendiente { background: var(--orange); color: #fff; }
+        .badge-estado.preparacion { background: var(--blue); color: #fff; }
+        .badge-estado.listo { background: var(--green); color: #1a1a2e; }
+        .badge-estado.entregado { background: var(--green); color: #1a1a2e; }
+        .badge-estado.cancelado { background: var(--red); color: #fff; }
+
+        .pedido-card .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 16px;
+            font-size: 13px;
+            margin: 6px 0;
+        }
+        .pedido-card .info-grid .label { color: var(--text-muted); }
+        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
+
+        .pedido-card .total {
+            text-align: right;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--green);
+            margin-top: 6px;
+        }
+        .pedido-card .items {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        .pedido-card .items .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .pedido-card .items .item:last-child { border-bottom: none; }
+
+        .acciones-pedido {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .acciones-pedido button {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .notificacion-listo {
+            background: var(--green-bg);
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--green);
+            animation: pulseNotificacion 2s ease-in-out infinite;
+        }
+        .notificacion-listo .icono { font-size: 28px; }
+        @keyframes pulseNotificacion {
+            0%, 100% { opacity: 1; border-color: var(--green); }
+            50% { opacity: 0.7; border-color: var(--yellow); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        .empty-state .icono { font-size: 48px; display: block; margin-bottom: 12px; }
+
+        #toastWrap {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1e1e1e;
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,.5);
+            animation: toastIn .3s ease;
+            pointer-events: auto;
+            max-width: 380px;
+            cursor: pointer;
+        }
         .toast.t-success { border-left: 3px solid var(--green); }
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); border-left-color: var(--red); animation: toastIn .3s ease, alarma-pulse 0.8s ease-in-out infinite 0.3s; }
-        @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
         .toast-fade { animation: toastOut .3s ease forwards; }
-        @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
-        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(20px); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
         .modal.active { display: flex; }
-        .modal .modal-content { background: #1e1e1e; border-radius: 20px; max-width: 550px; width: 100%; padding: 24px; border: 1px solid var(--yellow); max-height: 90vh; overflow-y: auto; }
-        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .modal .modal-content {
+            background: #1e1e1e;
+            border-radius: 20px;
+            max-width: 550px;
+            width: 100%;
+            padding: 24px;
+            border: 1px solid var(--yellow);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
         .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
-        .modal .modal-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+        .modal .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
         .modal .modal-close:hover { color: var(--red); }
-        .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+        .modal .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
         .modal .info-row .label { color: var(--text-muted); }
         .modal .info-row .value { color: #fff; font-weight: 500; }
-        .filtros { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: var(--surface2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
-        .filtros select, .filtros input { flex: 1; min-width: 150px; }
+
+        .filtros {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .filtros select, .filtros input {
+            flex: 1;
+            min-width: 150px;
+        }
         .filtros button { flex: 0 0 auto; width: auto; }
-        .seccion-pedidos { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border); }
-        .seccion-pedidos .titulo-seccion { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .seccion-pedidos .titulo-seccion .badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
-        .opcion-asignacion { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; transition: all 0.3s ease; }
-        .opcion-asignacion:hover { border-color: var(--yellow); }
-        .opcion-asignacion .titulo { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-        .opcion-asignacion .descripcion { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
-        .opcion-asignacion select { background: var(--surface3); border: 1px solid var(--border2); color: #fff; padding: 10px 12px; border-radius: 8px; width: 100%; margin-bottom: 8px; }
-        .opcion-asignacion select option { background: #1e1e1e; }
-        .opcion-asignacion .btn-asignar { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .opcion-asignacion .btn-asignar:hover { transform: scale(1.01); }
-        .opcion-asignacion .btn-asignar:active { transform: scale(0.97); }
-        .opcion-asignacion .btn-asignar.manual { background: var(--blue); color: #fff; }
-        .opcion-asignacion .btn-asignar.manual:hover { background: #0277bd; }
-        .opcion-asignacion .btn-asignar.broadcast { background: var(--yellow); color: #1a1a2e; }
-        .opcion-asignacion .btn-asignar.broadcast:hover { background: var(--yellow-dim); }
-        .opcion-asignacion .mensajeros-disponibles { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-        .opcion-asignacion .mensajeros-disponibles .count { color: var(--green); font-weight: 700; }
-        .btn-cancelar-modal { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border2); background: transparent; color: var(--text-muted); font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
-        .btn-cancelar-modal:hover { background: var(--surface3); color: #fff; }
-        .pedido-info-resumen { background: var(--surface3); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
-        .pedido-info-resumen .row { display: flex; justify-content: space-between; padding: 2px 0; }
-        .pedido-info-resumen .label { color: var(--text-muted); }
-        .pedido-info-resumen .value { color: #fff; font-weight: 500; }
-        .sin-mensajeros { text-align: center; padding: 30px; color: var(--text-muted); }
-        .sin-mensajeros .icono { font-size: 48px; display: block; margin-bottom: 12px; }
-        .auto-refresh-indicator { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
-        .auto-refresh-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
-        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
-        .llamada-entrante { background: var(--red); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; animation: llamada-pulse 0.8s ease-in-out infinite; display: inline-block; }
-        @keyframes llamada-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
-        @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
+
+        .seccion-tiendas {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+        .seccion-tiendas .titulo-seccion {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--yellow);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .seccion-tiendas .titulo-seccion .badge {
+            background: var(--blue);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .tienda-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            transition: border-color 0.3s;
+        }
+        .tienda-card:hover { border-color: var(--yellow); }
+        .tienda-card .icono { font-size: 32px; flex-shrink: 0; }
+        .tienda-card .info { flex: 1; min-width: 150px; }
+        .tienda-card .info .nombre { font-size: 15px; font-weight: 700; }
+        .tienda-card .info .direccion { font-size: 12px; color: var(--text-muted); }
+        .tienda-card .info .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .tienda-card .estado {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .tienda-card .estado.activa { background: var(--green-bg); color: var(--green); }
+        .tienda-card .estado.inactiva { background: var(--red-bg); color: var(--red); }
+        .tienda-card .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .pedido-card .info-grid { grid-template-columns: 1fr; }
+            .acciones-pedido button { min-width: 60px; font-size: 10px; padding: 8px; }
+        }
     </style>
 </head>
 <body>
+
 <div id="toastWrap"></div>
+
 <div id="loginBox">
     <div class="login-logo"><span class="brand">EyMoto</span></div>
-    <h2>Admin Mensajeros</h2>
-    <p class="sub">Gestiona tu equipo de repartidores y asigna pedidos</p>
+    <h2>Admin General</h2>
+    <p class="sub">Gestiona los pedidos de todas las tiendas</p>
     <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="admin@eymoto.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
     <button onclick="iniciarSesion()">Ingresar</button>
     <p id="loginMsg"></p>
 </div>
+
 <div id="panel" class="hidden">
     <header>
         <span class="brand">EyMoto</span>
-        <h1>Administración de Mensajeros</h1>
+        <h1>Administración General</h1>
         <span class="spacer"></span>
         <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
-        <span class="auto-refresh-indicator">
-            <span class="dot"></span>
-            Auto-refresh activo
-        </span>
-        <span class="header-badge" id="headerBadge">🔔 0</span>
-        <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
-        <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
+        <button class="btn-refrescar" onclick="recargarTodo()">🔄 Recargar</button>
+        <button class="btn-ghost btn-sm" onclick="logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
+
     <div class="wrap">
         <div class="stats-grid">
-            <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
-            <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
-            <div class="stat-card c-orange"><div class="val" id="statOcupados">0</div><div class="lbl">Ocupados</div></div>
-            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Por asignar</div></div>
-            <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
+            <div class="stat-card c-orange"><div class="val" id="statPendientes">0</div><div class="lbl">Pendientes</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statPreparacion">0</div><div class="lbl">En preparación</div></div>
+            <div class="stat-card c-green"><div class="val" id="statListos">0</div><div class="lbl">Listos para asignar</div></div>
+            <div class="stat-card c-purple"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
         </div>
+
         <div class="filtros">
-            <select id="filtroEstado" onchange="filtrarMensajeros()">
+            <select id="filtroEstado" onchange="filtrarPedidos()">
                 <option value="">📋 Todos</option>
-                <option value="activo">🟢 Activos</option>
-                <option value="inactivo">🔴 Inactivos</option>
-                <option value="ocupado">🟠 Ocupados</option>
+                <option value="Pendiente">🟠 Pendientes</option>
+                <option value="En preparación">🔵 En preparación</option>
+                <option value="Listo para asignar">🟢 Listos para asignar</option>
+                <option value="En camino">🟣 En camino</option>
+                <option value="Entregado">✅ Entregados</option>
+                <option value="Cancelado">❌ Cancelados</option>
             </select>
-            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
-            <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
-            <button class="btn-refrescar" onclick="recargarTodo()" style="padding:6px 14px;font-size:11px;">🔄 Refrescar todo</button>
+            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por #pedido, cliente o tienda..." oninput="filtrarPedidos()">
+            <button class="btn-info btn-sm" onclick="abrirModalCrearPedido()" style="width:auto;">➕ Crear pedido</button>
+            <button class="btn-refrescar" onclick="recargarTodo()" style="padding:6px 14px;font-size:11px;">🔄 Refrescar</button>
         </div>
-        <div class="form-crear">
-            <div class="titulo">➕ Crear nuevo mensajero</div>
-            <div class="row2">
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label><input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com"></div>
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label><input id="nuevoNombre" placeholder="Carlos Pérez"></div>
+
+        <div id="listaPedidos">
+            <div class="empty-state">
+                <span class="icono">🍽️</span>
+                <p>Cargando pedidos...</p>
             </div>
-            <div class="row2">
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label><input id="nuevoTelefono" placeholder="3169934516"></div>
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label><input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!"></div>
-            </div>
-            <div class="acciones">
-                <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
-                <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.</div>
         </div>
-        <div id="listaMensajeros"><div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🛵</div>Cargando mensajeros...</div></div>
-        <div class="seccion-pedidos" id="seccionPedidos">
+
+        <div class="seccion-tiendas">
             <div class="titulo-seccion">
-                📦 Pedidos listos para asignar
-                <span class="badge" id="badgePedidos">0</span>
-                <button class="btn-refrescar" onclick="recargarPedidos()" style="padding:2px 10px;font-size:10px;">🔄</button>
+                🏪 Tiendas registradas
+                <span class="badge" id="badgeTiendas">0</span>
+                <button class="btn-refrescar" onclick="cargarTiendas()" style="padding:2px 10px;font-size:10px;">🔄</button>
             </div>
-            <div id="listaPedidosAsignar"><div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">🍽️</div>No hay pedidos listos para asignar</div></div>
+            <div id="listaTiendas">
+                <div class="empty-state">
+                    <span class="icono">🏪</span>
+                    <p>Cargando tiendas...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<div class="modal" id="modalAsignacion" style="display:none;">
+
+<!-- MODAL CREAR PEDIDO -->
+<div class="modal" id="modalCrearPedido">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalAsignacionTitulo">📦 Asignar Pedido</h3>
-            <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
+            <h3>➕ Crear nuevo pedido</h3>
+            <button class="modal-close" onclick="cerrarModal('modalCrearPedido')">✕</button>
         </div>
-        <div id="modalAsignacionContenido"></div>
+        <div id="modalCrearContenido">
+            <div class="form-group"><label>🏪 Tienda</label>
+                <select id="selectTienda"></select>
+            </div>
+            <div class="form-group"><label>👤 Cliente</label><input id="inputCliente" placeholder="Nombre del cliente"></div>
+            <div class="form-group"><label>📍 Dirección</label><input id="inputDireccion" placeholder="Dirección de entrega"></div>
+            <div class="form-group"><label>📱 Teléfono</label><input id="inputTelefono" placeholder="Número de teléfono"></div>
+            <div class="form-group"><label>📦 Productos (separados por coma)</label><input id="inputProductos" placeholder="Ej: Pizza x2, Hamburguesa x1"></div>
+            <div class="form-group"><label>💰 Total</label><input id="inputTotal" type="number" placeholder="0" step="100"></div>
+            <div class="form-group"><label>💳 Método de pago</label>
+                <select id="inputPago">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Nequi">Nequi</option>
+                    <option value="Bancolombia">Bancolombia</option>
+                    <option value="Daviplata">Daviplata</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                </select>
+            </div>
+            <button onclick="crearPedido()">✅ Crear pedido</button>
+        </div>
     </div>
 </div>
-<div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
+
+<!-- MODAL DETALLE PEDIDO -->
+<div class="modal" id="modalDetalle">
+    <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitulo">Detalle del mensajero</h3>
-            <button class="modal-close" onclick="cerrarModal()">✕</button>
+            <h3 id="modalDetalleTitulo">Detalle del pedido</h3>
+            <button class="modal-close" onclick="cerrarModal('modalDetalle')">✕</button>
         </div>
-        <div id="modalContenido"></div>
+        <div id="modalDetalleContenido"></div>
     </div>
 </div>
 
@@ -270,249 +553,17 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SISTEMA DE SONIDO - DESPERTADOR (RING RING)
-// ============================================================
-class SonidoDespertador {
-    constructor() {
-        this.ctx = null;
-        this.inicializado = false;
-        this.intervalos = {};
-        this.pedidosActivos = {};
-        this.temporizadores = {};
-        this.audioContextIniciado = false;
-        this.reproduciendo = false;
-    }
-
-    // Inicializar contexto de audio
-    iniciarAudio() {
-        try {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
-            this.inicializado = true;
-            this.audioContextIniciado = true;
-            return true;
-        } catch (e) { 
-            console.warn('⚠️ Error inicializando audio:', e.message);
-            return false; 
-        }
-    }
-
-    // ⏰ GENERAR TONO DE DESPERTADOR (RING RING)
-    tonoDespertador(frecuencia, duracion, volumen = 0.3) {
-        try {
-            if (!this.inicializado || !this.ctx || this.ctx.state !== 'running') {
-                if (!this.iniciarAudio()) return;
-            }
-
-            // Frecuencias del despertador: 800Hz y 1000Hz alternados
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            
-            osc.frequency.value = frecuencia;
-            osc.type = 'square'; // Sonido más agresivo como despertador
-            
-            gain.gain.setValueAtTime(0, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(volumen, this.ctx.currentTime + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
-            
-            osc.start(this.ctx.currentTime);
-            osc.stop(this.ctx.currentTime + duracion);
-
-            // Agregar armónico para sonido más realista
-            setTimeout(() => {
-                try {
-                    const osc2 = this.ctx.createOscillator();
-                    const gain2 = this.ctx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(this.ctx.destination);
-                    osc2.frequency.value = frecuencia * 1.5;
-                    osc2.type = 'sine';
-                    gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.6);
-                    osc2.start(this.ctx.currentTime + 0.02);
-                    osc2.stop(this.ctx.currentTime + duracion * 0.6);
-                } catch (e) {}
-            }, 20);
-
-        } catch (e) {
-            console.debug('⚠️ Error generando tono de despertador:', e.message);
-        }
-    }
-
-    // ⏰ SECUENCIA RING RING (0.4s tono, 0.2s silencio)
-    secuenciaRingRing() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') {
-                console.warn('⚠️ Audio no disponible');
-                return;
-            }
-
-            // RING 1 - 800Hz
-            this.tonoDespertador(800, 0.3, 0.35);
-            
-            // RING 2 - 1000Hz (después de 0.4s)
-            setTimeout(() => {
-                try {
-                    this.tonoDespertador(1000, 0.3, 0.35);
-                } catch (e) {}
-            }, 400);
-
-            // RING 3 - 800Hz (después de 0.8s)
-            setTimeout(() => {
-                try {
-                    this.tonoDespertador(800, 0.3, 0.35);
-                } catch (e) {}
-            }, 800);
-
-            // RING 4 - 1000Hz (después de 1.2s)
-            setTimeout(() => {
-                try {
-                    this.tonoDespertador(1000, 0.3, 0.35);
-                } catch (e) {}
-            }, 1200);
-
-        } catch (e) {
-            console.debug('⚠️ Error en secuencia de despertador:', e.message);
-            this.fallbackBeep();
-        }
-    }
-
-    // ⏰ INICIAR DESPERTADOR
-    iniciarDespertador(pedidoId) {
-        if (this.pedidosActivos[pedidoId]) return;
-        
-        console.log(`⏰ [ADMIN] 🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
-        
-        if (!this.inicializado) this.iniciarAudio();
-        
-        this.pedidosActivos[pedidoId] = true;
-        this.reproduciendo = true;
-        
-        // Reproducir secuencia inmediatamente
-        this.secuenciaRingRing();
-        
-        // Configurar intervalo (se repite cada 2.5 segundos)
-        this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
-                this.secuenciaRingRing();
-            } else {
-                this.detenerDespertador(pedidoId);
-            }
-        }, 2500);
-    }
-
-    // ⏰ DETENER DESPERTADOR
-    detenerDespertador(pedidoId) {
-        if (!pedidoId) {
-            // Detener TODOS los despertadores
-            Object.keys(this.pedidosActivos).forEach(id => {
-                this.detenerDespertador(id);
-            });
-            return;
-        }
-        
-        if (this.pedidosActivos[pedidoId]) {
-            console.log(`⏰ [ADMIN] 🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
-            delete this.pedidosActivos[pedidoId];
-            
-            if (this.intervalos[pedidoId]) {
-                clearInterval(this.intervalos[pedidoId]);
-                delete this.intervalos[pedidoId];
-            }
-            
-            if (this.temporizadores[pedidoId]) {
-                clearTimeout(this.temporizadores[pedidoId]);
-                delete this.temporizadores[pedidoId];
-            }
-            
-            // Verificar si quedan pedidos activos
-            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
-            if (!hayActivos) {
-                this.reproduciendo = false;
-                const badge = document.getElementById('headerBadge');
-                if (badge) {
-                    badge.style.animation = '';
-                    badge.textContent = '🔔 0';
-                }
-            }
-        }
-    }
-
-    // ¿Está sonando?
-    estaSonando(pedidoId) {
-        return this.pedidosActivos[pedidoId] === true;
-    }
-
-    // Sonido de confirmación (cuando se asigna)
-    sonidoConfirmacion() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            
-            [600, 800, 1000].forEach((freq, i) => {
-                const t = i * 0.1;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
-                osc.start(this.ctx.currentTime + t);
-                osc.stop(this.ctx.currentTime + t + 0.15);
-            });
-        } catch (e) {}
-    }
-
-    // Fallback con Web Audio
-    fallbackBeep() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            
-            [800, 1000, 800, 1000].forEach((freq, i) => {
-                const t = i * 0.4;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'square';
-                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.3);
-                osc.start(this.ctx.currentTime + t);
-                osc.stop(this.ctx.currentTime + t + 0.35);
-            });
-        } catch (e) {}
-    }
-}
-
-// ============================================================
-// INSTANCIA DEL SONIDO
-// ============================================================
-const sonidoDespertador = new SonidoDespertador();
-
-// ============================================================
 // VARIABLES GLOBALES
 // ============================================================
-let todosLosMensajeros = [];
-let mensajerosFiltrados = [];
-let listenerMensajeros = null;
 let todosLosPedidos = [];
+let pedidosFiltrados = [];
 let tiendasCache = {};
+let tiendasList = [];
+let listeners = [];
 let recargando = false;
-let notificacionActiva = false;
 
 // ============================================================
-// FUNCIONES DE AUTENTICACIÓN
+// AUTENTICACIÓN
 // ============================================================
 function iniciarSesion() {
     const email = document.getElementById('email').value.trim();
@@ -520,10 +571,6 @@ function iniciarSesion() {
     const msg = document.getElementById('loginMsg');
     msg.textContent = '';
     if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
-    
-    // Inicializar audio al hacer clic
-    sonidoDespertador.iniciarAudio();
-    
     auth.signInWithEmailAndPassword(email, pass)
         .then(async (userCredential) => {
             const user = userCredential.user;
@@ -542,19 +589,16 @@ function iniciarSesion() {
         })
         .catch(e => { msg.textContent = '❌ Credenciales incorrectas.'; console.error(e); });
 }
+
 function logout() {
-    if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
-    if (window._listenersPedidos) {
-        window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
-        window._listenersPedidos = [];
-    }
-    // ⏰ DETENER TODOS LOS DESPERTADORES
-    sonidoDespertador.detenerDespertador();
+    listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+    listeners = [];
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
     toast('👋 Sesión cerrada', 'info');
 }
+
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('loginBox').classList.add('hidden');
@@ -563,12 +607,8 @@ auth.onAuthStateChanged(user => {
     } else {
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
-        if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
-        if (window._listenersPedidos) {
-            window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
-            window._listenersPedidos = [];
-        }
-        sonidoDespertador.detenerDespertador();
+        listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+        listeners = [];
     }
 });
 
@@ -578,661 +618,562 @@ auth.onAuthStateChanged(user => {
 async function inicializarPanel() {
     try {
         await cargarTiendas();
-        await cargarMensajeros();
-        await cargarPedidosIniciales();
-        await escucharPedidosEnTiempoReal();
+        await escucharPedidos();
+        await cargarListaTiendas();
         toast('✅ Panel de administración cargado', 'success', 2000);
+        console.log('✅ Panel de administración general cargado');
+        console.log('🔔 Los pedidos "Listo para asignar" SOLO van al admin de mensajeros');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
+        setTimeout(inicializarPanel, 5000);
     }
 }
+
+// ============================================================
+// CARGAR TIENDAS
+// ============================================================
 async function cargarTiendas() {
     try {
         const snap = await db.collection('tiendas').get();
-        snap.forEach(doc => { tiendasCache[doc.id] = doc.data(); });
-        console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
-    } catch (e) { console.error('Error cargando tiendas:', e); }
-}
-function cargarMensajeros() {
-    if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
-    listenerMensajeros = db.collection('usuarios')
-        .where('mensajero', '==', true)
-        .onSnapshot(snap => {
-            todosLosMensajeros = [];
-            snap.forEach(doc => {
-                const data = doc.data();
-                const tienePedidoActivo = todosLosPedidos.some(p => 
-                    p.mensajeroId === doc.id && 
-                    (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
-                );
-                todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
-            });
-            filtrarMensajeros();
-            actualizarEstadisticas();
-        }, err => { 
-            console.error('Error en listener de mensajeros:', err);
-            toast('⚠️ Error al cargar mensajeros. Recargando...', 'warn');
-            setTimeout(() => cargarMensajeros(), 3000);
-        });
-}
-
-// ============================================================
-// CARGAR PEDIDOS INICIALES
-// ============================================================
-async function cargarPedidosIniciales() {
-    if (recargando) return;
-    recargando = true;
-    try {
-        const tiendasSnap = await db.collection('tiendas').get();
-        todosLosPedidos = [];
-        for (const tiendaDoc of tiendasSnap.docs) {
-            const tiendaId = tiendaDoc.id;
-            try {
-                const pedidosSnap = await db.collection('tiendas')
-                    .doc(tiendaId)
-                    .collection('pedidos')
-                    .where('estado', '==', 'Listo para asignar')
-                    .get();
-                pedidosSnap.forEach(doc => {
-                    const data = doc.data();
-                    if (!data.mensajeroId) {
-                        todosLosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data, _cargadoInicial: true });
-                    }
-                });
-            } catch (err) {
-                console.warn(`⚠️ Error cargando pedidos de tienda ${tiendaId}:`, err);
-            }
-        }
-        console.log(`📦 ${todosLosPedidos.length} pedidos listos para asignar`);
-        renderizarPedidosAsignar();
-        actualizarEstadisticas();
-        actualizarHeaderBadge();
-    } catch (error) {
-        console.error('❌ Error cargando pedidos iniciales:', error);
-        toast('⚠️ Error al cargar pedidos. Reintentando...', 'warn');
-        setTimeout(() => { recargando = false; cargarPedidosIniciales(); }, 3000);
-    } finally {
-        recargando = false;
-    }
-}
-
-// ============================================================
-// ⏰ ESCUCHAR PEDIDOS - CON DESPERTADOR
-// ============================================================
-function escucharPedidosEnTiempoReal() {
-    if (window._listenersPedidos) {
-        window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
-        window._listenersPedidos = [];
-    }
-    
-    db.collection('tiendas').get().then(snap => {
+        tiendasCache = {};
         snap.forEach(doc => {
-            const tiendaId = doc.id;
-            
-            try {
-                const unsubscribe = db.collection('tiendas').doc(tiendaId)
-                    .collection('pedidos')
-                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
-                    .onSnapshot(snapPedidos => {
-                        snapPedidos.docChanges().forEach(change => {
-                            try {
-                                const data = change.doc.data();
-                                const pedidoId = change.doc.id;
-                                const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                                const tieneMensajero = !!data.mensajeroId;
-                                const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
-                                
-                                // ⏰ SI EL PEDIDO ESTÁ DISPONIBLE → INICIAR DESPERTADOR
-                                if (estaDisponible) {
-                                    if (!sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.iniciarDespertador(pedidoId);
-                                        const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`⏰ ¡DESPERTADOR! Nuevo pedido de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
-                                        
-                                        // Actualizar badge
-                                        const badge = document.getElementById('headerBadge');
-                                        if (badge) {
-                                            badge.style.display = 'inline-block';
-                                            badge.textContent = '⏰ 🔔';
-                                            badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
-                                        }
-                                    }
-                                }
-                                
-                                // ⏰ SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER DESPERTADOR
-                                if (tieneMensajero || esEntregado) {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
-                                        sonidoDespertador.detenerDespertador(pedidoId);
-                                    }
-                                }
-                                
-                                if (change.type === 'added') {
-                                    if (estaDisponible) {
-                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (!existe) {
-                                            todosLosPedidos.push({ 
-                                                id: pedidoId, 
-                                                tiendaId: tiendaId, 
-                                                ...data,
-                                                _nuevo: true 
-                                            });
-                                        }
-                                    } else if (tieneMensajero) {
-                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (!existe) {
-                                            todosLosPedidos.push({ 
-                                                id: pedidoId, 
-                                                tiendaId: tiendaId, 
-                                                ...data
-                                            });
-                                        }
-                                    }
-                                } else if (change.type === 'modified') {
-                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    
-                                    // ⏰ Si el pedido fue asignado, detener despertador
-                                    if (tieneMensajero || esEntregado) {
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
-                                    }
-                                    
-                                    // ⏰ Si está disponible, iniciar despertador
-                                    if (estaDisponible) {
-                                        if (!sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.iniciarDespertador(pedidoId);
-                                            const tienda = tiendasCache[tiendaId] || {};
-                                            toast(`⏰ Despertador activado para pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)}`, 'new', 5000);
-                                        }
-                                    }
-                                    
-                                    if (index !== -1) {
-                                        todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                    } else if (tieneMensajero || estaDisponible) {
-                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                    }
-                                    
-                                } else if (change.type === 'removed') {
-                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (index !== -1) {
-                                        todosLosPedidos.splice(index, 1);
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
-                                    }
-                                }
-                            } catch (err) {
-                                console.error('Error procesando cambio de pedido:', err);
-                            }
-                        });
-                        
-                        renderizarPedidosAsignar();
-                        actualizarEstadisticas();
-                        actualizarHeaderBadge();
-                        
-                    }, err => { 
-                        console.error(`Error escuchando pedidos en tienda ${tiendaId}:`, err);
-                        setTimeout(() => {
-                            if (window._listenersPedidos) {
-                                escucharPedidosEnTiempoReal();
-                            }
-                        }, 5000);
-                    });
-                
-                if (!window._listenersPedidos) window._listenersPedidos = [];
-                window._listenersPedidos.push(unsubscribe);
-            } catch (err) {
-                console.error(`Error configurando listener para tienda ${tiendaId}:`, err);
-            }
+            tiendasCache[doc.id] = doc.data();
+            tiendasCache[doc.id].id = doc.id;
         });
-    }).catch(err => {
-        console.error('Error obteniendo tiendas para escucha:', err);
-        setTimeout(() => {
-            if (!window._listenersPedidos) {
-                escucharPedidosEnTiempoReal();
-            }
-        }, 5000);
-    });
+        console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
+        actualizarBadgeTiendas();
+        return tiendasCache;
+    } catch (e) {
+        console.error('Error cargando tiendas:', e);
+        return {};
+    }
 }
 
-// ============================================================
-// FUNCIONES DE RENDERIZADO
-// ============================================================
-function filtrarMensajeros() {
-    const estado = document.getElementById('filtroEstado').value;
-    const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
-    mensajerosFiltrados = todosLosMensajeros.filter(m => {
-        if (estado) {
-            const activo = m.activo !== false;
-            const ocupado = m.ocupado === true;
-            if (estado === 'activo' && (!activo || ocupado)) return false;
-            if (estado === 'inactivo' && activo) return false;
-            if (estado === 'ocupado' && !ocupado) return false;
-        }
-        if (busqueda) {
-            const nombre = (m.nombre || '').toLowerCase();
-            const email = (m.email || '').toLowerCase();
-            if (!nombre.includes(busqueda) && !email.includes(busqueda)) return false;
-        }
-        return true;
-    });
-    renderizarMensajeros();
+async function cargarListaTiendas() {
+    try {
+        const snap = await db.collection('tiendas').get();
+        tiendasList = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            tiendasList.push({ id: doc.id, ...data });
+        });
+        renderizarTiendas();
+        actualizarSelectTiendas();
+    } catch (e) {
+        console.error('Error cargando lista de tiendas:', e);
+    }
 }
-function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
-function recargarPedidos() { cargarPedidosIniciales(); toast('🔄 Pedidos recargados', 'info', 1500); }
-function recargarTodo() {
-    toast('🔄 Recargando todo...', 'info', 2000);
-    cargarMensajeros();
-    cargarPedidosIniciales();
-    setTimeout(() => { toast('✅ Todo recargado correctamente', 'success', 2000); }, 1500);
-}
-function renderizarMensajeros() {
-    const container = document.getElementById('listaMensajeros');
-    if (mensajerosFiltrados.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No hay mensajeros que coincidan con los filtros</p></div>`;
+
+function renderizarTiendas() {
+    const container = document.getElementById('listaTiendas');
+    if (tiendasList.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="icono">🏪</span>
+                <p>No hay tiendas registradas</p>
+            </div>
+        `;
         return;
     }
     let html = '';
-    mensajerosFiltrados.forEach(m => {
-        const activo = m.activo !== false;
-        const ocupado = m.ocupado === true;
-        const iniciales = (m.nombre || m.email || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-        const estadoClass = ocupado ? 'ocupado' : (activo ? 'activo' : 'inactivo');
-        const estadoLabel = ocupado ? '🟠 Ocupado' : (activo ? '🟢 Activo' : '🔴 Inactivo');
+    tiendasList.forEach(t => {
+        const activa = t.activa !== false;
+        const estadoClass = activa ? 'activa' : 'inactiva';
+        const estadoLabel = activa ? '🟢 Activa' : '🔴 Inactiva';
+        const tipos = t.tipos ? t.tipos.join(', ') : 'General';
         html += `
-            <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
-                <div class="avatar">${iniciales}</div>
+            <div class="tienda-card">
+                <span class="icono">${t.icono || '🏪'}</span>
                 <div class="info">
-                    <div class="nombre">${m.nombre || 'Sin nombre'} ${ocupado ? '🛵' : ''}</div>
-                    <div class="email">📧 ${m.email || 'Sin email'}</div>
-                    <div class="meta">${m.telefono ? '📱 ' + m.telefono : ''} ${m.creadoEn ? ' | 📅 ' + formatearFecha(m.creadoEn) : ''}</div>
+                    <div class="nombre">${t.nombre || 'Sin nombre'}</div>
+                    <div class="direccion">📍 ${t.direccion || 'Sin dirección'}</div>
+                    <div class="meta">📋 ${tipos} ${t.telefono ? ' | 📱 ' + t.telefono : ''}</div>
                 </div>
                 <span class="estado ${estadoClass}">${estadoLabel}</span>
                 <div class="acciones">
-                    <button class="btn-info btn-sm" onclick="verDetalle('${m.uid}')">📋 Ver</button>
-                    ${activo && !ocupado ? 
-                        `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', false)">🔴 Desactivar</button>` :
-                        activo && ocupado ? 
-                        `<button class="btn-warning btn-sm" onclick="toggleMensajero('${m.uid}', false)" style="background:var(--orange);">⏳ Esperando</button>` :
-                        `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', true)">🟢 Activar</button>`
+                    <button class="btn-info btn-sm" onclick="verTienda('${t.id}')">📋 Ver</button>
+                    ${activa ? 
+                        `<button class="btn-danger btn-sm" onclick="toggleTienda('${t.id}', false)">🔴 Desactivar</button>` :
+                        `<button class="btn-success btn-sm" onclick="toggleTienda('${t.id}', true)">🟢 Activar</button>`
                     }
-                    <button class="btn-danger btn-sm" onclick="eliminarMensajero('${m.uid}')">🗑️ Eliminar</button>
                 </div>
             </div>
         `;
     });
     container.innerHTML = html;
 }
-function renderizarPedidosAsignar() {
-    const container = document.getElementById('listaPedidosAsignar');
-    const badge = document.getElementById('badgePedidos');
-    const pedidosPendientes = todosLosPedidos.filter(p => { return p.estado === 'Listo para asignar' && !p.mensajeroId; });
-    badge.textContent = pedidosPendientes.length;
-    if (pedidosPendientes.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos listos para asignar</div>`;
-        return;
-    }
-    const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado);
-    let html = '';
-    pedidosPendientes.forEach(p => {
-        const tienda = tiendasCache[p.tiendaId] || {};
-        const nombreTienda = tienda.nombre || 'Tienda';
-        const cliente = p.cliente || {};
-        const total = p.total || 0;
-        const fechaStr = formatearFecha(p.fecha);
-        const esNuevo = p._nuevo === true;
-        let itemsHtml = '';
-        if (p.items && p.items.length > 0) {
-            p.items.slice(0, 3).forEach(item => {
-                let nombreItem = item.nombre || 'Producto';
-                if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
-                const subtotal = item.total || (item.precio * item.cantidad) || 0;
-                itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
-            });
-            if (p.items.length > 3) {
-                itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
-            }
-        }
-        const hayMensajeros = mensajerosActivos.length > 0;
-        const claseNuevo = esNuevo ? 'nuevo' : '';
-        const sonidoActivo = sonidoDespertador.estaSonando(p.id);
-        const indicadorSonido = sonidoActivo ? '⏰🔔' : '';
-        html += `
-            <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
-                <div class="header">
-                    <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)} ${indicadorSonido}</span>
-                    ${sonidoActivo ? '<span class="alarma-indicador">⏰ DESPERTADOR ACTIVADO</span>' : '<span class="estado-badge">🔔 Listo para asignar</span>'}
-                </div>
-                <div class="info-grid">
-                    <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
-                    <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
-                    <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                    <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
-                    <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
-                    <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
-                </div>
-                ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
-                <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                ${hayMensajeros ? 
-                    `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">👤 Asignar mensajero</button>` :
-                    `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;"><span style="font-size:14px;">⚠️</span><span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span></div>`
-                }
-                ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">⏰🔔 Despertador sonando...</div>` : ''}
-            </div>
-        `;
+
+function actualizarBadgeTiendas() {
+    document.getElementById('badgeTiendas').textContent = Object.keys(tiendasCache).length;
+}
+
+function actualizarSelectTiendas() {
+    const select = document.getElementById('selectTienda');
+    select.innerHTML = '';
+    tiendasList.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.nombre || 'Tienda';
+        select.appendChild(option);
     });
-    container.innerHTML = html;
-    actualizarEstadisticas();
-    actualizarHeaderBadge();
 }
 
 // ============================================================
-// MODAL DE ASIGNACIÓN
+// ESCUCHAR PEDIDOS - SIN NOTIFICAR A MENSAJEROS
 // ============================================================
-let pedidoAsignacion = null;
-function abrirModalAsignacion(pedidoId, tiendaId) {
-    const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (!pedido) { toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); recargarPedidos(); return; }
-    if (pedido.mensajeroId) {
-        toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
+function escucharPedidos() {
+    listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
+    listeners = [];
+
+    db.collection('tiendas').get().then(snap => {
+        snap.forEach(doc => {
+            const tiendaId = doc.id;
+            const unsubscribe = db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        const data = change.doc.data();
+                        const pedidoId = change.doc.id;
+
+                        if (change.type === 'added') {
+                            const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                            if (!existe) {
+                                todosLosPedidos.push({
+                                    id: pedidoId,
+                                    tiendaId: tiendaId,
+                                    ...data
+                                });
+                            }
+                        } else if (change.type === 'modified') {
+                            const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                            if (index !== -1) {
+                                todosLosPedidos[index] = {
+                                    id: pedidoId,
+                                    tiendaId: tiendaId,
+                                    ...data
+                                };
+                            } else {
+                                todosLosPedidos.push({
+                                    id: pedidoId,
+                                    tiendaId: tiendaId,
+                                    ...data
+                                });
+                            }
+                        } else if (change.type === 'removed') {
+                            const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                            if (index !== -1) {
+                                todosLosPedidos.splice(index, 1);
+                            }
+                        }
+                    });
+                    filtrarPedidos();
+                    actualizarEstadisticas();
+                }, err => {
+                    console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
+                });
+            listeners.push(unsubscribe);
+        });
+    }).catch(err => {
+        console.error('❌ Error obteniendo tiendas:', err);
+        setTimeout(escucharPedidos, 5000);
+    });
+}
+
+// ============================================================
+// FILTRAR Y RENDERIZAR
+// ============================================================
+function filtrarPedidos() {
+    const estado = document.getElementById('filtroEstado').value;
+    const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+
+    pedidosFiltrados = todosLosPedidos.filter(p => {
+        if (estado && p.estado !== estado) return false;
+        if (busqueda) {
+            const numero = (p.numeroPedido || p.id || '').toLowerCase();
+            const cliente = (p.cliente?.nombre || '').toLowerCase();
+            const tienda = (tiendasCache[p.tiendaId]?.nombre || '').toLowerCase();
+            if (!numero.includes(busqueda) && !cliente.includes(busqueda) && !tienda.includes(busqueda)) return false;
         }
-        recargarPedidos();
+        return true;
+    });
+
+    pedidosFiltrados.sort((a, b) => {
+        const fechaA = a.fecha?.toDate?.() || new Date(a.fecha);
+        const fechaB = b.fecha?.toDate?.() || new Date(b.fecha);
+        return fechaB - fechaA;
+    });
+
+    renderizarPedidos();
+}
+
+function renderizarPedidos() {
+    const container = document.getElementById('listaPedidos');
+
+    if (pedidosFiltrados.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="icono">📭</span>
+                <p>No hay pedidos que coincidan con los filtros</p>
+            </div>
+        `;
         return;
     }
-    pedidoAsignacion = { tiendaId, pedidoId };
-    const tienda = tiendasCache[tiendaId] || {};
+
+    let html = '';
+    pedidosFiltrados.forEach(p => {
+        html += renderizarCard(p);
+    });
+    container.innerHTML = html;
+}
+
+// ============================================================
+// 🎯 RENDERIZAR CARD - SIN CANCELAR DESPUÉS DE "LISTO PARA ASIGNAR"
+// ============================================================
+function renderizarCard(pedido) {
+    const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
     const total = pedido.total || 0;
-    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-    const mensajerosDisponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado);
-    const modal = document.getElementById('modalAsignacion');
-    const contenido = document.getElementById('modalAsignacionContenido');
-    const titulo = document.getElementById('modalAsignacionTitulo');
-    titulo.textContent = `📦 Asignar Pedido ${numero}`;
-    let mensajerosOptions = '';
-    if (mensajerosDisponibles.length === 0) {
-        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    const fechaStr = formatearFecha(pedido.fecha);
+    const estado = pedido.estado || 'Pendiente';
+
+    let claseCard = '';
+    let claseBadge = '';
+    let labelEstado = estado;
+
+    switch(estado) {
+        case 'Pendiente': claseCard = 'pendiente'; claseBadge = 'pendiente'; labelEstado = '🟠 Pendiente'; break;
+        case 'En preparación': claseCard = 'preparacion'; claseBadge = 'preparacion'; labelEstado = '🔵 En preparación'; break;
+        case 'Listo para asignar': claseCard = 'listo'; claseBadge = 'listo'; labelEstado = '🟢 Listo para asignar'; break;
+        case 'En camino': claseCard = 'preparacion'; claseBadge = 'preparacion'; labelEstado = '🟣 En camino'; break;
+        case 'Entregado': claseCard = 'entregado'; claseBadge = 'entregado'; labelEstado = '✅ Entregado'; break;
+        case 'Cancelado': claseCard = 'cancelado'; claseBadge = 'cancelado'; labelEstado = '❌ Cancelado'; break;
+        default: claseCard = 'pendiente'; claseBadge = 'pendiente'; labelEstado = '📋 ' + estado;
+    }
+
+    let itemsHtml = '';
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.slice(0, 3).forEach(item => {
+            const nombre = item.nombre || 'Producto';
+            const subtotal = item.total || (item.precio * item.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+        });
+        if (pedido.items.length > 3) {
+            itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${pedido.items.length - 3} más...</div>`;
+        }
+    }
+
+    let botonesHtml = '';
+
+    switch(estado) {
+        case 'Pendiente':
+            botonesHtml = `
+                <div class="acciones-pedido">
+                    <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En preparación')">🔵 Iniciar preparación</button>
+                    <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        case 'En preparación':
+            botonesHtml = `
+                <div class="acciones-pedido">
+                    <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Listo para asignar')">✅ Servicio Listo</button>
+                    <button class="btn-danger" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Cancelado')">❌ Cancelar</button>
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        case 'Listo para asignar':
+            // 🔥 SIN BOTÓN DE CANCELAR - SOLO MENSAJE DE NOTIFICACIÓN
+            botonesHtml = `
+                <div class="notificacion-listo">
+                    <span class="icono">📢</span>
+                    <div>
+                        <strong>✅ Pedido notificado al Administrador de Mensajeros</strong><br>
+                        <span style="font-size:12px;color:var(--text-muted);">El Administrador de Mensajeros asignará este pedido a un repartidor</span>
+                    </div>
+                </div>
+                <div class="acciones-pedido">
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        case 'En camino':
+            // 🔥 SIN BOTÓN DE CANCELAR
+            botonesHtml = `
+                <div class="acciones-pedido">
+                    <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ Marcar como entregado</button>
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        case 'Entregado':
+            // 🔥 SIN BOTÓN DE CANCELAR
+            botonesHtml = `
+                <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">
+                    ✅ Pedido entregado - Proceso finalizado
+                </div>
+                <div class="acciones-pedido">
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        case 'Cancelado':
+            botonesHtml = `
+                <div style="margin-top:8px;padding:10px;background:var(--red-bg);border-radius:8px;text-align:center;color:var(--red);font-size:13px;">
+                    ❌ Pedido cancelado
+                </div>
+                <div class="acciones-pedido">
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+            break;
+
+        default:
+            botonesHtml = `
+                <div class="acciones-pedido">
+                    <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En preparación')">🔵 Preparar</button>
+                    <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Listo para asignar')">✅ Listo</button>
+                    <button class="btn-ghost btn-sm" onclick="verDetallePedido('${pedido.id}','${pedido.tiendaId}')">📋 Detalle</button>
+                </div>
+            `;
+    }
+
+    return `
+        <div class="pedido-card ${claseCard}" id="pedido-${pedido.id}">
+            <div class="header">
+                <span class="numero">🛵 ${pedido.numeroPedido || '#' + pedido.id.slice(-6).toUpperCase()}</span>
+                <span class="badge-estado ${claseBadge}">${labelEstado}</span>
+            </div>
+            <div class="info-grid">
+                <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
+                <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
+                <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
+                <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
+                <div><span class="label">💳 Pago:</span> <span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+                ${pedido.mensajeroId ? `<div><span class="label">🛵 Mensajero:</span> <span class="value" style="color:var(--blue);">${pedido.nombreMensajero || 'Asignado'}</span></div>` : ''}
+            </div>
+            ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
+            <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
+            ${botonesHtml}
+        </div>
+    `;
+}
+
+// ============================================================
+// 🔥 CAMBIAR ESTADO - SIN NOTIFICAR A MENSAJEROS DIRECTAMENTE
+// ============================================================
+async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
+    // 🔥 PREGUNTAR SOLO SI ES CANCELAR
+    if (nuevoEstado === 'Cancelado') {
+        if (!confirm('⚠️ ¿Estás seguro de cancelar este pedido?')) return;
     } else {
-        mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
-        mensajerosDisponibles.forEach(m => {
-            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'} (Disponible)</option>`;
+        if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) return;
+    }
+
+    try {
+        const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
+
+        await docRef.update({
+            estado: nuevoEstado,
+            ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
+            [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 🔥 NOTIFICACIÓN AL ADMIN DE MENSAJEROS (SOLO cuando es "Listo para asignar")
+        if (nuevoEstado === 'Listo para asignar') {
+            toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
+            console.log(`📦 Pedido ${pedidoId} listo para asignar - Notificado al admin de mensajeros`);
+        } else {
+            toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
+        }
+
+        setTimeout(() => {
+            filtrarPedidos();
+            actualizarEstadisticas();
+        }, 500);
+
+    } catch (e) {
+        console.error('Error actualizando estado:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// CREAR PEDIDO
+// ============================================================
+function abrirModalCrearPedido() {
+    document.getElementById('modalCrearPedido').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    actualizarSelectTiendas();
+}
+
+function cerrarModal(id) {
+    document.getElementById(id).style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+async function crearPedido() {
+    const tiendaId = document.getElementById('selectTienda').value;
+    const cliente = document.getElementById('inputCliente').value.trim();
+    const direccion = document.getElementById('inputDireccion').value.trim();
+    const telefono = document.getElementById('inputTelefono').value.trim();
+    const productosRaw = document.getElementById('inputProductos').value.trim();
+    const total = parseFloat(document.getElementById('inputTotal').value) || 0;
+    const metodoPago = document.getElementById('inputPago').value;
+
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'error'); return; }
+    if (!cliente) { toast('⚠️ Ingresa el nombre del cliente', 'error'); return; }
+
+    const items = productosRaw.split(',').map(p => p.trim()).filter(p => p).map(p => ({
+        nombre: p,
+        cantidad: 1,
+        precio: 0,
+        total: 0
+    }));
+
+    const numeroPedido = 'PED-' + Date.now().toString().slice(-6);
+
+    try {
+        await db.collection('tiendas').doc(tiendaId).collection('pedidos').add({
+            numeroPedido: numeroPedido,
+            cliente: { nombre: cliente, direccion, telefono },
+            items: items,
+            total: total,
+            metodoPago: metodoPago,
+            estado: 'Pendiente',
+            fecha: firebase.firestore.FieldValue.serverTimestamp(),
+            creadoPor: auth.currentUser?.email || 'Admin'
+        });
+
+        toast(`✅ Pedido ${numeroPedido} creado exitosamente`, 'success', 3000);
+        cerrarModal('modalCrearPedido');
+        limpiarFormularioPedido();
+
+    } catch (e) {
+        console.error('Error creando pedido:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+function limpiarFormularioPedido() {
+    document.getElementById('inputCliente').value = '';
+    document.getElementById('inputDireccion').value = '';
+    document.getElementById('inputTelefono').value = '';
+    document.getElementById('inputProductos').value = '';
+    document.getElementById('inputTotal').value = '';
+}
+
+// ============================================================
+// VER DETALLE PEDIDO
+// ============================================================
+function verDetallePedido(pedidoId, tiendaId) {
+    const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    if (!pedido) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+
+    const tienda = tiendasCache[pedido.tiendaId] || {};
+    const cliente = pedido.cliente || {};
+    let itemsHtml = '';
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.forEach(item => {
+            itemsHtml += `<div class="info-row"><span class="label">${item.nombre || 'Producto'}</span><span class="value">x${item.cantidad || 1} $${(item.total || 0).toLocaleString('es-CO')}</span></div>`;
         });
     }
-    contenido.innerHTML = `
-        <div class="pedido-info-resumen">
-            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
-            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
-            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+
+    const modal = document.getElementById('modalDetalle');
+    document.getElementById('modalDetalleTitulo').textContent = `📦 Pedido ${pedido.numeroPedido || '#' + pedido.id.slice(-6)}`;
+    document.getElementById('modalDetalleContenido').innerHTML = `
+        <div class="info-row"><span class="label">🏪 Tienda</span><span class="value">${tienda.nombre || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📅 Fecha</span><span class="value">${formatearFecha(pedido.fecha)}</span></div>
+        <div class="info-row"><span class="label">📌 Estado</span><span class="value">${pedido.estado || 'Pendiente'}</span></div>
+        <div class="info-row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${cliente.telefono || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">💳 Pago</span><span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+        ${pedido.mensajeroId ? `<div class="info-row"><span class="label">🛵 Mensajero</span><span class="value" style="color:var(--blue);">${pedido.nombreMensajero || 'Asignado'}</span></div>` : ''}
+        ${itemsHtml ? `<div style="margin-top:12px;padding:12px;background:var(--surface2);border-radius:8px;">${itemsHtml}</div>` : ''}
+        <div class="info-row" style="border-top:2px solid var(--border);margin-top:8px;padding-top:8px;font-size:16px;">
+            <span class="label" style="font-weight:700;">💰 Total</span>
+            <span class="value" style="font-weight:700;color:var(--green);">$${pedido.total?.toLocaleString('es-CO') || '0'}</span>
         </div>
-        <div class="opcion-asignacion" style="border-color: var(--blue);">
-            <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
-            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
-            <div style="margin: 8px 0 4px 0;">
-                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
-                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">${mensajerosOptions}</select>
-            </div>
-            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                ✅ Asignar a este mensajero
-            </button>
-        </div>
-        <div class="opcion-asignacion" style="border-color: var(--yellow);">
-            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
-            <div class="mensajeros-disponibles">📨 Mensajeros que recibirán la notificación: <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span></div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.</div>
-            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                🔔 Notificar a todos los mensajeros
-            </button>
-        </div>
-        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
     `;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
-function cerrarModalAsignacion() {
-    const modal = document.getElementById('modalAsignacion');
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-    pedidoAsignacion = null;
-}
 
 // ============================================================
-// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
+// VER TIENDA
 // ============================================================
-async function asignarPedidoManual() {
-    const select = document.getElementById('selectMensajeroManual');
-    if (!select) return;
-    const mensajeroId = select.value;
-    if (!mensajeroId) { toast('⚠️ Selecciona un mensajero de la lista', 'warn'); return; }
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
-    const nombreMensajero = mensajero?.nombre || 'Mensajero';
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
-        cerrarModalAsignacion();
-        recargarPedidos();
-        return;
-    }
-    try {
-        toast('⏳ Asignando pedido...', 'info');
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                mensajeroId: mensajeroId,
-                nombreMensajero: nombreMensajero,
-                estado: 'En camino al restaurante',
-                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros'
-            });
-        
-        // ⏰ APAGAR DESPERTADOR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            sonidoDespertador.detenerDespertador(pedidoId);
-        }
-        
-        sonidoDespertador.sonidoConfirmacion();
-        toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
-        cerrarModalAsignacion();
-        
-        setTimeout(() => {
-            console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
-            recargarPedidos();
-            recargarMensajeros();
-        }, 1000);
-        
-    } catch (e) {
-        if (e.code === 'not-found' || e.message.includes('no such document')) {
-            toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
-            if (sonidoDespertador.estaSonando(pedidoId)) { 
-                sonidoDespertador.detenerDespertador(pedidoId); 
-            }
-            cerrarModalAsignacion();
-            recargarPedidos();
-        } else {
-            toast('❌ Error: ' + e.message, 'error');
-        }
-    }
+function verTienda(tiendaId) {
+    const tienda = tiendasList.find(t => t.id === tiendaId);
+    if (!tienda) { toast('⚠️ Tienda no encontrada', 'error'); return; }
+
+    const modal = document.getElementById('modalDetalle');
+    document.getElementById('modalDetalleTitulo').textContent = `🏪 ${tienda.nombre || 'Tienda'}`;
+    document.getElementById('modalDetalleContenido').innerHTML = `
+        <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${tienda.activa !== false ? 'var(--green)' : 'var(--red)'}">${tienda.activa !== false ? '🟢 Activa' : '🔴 Inactiva'}</span></div>
+        <div class="info-row"><span class="label">📍 Dirección</span><span class="value">${tienda.direccion || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${tienda.telefono || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📋 Tipos</span><span class="value">${tienda.tipos ? tienda.tipos.join(', ') : 'General'}</span></div>
+        <div class="info-row"><span class="label">🆔 ID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${tienda.id}</span></div>
+    `;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
-// ============================================================
-// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
-// ============================================================
-async function notificarATodos() {
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
-        cerrarModalAsignacion();
-        recargarPedidos();
-        return;
-    }
+async function toggleTienda(tiendaId, activo) {
+    if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} esta tienda?`)) return;
     try {
-        toast('⏳ Notificando mensajeros...', 'info');
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'Listo para asignar',
-                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
-                notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionEnviada: true
-            });
-        
-        // ⏰ APAGAR DESPERTADOR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
-            sonidoDespertador.detenerDespertador(pedidoId);
-        }
-        
-        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
-        cerrarModalAsignacion();
-        
-        setTimeout(() => {
-            console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
-            recargarPedidos();
-        }, 1000);
-        
-    } catch (e) {
-        toast('❌ Error: ' + e.message, 'error');
-    }
+        await db.collection('tiendas').doc(tiendaId).update({
+            activa: activo,
+            [`${activo ? 'activada' : 'desactivada'}En`]: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast(`✅ Tienda ${activo ? 'activada' : 'desactivada'}`, 'success');
+        await cargarListaTiendas();
+        await cargarTiendas();
+    } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
 // ============================================================
 // ESTADÍSTICAS
 // ============================================================
 function actualizarEstadisticas() {
-    const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado).length;
-    const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
-    const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
-    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
-    const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
-    document.getElementById('statActivos').textContent = activos;
-    document.getElementById('statInactivos').textContent = inactivos;
-    document.getElementById('statOcupados').textContent = ocupados;
+    const pendientes = todosLosPedidos.filter(p => p.estado === 'Pendiente').length;
+    const preparacion = todosLosPedidos.filter(p => p.estado === 'En preparación').length;
+    const listos = todosLosPedidos.filter(p => p.estado === 'Listo para asignar').length;
+    const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino').length;
+
     document.getElementById('statPendientes').textContent = pendientes;
+    document.getElementById('statPreparacion').textContent = preparacion;
+    document.getElementById('statListos').textContent = listos;
     document.getElementById('statEnCamino').textContent = enCamino;
-    document.getElementById('badgePedidos').textContent = pendientes;
-}
-function actualizarHeaderBadge() {
-    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
-    const badge = document.getElementById('headerBadge');
-    // Mostrar badge con ícono de despertador si hay pedidos
-    if (pendientes > 0) {
-        badge.style.display = 'inline-block';
-        // Verificar si algún pedido está sonando
-        let sonando = false;
-        todosLosPedidos.forEach(p => {
-            if (sonidoDespertador.estaSonando(p.id)) sonando = true;
-        });
-        badge.textContent = sonando ? '⏰🔔 ' + pendientes : '🔔 ' + pendientes;
-        badge.style.animation = sonando ? 'pulse-badge 0.5s ease-in-out infinite' : '';
-    } else {
-        badge.style.display = 'none';
-        badge.textContent = '🔔 0';
-    }
 }
 
 // ============================================================
-// GESTIÓN DE MENSAJEROS
+// RECARGAR
 // ============================================================
-async function crearMensajero() {
-    const email = document.getElementById('nuevoEmail').value.trim();
-    const nombre = document.getElementById('nuevoNombre').value.trim();
-    const telefono = document.getElementById('nuevoTelefono').value.trim();
-    const password = document.getElementById('nuevoPassword').value.trim();
-    if (!email) { toast('⚠️ Ingresa el Gmail del mensajero', 'error'); return; }
-    if (!nombre) { toast('⚠️ Ingresa el nombre del mensajero', 'error'); return; }
-    if (!password || password.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
-    try {
-        toast('⏳ Creando mensajero...', 'info');
-        const result = await auth.createUserWithEmailAndPassword(email, password);
-        const uid = result.user.uid;
-        await db.collection('usuarios').doc(uid).set({
-            email, nombre, telefono: telefono || '',
-            mensajero: true, rol: 'mensajero', activo: true, conectado: false,
-            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        await result.user.sendEmailVerification();
-        toast(`✅ Mensajero "${nombre}" creado exitosamente`, 'success', 5000);
-        limpiarFormulario();
-        filtrarMensajeros();
-        actualizarEstadisticas();
-    } catch (error) {
-        if (error.code === 'auth/email-already-in-use') {
-            toast('⚠️ Este email ya está registrado. Usa otro Gmail.', 'error');
-        } else {
-            toast('❌ Error: ' + error.message, 'error');
-        }
-    }
-}
-function limpiarFormulario() {
-    document.getElementById('nuevoEmail').value = '';
-    document.getElementById('nuevoNombre').value = '';
-    document.getElementById('nuevoTelefono').value = '';
-    document.getElementById('nuevoPassword').value = 'Mensajero2026!';
-}
-async function toggleMensajero(uid, activo) {
-    if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} este mensajero?`)) return;
-    try {
-        await db.collection('usuarios').doc(uid).update({
-            activo: activo,
-            [`${activo ? 'activado' : 'desactivado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        toast(`✅ Mensajero ${activo ? 'activado' : 'desactivado'}`, 'success');
-        filtrarMensajeros();
-        actualizarEstadisticas();
-    } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
-}
-async function eliminarMensajero(uid) {
-    if (!confirm('⚠️ ¿Eliminar este mensajero permanentemente?')) return;
-    try {
-        await db.collection('usuarios').doc(uid).delete();
-        toast('✅ Mensajero eliminado de Firestore', 'success');
-        filtrarMensajeros();
-        actualizarEstadisticas();
-    } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
-}
-function verDetalle(uid) {
-    const mensajero = todosLosMensajeros.find(m => m.uid === uid);
-    if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
-    const activo = mensajero.activo !== false;
-    const ocupado = mensajero.ocupado === true;
-    let html = `
-        <div class="info-row"><span class="label">👤 Nombre</span><span class="value">${mensajero.nombre || 'Sin nombre'}</span></div>
-        <div class="info-row"><span class="label">📧 Email</span><span class="value">${mensajero.email || 'Sin email'}</span></div>
-        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${mensajero.telefono || 'N/A'}</span></div>
-        <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? (ocupado ? 'var(--orange)' : 'var(--green)') : 'var(--red)'}">${activo ? (ocupado ? '🟠 Ocupado' : '🟢 Activo') : '🔴 Inactivo'}</span></div>
-        <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
-        <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
-        <div class="info-row"><span class="label">🔌 Conexión</span><span class="value" style="color:${mensajero.conectado ? 'var(--green)' : 'var(--red)'}">${mensajero.conectado ? '🟢 Conectado' : '🔴 Desconectado'}</span></div>
-    `;
-    if (mensajero.activadoEn) html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
-    if (mensajero.desactivadoEn) html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
-    document.getElementById('modalTitulo').textContent = `📋 ${mensajero.nombre || 'Mensajero'}`;
-    document.getElementById('modalContenido').innerHTML = html;
-    document.getElementById('modalDetalle').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function cerrarModal(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('modalDetalle').classList.remove('active');
-    document.body.style.overflow = '';
+function recargarTodo() {
+    toast('🔄 Recargando...', 'info', 1500);
+    todosLosPedidos = [];
+    filtrarPedidos();
+    actualizarEstadisticas();
+    cargarListaTiendas();
+    setTimeout(() => {
+        toast('✅ Recargado correctamente', 'success', 1500);
+    }, 1000);
 }
 
 // ============================================================
-// FUNCIONES DE UTILIDAD
+// UTILIDADES
 // ============================================================
 function formatearFecha(fecha) {
     if (!fecha) return '--/--/--';
@@ -1245,8 +1186,9 @@ function formatearFecha(fecha) {
                ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     } catch (e) { return '--/--/--'; }
 }
+
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '⏰' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1261,26 +1203,22 @@ function toast(msg, type = 'info', dur = 4000) {
 // ============================================================
 window.iniciarSesion = iniciarSesion;
 window.logout = logout;
-window.crearMensajero = crearMensajero;
-window.limpiarFormulario = limpiarFormulario;
-window.filtrarMensajeros = filtrarMensajeros;
-window.recargarMensajeros = recargarMensajeros;
-window.recargarPedidos = recargarPedidos;
+window.cambiarEstado = cambiarEstado;
+window.filtrarPedidos = filtrarPedidos;
 window.recargarTodo = recargarTodo;
-window.toggleMensajero = toggleMensajero;
-window.eliminarMensajero = eliminarMensajero;
-window.verDetalle = verDetalle;
+window.abrirModalCrearPedido = abrirModalCrearPedido;
 window.cerrarModal = cerrarModal;
+window.crearPedido = crearPedido;
+window.verDetallePedido = verDetallePedido;
+window.verTienda = verTienda;
+window.toggleTienda = toggleTienda;
+window.cargarTiendas = cargarTiendas;
+window.cargarListaTiendas = cargarListaTiendas;
 window.toast = toast;
-window.abrirModalAsignacion = abrirModalAsignacion;
-window.cerrarModalAsignacion = cerrarModalAsignacion;
-window.asignarPedidoManual = asignarPedidoManual;
-window.notificarATodos = notificarATodos;
 
-console.log('✅ Panel de administración de mensajeros cargado correctamente');
-console.log('⏰ Despertador activado para pedidos listos');
-console.log('🔇 El despertador se apaga al asignar o notificar');
-console.log('🔄 Auto-refresco activado al asignar pedidos');
+console.log('✅ Panel de administración general cargado correctamente');
+console.log('🔔 Los pedidos "Listo para asignar" SOLO van al admin de mensajeros');
+console.log('🚫 NO se puede cancelar después de "Listo para asignar"');
 </script>
 </body>
 </html>
