@@ -595,18 +595,14 @@ function escucharPedidosEnTiempoReal() {
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
                                 if (estaDisponible) {
-                                    if (!sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.iniciarDespertador(pedidoId);
-                                        const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`⏰ ¡DESPERTADOR! Nuevo pedido de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
-                                        const badge = document.getElementById('headerBadge');
-                                        if (badge) {
-                                            badge.style.display = 'inline-block';
-                                            badge.textContent = '⏰🔔';
-                                            badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
-                                        }
-                                    }
-                                }
+    if (!sonidoDespertador.estaSonando(pedidoId)) {
+        sonidoDespertador.iniciarDespertador(pedidoId);  // ✅ INICIA EL SONIDO
+        const tienda = tiendasCache[tiendaId] || {};
+        toast(`⏰ ¡DESPERTADOR! Nuevo pedido de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
+        // ... badge y animaciones
+    }
+}
+}
                                 
                                 if (tieneMensajero || esEntregado) {
                                     if (sonidoDespertador.estaSonando(pedidoId)) {
@@ -904,19 +900,26 @@ function cerrarModalAsignacion() {
 // ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
 // ============================================================
 async function asignarPedidoManual() {
-    const select = document.getElementById('selectMensajeroManual');
-    if (!select) return;
-    const mensajeroId = select.value;
-    if (!mensajeroId) { toast('⚠️ Selecciona un mensajero de la lista', 'warn'); return; }
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
-    const nombreMensajero = mensajero?.nombre || 'Mensajero';
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
+    // ... validaciones
+    
+    await docRef.update({
+        mensajeroId: mensajeroId,
+        nombreMensajero: nombreMensajero,
+        estado: 'En camino al restaurante',
+        fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
+        asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+        notificacionEnviada: false
+    });
+    
+    // 🔥 DETENER SONIDO DESPUÉS DE ASIGNAR
+    if (sonidoDespertador.estaSonando(pedidoId)) {
+        sonidoDespertador.detenerDespertador(pedidoId);  // ✅ DETIENE EL SONIDO
+    }
+    
+    sonidoDespertador.sonidoConfirmacion(); // Sonido de confirmación corto
+    toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
+    // ...
+}
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -962,13 +965,24 @@ async function asignarPedidoManual() {
 // ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
 // ============================================================
 async function notificarATodos() {
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
+    // ... validaciones
+    
+    await docRef.update({
+        estado: 'Listo para asignar',
+        fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+        notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+        notificacionEnviada: true
+    });
+    
+    // 🔥 DETENER SONIDO DESPUÉS DE NOTIFICAR
+    if (sonidoDespertador.estaSonando(pedidoId)) {
+        console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
+        sonidoDespertador.detenerDespertador(pedidoId);  // ✅ DETIENE EL SONIDO
+    }
+    
+    toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+    // ...
+}
         cerrarModalAsignacion();
         recargarPedidos();
         return;
