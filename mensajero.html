@@ -63,8 +63,28 @@
         .seccion-pedidos .titulo .badge-count { background: var(--red); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 20px; }
 
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
-        .pedido-card.disponible { border-left-color: var(--green); animation: pulseDisponible 2s ease-in-out infinite; }
-        @keyframes pulseDisponible { 0%, 100% { border-color: var(--green); } 50% { border-color: var(--yellow); } }
+        .pedido-card.disponible { border-left-color: var(--green); }
+        
+        /* ✅ ANIMACIÓN DE NUEVO PEDIDO */
+        .pedido-card.nuevo-pedido {
+            animation: nuevoPedido 1s infinite;
+        }
+        
+        @keyframes nuevoPedido {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(255, 214, 0, 0);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 25px #FFD600;
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(255, 214, 0, 0);
+            }
+        }
+        
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
         .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .badge-estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
@@ -230,6 +250,156 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// ============================================================
+// ⏰ SISTEMA DE SONIDO CON AUDIO MP3
+// ============================================================
+class SonidoDespertador {
+    constructor() {
+        this.ctx = null;
+        this.inicializado = false;
+        this.intervalos = {};
+        this.pedidosActivos = {};
+        this.temporizadores = {};
+        this.audioContextIniciado = false;
+        this.reproduciendo = false;
+        this.pedidosProcesados = new Set();
+        
+        // ✅ TU ARCHIVO MP3
+        this.audioUrl = './notificacion-ymoto.mp3';
+        
+        // ✅ CONFIGURACIÓN DEL AUDIO
+        this.audio = new Audio(this.audioUrl);
+        this.audio.preload = "auto";
+        this.audio.loop = false;
+        
+        // Verificar carga
+        this.audio.addEventListener('canplaythrough', () => {
+            console.log('✅ Audio cargado correctamente:', this.audioUrl);
+        });
+        
+        this.audio.addEventListener('error', (e) => {
+            console.error('❌ Error cargando audio:', e);
+        });
+    }
+
+    iniciarAudio() {
+        try {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+            this.inicializado = true;
+            this.audioContextIniciado = true;
+            return true;
+        } catch (e) { 
+            console.warn('⚠️ Error inicializando audio:', e.message);
+            return false; 
+        }
+    }
+
+    reproducir() {
+        try {
+            this.audio.pause();
+            this.audio.currentTime = 0;
+            this.audio.volume = 1.0;
+
+            this.audio.play().then(() => {
+                console.log('✅ Sonido reproducido correctamente');
+            }).catch(e => {
+                console.log("❌ Error reproduciendo audio:", e);
+                this.fallbackBeep();
+            });
+
+            // Vibrar teléfono
+            if ("vibrate" in navigator) {
+                navigator.vibrate([300, 150, 300, 150, 300]);
+            }
+
+        } catch (e) {
+            console.error(e);
+            this.fallbackBeep();
+        }
+    }
+
+    fallbackBeep() {
+        try {
+            if (!this.inicializado) this.iniciarAudio();
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'square';
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+            osc.start(this.ctx.currentTime);
+            osc.stop(this.ctx.currentTime + 0.3);
+        } catch (e) {}
+    }
+
+    secuenciaRingRing() {
+        this.reproducir();
+    }
+
+    iniciarDespertador(pedidoId) {
+        if (this.pedidosActivos[pedidoId]) return;
+        if (this.pedidosProcesados.has(pedidoId)) {
+            console.log(`⏰ Pedido ${pedidoId} ya fue procesado`);
+            return;
+        }
+        console.log(`⏰ 🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
+        if (!this.inicializado) this.iniciarAudio();
+        this.pedidosActivos[pedidoId] = true;
+        this.reproduciendo = true;
+        this.secuenciaRingRing();
+        
+        this.intervalos[pedidoId] = setInterval(() => {
+            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
+                this.secuenciaRingRing();
+            } else {
+                this.detenerDespertador(pedidoId);
+            }
+        }, 10000);
+    }
+
+    detenerDespertador(pedidoId) {
+        if (!pedidoId) {
+            Object.keys(this.pedidosActivos).forEach(id => {
+                this.detenerDespertador(id);
+            });
+            return;
+        }
+        if (this.pedidosActivos[pedidoId]) {
+            console.log(`⏰ 🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
+            delete this.pedidosActivos[pedidoId];
+            this.pedidosProcesados.add(pedidoId);
+            if (this.intervalos[pedidoId]) {
+                clearInterval(this.intervalos[pedidoId]);
+                delete this.intervalos[pedidoId];
+            }
+            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
+            if (!hayActivos) {
+                this.reproduciendo = false;
+            }
+        }
+    }
+
+    estaSonando(pedidoId) {
+        return this.pedidosActivos[pedidoId] === true;
+    }
+
+    limpiarProcesados() {
+        this.pedidosProcesados.clear();
+    }
+}
+
+// ✅ INSTANCIA GLOBAL
+const sonidoDespertador = new SonidoDespertador();
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -422,7 +592,7 @@ async function inicializarPanel() {
         await escucharPedidos();
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🔇 SIN SONIDO - Notificaciones silenciosas');
+        console.log('🔊 Sonido de notificación configurado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -452,7 +622,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - SIN SONIDO
+// 📢 ESCUCHAR PEDIDOS - CON SONIDO
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -488,13 +658,22 @@ function escucharPedidos() {
                                     if (!existe) {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                        
+                                        // 🔔 ACTIVAR SONIDO PARA NUEVO PEDIDO
+                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
+                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            sonidoDespertador.iniciarDespertador(pedidoId);
+                                            toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                        }
                                     }
                                 }
                             } else if (change.type === 'modified') {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 if (!esVisibleParaMi) {
                                     if (index !== -1) {
+                                        if (sonidoDespertador.estaSonando(pedidoId)) {
+                                            sonidoDespertador.detenerDespertador(pedidoId);
+                                        }
                                         todosLosPedidos.splice(index, 1);
                                         renderizarPedidos();
                                     }
@@ -505,9 +684,18 @@ function escucharPedidos() {
                                 } else if (esVisibleParaMi) {
                                     todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                 }
+                                
+                                if (data.mensajeroId || data.estado === 'Entregado' || data.estado === 'Cancelado') {
+                                    if (sonidoDespertador.estaSonando(pedidoId)) {
+                                        sonidoDespertador.detenerDespertador(pedidoId);
+                                    }
+                                }
                             } else if (change.type === 'removed') {
                                 const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                 if (index !== -1) {
+                                    if (sonidoDespertador.estaSonando(pedidoId)) {
+                                        sonidoDespertador.detenerDespertador(pedidoId);
+                                    }
                                     todosLosPedidos.splice(index, 1);
                                 }
                             }
@@ -534,6 +722,7 @@ function escucharPedidos() {
                     window._listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
                     window._listeners = [];
                 }
+                sonidoDespertador.detenerDespertador();
             };
         })
         .catch(err => {
@@ -609,7 +798,7 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO
+// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN)
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
@@ -674,7 +863,11 @@ function renderizarPedidoCard(pedido, disponible) {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
     
-    const claseDisponible = disponible ? 'disponible' : '';
+    // ✅ DETECTAR SI EL SONIDO ESTÁ ACTIVO PARA APLICAR ANIMACIÓN
+    const sonidoActivo = sonidoDespertador.estaSonando(pedido.id);
+    const claseDisponible = disponible 
+        ? (sonidoActivo ? 'disponible nuevo-pedido' : 'disponible') 
+        : '';
     
     return `
         <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
@@ -730,7 +923,11 @@ async function tomarPedido(pedidoId, tiendaId) {
             notificacionEnviada: false
         });
         
-        // 🔥 FORZAR AUTO-REFRESCO INMEDIATO
+        // DETENER SONIDO AL TOMAR EL PEDIDO
+        if (sonidoDespertador.estaSonando(pedidoId)) {
+            sonidoDespertador.detenerDespertador(pedidoId);
+        }
+        
         await cargarPedidosCompletos();
         await actualizarContadores();
         renderizarPedidos();
@@ -815,7 +1012,7 @@ async function actualizarContadores() {
 }
 
 // ============================================================
-// 🔄 CAMBIAR ESTADO - SIN CONFIRMACIÓN
+// 🔄 CAMBIAR ESTADO
 // ============================================================
 async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -832,6 +1029,13 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
             ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
             [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        // DETENER SONIDO SI EL PEDIDO SE ENTREGA O CANCELA
+        if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
+            if (sonidoDespertador.estaSonando(pedidoId)) {
+                sonidoDespertador.detenerDespertador(pedidoId);
+            }
+        }
         
         setTimeout(async () => {
             await cargarPedidosCompletos();
@@ -888,9 +1092,9 @@ window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔇 SIN SONIDO - Notificaciones silenciosas');
-console.log('🔄 AUTO-REFRESCO FORZADO AL TOMAR EL PEDIDO');
-console.log('🚫 SIN VENTANA DE CONFIRMACIÓN - CAMBIO INMEDIATO');
+console.log('🔊 Sonido de notificación activado con MP3 personalizado');
+console.log('📱 Vibración activada para dispositivos compatibles');
+console.log('🎨 Animación de nuevo pedido activada');
 </script>
 </body>
 </html>
