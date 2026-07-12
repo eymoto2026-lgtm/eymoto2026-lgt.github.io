@@ -252,17 +252,17 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ FUNCIÓN DE SONIDO CON MP3
+// ⏰ FUNCIÓN DE SONIDO CON MP3 (URL COMPLETA)
 // ============================================================
 function sonidoEyMoto() {
     try {
-        // ✅ USA TU ARCHIVO MP3 - notificacion-ymoto.mp3
-        const audio = new Audio('./notificacion-ymoto.mp3');
+        // ✅ URL COMPLETA DE GITHUB PAGES
+        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
         audio.volume = 1.0;
         audio.preload = "auto";
         
         audio.play().then(() => {
-            console.log('🔊 Sonido MP3 reproducido');
+            console.log('🔊 Sonido MP3 reproducido desde GitHub');
         }).catch(e => {
             console.log('❌ Error con MP3, usando sonido de respaldo:', e);
             sonidoRespaldo();
