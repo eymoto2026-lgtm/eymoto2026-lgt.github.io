@@ -272,6 +272,8 @@ class SonidoDespertador {
         this.temporizadores = {};
         this.audioContextIniciado = false;
         this.reproduciendo = false;
+        // 🔥 NUEVO: Control de pedidos ya procesados para evitar reactivación
+        this.pedidosProcesados = new Set();
     }
 
     iniciarAudio() {
@@ -342,8 +344,13 @@ class SonidoDespertador {
         } catch (e) {}
     }
 
+    // 🔥 INICIAR DESPERTADOR - SOLO SI NO HA SIDO PROCESADO
     iniciarDespertador(pedidoId) {
         if (this.pedidosActivos[pedidoId]) return;
+        if (this.pedidosProcesados.has(pedidoId)) {
+            console.log(`⏰ [ADMIN] Pedido ${pedidoId} ya fue procesado, no se reactiva`);
+            return;
+        }
         console.log(`⏰ [ADMIN] 🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
         if (!this.inicializado) this.iniciarAudio();
         this.pedidosActivos[pedidoId] = true;
@@ -358,6 +365,7 @@ class SonidoDespertador {
         }, 2500);
     }
 
+    // 🔥 DETENER DESPERTADOR Y MARCAR COMO PROCESADO
     detenerDespertador(pedidoId) {
         if (!pedidoId) {
             Object.keys(this.pedidosActivos).forEach(id => {
@@ -368,6 +376,8 @@ class SonidoDespertador {
         if (this.pedidosActivos[pedidoId]) {
             console.log(`⏰ [ADMIN] 🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
             delete this.pedidosActivos[pedidoId];
+            // 🔥 MARCAR COMO PROCESADO PARA QUE NO SE REACTIVE
+            this.pedidosProcesados.add(pedidoId);
             if (this.intervalos[pedidoId]) {
                 clearInterval(this.intervalos[pedidoId]);
                 delete this.intervalos[pedidoId];
@@ -386,6 +396,11 @@ class SonidoDespertador {
                 }
             }
         }
+    }
+
+    // 🔥 LIMPIAR PEDIDOS PROCESADOS (para recargas)
+    limpiarProcesados() {
+        this.pedidosProcesados.clear();
     }
 
     estaSonando(pedidoId) {
@@ -425,6 +440,8 @@ let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
 let notificacionActiva = false;
+// 🔥 Control para evitar duplicados en el listener
+let pedidosEnProceso = new Set();
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -461,6 +478,7 @@ function logout() {
         window._listenersPedidos = [];
     }
     sonidoDespertador.detenerDespertador();
+    sonidoDespertador.limpiarProcesados();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
@@ -480,6 +498,7 @@ auth.onAuthStateChanged(user => {
             window._listenersPedidos = [];
         }
         sonidoDespertador.detenerDespertador();
+        sonidoDespertador.limpiarProcesados();
     }
 });
 
@@ -488,6 +507,7 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 async function inicializarPanel() {
     try {
+        sonidoDespertador.limpiarProcesados();
         await cargarTiendas();
         await cargarMensajeros();
         await cargarPedidosIniciales();
@@ -569,9 +589,10 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ⏰ ESCUCHAR PEDIDOS - CON DESPERTADOR
+// ⏰ ESCUCHAR PEDIDOS - CON CONTROL DE REACTIVACIÓN
 // ============================================================
 function escucharPedidosEnTiempoReal() {
+    // 🔥 LIMPIAR LISTENERS ANTERIORES
     if (window._listenersPedidos) {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
@@ -586,6 +607,7 @@ function escucharPedidosEnTiempoReal() {
                     .collection('pedidos')
                     .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                     .onSnapshot(snapPedidos => {
+                        // 🔥 EVITAR PROCESAR MÚLTIPLES VECES EL MISMO CAMBIO
                         snapPedidos.docChanges().forEach(change => {
                             try {
                                 const data = change.doc.data();
@@ -593,8 +615,24 @@ function escucharPedidosEnTiempoReal() {
                                 const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId;
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
+                                const estaNotificado = data.notificacionEnviada === true;
                                 
-                                if (estaDisponible) {
+                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER SONIDO
+                                if (tieneMensajero || esEntregado) {
+                                    if (sonidoDespertador.estaSonando(pedidoId)) {
+                                        console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
+                                        sonidoDespertador.detenerDespertador(pedidoId);
+                                    }
+                                }
+                                
+                                // 🔥 SI EL PEDIDO ESTÁ NOTIFICADO → DETENER SONIDO (ya se notificó a mensajeros)
+                                if (estaNotificado && sonidoDespertador.estaSonando(pedidoId)) {
+                                    console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
+                                    sonidoDespertador.detenerDespertador(pedidoId);
+                                }
+                                
+                                // 🔥 INICIAR SONIDO SOLO SI ESTÁ DISPONIBLE Y NO NOTIFICADO Y NO ESTÁ SONANDO
+                                if (estaDisponible && !estaNotificado) {
                                     if (!sonidoDespertador.estaSonando(pedidoId)) {
                                         sonidoDespertador.iniciarDespertador(pedidoId);
                                         const tienda = tiendasCache[tiendaId] || {};
@@ -609,13 +647,7 @@ function escucharPedidosEnTiempoReal() {
                                     }
                                 }
                                 
-                                if (tieneMensajero || esEntregado) {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
-                                        sonidoDespertador.detenerDespertador(pedidoId);
-                                    }
-                                }
-                                
+                                // 🔥 ACTUALIZAR LISTA LOCAL
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -639,18 +671,8 @@ function escucharPedidosEnTiempoReal() {
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (tieneMensajero || esEntregado) {
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
-                                    }
-                                    if (estaDisponible) {
-                                        if (!sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.iniciarDespertador(pedidoId);
-                                            const tienda = tiendasCache[tiendaId] || {};
-                                            toast(`⏰ Despertador activado para pedido ${data.numeroPedido || '#' + pedidoId.slice(-6)}`, 'new', 5000);
-                                        }
-                                    }
+                                    
+                                    // 🔥 ACTUALIZAR O AGREGAR
                                     if (index !== -1) {
                                         todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                     } else if (tieneMensajero || estaDisponible) {
@@ -723,6 +745,7 @@ function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros reca
 function recargarPedidos() { cargarPedidosIniciales(); toast('🔄 Pedidos recargados', 'info', 1500); }
 function recargarTodo() {
     toast('🔄 Recargando todo...', 'info', 2000);
+    sonidoDespertador.limpiarProcesados();
     cargarMensajeros();
     cargarPedidosIniciales();
     setTimeout(() => { toast('✅ Todo recargado correctamente', 'success', 2000); }, 1500);
@@ -833,7 +856,7 @@ function renderizarPedidosAsignar() {
 }
 
 // ============================================================
-// ⏰ ABRIR MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR INMEDIATAMENTE
+// ⏰ ABRIR MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR
 // ============================================================
 let pedidoAsignacion = null;
 function abrirModalAsignacion(pedidoId, tiendaId) {
@@ -849,19 +872,16 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
         if (sonidoDespertador.estaSonando(pedidoId)) { 
-            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         recargarPedidos();
         return;
     }
     
-    // 🔥🔥🔥 APAGAR EL DESPERTADOR INMEDIATAMENTE AL ABRIR EL MODAL 🔥🔥🔥
+    // 🔥 APAGAR DESPERTADOR
     if (sonidoDespertador.estaSonando(pedidoId)) {
         console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al abrir modal - Pedido: ${pedidoId}`);
         sonidoDespertador.detenerDespertador(pedidoId);
-    } else {
-        console.log(`ℹ️ El pedido ${pedidoId} NO está sonando`);
     }
     
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -916,16 +936,8 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
-    // 🔥 ACTUALIZAR EL BADGE Y LA TARJETA PARA REFLEJAR QUE EL SONIDO SE APAGÓ
     actualizarHeaderBadge();
     renderizarPedidosAsignar();
-    
-    // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
-    if (!sonidoDespertador.estaSonando(pedidoId)) {
-        console.log(`✅ [ADMIN] Despertador APAGADO correctamente para pedido: ${pedidoId}`);
-    } else {
-        console.log(`❌ [ADMIN] El despertador SIGUE SONANDO para pedido: ${pedidoId}`);
-    }
 }
 
 function cerrarModalAsignacion() {
@@ -936,18 +948,13 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR INMEDIATAMENTE
+// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
     if (!select) return;
     const mensajeroId = select.value;
-    
-    if (!mensajeroId) {
-        toast('⚠️ Selecciona un mensajero de la lista', 'warn');
-        return;
-    }
-    
+    if (!mensajeroId) { toast('⚠️ Selecciona un mensajero de la lista', 'warn'); return; }
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
@@ -955,9 +962,7 @@ async function asignarPedidoManual() {
     
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) { 
-            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         cerrarModalAsignacion();
@@ -968,7 +973,7 @@ async function asignarPedidoManual() {
     try {
         toast('⏳ Asignando pedido...', 'info');
         
-        // 🔥🔥🔥 APAGAR EL DESPERTADOR ANTES DE LA ASIGNACIÓN 🔥🔥🔥
+        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) {
             console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al asignar - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
@@ -985,9 +990,8 @@ async function asignarPedidoManual() {
                 notificacionEnviada: false
             });
         
-        // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
+        // 🔥 VERIFICAR
         if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ [ADMIN] ⚠️ El despertador SIGUE SONANDO, forzando detención - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
         }
         
@@ -995,7 +999,6 @@ async function asignarPedidoManual() {
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
-        // 🔥 ACTUALIZAR BADGE Y VISTA
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
         
@@ -1008,7 +1011,6 @@ async function asignarPedidoManual() {
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
-            // 🔥 APAGAR DESPERTADOR
             if (sonidoDespertador.estaSonando(pedidoId)) { 
                 sonidoDespertador.detenerDespertador(pedidoId); 
             }
@@ -1021,7 +1023,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR INMEDIATAMENTE
+// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -1029,9 +1031,7 @@ async function notificarATodos() {
     
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) { 
-            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR (pedido ya asignado) - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
         cerrarModalAsignacion();
@@ -1042,7 +1042,7 @@ async function notificarATodos() {
     try {
         toast('⏳ Notificando mensajeros...', 'info');
         
-        // 🔥🔥🔥 APAGAR EL DESPERTADOR ANTES DE NOTIFICAR 🔥🔥🔥
+        // 🔥 APAGAR DESPERTADOR
         if (sonidoDespertador.estaSonando(pedidoId)) {
             console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al notificar - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
@@ -1057,16 +1057,14 @@ async function notificarATodos() {
                 notificacionEnviada: true
             });
         
-        // 🔥 VERIFICAR QUE EL SONIDO SE HAYA DETENIDO
+        // 🔥 VERIFICAR
         if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ [ADMIN] ⚠️ El despertador SIGUE SONANDO, forzando detención - Pedido: ${pedidoId}`);
             sonidoDespertador.detenerDespertador(pedidoId);
         }
         
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         
-        // 🔥 ACTUALIZAR BADGE Y VISTA
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
         
@@ -1077,7 +1075,6 @@ async function notificarATodos() {
         
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
-        // 🔥 APAGAR DESPERTADOR EN CASO DE ERROR
         if (sonidoDespertador.estaSonando(pedidoId)) { 
             sonidoDespertador.detenerDespertador(pedidoId); 
         }
