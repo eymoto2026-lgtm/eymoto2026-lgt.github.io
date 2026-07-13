@@ -7,20 +7,18 @@ const CACHE_NAME = 'eymoto-mensajero-v3';
 // 🔑 TU CLAVE PÚBLICA VAPID
 const PUBLIC_VAPID_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
 
-// Instalar Service Worker
 self.addEventListener('install', function(event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(function(cache) {
             return cache.addAll([
-                '/mensajero.html',
-                '/'
+                './mensajero.html',
+                './'
             ]);
         })
     );
     self.skipWaiting();
 });
 
-// Activar Service Worker
 self.addEventListener('activate', function(event) {
     event.waitUntil(
         caches.keys().then(function(cacheNames) {
@@ -36,14 +34,10 @@ self.addEventListener('activate', function(event) {
     return self.clients.claim();
 });
 
-// ============================================================
-// 📢 RECIBIR NOTIFICACIONES PUSH
-// ============================================================
 self.addEventListener('push', function(event) {
     console.log('📢 Push recibido en Service Worker');
     
     let data = {};
-    
     if (event.data) {
         try {
             data = event.data.json();
@@ -58,14 +52,14 @@ self.addEventListener('push', function(event) {
     const title = data.title || '📦 Nuevo pedido disponible';
     const options = {
         body: data.body || '¡Un pedido está esperando por ti!',
-        icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-        badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
+        icon: data.icon || 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+        badge: data.badge || 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
         vibrate: [300, 100, 300, 100, 400],
         tag: data.tag || 'nuevo-pedido',
         renotify: true,
         requireInteraction: true,
         data: {
-            url: '/mensajero.html',
+            url: './mensajero.html',
             pedidoId: data.pedidoId || null,
             tiendaId: data.tiendaId || null
         },
@@ -80,9 +74,6 @@ self.addEventListener('push', function(event) {
     );
 });
 
-// ============================================================
-// 🔘 MANEJAR CLIC EN NOTIFICACIÓN
-// ============================================================
 self.addEventListener('notificationclick', function(event) {
     console.log('🔘 Clic en notificación');
     event.notification.close();
@@ -97,7 +88,7 @@ self.addEventListener('notificationclick', function(event) {
                     }
                 }
                 if (clients.openWindow) {
-                    return clients.openWindow('/mensajero.html');
+                    return clients.openWindow('./mensajero.html');
                 }
             })
         );
