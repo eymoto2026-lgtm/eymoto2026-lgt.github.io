@@ -7,7 +7,6 @@ const CACHE_NAME = 'eymoto-mensajero-v3';
 // 🔑 TU CLAVE PÚBLICA VAPID
 const PUBLIC_VAPID_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
 
-// Instalar Service Worker
 self.addEventListener('install', function(event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(function(cache) {
@@ -20,7 +19,6 @@ self.addEventListener('install', function(event) {
     self.skipWaiting();
 });
 
-// Activar Service Worker
 self.addEventListener('activate', function(event) {
     event.waitUntil(
         caches.keys().then(function(cacheNames) {
@@ -36,9 +34,6 @@ self.addEventListener('activate', function(event) {
     return self.clients.claim();
 });
 
-// ============================================================
-// 📢 RECIBIR NOTIFICACIONES PUSH
-// ============================================================
 self.addEventListener('push', function(event) {
     console.log('📢 Push recibido en Service Worker');
     
@@ -47,7 +42,6 @@ self.addEventListener('push', function(event) {
         try {
             data = event.data.json();
         } catch (e) {
-            console.warn('Error parseando push:', e);
             data = {
                 title: '📦 Nuevo pedido disponible',
                 body: '¡Un pedido está esperando por ti!'
@@ -80,11 +74,8 @@ self.addEventListener('push', function(event) {
     );
 });
 
-// ============================================================
-// 🔘 MANEJAR CLIC EN NOTIFICACIÓN
-// ============================================================
 self.addEventListener('notificationclick', function(event) {
-    console.log('🔘 Clic en notificación:', event.action);
+    console.log('🔘 Clic en notificación');
     event.notification.close();
     
     if (event.action === 'abrir' || !event.action) {
@@ -104,12 +95,4 @@ self.addEventListener('notificationclick', function(event) {
     }
 });
 
-// ============================================================
-// 🔄 MANEJAR CAMBIO DE SUSCRIPCIÓN
-// ============================================================
-self.addEventListener('pushsubscriptionchange', function(event) {
-    console.log('🔄 Suscripción push cambiada');
-    // Notificar al servidor para actualizar la suscripción
-});
-
-console.log('✅ Service Worker EyMoto cargado correctamente');
+console.log('✅ Service Worker EyMoto cargado');
