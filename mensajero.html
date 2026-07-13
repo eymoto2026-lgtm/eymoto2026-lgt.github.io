@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Panel Mensajero - EyMoto</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
@@ -42,6 +42,7 @@
         header .estado:hover { transform: scale(1.05); }
         header .estado.desconectado { background: var(--red-bg); color: var(--red); }
         .push-status { font-size: 10px; padding: 4px 10px; border-radius: 12px; background: var(--surface2); color: var(--text-muted); }
+        .mensajero-stats { font-size: 11px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
 
         .auto-refresh-indicator { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; background: var(--surface2); padding: 3px 10px; border-radius: 12px; }
         .auto-refresh-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
@@ -60,8 +61,9 @@
         .form-group input:focus { border-color: var(--yellow); }
 
         .seccion-pedidos { margin-bottom: 20px; }
-        .seccion-pedidos .titulo { font-size: 16px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .seccion-pedidos .titulo { font-size: 16px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .seccion-pedidos .titulo .badge-count { background: var(--red); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 20px; }
+        .seccion-pedidos .titulo .badge-count.blue { background: var(--blue); }
 
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
         .pedido-card.disponible { border-left-color: var(--green); }
@@ -76,7 +78,7 @@
             100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
         }
         
-        .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
         .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .badge-estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .badge-estado.disponible { background: var(--green); color: #1a1a2e; }
@@ -138,12 +140,33 @@
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
 
+        /* Filtros historial */
+        .filtros-historial { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filtros-historial button { width: auto; padding: 4px 12px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .filtros-historial button:hover { border-color: var(--yellow); color: #fff; }
+        .filtros-historial button.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .filtros-historial button.active.hoy { background: var(--blue); border-color: var(--blue); }
+        .filtros-historial button.active.todas { background: var(--yellow); color: #1a1a2e; border-color: var(--yellow); }
+
+        .resumen-historial { margin-top: 10px; padding: 12px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+        .resumen-historial .item { font-size: 13px; }
+        .resumen-historial .item .num { font-weight: 800; }
+        .resumen-historial .item .num.yellow { color: var(--yellow); }
+        .resumen-historial .item .num.green { color: var(--green); }
+        .resumen-historial .item .num.orange { color: var(--orange); }
+        .resumen-historial .item .num.blue { color: var(--blue); }
+
+        .pago-confirmado { margin-top: 6px; padding: 4px 12px; border-radius: 6px; background: var(--green-bg); color: var(--green); font-size: 11px; font-weight: 700; text-align: center; }
+        .pago-pendiente { margin-top: 6px; padding: 4px 12px; border-radius: 6px; background: var(--yellow-bg); color: var(--yellow); font-size: 11px; font-weight: 700; text-align: center; }
+
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
             .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
             .motivacion-box .beneficios { grid-template-columns: 1fr; }
             .motivacion-box { padding: 24px 16px; }
             .motivacion-box h2 { font-size: 22px; }
+            .resumen-historial { flex-direction: column; gap: 4px; }
+            header .mensajero-stats { font-size: 10px; padding: 2px 8px; gap: 6px; }
         }
     </style>
 </head>
@@ -204,8 +227,11 @@
         <h1>Mis Pedidos</h1>
         <span class="spacer"></span>
         <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
+        <span class="mensajero-stats" id="mensajeroStats">
+            <span style="color:var(--yellow);">📦 Cargando...</span>
+        </span>
         <span class="push-status" id="pushStatus">🔔 Notificaciones: Cargando...</span>
-        <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh activo</span>
+        <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh</span>
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
         <button class="btn-sm" onclick="activarNotificacionesPush()" style="width:auto;padding:6px 12px;background:var(--blue);color:#fff;border-radius:8px;">🔔 Activar</button>
         <button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
@@ -213,13 +239,52 @@
     </header>
 
     <div class="wrap">
+        <!-- ============================================================ -->
+        <!-- 📦 PEDIDOS DISPONIBLES -->
+        <!-- ============================================================ -->
         <div class="seccion-pedidos">
             <div class="titulo">📦 Pedidos Disponibles <span class="badge-count" id="contadorDisponibles">0</span></div>
             <div id="listaPedidosDisponibles"><div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span></div></div>
         </div>
+
+        <!-- ============================================================ -->
+        <!-- 🛵 MIS PEDIDOS ACTIVOS -->
+        <!-- ============================================================ -->
         <div class="seccion-pedidos">
-            <div class="titulo">🛵 Mis Pedidos Activos <span class="badge-count" id="contadorMisPedidos" style="background:var(--blue);">0</span></div>
+            <div class="titulo">🛵 Mis Pedidos Activos <span class="badge-count blue" id="contadorMisPedidos" style="background:var(--blue);">0</span></div>
             <div id="listaMisPedidos"><div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div></div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 📊 MI HISTORIAL DE PEDIDOS -->
+        <!-- ============================================================ -->
+        <div class="seccion-pedidos">
+            <div class="titulo" style="color: var(--blue);">
+                📊 Mi Historial de Pedidos
+                <span class="badge-count blue" id="contadorHistorial" style="background: var(--blue);">0</span>
+                <button class="btn-sm" onclick="cargarHistorialPedidos()" style="width:auto;padding:4px 12px;font-size:10px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:6px;">🔄 Recargar</button>
+            </div>
+            
+            <div class="filtros-historial">
+                <button class="active hoy" onclick="filtrarHistorial('hoy', this)">📅 Hoy</button>
+                <button onclick="filtrarHistorial('ayer', this)">📅 Ayer</button>
+                <button onclick="filtrarHistorial('semana', this)">📅 Esta semana</button>
+                <button onclick="filtrarHistorial('todas', this)">📅 Todas</button>
+            </div>
+            
+            <div id="listaHistorialPedidos">
+                <div class="empty-state">
+                    <span class="icono">⏳</span>
+                    <p>Cargando historial...</p>
+                </div>
+            </div>
+            
+            <div class="resumen-historial">
+                <div class="item">📦 <span class="num yellow" id="totalPedidosHistorial">0</span> Total</div>
+                <div class="item">💰 <span class="num green" id="totalGanadoHistorial">$0</span> Ganado</div>
+                <div class="item">✅ <span class="num green" id="totalEntregadosHistorial">0</span> Entregados</div>
+                <div class="item">⏳ <span class="num orange" id="totalPendientesHistorial">0</span> Pendientes</div>
+            </div>
         </div>
     </div>
 </div>
@@ -411,7 +476,6 @@ const sonidoDespertador = new SonidoDespertador();
 // 📢 NOTIFICACIONES - MODO APPCREATOR24
 // ============================================================
 
-// Convertir clave VAPID de base64 a Uint8Array
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -423,7 +487,6 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-// Convertir ArrayBuffer a Base64
 function arrayBufferToBase64(buffer) {
     if (!buffer) return '';
     const bytes = new Uint8Array(buffer);
@@ -434,18 +497,12 @@ function arrayBufferToBase64(buffer) {
     return btoa(binary);
 }
 
-// ============================================================
-// 1. PROBAR NOTIFICACIÓN
-// ============================================================
+// PROBAR NOTIFICACIÓN
 function probarNotificacion() {
     try {
-        // Mostrar mensaje en la interfaz
-        toast('🔔 ¡Notificación de prueba! (AppCreator24)', 'success', 5000);
-        
-        // Mostrar alerta (funciona en WebView)
+        toast('🔔 ¡Notificación de prueba!', 'success', 5000);
         alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas de nuevos pedidos.');
         
-        // Intentar con Notification API (por si acaso)
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
                 const notification = new Notification('🔔 Notificación de prueba', {
@@ -454,35 +511,25 @@ function probarNotificacion() {
                 });
                 console.log('✅ Notification API funcionando');
             } catch (e) {
-                console.log('ℹ️ Notification API no disponible en este entorno');
+                console.log('ℹ️ Notification API no disponible');
             }
         }
-        
-        console.log('✅ Notificación de prueba mostrada en WebView');
-        
+        console.log('✅ Notificación de prueba mostrada');
     } catch (error) {
         console.error('❌ Error:', error);
         toast('❌ Error al mostrar notificación', 'error', 5000);
     }
 }
 
-// ============================================================
-// 2. MOSTRAR NOTIFICACIÓN DE PEDIDO
-// ============================================================
+// MOSTRAR NOTIFICACIÓN DE PEDIDO
 function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
-    console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre} - $${total}`);
-    
-    // ✅ Mostrar en la interfaz (toast)
+    console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
     toast(`📦 ${tiendaNombre} - ${clienteNombre}`, 'new', 8000);
     
-    // ✅ Mostrar alerta (funciona en WebView)
     try {
-        alert(`📦 ¡NUEVO PEDIDO!\n\n🏪 Tienda: ${tiendaNombre}\n👤 Cliente: ${clienteNombre}\n💰 Total: $${total.toLocaleString('es-CO')}\n\n📱 Revisa el panel para más detalles.`);
-    } catch (e) {
-        console.log('ℹ️ Alerta no disponible');
-    }
+        alert(`📦 ¡NUEVO PEDIDO!\n\n🏪 Tienda: ${tiendaNombre}\n👤 Cliente: ${clienteNombre}\n💰 Total: $${total.toLocaleString('es-CO')}\n\n📱 Revisa el panel.`);
+    } catch (e) {}
     
-    // ✅ Intentar con Notification API (por si acaso)
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             navigator.serviceWorker.ready.then(function(registration) {
@@ -491,9 +538,7 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
                     icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
                     vibrate: [300, 100, 300, 100, 400]
                 });
-                console.log('✅ Notificación Service Worker enviada');
             }).catch(function() {
-                // Fallback: Notification simple
                 try {
                     const notification = new Notification('📦 Nuevo pedido disponible', {
                         body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
@@ -506,35 +551,27 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
                     };
                 } catch (e) {}
             });
-        } catch (e) {
-            console.log('ℹ️ Notification API no disponible');
-        }
+        } catch (e) {}
     }
 }
 
-// ============================================================
-// 3. ACTIVAR NOTIFICACIONES
-// ============================================================
+// ACTIVAR NOTIFICACIONES
 async function activarNotificacionesPush() {
     try {
         console.log('🔔 Activando notificaciones...');
         
-        // Detectar si estamos en AppCreator24
         const isAppCreator = window.location.href.includes('appcreator') || 
                             navigator.userAgent.includes('AppCreator') ||
                             document.referrer.includes('appcreator');
         
-        // Actualizar estado en la interfaz
         document.getElementById('pushStatus').textContent = isAppCreator ? '🔔 Notificaciones: Activadas (App)' : '🔔 Notificaciones: Activadas';
         
-        // En AppCreator24, mostrar mensaje de éxito
         if (isAppCreator) {
             toast('✅ Notificaciones activadas en la app', 'success', 4000);
             alert('✅ Notificaciones activadas correctamente en la app.\n\nRecibirás alertas de nuevos pedidos.');
             return true;
         }
         
-        // Intentar con Service Worker (navegador normal)
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.register('sw.js', {
@@ -572,7 +609,6 @@ async function activarNotificacionesPush() {
             }
         }
         
-        // Fallback: modo interfaz
         toast('✅ Modo notificaciones activado', 'success', 4000);
         return true;
         
@@ -584,14 +620,11 @@ async function activarNotificacionesPush() {
     }
 }
 
-// ============================================================
-// 4. INICIALIZAR NOTIFICACIONES
-// ============================================================
+// INICIALIZAR NOTIFICACIONES
 async function inicializarNotificaciones() {
     try {
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Detectar si estamos en AppCreator24
         const isAppCreator = window.location.href.includes('appcreator') || 
                             navigator.userAgent.includes('AppCreator') ||
                             document.referrer.includes('appcreator');
@@ -602,7 +635,6 @@ async function inicializarNotificaciones() {
             return;
         }
         
-        // Navegador normal
         if (Notification.permission === 'granted') {
             document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
             try {
@@ -611,9 +643,7 @@ async function inicializarNotificaciones() {
                 if (!subscription) {
                     await activarNotificacionesPush();
                 }
-            } catch (e) {
-                console.warn('⚠️ Error:', e);
-            }
+            } catch (e) {}
         } else if (Notification.permission === 'denied') {
             document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
         } else {
@@ -649,6 +679,8 @@ let mensajeroConectado = true;
 let accionPendiente = null;
 let motivacionMostrada = false;
 let mensajerosGlobal = [];
+let historialPedidos = [];
+let filtroHistorialActual = 'hoy';
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -826,11 +858,16 @@ async function inicializarPanel() {
         await cargarTiendas();
         await cargarMensajeros();
         await escucharPedidos();
+        
+        // Cargar historial y estadísticas
+        await cargarHistorialPedidos();
+        await actualizarEstadisticasMensajero();
+        
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔊 Sonido EyMoto configurado');
         
-        // ✅ INICIALIZAR NOTIFICACIONES DESPUÉS DEL LOGIN
+        // Inicializar notificaciones después del login
         setTimeout(() => {
             inicializarNotificaciones();
         }, 3000);
@@ -907,8 +944,6 @@ function escucharPedidos() {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
                                             sonidoDespertador.iniciarDespertador(pedidoId);
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
-                                            
-                                            // Mostrar notificación del sistema
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -989,6 +1024,262 @@ function escucharPedidos() {
 }
 
 // ============================================================
+// 📊 HISTORIAL DE PEDIDOS DEL MENSAJERO
+// ============================================================
+
+async function cargarHistorialPedidos() {
+    if (!mensajeroUid) {
+        console.warn('⚠️ No hay mensajero UID');
+        return;
+    }
+    
+    try {
+        const tiendasSnap = await db.collection('tiendas').get();
+        historialPedidos = [];
+        
+        for (const tiendaDoc of tiendasSnap.docs) {
+            const tiendaId = tiendaDoc.id;
+            const pedidosSnap = await db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .where('mensajeroId', '==', mensajeroUid)
+                .get();
+            
+            pedidosSnap.forEach(doc => {
+                const data = doc.data();
+                historialPedidos.push({
+                    id: doc.id,
+                    tiendaId: tiendaId,
+                    ...data
+                });
+            });
+        }
+        
+        historialPedidos.sort((a, b) => {
+            const fechaA = a.fecha ? a.fecha.toDate?.() || new Date(a.fecha) : new Date(0);
+            const fechaB = b.fecha ? b.fecha.toDate?.() || new Date(b.fecha) : new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        console.log(`📊 ${historialPedidos.length} pedidos en el historial`);
+        aplicarFiltroHistorial(filtroHistorialActual);
+        
+    } catch (error) {
+        console.error('❌ Error cargando historial:', error);
+        document.getElementById('listaHistorialPedidos').innerHTML = `
+            <div class="empty-state">
+                <span class="icono">❌</span>
+                <p>Error al cargar el historial</p>
+            </div>
+        `;
+    }
+}
+
+function aplicarFiltroHistorial(filtro) {
+    filtroHistorialActual = filtro;
+    
+    const ahora = new Date();
+    let fechaInicio = new Date(0);
+    let fechaFin = new Date();
+    
+    switch(filtro) {
+        case 'hoy':
+            fechaInicio = new Date(ahora);
+            fechaInicio.setHours(0, 0, 0, 0);
+            break;
+        case 'ayer':
+            fechaInicio = new Date(ahora);
+            fechaInicio.setDate(fechaInicio.getDate() - 1);
+            fechaInicio.setHours(0, 0, 0, 0);
+            fechaFin = new Date(ahora);
+            fechaFin.setHours(0, 0, 0, 0);
+            break;
+        case 'semana':
+            fechaInicio = new Date(ahora);
+            fechaInicio.setDate(fechaInicio.getDate() - 7);
+            fechaInicio.setHours(0, 0, 0, 0);
+            break;
+        case 'todas':
+        default:
+            fechaInicio = new Date(0);
+            break;
+    }
+    
+    const pedidosFiltrados = historialPedidos.filter(pedido => {
+        const fechaPedido = pedido.fecha ? pedido.fecha.toDate?.() || new Date(pedido.fecha) : new Date(0);
+        return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
+    });
+    
+    renderizarHistorial(pedidosFiltrados);
+}
+
+function filtrarHistorial(filtro, btn) {
+    // Actualizar botones
+    document.querySelectorAll('.filtros-historial button').forEach(b => b.classList.remove('active', 'hoy', 'todas'));
+    if (btn) {
+        btn.classList.add('active');
+        if (filtro === 'hoy') btn.classList.add('hoy');
+        if (filtro === 'todas') btn.classList.add('todas');
+    }
+    aplicarFiltroHistorial(filtro);
+}
+
+function renderizarHistorial(pedidos) {
+    const container = document.getElementById('listaHistorialPedidos');
+    const totalPedidos = pedidos.length;
+    let totalGanado = 0;
+    let entregados = 0;
+    let pendientes = 0;
+    
+    pedidos.forEach(p => {
+        const total = p.total || 0;
+        totalGanado += total;
+        if (p.estado === 'Entregado') {
+            entregados++;
+        } else if (p.estado !== 'Cancelado') {
+            pendientes++;
+        }
+    });
+    
+    document.getElementById('totalPedidosHistorial').textContent = totalPedidos;
+    document.getElementById('totalGanadoHistorial').textContent = '$' + totalGanado.toLocaleString('es-CO');
+    document.getElementById('totalEntregadosHistorial').textContent = entregados;
+    document.getElementById('totalPendientesHistorial').textContent = pendientes;
+    document.getElementById('contadorHistorial').textContent = totalPedidos;
+    
+    if (totalPedidos === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="icono">📭</span>
+                <p>No hay pedidos en este período</p>
+                <span style="font-size:12px;color:var(--text-muted);">Comienza a entregar pedidos para ver tu historial</span>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    pedidos.forEach(p => {
+        const tienda = tiendasCache[p.tiendaId] || {};
+        const nombreTienda = tienda.nombre || 'Tienda';
+        const cliente = p.cliente || {};
+        const total = p.total || 0;
+        const fechaStr = formatearFecha(p.fecha);
+        const estado = p.estado || 'Pendiente';
+        
+        let estadoColor = '';
+        let estadoLabel = '';
+        switch(estado) {
+            case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
+            case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
+            case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
+            case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
+            case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
+            default: estadoColor = 'pendiente'; estadoLabel = '⏳ ' + estado;
+        }
+        
+        let itemsHtml = '';
+        if (p.items && p.items.length > 0) {
+            p.items.slice(0, 3).forEach(item => {
+                const nombre = item.nombre || 'Producto';
+                const subtotal = item.total || (item.precio * item.cantidad) || 0;
+                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+            });
+            if (p.items.length > 3) {
+                itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
+            }
+        }
+        
+        const metodoPago = p.metodoPago || 'efectivo';
+        const pagoLabel = metodoPago === 'nequi' ? '🟢 Nequi' : 
+                         metodoPago === 'daviplata' ? '🔵 Daviplata' : '💵 Efectivo';
+        
+        const pagoConfirmado = p.estadoPago === 'pagado';
+        const pagoHtml = pagoConfirmado ? 
+            '<div class="pago-confirmado">✅ Pago confirmado</div>' : 
+            (p.estadoPago === 'rechazado' ? '<div class="pago-pendiente" style="background:var(--red-bg);color:var(--red);">❌ Pago rechazado</div>' : '');
+        
+        html += `
+            <div class="pedido-card" style="border-left-color: ${estado === 'Entregado' ? 'var(--green)' : 'var(--orange)'};">
+                <div class="header">
+                    <span class="numero">🛵 #${p.numeroPedido || p.id.slice(-6).toUpperCase()}</span>
+                    <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
+                </div>
+                <div class="info-grid">
+                    <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
+                    <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
+                    <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                    <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
+                    <div><span class="label">💳 Pago:</span> <span class="value">${pagoLabel}</span></div>
+                    <div><span class="label">💰 Total:</span> <span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+                </div>
+                ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
+                ${pagoHtml}
+                ${p.observaciones ? `<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">📝 ${p.observaciones}</div>` : ''}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// ============================================================
+// ESTADÍSTICAS DEL MENSAJERO
+// ============================================================
+async function actualizarEstadisticasMensajero() {
+    if (!mensajeroUid) return;
+    
+    try {
+        const tiendasSnap = await db.collection('tiendas').get();
+        let totalPedidos = 0;
+        let totalGanado = 0;
+        let entregadosHoy = 0;
+        let entregadosTotal = 0;
+        
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        for (const tiendaDoc of tiendasSnap.docs) {
+            const tiendaId = tiendaDoc.id;
+            const pedidosSnap = await db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .where('mensajeroId', '==', mensajeroUid)
+                .get();
+            
+            pedidosSnap.forEach(doc => {
+                const data = doc.data();
+                const total = data.total || 0;
+                totalPedidos++;
+                totalGanado += total;
+                
+                const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
+                if (data.estado === 'Entregado') {
+                    entregadosTotal++;
+                    if (fechaPedido >= hoy) {
+                        entregadosHoy++;
+                    }
+                }
+            });
+        }
+        
+        const statsElement = document.getElementById('mensajeroStats');
+        if (statsElement) {
+            statsElement.innerHTML = `
+                <span style="color:var(--green);">✅ ${entregadosHoy} hoy</span>
+                <span style="color:var(--yellow);">📦 ${totalPedidos} total</span>
+                <span style="color:var(--green);">💰 $${totalGanado.toLocaleString('es-CO')}</span>
+                <span style="color:var(--blue);">📊 ${entregadosTotal} entregados</span>
+            `;
+        }
+        
+        return { totalPedidos, totalGanado, entregadosHoy, entregadosTotal };
+    } catch (error) {
+        console.error('❌ Error actualizando estadísticas:', error);
+    }
+}
+
+// ============================================================
 // 🧪 SIMULAR PEDIDO DE PRUEBA
 // ============================================================
 function simularPedidoPrueba() {
@@ -1012,7 +1303,6 @@ function simularPedidoPrueba() {
     sonidoDespertador.iniciarDespertador(pedidoFalso.id);
     renderizarPedidos();
     
-    // Mostrar notificación de prueba
     mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 15000);
     
     toast('🔔 Nuevo pedido de prueba', 'new', 5000);
@@ -1374,10 +1664,13 @@ window.toast = toast;
 window.simularPedidoPrueba = simularPedidoPrueba;
 window.activarNotificacionesPush = activarNotificacionesPush;
 window.probarNotificacion = probarNotificacion;
+window.cargarHistorialPedidos = cargarHistorialPedidos;
+window.filtrarHistorial = filtrarHistorial;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔊 Sonido con MP3 integrado');
 console.log('📢 Notificaciones push activadas');
+console.log('📊 Historial de pedidos activado');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
