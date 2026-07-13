@@ -207,6 +207,9 @@
         <span class="push-status" id="pushStatus">🔔 Notificaciones: Cargando...</span>
         <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh activo</span>
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
+        <button class="btn-sm" onclick="activarNotificacionesPush()" style="width:auto;padding:6px 12px;background:var(--blue);color:#fff;border-radius:8px;">🔔 Activar</button>
+<button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
+<span id="pushStatus" style="font-size:10px;color:var(--text-muted);padding:4px 10px;background:var(--surface2);border-radius:12px;">🔔 Cargando...</span>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -736,6 +739,8 @@ async function inicializarPanel() {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
         setTimeout(inicializarPanel, 5000);
+        // Al final de inicializarPanel()
+inicializarNotificaciones();
     }
 }
 async function cargarTiendas() {
@@ -1293,6 +1298,177 @@ console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔊 Sonido con MP3 integrado');
 console.log('📢 Notificaciones push activadas');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
+    // ============================================================
+// 📢 CONFIGURACIÓN DE NOTIFICACIONES PUSH
+// ============================================================
+
+// 🔑 TU CLAVE PÚBLICA VAPID (LA MISMA QUE EN sw.js)
+const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
+
+// Registrar Service Worker y activar notificaciones
+async function activarNotificacionesPush() {
+    try {
+        // 1. Verificar soporte
+        if (!('serviceWorker' in navigator)) {
+            console.warn('⚠️ Service Workers no soportados');
+            document.getElementById('pushStatus').textContent = '❌ No soportado';
+            return false;
+        }
+        
+        // 2. Registrar Service Worker
+        const registration = await navigator.serviceWorker.register('sw.js', {
+            scope: '/'
+        });
+        console.log('✅ Service Worker registrado');
+        
+        // 3. Solicitar permiso
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            console.warn('⚠️ Permiso denegado');
+            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
+            return false;
+        }
+        
+        // 4. Suscribirse a push
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        
+        console.log('✅ Suscripción push creada');
+        document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
+        
+        // 5. Guardar suscripción en Firestore
+        await guardarSuscripcionPush(subscription);
+        
+        toast('✅ Notificaciones push activadas correctamente', 'success', 4000);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        document.getElementById('pushStatus').textContent = '❌ Error';
+        toast('❌ Error: ' + error.message, 'error', 5000);
+        return false;
+    }
+}
+
+// Convertir clave VAPID de base64 a Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Guardar suscripción en Firestore
+async function guardarSuscripcionPush(subscription) {
+    if (!mensajeroUid) {
+        console.warn('⚠️ No hay mensajero UID');
+        return;
+    }
+    
+    try {
+        const subscriptionData = {
+            endpoint: subscription.endpoint,
+            expirationTime: subscription.expirationTime,
+            keys: {
+                p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                auth: arrayBufferToBase64(subscription.getKey('auth'))
+            }
+        };
+        
+        await db.collection('usuarios').doc(mensajeroUid).set({
+            pushSubscription: subscriptionData,
+            pushEnabled: true,
+            pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        console.log('✅ Suscripción guardada en Firestore');
+    } catch (error) {
+        console.error('❌ Error guardando suscripción:', error);
+    }
+}
+
+// Convertir ArrayBuffer a Base64
+function arrayBufferToBase64(buffer) {
+    if (!buffer) return '';
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+// ============================================================
+// 🔘 PROBAR NOTIFICACIÓN
+// ============================================================
+function probarNotificacion() {
+    if (!('Notification' in window)) {
+        toast('⚠️ Tu navegador no soporta notificaciones', 'warn');
+        return;
+    }
+    
+    if (Notification.permission !== 'granted') {
+        toast('⚠️ Primero activa las notificaciones con el botón "Activar"', 'warn');
+        return;
+    }
+    
+    try {
+        const notification = new Notification('🔔 Notificación de prueba', {
+            body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
+            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+            vibrate: [200, 100, 200]
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            this.close();
+        };
+        
+        toast('✅ Notificación de prueba enviada', 'success', 3000);
+        console.log('✅ Notificación de prueba mostrada');
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error: ' + error.message, 'error', 5000);
+    }
+}
+
+// ============================================================
+// 🚀 INICIALIZAR NOTIFICACIONES AL CARGAR
+// ============================================================
+async function inicializarNotificaciones() {
+    try {
+        // Esperar 2 segundos
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verificar si ya tiene permiso
+        if (Notification.permission === 'granted') {
+            console.log('✅ Permiso de notificaciones ya concedido');
+            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
+            
+            // Verificar si ya está suscrito
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            
+            if (!subscription) {
+                console.log('🔄 No hay suscripción activa, activando...');
+                await activarNotificacionesPush();
+            }
+        } else if (Notification.permission === 'denied') {
+            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
+        } else {
+            document.getElementById('pushStatus').textContent = '🔔 Activa las notificaciones';
+        }
+    } catch (error) {
+        console.warn('⚠️ Error inicializando notificaciones:', error);
+    }
+}
 </script>
 </body>
 </html>
