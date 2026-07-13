@@ -434,7 +434,7 @@ function arrayBufferToBase64(buffer) {
     return btoa(binary);
 }
 
-// ACTIVAR NOTIFICACIONES PUSH
+// ACTIVAR NOTIFICACIONES PUSH (CORREGIDO)
 async function activarNotificacionesPush() {
     try {
         // 1. Verificar soporte
@@ -444,9 +444,9 @@ async function activarNotificacionesPush() {
             return false;
         }
         
-        // 2. Registrar Service Worker (CON SCOPE CORREGIDO)
-        const registration = await navigator.serviceWorker.register('./sw.js', {
-            scope: './'
+        // 2. Registrar Service Worker (RUTA CORREGIDA PARA MÓVIL)
+        const registration = await navigator.serviceWorker.register('sw.js', {
+            scope: '/'
         });
         console.log('✅ Service Worker registrado con scope:', registration.scope);
         
@@ -496,7 +496,8 @@ async function activarNotificacionesPush() {
         return false;
     }
 }
-// PROBAR NOTIFICACIÓN
+
+// PROBAR NOTIFICACIÓN (CORREGIDO PARA MÓVIL)
 function probarNotificacion() {
     if (!('Notification' in window)) {
         toast('⚠️ Tu navegador no soporta notificaciones', 'warn');
@@ -543,6 +544,7 @@ function probarNotificacion() {
         toast('❌ Error: ' + error.message, 'error', 5000);
     }
 }
+
 // INICIALIZAR NOTIFICACIONES AL CARGAR
 async function inicializarNotificaciones() {
     try {
@@ -570,12 +572,13 @@ async function inicializarNotificaciones() {
     } catch (error) {
         console.warn('⚠️ Error inicializando notificaciones:', error);
         // Si hay error con el scope, intentar registrar con scope corregido
-        if (error.message.includes('scope')) {
+        if (error.message && error.message.includes('scope')) {
             console.log('🔄 Intentando registrar con scope corregido...');
             await activarNotificacionesPush();
         }
     }
 }
+
 // ============================================================
 // ACTIVAR AUDIO CON UN CLIC
 // ============================================================
@@ -938,6 +941,7 @@ function escucharPedidos() {
             }
         });
 }
+
 // ============================================================
 // 📢 MOSTRAR NOTIFICACIÓN DEL SISTEMA (CORREGIDA)
 // ============================================================
@@ -978,6 +982,8 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
         console.error('❌ Error mostrando notificación:', error);
     }
 }
+
+// ============================================================
 // 🧪 SIMULAR PEDIDO DE PRUEBA
 // ============================================================
 function simularPedidoPrueba() {
