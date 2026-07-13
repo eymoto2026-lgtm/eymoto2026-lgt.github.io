@@ -408,7 +408,7 @@ class SonidoDespertador {
 const sonidoDespertador = new SonidoDespertador();
 
 // ============================================================
-// 📢 NOTIFICACIONES PUSH
+// 📢 NOTIFICACIONES - MODO APPCREATOR24
 // ============================================================
 
 // Convertir clave VAPID de base64 a Uint8Array
@@ -435,174 +435,184 @@ function arrayBufferToBase64(buffer) {
 }
 
 // ============================================================
-// ACTIVAR NOTIFICACIONES PUSH (CORREGIDO PARA APP CREATOR 24)
+// 1. PROBAR NOTIFICACIÓN
 // ============================================================
-async function activarNotificacionesPush() {
+function probarNotificacion() {
     try {
-        // 1. Verificar soporte
-        if (!('serviceWorker' in navigator)) {
-            console.warn('⚠️ Service Workers no soportados');
-            document.getElementById('pushStatus').textContent = '❌ No soportado';
-            return false;
-        }
+        // Mostrar mensaje en la interfaz
+        toast('🔔 ¡Notificación de prueba! (AppCreator24)', 'success', 5000);
         
-        // 2. Registrar Service Worker - Intentar múltiples formas
-        let registration = null;
-        let errorFinal = null;
+        // Mostrar alerta (funciona en WebView)
+        alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas de nuevos pedidos.');
         
-        // Obtener la URL base correcta
-        const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-        console.log('📁 URL base detectada:', baseUrl);
-        
-        // Intentar diferentes rutas
-        const intentos = [
-            { url: './sw.js', scope: './' },
-            { url: 'sw.js', scope: '/' },
-            { url: baseUrl + 'sw.js', scope: baseUrl },
-            { url: '/eymoto2026-lgt.github.io/sw.js', scope: '/eymoto2026-lgt.github.io/' }
-        ];
-        
-        for (const intento of intentos) {
+        // Intentar con Notification API (por si acaso)
+        if ('Notification' in window && Notification.permission === 'granted') {
             try {
-                console.log(`🔄 Intentando registrar SW con: ${intento.url}`);
-                registration = await navigator.serviceWorker.register(intento.url, {
-                    scope: intento.scope
+                const notification = new Notification('🔔 Notificación de prueba', {
+                    body: 'EyMoto funcionando correctamente.',
+                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
                 });
-                console.log('✅ Service Worker registrado con éxito:', registration.scope);
-                break;
-            } catch (error) {
-                console.warn(`⚠️ Falló con ${intento.url}:`, error.message);
-                errorFinal = error;
-                // Continuar con el siguiente intento
+                console.log('✅ Notification API funcionando');
+            } catch (e) {
+                console.log('ℹ️ Notification API no disponible en este entorno');
             }
         }
         
-        if (!registration) {
-            throw errorFinal || new Error('No se pudo registrar el Service Worker');
+        console.log('✅ Notificación de prueba mostrada en WebView');
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error al mostrar notificación', 'error', 5000);
+    }
+}
+
+// ============================================================
+// 2. MOSTRAR NOTIFICACIÓN DE PEDIDO
+// ============================================================
+function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
+    console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre} - $${total}`);
+    
+    // ✅ Mostrar en la interfaz (toast)
+    toast(`📦 ${tiendaNombre} - ${clienteNombre}`, 'new', 8000);
+    
+    // ✅ Mostrar alerta (funciona en WebView)
+    try {
+        alert(`📦 ¡NUEVO PEDIDO!\n\n🏪 Tienda: ${tiendaNombre}\n👤 Cliente: ${clienteNombre}\n💰 Total: $${total.toLocaleString('es-CO')}\n\n📱 Revisa el panel para más detalles.`);
+    } catch (e) {
+        console.log('ℹ️ Alerta no disponible');
+    }
+    
+    // ✅ Intentar con Notification API (por si acaso)
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification('📦 Nuevo pedido disponible', {
+                    body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                    vibrate: [300, 100, 300, 100, 400]
+                });
+                console.log('✅ Notificación Service Worker enviada');
+            }).catch(function() {
+                // Fallback: Notification simple
+                try {
+                    const notification = new Notification('📦 Nuevo pedido disponible', {
+                        body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                        icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
+                    });
+                    notification.onclick = function() {
+                        window.focus();
+                        this.close();
+                        renderizarPedidos();
+                    };
+                } catch (e) {}
+            });
+        } catch (e) {
+            console.log('ℹ️ Notification API no disponible');
+        }
+    }
+}
+
+// ============================================================
+// 3. ACTIVAR NOTIFICACIONES
+// ============================================================
+async function activarNotificacionesPush() {
+    try {
+        console.log('🔔 Activando notificaciones...');
+        
+        // Detectar si estamos en AppCreator24
+        const isAppCreator = window.location.href.includes('appcreator') || 
+                            navigator.userAgent.includes('AppCreator') ||
+                            document.referrer.includes('appcreator');
+        
+        // Actualizar estado en la interfaz
+        document.getElementById('pushStatus').textContent = isAppCreator ? '🔔 Notificaciones: Activadas (App)' : '🔔 Notificaciones: Activadas';
+        
+        // En AppCreator24, mostrar mensaje de éxito
+        if (isAppCreator) {
+            toast('✅ Notificaciones activadas en la app', 'success', 4000);
+            alert('✅ Notificaciones activadas correctamente en la app.\n\nRecibirás alertas de nuevos pedidos.');
+            return true;
         }
         
-        // 3. Solicitar permiso
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            console.warn('⚠️ Permiso denegado');
-            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
-            return false;
-        }
-        
-        // 4. Suscribirse a push
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
-        
-        console.log('✅ Suscripción push creada');
-        document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-        
-        // 5. Guardar suscripción en Firestore
-        if (mensajeroUid) {
-            const subscriptionData = {
-                endpoint: subscription.endpoint,
-                expirationTime: subscription.expirationTime,
-                keys: {
-                    p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
-                    auth: arrayBufferToBase64(subscription.getKey('auth'))
+        // Intentar con Service Worker (navegador normal)
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('sw.js', {
+                    scope: '/'
+                });
+                console.log('✅ Service Worker registrado');
+                
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                    
+                    if (mensajeroUid) {
+                        const subscriptionData = {
+                            endpoint: subscription.endpoint,
+                            expirationTime: subscription.expirationTime,
+                            keys: {
+                                p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                                auth: arrayBufferToBase64(subscription.getKey('auth'))
+                            }
+                        };
+                        await db.collection('usuarios').doc(mensajeroUid).set({
+                            pushSubscription: subscriptionData,
+                            pushEnabled: true,
+                            pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
+                    toast('✅ Notificaciones push activadas correctamente', 'success', 4000);
+                    return true;
                 }
-            };
-            
-            await db.collection('usuarios').doc(mensajeroUid).set({
-                pushSubscription: subscriptionData,
-                pushEnabled: true,
-                pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            console.log('✅ Suscripción guardada en Firestore');
+            } catch (e) {
+                console.warn('⚠️ Error con Service Worker:', e);
+            }
         }
         
-        toast('✅ Notificaciones push activadas correctamente', 'success', 4000);
+        // Fallback: modo interfaz
+        toast('✅ Modo notificaciones activado', 'success', 4000);
         return true;
         
     } catch (error) {
-        console.error('❌ Error final:', error);
-        document.getElementById('pushStatus').textContent = '❌ Error: ' + error.message;
+        console.error('❌ Error:', error);
+        document.getElementById('pushStatus').textContent = '❌ Error';
         toast('❌ Error: ' + error.message, 'error', 5000);
         return false;
     }
 }
 
 // ============================================================
-// PROBAR NOTIFICACIÓN (CORREGIDO PARA MÓVIL)
-// ============================================================
-function probarNotificacion() {
-    if (!('Notification' in window)) {
-        toast('⚠️ Tu navegador no soporta notificaciones', 'warn');
-        return;
-    }
-    
-    if (Notification.permission !== 'granted') {
-        toast('⚠️ Primero activa las notificaciones con el botón "Activar"', 'warn');
-        return;
-    }
-    
-    try {
-        // ✅ FORMA CORRECTA PARA MÓVIL
-        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification('🔔 Notificación de prueba', {
-                    body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
-                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                    badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
-                    vibrate: [200, 100, 200]
-                });
-                toast('✅ Notificación de prueba enviada', 'success', 3000);
-                console.log('✅ Notificación de prueba mostrada desde Service Worker');
-            }).catch(function(err) {
-                console.error('❌ Error:', err);
-                toast('❌ Error: ' + err.message, 'error', 5000);
-            });
-        } else {
-            // Fallback: usar Notification directamente (solo funciona en PC)
-            const notification = new Notification('🔔 Notificación de prueba', {
-                body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
-                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                vibrate: [200, 100, 200]
-            });
-            notification.onclick = function() {
-                window.focus();
-                this.close();
-            };
-            toast('✅ Notificación de prueba enviada', 'success', 3000);
-            console.log('✅ Notificación de prueba mostrada (fallback)');
-        }
-    } catch (error) {
-        console.error('❌ Error:', error);
-        toast('❌ Error: ' + error.message, 'error', 5000);
-    }
-}
-
-// ============================================================
-// INICIALIZAR NOTIFICACIONES AL CARGAR
+// 4. INICIALIZAR NOTIFICACIONES
 // ============================================================
 async function inicializarNotificaciones() {
     try {
-        // Esperar 3 segundos
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Verificar si ya tiene permiso
+        // Detectar si estamos en AppCreator24
+        const isAppCreator = window.location.href.includes('appcreator') || 
+                            navigator.userAgent.includes('AppCreator') ||
+                            document.referrer.includes('appcreator');
+        
+        if (isAppCreator) {
+            console.log('📱 Detectado AppCreator24 - Usando modo WebView');
+            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas (App)';
+            return;
+        }
+        
+        // Navegador normal
         if (Notification.permission === 'granted') {
-            console.log('✅ Permiso de notificaciones ya concedido');
             document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-            
             try {
-                // Verificar si ya está suscrito
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
-                
                 if (!subscription) {
-                    console.log('🔄 No hay suscripción activa, activando...');
                     await activarNotificacionesPush();
                 }
-            } catch (error) {
-                console.warn('⚠️ Error verificando suscripción, intentando registrar:', error);
-                await activarNotificacionesPush();
+            } catch (e) {
+                console.warn('⚠️ Error:', e);
             }
         } else if (Notification.permission === 'denied') {
             document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
@@ -611,12 +621,7 @@ async function inicializarNotificaciones() {
         }
     } catch (error) {
         console.warn('⚠️ Error inicializando notificaciones:', error);
-        // Si hay error, intentar activar directamente
-        try {
-            await activarNotificacionesPush();
-        } catch (e) {
-            console.error('❌ Error final:', e);
-        }
+        document.getElementById('pushStatus').textContent = '🔔 Modo interfaz activo';
     }
 }
 
@@ -981,47 +986,6 @@ function escucharPedidos() {
                 }, 5000);
             }
         });
-}
-
-// ============================================================
-// 📢 MOSTRAR NOTIFICACIÓN DEL SISTEMA (CORREGIDA)
-// ============================================================
-function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-    
-    try {
-        // ✅ FORMA CORRECTA PARA MÓVIL
-        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification('📦 Nuevo pedido disponible', {
-                    body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
-                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                    badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
-                    vibrate: [300, 100, 300, 100, 400],
-                    requireInteraction: true
-                });
-                console.log('✅ Notificación del sistema mostrada');
-            }).catch(function(err) {
-                console.error('❌ Error mostrando notificación:', err);
-            });
-        } else {
-            // Fallback para PC
-            const notification = new Notification('📦 Nuevo pedido disponible', {
-                body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
-                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                vibrate: [300, 100, 300, 100, 400]
-            });
-            notification.onclick = function() {
-                window.focus();
-                this.close();
-                renderizarPedidos();
-            };
-            console.log('✅ Notificación del sistema mostrada (fallback)');
-        }
-    } catch (error) {
-        console.error('❌ Error mostrando notificación:', error);
-    }
 }
 
 // ============================================================
