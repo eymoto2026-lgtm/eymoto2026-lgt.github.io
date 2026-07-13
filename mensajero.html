@@ -208,8 +208,7 @@
         <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh activo</span>
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
         <button class="btn-sm" onclick="activarNotificacionesPush()" style="width:auto;padding:6px 12px;background:var(--blue);color:#fff;border-radius:8px;">🔔 Activar</button>
-<button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
-<span id="pushStatus" style="font-size:10px;color:var(--text-muted);padding:4px 10px;background:var(--surface2);border-radius:12px;">🔔 Cargando...</span>
+        <button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -246,89 +245,9 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 📢 SISTEMA DE NOTIFICACIONES PUSH
+// 🔑 CONFIGURACIÓN VAPID (TU CLAVE PÚBLICA)
 // ============================================================
-let pushSubscription = null;
-let pushEnabled = false;
-
-async function registrarServiceWorker() {
-    try {
-        if (!('serviceWorker' in navigator)) {
-            console.warn('⚠️ Service Workers no soportados');
-            document.getElementById('pushStatus').textContent = '❌ Notificaciones: No soportadas';
-            return false;
-        }
-        
-        // Registrar Service Worker
-        const registration = await navigator.serviceWorker.register('sw.js', {
-            scope: '/'
-        });
-        console.log('✅ Service Worker registrado:', registration);
-        
-        // Solicitar permiso para notificaciones
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-            console.log('✅ Permiso de notificaciones concedido');
-            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-            pushEnabled = true;
-            
-            // Suscribirse a push
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array('BGJ2jSj5qKyU6ykJz3P7z9Y9x8cTfRjywM7lJ1nKq4sTp0yXw2zD4tV5uH6iL7oM8nP9qR0sT1uV2wX3yZ4') // Clave pública de VAPID
-            });
-            
-            pushSubscription = subscription;
-            console.log('✅ Suscripción push:', subscription);
-            
-            // Guardar suscripción en Firestore
-            await guardarSuscripcionPush(subscription);
-            
-            return true;
-        } else {
-            console.warn('⚠️ Permiso de notificaciones denegado');
-            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Error registrando Service Worker:', error);
-        document.getElementById('pushStatus').textContent = '❌ Notificaciones: Error';
-        return false;
-    }
-}
-
-// Convertir clave VAPID de base64 a Uint8Array
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-async function guardarSuscripcionPush(subscription) {
-    if (!mensajeroUid) return;
-    
-    try {
-        await db.collection('usuarios').doc(mensajeroUid).update({
-            pushSubscription: {
-                endpoint: subscription.endpoint,
-                keys: {
-                    p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
-                    auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
-                }
-            },
-            pushEnabled: true
-        });
-        console.log('✅ Suscripción push guardada en Firestore');
-    } catch (error) {
-        console.error('❌ Error guardando suscripción:', error);
-    }
-}
+const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
 
 // ============================================================
 // ⏰ FUNCIÓN DE SONIDO CON MP3
@@ -424,11 +343,6 @@ class SonidoDespertador {
                 this.iniciarAudio();
             }
             sonidoEyMoto();
-            // Enviar notificación push
-            if (pushEnabled) {
-                // Las notificaciones push se envían desde el servidor
-                // Esta función es solo para el sonido en el panel
-            }
         } catch (e) {
             console.error('❌ Error en sonido:', e);
         }
@@ -491,8 +405,159 @@ class SonidoDespertador {
     }
 }
 
-// ✅ INSTANCIA GLOBAL
 const sonidoDespertador = new SonidoDespertador();
+
+// ============================================================
+// 📢 NOTIFICACIONES PUSH
+// ============================================================
+
+// Convertir clave VAPID de base64 a Uint8Array
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+// Convertir ArrayBuffer a Base64
+function arrayBufferToBase64(buffer) {
+    if (!buffer) return '';
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+// ACTIVAR NOTIFICACIONES PUSH
+async function activarNotificacionesPush() {
+    try {
+        // 1. Verificar soporte
+        if (!('serviceWorker' in navigator)) {
+            console.warn('⚠️ Service Workers no soportados');
+            document.getElementById('pushStatus').textContent = '❌ No soportado';
+            return false;
+        }
+        
+        // 2. Registrar Service Worker
+        const registration = await navigator.serviceWorker.register('sw.js', {
+            scope: '/'
+        });
+        console.log('✅ Service Worker registrado');
+        
+        // 3. Solicitar permiso
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            console.warn('⚠️ Permiso denegado');
+            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
+            return false;
+        }
+        
+        // 4. Suscribirse a push (USA TU CLAVE PÚBLICA)
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        
+        console.log('✅ Suscripción push creada');
+        document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
+        
+        // 5. Guardar suscripción en Firestore
+        if (mensajeroUid) {
+            const subscriptionData = {
+                endpoint: subscription.endpoint,
+                expirationTime: subscription.expirationTime,
+                keys: {
+                    p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
+                    auth: arrayBufferToBase64(subscription.getKey('auth'))
+                }
+            };
+            
+            await db.collection('usuarios').doc(mensajeroUid).set({
+                pushSubscription: subscriptionData,
+                pushEnabled: true,
+                pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            console.log('✅ Suscripción guardada en Firestore');
+        }
+        
+        toast('✅ Notificaciones push activadas correctamente', 'success', 4000);
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        document.getElementById('pushStatus').textContent = '❌ Error';
+        toast('❌ Error: ' + error.message, 'error', 5000);
+        return false;
+    }
+}
+
+// PROBAR NOTIFICACIÓN
+function probarNotificacion() {
+    if (!('Notification' in window)) {
+        toast('⚠️ Tu navegador no soporta notificaciones', 'warn');
+        return;
+    }
+    
+    if (Notification.permission !== 'granted') {
+        toast('⚠️ Primero activa las notificaciones con el botón "Activar"', 'warn');
+        return;
+    }
+    
+    try {
+        const notification = new Notification('🔔 Notificación de prueba', {
+            body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
+            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+            vibrate: [200, 100, 200]
+        });
+        
+        notification.onclick = function() {
+            window.focus();
+            this.close();
+        };
+        
+        toast('✅ Notificación de prueba enviada', 'success', 3000);
+        console.log('✅ Notificación de prueba mostrada');
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error: ' + error.message, 'error', 5000);
+    }
+}
+
+// INICIALIZAR NOTIFICACIONES AL CARGAR
+async function inicializarNotificaciones() {
+    try {
+        // Esperar 2 segundos
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verificar si ya tiene permiso
+        if (Notification.permission === 'granted') {
+            console.log('✅ Permiso de notificaciones ya concedido');
+            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
+            
+            // Verificar si ya está suscrito
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            
+            if (!subscription) {
+                console.log('🔄 No hay suscripción activa, activando...');
+                await activarNotificacionesPush();
+            }
+        } else if (Notification.permission === 'denied') {
+            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
+        } else {
+            document.getElementById('pushStatus').textContent = '🔔 Activa las notificaciones';
+        }
+    } catch (error) {
+        console.warn('⚠️ Error inicializando notificaciones:', error);
+    }
+}
 
 // ============================================================
 // ACTIVAR AUDIO CON UN CLIC
@@ -503,35 +568,6 @@ document.addEventListener('click', function activarAudio() {
         console.log('🔊 Audio activado por clic');
     }
 }, { once: true });
-
-// ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA
-// ============================================================
-function simularPedidoPrueba() {
-    console.log('🧪 Simulando pedido de prueba...');
-    
-    const pedidoFalso = {
-        id: 'PEDIDO-TEST-' + Date.now(),
-        tiendaId: 'test',
-        estado: 'Listo para asignar',
-        mensajeroId: null,
-        notificacionEnviada: true,
-        numeroPedido: '#TEST',
-        cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 15000,
-        items: [{ nombre: 'Producto Test', cantidad: 1, precio: 15000 }]
-    };
-    
-    todosLosPedidos.push(pedidoFalso);
-    console.log('✅ Pedido de prueba agregado');
-    
-    sonidoDespertador.iniciarDespertador(pedidoFalso.id);
-    renderizarPedidos();
-    
-    toast('🔔 Nuevo pedido de prueba', 'new', 5000);
-}
-
-window.simularPedidoPrueba = simularPedidoPrueba;
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -574,11 +610,6 @@ function iniciarSesion() {
             await db.collection('usuarios').doc(user.uid).update({ conectado: mensajeroConectado, ultimaConexion: firebase.firestore.FieldValue.serverTimestamp() });
             await inicializarPanel();
             
-            // Registrar Service Worker después del login
-            setTimeout(() => {
-                registrarServiceWorker();
-            }, 2000);
-            
             if (!mensajeroConectado && !motivacionMostrada) {
                 setTimeout(() => { mostrarMotivacion(); }, 2000);
             }
@@ -605,9 +636,6 @@ auth.onAuthStateChanged(user => {
         document.getElementById('panel').classList.remove('hidden');
         mensajeroUid = user.uid;
         inicializarPanel();
-        setTimeout(() => {
-            registrarServiceWorker();
-        }, 3000);
     } else {
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
@@ -735,14 +763,19 @@ async function inicializarPanel() {
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔊 Sonido EyMoto configurado');
+        
+        // ✅ INICIALIZAR NOTIFICACIONES DESPUÉS DEL LOGIN
+        setTimeout(() => {
+            inicializarNotificaciones();
+        }, 3000);
+        
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
         setTimeout(inicializarPanel, 5000);
-        // Al final de inicializarPanel()
-inicializarNotificaciones();
     }
 }
+
 async function cargarTiendas() {
     try {
         const snap = await db.collection('tiendas').get();
@@ -750,6 +783,7 @@ async function cargarTiendas() {
         console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
     } catch (e) { console.error('Error cargando tiendas:', e); }
 }
+
 async function cargarMensajeros() {
     try {
         const snap = await db.collection('usuarios').where('mensajero', '==', true).get();
@@ -766,7 +800,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - CON SONIDO Y NOTIFICACIÓN PUSH
+// 📢 ESCUCHAR PEDIDOS
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -803,26 +837,18 @@ function escucharPedidos() {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         const tienda = tiendasCache[tiendaId] || {};
                                         
-                                        // 🔔 ACTIVAR SONIDO PARA NUEVO PEDIDO
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            
-                                            // Reproducir sonido en el panel
                                             sonidoDespertador.iniciarDespertador(pedidoId);
-                                            
-                                            // Mostrar toast
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                             
-                                            // 🚀 ENVIAR NOTIFICACIÓN PUSH
-                                            if (pushEnabled && mensajeroUid) {
-                                                enviarNotificacionPush({
-                                                    title: '📦 Nuevo pedido disponible',
-                                                    body: `${tienda.nombre || 'Tienda'} - ${data.numeroPedido || '#' + pedidoId.slice(-6)}`,
-                                                    pedidoId: pedidoId,
-                                                    tiendaId: tiendaId,
-                                                    mensajeroId: mensajeroUid
-                                                });
-                                            }
+                                            // Mostrar notificación del sistema
+                                            mostrarNotificacionSistema(
+                                                tienda.nombre || 'Tienda',
+                                                data.numeroPedido || '#' + pedidoId.slice(-6),
+                                                data.cliente?.nombre || 'Cliente',
+                                                data.total || 0
+                                            );
                                         }
                                     }
                                 }
@@ -897,50 +923,63 @@ function escucharPedidos() {
 }
 
 // ============================================================
-// 🚀 ENVIAR NOTIFICACIÓN PUSH
+// 📢 MOSTRAR NOTIFICACIÓN DEL SISTEMA
 // ============================================================
-async function enviarNotificacionPush(datos) {
+function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    
     try {
-        // Buscar la suscripción push del mensajero
-        const userDoc = await db.collection('usuarios').doc(mensajeroUid).get();
-        const userData = userDoc.data();
+        const notification = new Notification('📦 Nuevo pedido disponible', {
+            body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+            vibrate: [300, 100, 300, 100, 400],
+            requireInteraction: true
+        });
         
-        if (!userData.pushSubscription) {
-            console.warn('⚠️ El mensajero no tiene suscripción push');
-            return;
-        }
+        notification.onclick = function() {
+            window.focus();
+            this.close();
+            renderizarPedidos();
+        };
         
-        const subscription = userData.pushSubscription;
-        
-        // Aquí deberías enviar la notificación a través de un servidor
-        // Por ahora, usamos la API de notificaciones del navegador
-        if ('Notification' in window && Notification.permission === 'granted') {
-            const notification = new Notification(datos.title, {
-                body: datos.body,
-                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
-                vibrate: [300, 100, 300, 100, 400],
-                data: {
-                    pedidoId: datos.pedidoId,
-                    tiendaId: datos.tiendaId
-                }
-            });
-            
-            notification.onclick = function() {
-                window.focus();
-                // Abrir el pedido específico
-                if (datos.pedidoId && datos.tiendaId) {
-                    // Buscar y mostrar el pedido
-                    renderizarPedidos();
-                }
-            };
-            
-            console.log('✅ Notificación push enviada');
-        }
+        console.log('✅ Notificación del sistema mostrada');
     } catch (error) {
-        console.error('❌ Error enviando notificación push:', error);
+        console.error('❌ Error mostrando notificación:', error);
     }
 }
+
+// ============================================================
+// 🧪 SIMULAR PEDIDO DE PRUEBA
+// ============================================================
+function simularPedidoPrueba() {
+    console.log('🧪 Simulando pedido de prueba...');
+    
+    const pedidoFalso = {
+        id: 'PEDIDO-TEST-' + Date.now(),
+        tiendaId: 'test',
+        estado: 'Listo para asignar',
+        mensajeroId: null,
+        notificacionEnviada: true,
+        numeroPedido: '#TEST',
+        cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
+        total: 15000,
+        items: [{ nombre: 'Producto Test', cantidad: 1, precio: 15000 }]
+    };
+    
+    todosLosPedidos.push(pedidoFalso);
+    console.log('✅ Pedido de prueba agregado');
+    
+    sonidoDespertador.iniciarDespertador(pedidoFalso.id);
+    renderizarPedidos();
+    
+    // Mostrar notificación de prueba
+    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 15000);
+    
+    toast('🔔 Nuevo pedido de prueba', 'new', 5000);
+}
+
+window.simularPedidoPrueba = simularPedidoPrueba;
 
 // ============================================================
 // RENDERIZAR PEDIDOS
@@ -1003,7 +1042,7 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN)
+// 🎯 RENDERIZAR CARD DE PEDIDO
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
@@ -1267,6 +1306,7 @@ function formatearFecha(fecha) {
                ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     } catch (e) { return '--/--/--'; }
 }
+
 function toast(msg, type = 'info', dur = 4000) {
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🔔', motivacion: '💪' };
     const wrap = document.getElementById('toastWrap');
@@ -1293,182 +1333,14 @@ window.cerrarMotivacion = cerrarMotivacion;
 window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
 window.simularPedidoPrueba = simularPedidoPrueba;
+window.activarNotificacionesPush = activarNotificacionesPush;
+window.probarNotificacion = probarNotificacion;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔊 Sonido con MP3 integrado');
 console.log('📢 Notificaciones push activadas');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
-    // ============================================================
-// 📢 CONFIGURACIÓN DE NOTIFICACIONES PUSH
-// ============================================================
-
-// 🔑 TU CLAVE PÚBLICA VAPID (LA MISMA QUE EN sw.js)
-const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
-
-// Registrar Service Worker y activar notificaciones
-async function activarNotificacionesPush() {
-    try {
-        // 1. Verificar soporte
-        if (!('serviceWorker' in navigator)) {
-            console.warn('⚠️ Service Workers no soportados');
-            document.getElementById('pushStatus').textContent = '❌ No soportado';
-            return false;
-        }
-        
-        // 2. Registrar Service Worker
-        const registration = await navigator.serviceWorker.register('sw.js', {
-            scope: '/'
-        });
-        console.log('✅ Service Worker registrado');
-        
-        // 3. Solicitar permiso
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            console.warn('⚠️ Permiso denegado');
-            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
-            return false;
-        }
-        
-        // 4. Suscribirse a push
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
-        
-        console.log('✅ Suscripción push creada');
-        document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-        
-        // 5. Guardar suscripción en Firestore
-        await guardarSuscripcionPush(subscription);
-        
-        toast('✅ Notificaciones push activadas correctamente', 'success', 4000);
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        document.getElementById('pushStatus').textContent = '❌ Error';
-        toast('❌ Error: ' + error.message, 'error', 5000);
-        return false;
-    }
-}
-
-// Convertir clave VAPID de base64 a Uint8Array
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-// Guardar suscripción en Firestore
-async function guardarSuscripcionPush(subscription) {
-    if (!mensajeroUid) {
-        console.warn('⚠️ No hay mensajero UID');
-        return;
-    }
-    
-    try {
-        const subscriptionData = {
-            endpoint: subscription.endpoint,
-            expirationTime: subscription.expirationTime,
-            keys: {
-                p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
-                auth: arrayBufferToBase64(subscription.getKey('auth'))
-            }
-        };
-        
-        await db.collection('usuarios').doc(mensajeroUid).set({
-            pushSubscription: subscriptionData,
-            pushEnabled: true,
-            pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        console.log('✅ Suscripción guardada en Firestore');
-    } catch (error) {
-        console.error('❌ Error guardando suscripción:', error);
-    }
-}
-
-// Convertir ArrayBuffer a Base64
-function arrayBufferToBase64(buffer) {
-    if (!buffer) return '';
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-}
-
-// ============================================================
-// 🔘 PROBAR NOTIFICACIÓN
-// ============================================================
-function probarNotificacion() {
-    if (!('Notification' in window)) {
-        toast('⚠️ Tu navegador no soporta notificaciones', 'warn');
-        return;
-    }
-    
-    if (Notification.permission !== 'granted') {
-        toast('⚠️ Primero activa las notificaciones con el botón "Activar"', 'warn');
-        return;
-    }
-    
-    try {
-        const notification = new Notification('🔔 Notificación de prueba', {
-            body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
-            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-            vibrate: [200, 100, 200]
-        });
-        
-        notification.onclick = function() {
-            window.focus();
-            this.close();
-        };
-        
-        toast('✅ Notificación de prueba enviada', 'success', 3000);
-        console.log('✅ Notificación de prueba mostrada');
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        toast('❌ Error: ' + error.message, 'error', 5000);
-    }
-}
-
-// ============================================================
-// 🚀 INICIALIZAR NOTIFICACIONES AL CARGAR
-// ============================================================
-async function inicializarNotificaciones() {
-    try {
-        // Esperar 2 segundos
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Verificar si ya tiene permiso
-        if (Notification.permission === 'granted') {
-            console.log('✅ Permiso de notificaciones ya concedido');
-            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-            
-            // Verificar si ya está suscrito
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.getSubscription();
-            
-            if (!subscription) {
-                console.log('🔄 No hay suscripción activa, activando...');
-                await activarNotificacionesPush();
-            }
-        } else if (Notification.permission === 'denied') {
-            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
-        } else {
-            document.getElementById('pushStatus').textContent = '🔔 Activa las notificaciones';
-        }
-    } catch (error) {
-        console.warn('⚠️ Error inicializando notificaciones:', error);
-    }
-}
+console.log('🔑 Clave VAPID configurada correctamente');
 </script>
 </body>
 </html>
