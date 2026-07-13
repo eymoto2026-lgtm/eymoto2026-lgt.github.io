@@ -444,11 +444,11 @@ async function activarNotificacionesPush() {
             return false;
         }
         
-        // 2. Registrar Service Worker
-        const registration = await navigator.serviceWorker.register('sw.js', {
-            scope: '/'
+        // 2. Registrar Service Worker (CON SCOPE CORREGIDO)
+        const registration = await navigator.serviceWorker.register('./sw.js', {
+            scope: './'
         });
-        console.log('✅ Service Worker registrado');
+        console.log('✅ Service Worker registrado con scope:', registration.scope);
         
         // 3. Solicitar permiso
         const permission = await Notification.requestPermission();
@@ -458,7 +458,7 @@ async function activarNotificacionesPush() {
             return false;
         }
         
-        // 4. Suscribirse a push (USA TU CLAVE PÚBLICA)
+        // 4. Suscribirse a push
         const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -496,7 +496,6 @@ async function activarNotificacionesPush() {
         return false;
     }
 }
-
 // PROBAR NOTIFICACIÓN
 function probarNotificacion() {
     if (!('Notification' in window)) {
@@ -531,6 +530,7 @@ function probarNotificacion() {
 }
 
 // INICIALIZAR NOTIFICACIONES AL CARGAR
+// INICIALIZAR NOTIFICACIONES AL CARGAR
 async function inicializarNotificaciones() {
     try {
         // Esperar 2 segundos
@@ -556,9 +556,13 @@ async function inicializarNotificaciones() {
         }
     } catch (error) {
         console.warn('⚠️ Error inicializando notificaciones:', error);
+        // Si hay error con el scope, intentar registrar con scope corregido
+        if (error.message.includes('scope')) {
+            console.log('🔄 Intentando registrar con scope corregido...');
+            await activarNotificacionesPush();
+        }
     }
 }
-
 // ============================================================
 // ACTIVAR AUDIO CON UN CLIC
 // ============================================================
