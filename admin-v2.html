@@ -70,6 +70,61 @@ label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margi
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
 
+/* Campo de costo de domicilio */
+.campo-domicilio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+    background: var(--surface2);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+.campo-domicilio input {
+    width: 120px;
+    padding: 6px 10px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+    text-align: center;
+}
+.campo-domicilio input:focus {
+    border-color: var(--yellow);
+    outline: none;
+}
+.campo-domicilio .label-domicilio {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.campo-domicilio .btn-domicilio {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: auto;
+}
+.campo-domicilio .btn-domicilio:hover {
+    background: #0277bd;
+}
+.campo-domicilio .domicilio-actual {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--yellow);
+}
+.campo-domicilio .domicilio-actual.agregado {
+    color: var(--green);
+}
+
 #toastWrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{background:#1e1e1e;border:1px solid var(--border2);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastIn .3s ease;pointer-events:auto;max-width:380px;cursor:pointer;}
 .toast:hover{opacity:0.9}
@@ -962,12 +1017,12 @@ header .spacer{flex:1}
 // CONFIGURACIÓN FIREBASE
 // ============================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
-  authDomain: "eymotocomidas.firebaseapp.com",
-  projectId: "eymotocomidas",
-  storageBucket: "eymotocomidas.firebasestorage.app",
-  messagingSenderId: "670474251560",
-  appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
+    apiKey: "AIzaSyA_foZDTRxKYHRDhvYMjtPr5zBdi2LbmgY",
+    authDomain: "eymotocomidas.firebaseapp.com",
+    projectId: "eymotocomidas",
+    storageBucket: "eymotocomidas.firebasestorage.app",
+    messagingSenderId: "670474251560",
+    appId: "1:670474251560:web:eab1fbbb744af4e0b8341d"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -1232,6 +1287,10 @@ function generarFactura(tiendaId, pedidoId) {
         });
     }
     
+    // ✅ COSTO DE DOMICILIO
+    const costoDomicilio = pedido.costoDomicilio || 0;
+    const totalConDomicilio = total + costoDomicilio;
+    
     let fechaStr = '--', horaStr = '--';
     if (pedido.fecha) {
         try {
@@ -1271,6 +1330,8 @@ function generarFactura(tiendaId, pedidoId) {
             table { width: 100%; border-collapse: collapse; margin: 10px 0; }
             table th { background: #FFD600; color: #1a1a2e; padding: 8px; text-align: left; font-size: 12px; }
             .total { font-size: 18px; font-weight: 800; text-align: right; padding: 10px 0; border-top: 2px solid #FFD600; }
+            .domicilio-line { font-size: 14px; text-align: right; padding: 4px 0; color: #555; }
+            .domicilio-line .dom-valor { color: #FFD600; font-weight: 700; }
             .pago { font-size: 13px; color: #555; margin-top: 10px; }
             .footer { text-align: center; font-size: 11px; color: #888; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
             @media print { body { margin: 0; } .no-print { display: none; } }
@@ -1299,7 +1360,13 @@ function generarFactura(tiendaId, pedidoId) {
                 <thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead>
                 <tbody>${itemsHtml}</tbody>
             </table>
-            <div class="total">TOTAL: $${total.toLocaleString('es-CO')}</div>
+            ${costoDomicilio > 0 ? `
+            <div class="domicilio-line">
+                🛵 Costo de domicilio: <span class="dom-valor">$${costoDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+            ` : ''}
+            <div class="total">TOTAL: $${totalConDomicilio.toLocaleString('es-CO')}</div>
+            ${costoDomicilio > 0 ? `<div style="font-size:11px;text-align:right;color:#888;">(Incluye domicilio)</div>` : ''}
             <div class="pago">${metodoPago === 'nequi' || metodoPago === 'daviplata' ? `💳 Pagado con ${pagoTexto}` : '💵 Pagado en efectivo'}</div>
             <div class="footer">Gracias por tu compra - ${nombreTienda}</div>
             <div class="no-print" style="text-align:center;margin-top:15px;">
@@ -1311,6 +1378,59 @@ function generarFactura(tiendaId, pedidoId) {
     `);
     ventana.document.close();
 }
+
+// ============================================================
+// 🛵 ACTUALIZAR COSTO DE DOMICILIO
+// ============================================================
+async function actualizarCostoDomicilio(tiendaId, pedidoId) {
+    try {
+        const input = document.getElementById(`domicilio-${pedidoId}`);
+        if (!input) {
+            toast('⚠️ No se encontró el campo de domicilio', 'error');
+            return;
+        }
+        
+        const costo = parseFloat(input.value) || 0;
+        if (costo < 0) {
+            toast('⚠️ El costo no puede ser negativo', 'error');
+            return;
+        }
+        
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        const totalPedido = data.total || 0;
+        
+        await docRef.update({
+            costoDomicilio: costo,
+            totalConDomicilio: totalPedido + costo,
+            fechaActualizacionDomicilio: firebase.firestore.FieldValue.serverTimestamp(),
+            domicilioActualizadoPor: auth.currentUser?.email || 'Admin'
+        });
+        
+        toast(`✅ Costo de domicilio actualizado: $${costo.toLocaleString('es-CO')}`, 'success', 3000);
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando domicilio:', error);
+        toast('❌ Error: ' + error.message, 'error');
+    }
+}
+
+// Exponer función al scope global
+window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
 // FUNCIÓN: CARGAR PRODUCTOS PARA EDICIÓN DE PEDIDOS
@@ -2702,7 +2822,7 @@ function escucharPedidosDeTienda(tiendaId) {
 }
 
 // ============================================================
-// FUNCIÓN: RENDER PEDIDO CON ESTADOS DINÁMICOS (CORREGIDA)
+// FUNCIÓN: RENDER PEDIDO CON ESTADOS DINÁMICOS (CON DOMICILIO)
 // ============================================================
 function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio) {
     const p = doc.data();
@@ -2754,6 +2874,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const metodoPago = p.metodoPago || 'efectivo';
     const estadoPago = p.estadoPago || 'pendiente';
     const totalPedido = p.total || 0;
+    const costoDomicilio = p.costoDomicilio || 0;
+    const totalConDomicilio = totalPedido + costoDomicilio;
     
     let itemsHtml = '';
     if (p.items && p.items.length > 0) {
@@ -2774,17 +2896,46 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES CORREGIDAS =====
+    // ===== CAMPO DE COSTO DE DOMICILIO =====
+    const campoDomicilio = `
+        <div class="campo-domicilio">
+            <span class="label-domicilio">🛵 Costo domicilio:</span>
+            <input type="number" id="domicilio-${pid}" value="${costoDomicilio}" min="0" step="500" placeholder="0">
+            <button class="btn-domicilio" onclick="window.actualizarCostoDomicilio('${tiendaId}','${pid}')">💾 Actualizar</button>
+            <span class="domicilio-actual ${costoDomicilio > 0 ? 'agregado' : ''}">
+                ${costoDomicilio > 0 ? '✅ $' + costoDomicilio.toLocaleString('es-CO') : '❌ Sin domicilio'}
+            </span>
+        </div>
+    `;
+    
+    // ===== TOTAL ACTUALIZADO CON DOMICILIO =====
+    const totalHtml = `
+        <div style="margin-top:4px;padding:6px 0;border-top:1px dashed var(--border2);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">Subtotal:</span>
+                <span>$${totalPedido.toLocaleString('es-CO')}</span>
+            </div>
+            ${costoDomicilio > 0 ? `
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">🛵 Domicilio:</span>
+                <span style="color:var(--yellow);">$${costoDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+            ` : ''}
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--green);">
+                <span>TOTAL:</span>
+                <span>$${totalConDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+        </div>
+    `;
+    
+    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimerEstado = estado === estadosNegocio[0];
     const estadoPrep = getEstadoPreparacion(tipoNegocio);
     
-    // Variable para botones de pago
     let btnPago = '';
-    
-    // ===== 1. BOTONES DE PAGO (SOLO EN PENDIENTE) =====
     if ((metodoPago === 'nequi' || metodoPago === 'daviplata') && estadoPago === 'pendiente' && estado === estadosNegocio[0]) {
         btnPago = `
             <button class="btn-pago-confirmar" onclick="window.confirmarPago('${tiendaId}','${pid}')">✅ Confirmar pago</button>
@@ -2792,7 +2943,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== 2. BOTÓN AVANZAR A "EN COCINA" (SOLO EN PENDIENTE) =====
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -2812,8 +2962,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // ===== 3. BOTÓN "SERVICIO LISTO" (SOLO EN COCINA/PREPARACIÓN - SEGUNDO ESTADO) =====
-    // 👈 ESTE ES EL BOTÓN QUE DEBE APARECER CUANDO EL PEDIDO ESTÁ EN "En cocina"
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -2822,7 +2970,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== 4. BOTÓN AVANZAR (Para otros estados que no sean los primeros) =====
     if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
         let iconoSiguiente = '▶';
         const labelLower = siguienteEstado.toLowerCase();
@@ -2835,7 +2982,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // ===== 5. BOTÓN RETROCEDER =====
     const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
     if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
         acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
@@ -2843,17 +2989,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </button>`;
     }
     
-    // ===== 6. BOTÓN CANCELAR =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // ===== 7. BOTÓN EDITAR (solo si no tiene mensajero y no está en cocina) =====
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
-    // ===== 8. BOTONES FINALES =====
     if (esUltimoEstado || estado === 'Cancelado') {
         acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
         if (esUltimoEstado) {
@@ -2861,7 +3004,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         }
     }
     
-    // Mostrar si el pedido está "Listo para asignar"
     if (estado === 'Listo para asignar' && !tieneMensajero) {
         acciones += `
             <div style="background:var(--green-bg);color:var(--green);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:12px;">
@@ -2870,7 +3012,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // Mostrar información del mensajero si está asignado
     if (tieneMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero';
         const asignadoPor = p.asignadoPor || 'Sistema';
@@ -2904,7 +3045,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         <div class="pedido-items">
             <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
             ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-            <div class="pedido-total"><span>TOTAL</span><span class="val">$${totalPedido.toLocaleString('es-CO')}</span></div>
+            ${campoDomicilio}
+            ${totalHtml}
         </div>
         ${btnPago}
         <div class="accion-btns">${acciones}</div>
@@ -3027,6 +3169,8 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const totalPedido = p.total || 0;
     const metodoPago = p.metodoPago || 'efectivo';
     const estadoPago = p.estadoPago || 'pendiente';
+    const costoDomicilio = p.costoDomicilio || 0;
+    const totalConDomicilio = totalPedido + costoDomicilio;
     
     let itemsHtml = '';
     if (p.items && p.items.length > 0) {
@@ -3047,13 +3191,43 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== ACCIONES (FLUJO CORRECTO) =====
+    // ===== CAMPO DE DOMICILIO (GLOBAL) =====
+    const campoDomicilio = `
+        <div class="campo-domicilio">
+            <span class="label-domicilio">🛵 Costo domicilio:</span>
+            <input type="number" id="domicilio-${pid}" value="${costoDomicilio}" min="0" step="500" placeholder="0">
+            <button class="btn-domicilio" onclick="window.actualizarCostoDomicilio('${tiendaId}','${pid}')">💾 Actualizar</button>
+            <span class="domicilio-actual ${costoDomicilio > 0 ? 'agregado' : ''}">
+                ${costoDomicilio > 0 ? '✅ $' + costoDomicilio.toLocaleString('es-CO') : '❌ Sin domicilio'}
+            </span>
+        </div>
+    `;
+    
+    const totalHtml = `
+        <div style="margin-top:4px;padding:6px 0;border-top:1px dashed var(--border2);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">Subtotal:</span>
+                <span>$${totalPedido.toLocaleString('es-CO')}</span>
+            </div>
+            ${costoDomicilio > 0 ? `
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">🛵 Domicilio:</span>
+                <span style="color:var(--yellow);">$${costoDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+            ` : ''}
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--green);">
+                <span>TOTAL:</span>
+                <span>$${totalConDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+        </div>
+    `;
+    
+    // ===== ACCIONES (GLOBAL) =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     
-    // Botón "Servicio Listo" (SOLO EN SEGUNDO ESTADO)
     if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
         acciones += `
             <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -3062,7 +3236,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         `;
     }
     
-    // Botón avanzar en Pendiente
     if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
         const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
         if (primerSiguiente) {
@@ -3151,7 +3324,8 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         <div class="pedido-items">
             <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
             ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
-            <div class="pedido-total"><span>TOTAL</span><span class="val">$${totalPedido.toLocaleString('es-CO')}</span></div>
+            ${campoDomicilio}
+            ${totalHtml}
         </div>
         <div class="accion-btns">${acciones}</div>
     `;
@@ -3581,7 +3755,7 @@ async function guardarEdicionPedido() {
 }
 
 // ============================================================
-// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS (CORREGIDAS)
+// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
 // ============================================================
 async function cargarMensajerosAdmin() {
     try {
@@ -3653,7 +3827,6 @@ async function cargarMensajerosAdmin() {
         if (statOcupados) statOcupados.textContent = ocupados;
         
         console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
-        console.log('👥 Lista de mensajeros:', mensajerosList.map(m => ({ nombre: m.nombre, conectado: m.conectado, ocupado: m.ocupado })));
         
         return { activos, inactivos, ocupados };
         
@@ -3664,7 +3837,7 @@ async function cargarMensajerosAdmin() {
 }
 
 // ============================================================
-// ABRIR MODAL DE ASIGNACIÓN (CON 2 OPCIONES) - CORREGIDO
+// ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
 function abrirModalAsignacion(tiendaId, pedidoId) {
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -3681,7 +3854,6 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
-    // Obtener mensajeros disponibles (activos, conectados y NO ocupados)
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && m.conectado !== false && !m.ocupado
     );
@@ -3761,7 +3933,7 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// ASIGNAR PEDIDO MANUALMENTE (OPCIÓN 1)
+// ASIGNAR PEDIDO MANUALMENTE
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -3802,7 +3974,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// NOTIFICAR A TODOS (OPCIÓN 2)
+// NOTIFICAR A TODOS
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -3860,7 +4032,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// FUNCIÓN MARCAR SERVICIO LISTO (CORREGIDA - SOLO EN COCINA)
+// FUNCIÓN MARCAR SERVICIO LISTO
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3877,8 +4049,6 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         const tienda = tiendasCache[tiendaId] || {};
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
         const estadosNegocio = getEstadosNegocio(tipoNegocio);
-        
-        // Verificar que esté en el segundo estado (En cocina/Preparando/etc)
         const estadoCocina = estadosNegocio[1];
         
         if (!estadoCocina) {
@@ -3896,28 +4066,21 @@ async function marcarServicioListo(tiendaId, pedidoId) {
             return;
         }
         
-        // ===== 🔥 CAMBIAR ESTADO A "Listo para asignar" =====
         await docRef.update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
             notificadoPor: auth.currentUser?.email || 'Admin General'
         });
         
-        // ===== 🛑 ELIMINADA LA LLAMADA A abrirModalAsignacion() =====
-        // La ventana de asignación SOLO debe aparecer en el Admin Mensajeros
-        
-        // ===== NOTIFICAR AL ADMIN MENSAJEROS =====
         toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
-        console.log(`📦 Pedido ${pedidoId} listo para asignar - Notificado al admin de mensajeros`);
+        console.log(`📦 Pedido ${pedidoId} listo para asignar`);
         
-        // ===== REFRESCAR LA VISTA =====
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
             mostrarPedidosPendientesGlobal();
         }
         
-        // ===== RECARGAR MENSAJEROS (opcional) =====
         cargarMensajerosAdmin();
         
     } catch (e) {
@@ -3925,6 +4088,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         toast('❌ Error: ' + e.message, 'error');
     }
 }
+
 // ============================================================
 // INICIALIZAR
 // ============================================================
@@ -3939,7 +4103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Panel de administración cargado correctamente');
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
-    console.log('📍 Dirección de locales agregada');
+    console.log('🛵 Costo de domicilio integrado');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
@@ -3967,7 +4131,6 @@ function actualizarOcupadosEnTiempoReal() {
     cargarMensajerosAdmin();
 }
 
-// Sobrescribir la función existente
 const originalActualizarEstadisticas = window.actualizarEstadisticas;
 window.actualizarEstadisticas = function() {
     if (originalActualizarEstadisticas) {
@@ -4042,6 +4205,11 @@ window.cerrarModalAsignacion = cerrarModalAsignacion;
 window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
 window.cargarMensajerosAdmin = cargarMensajerosAdmin;
+window.actualizarCostoDomicilio = actualizarCostoDomicilio;
+
+console.log('✅ Panel de administración de EyMoto cargado correctamente');
+console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
+console.log('📝 Puedes agregar costo de domicilio a cualquier pedido');
 </script>
 </body>
 </html>
