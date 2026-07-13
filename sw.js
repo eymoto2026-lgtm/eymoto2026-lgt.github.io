@@ -11,8 +11,8 @@ self.addEventListener('install', function(event) {
     event.waitUntil(
         caches.open(CACHE_NAME).then(function(cache) {
             return cache.addAll([
-                './mensajero.html',
-                './'
+                '/mensajero.html',
+                '/'
             ]);
         })
     );
@@ -59,7 +59,7 @@ self.addEventListener('push', function(event) {
         renotify: true,
         requireInteraction: true,
         data: {
-            url: './mensajero.html',
+            url: '/mensajero.html',
             pedidoId: data.pedidoId || null,
             tiendaId: data.tiendaId || null
         },
@@ -88,7 +88,7 @@ self.addEventListener('notificationclick', function(event) {
                     }
                 }
                 if (clients.openWindow) {
-                    return clients.openWindow('./mensajero.html');
+                    return clients.openWindow('/mensajero.html');
                 }
             })
         );
