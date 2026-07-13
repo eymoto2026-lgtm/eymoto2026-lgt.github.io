@@ -509,27 +509,40 @@ function probarNotificacion() {
     }
     
     try {
-        const notification = new Notification('🔔 Notificación de prueba', {
-            body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
-            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-            vibrate: [200, 100, 200]
-        });
-        
-        notification.onclick = function() {
-            window.focus();
-            this.close();
-        };
-        
-        toast('✅ Notificación de prueba enviada', 'success', 3000);
-        console.log('✅ Notificación de prueba mostrada');
-        
+        // ✅ FORMA CORRECTA PARA MÓVIL
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification('🔔 Notificación de prueba', {
+                    body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
+                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                    badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
+                    vibrate: [200, 100, 200]
+                });
+                toast('✅ Notificación de prueba enviada', 'success', 3000);
+                console.log('✅ Notificación de prueba mostrada desde Service Worker');
+            }).catch(function(err) {
+                console.error('❌ Error:', err);
+                toast('❌ Error: ' + err.message, 'error', 5000);
+            });
+        } else {
+            // Fallback: usar Notification directamente (solo funciona en PC)
+            const notification = new Notification('🔔 Notificación de prueba', {
+                body: '¡EyMoto funciona! Recibirás alertas de nuevos pedidos.',
+                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                vibrate: [200, 100, 200]
+            });
+            notification.onclick = function() {
+                window.focus();
+                this.close();
+            };
+            toast('✅ Notificación de prueba enviada', 'success', 3000);
+            console.log('✅ Notificación de prueba mostrada (fallback)');
+        }
     } catch (error) {
         console.error('❌ Error:', error);
         toast('❌ Error: ' + error.message, 'error', 5000);
     }
 }
-
-// INICIALIZAR NOTIFICACIONES AL CARGAR
 // INICIALIZAR NOTIFICACIONES AL CARGAR
 async function inicializarNotificaciones() {
     try {
@@ -925,35 +938,46 @@ function escucharPedidos() {
             }
         });
 }
-
 // ============================================================
-// 📢 MOSTRAR NOTIFICACIÓN DEL SISTEMA
+// 📢 MOSTRAR NOTIFICACIÓN DEL SISTEMA (CORREGIDA)
 // ============================================================
 function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
     
     try {
-        const notification = new Notification('📦 Nuevo pedido disponible', {
-            body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
-            icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-            vibrate: [300, 100, 300, 100, 400],
-            requireInteraction: true
-        });
-        
-        notification.onclick = function() {
-            window.focus();
-            this.close();
-            renderizarPedidos();
-        };
-        
-        console.log('✅ Notificación del sistema mostrada');
+        // ✅ FORMA CORRECTA PARA MÓVIL
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification('📦 Nuevo pedido disponible', {
+                    body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                    badge: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/badge.png',
+                    vibrate: [300, 100, 300, 100, 400],
+                    requireInteraction: true
+                });
+                console.log('✅ Notificación del sistema mostrada');
+            }).catch(function(err) {
+                console.error('❌ Error mostrando notificación:', err);
+            });
+        } else {
+            // Fallback para PC
+            const notification = new Notification('📦 Nuevo pedido disponible', {
+                body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
+                vibrate: [300, 100, 300, 100, 400]
+            });
+            notification.onclick = function() {
+                window.focus();
+                this.close();
+                renderizarPedidos();
+            };
+            console.log('✅ Notificación del sistema mostrada (fallback)');
+        }
     } catch (error) {
         console.error('❌ Error mostrando notificación:', error);
     }
 }
-
-// ============================================================
 // 🧪 SIMULAR PEDIDO DE PRUEBA
 // ============================================================
 function simularPedidoPrueba() {
