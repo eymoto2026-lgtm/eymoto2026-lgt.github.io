@@ -223,6 +223,28 @@
         .resumen-historial .item .num.green { color: var(--green); }
         .resumen-historial .item .num.orange { color: var(--orange); }
 
+        .pago-confirmado {
+            background: var(--green-bg);
+            color: var(--green);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .pago-pendiente {
+            background: var(--orange-bg);
+            color: var(--orange);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: center;
+        }
+
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
             .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
@@ -1232,10 +1254,19 @@ function renderizarHistorial(pedidos) {
     let pendientes = 0;
     
     pedidos.forEach(p => {
-        const total = p.total || 0;
-        // ✅ SOLO SE SUMA EL COSTO DEL DOMICILIO (GANANCIA DEL MENSAJERO)
+        // ✅ Calcular subtotal de productos
+        let subtotal = 0;
+        if (p.items && p.items.length > 0) {
+            p.items.forEach(item => {
+                subtotal += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
         const costoDomicilio = p.costoDomicilio || 0;
+        const totalCalculado = subtotal + costoDomicilio;
+        
+        // ✅ Solo se suma el costo del domicilio (ganancia del mensajero)
         totalGanado += costoDomicilio;
+        
         if (p.estado === 'Entregado') {
             entregados++;
         } else if (p.estado !== 'Cancelado') {
@@ -1265,8 +1296,17 @@ function renderizarHistorial(pedidos) {
         const tienda = tiendasCache[p.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = p.cliente || {};
-        const total = p.total || 0;
+        
+        // ✅ Calcular subtotal de productos
+        let subtotal = 0;
+        if (p.items && p.items.length > 0) {
+            p.items.forEach(item => {
+                subtotal += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
         const costoDomicilio = p.costoDomicilio || 0;
+        const totalCalculado = subtotal + costoDomicilio;
+        
         const fechaStr = formatearFecha(p.fecha);
         const estado = p.estado || 'Pendiente';
         
@@ -1285,8 +1325,8 @@ function renderizarHistorial(pedidos) {
         if (p.items && p.items.length > 0) {
             p.items.slice(0, 3).forEach(item => {
                 const nombre = item.nombre || 'Producto';
-                const subtotal = item.total || (item.precio * item.cantidad) || 0;
-                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+                const itemTotal = item.total || (item.precio * item.cantidad) || 0;
+                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
             });
             if (p.items.length > 3) {
                 itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
@@ -1314,8 +1354,8 @@ function renderizarHistorial(pedidos) {
                     <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
                     <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                     <div><span class="label">💳 Pago:</span> <span class="value">${pagoLabel}</span></div>
-                    <div><span class="label">💰 Total:</span> <span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
                     <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
+                    <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green);">$${totalCalculado.toLocaleString('es-CO')}</span></div>
                 </div>
                 ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
                 ${pagoHtml}
@@ -1353,10 +1393,18 @@ async function actualizarEstadisticasMensajero() {
             
             pedidosSnap.forEach(doc => {
                 const data = doc.data();
-                const total = data.total || 0;
-                // ✅ SOLO SE SUMA EL COSTO DEL DOMICILIO (GANANCIA DEL MENSAJERO)
+                // ✅ Calcular subtotal de productos
+                let subtotal = 0;
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
+                        subtotal += item.total || (item.precio * item.cantidad) || 0;
+                    });
+                }
                 const costoDomicilio = data.costoDomicilio || 0;
+                const totalCalculado = subtotal + costoDomicilio;
+                
                 totalPedidos++;
+                // ✅ Solo se suma el costo del domicilio (ganancia del mensajero)
                 totalGanado += costoDomicilio;
                 
                 const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
@@ -1399,9 +1447,10 @@ function simularPedidoPrueba() {
         notificacionEnviada: true,
         numeroPedido: '#TEST',
         cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 25000,
+        total: 25000, // ✅ Productos (17000) + Domicilio (8000)
         costoDomicilio: 8000,
-        items: [{ nombre: 'Producto Test', cantidad: 2, precio: 8500 }]
+        items: [{ nombre: 'Producto Test 1', cantidad: 2, precio: 6000, total: 12000 },
+                { nombre: 'Producto Test 2', cantidad: 1, precio: 5000, total: 5000 }]
     };
     
     todosLosPedidos.push(pedidoFalso);
@@ -1482,8 +1531,17 @@ function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
-    const total = pedido.total || 0;
+    
+    // ✅ Calcular subtotal de productos
+    let subtotal = 0;
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.forEach(item => {
+            subtotal += item.total || (item.precio * item.cantidad) || 0;
+        });
+    }
     const costoDomicilio = pedido.costoDomicilio || 0;
+    const totalCalculado = subtotal + costoDomicilio;
+    
     const fechaStr = formatearFecha(pedido.fecha);
     const estado = pedido.estado || 'Pendiente';
     
@@ -1503,8 +1561,8 @@ function renderizarPedidoCard(pedido, disponible) {
     if (pedido.items && pedido.items.length > 0) {
         pedido.items.forEach(item => {
             const nombre = item.nombre || 'Producto';
-            const subtotal = item.total || (item.precio * item.cantidad) || 0;
-            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+            const itemTotal = item.total || (item.precio * item.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
         });
     }
     
@@ -1564,10 +1622,11 @@ function renderizarPedidoCard(pedido, disponible) {
                 <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                 <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
                 <div><span class="label">💳 Pago:</span> <span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+                <div><span class="label" style="color:var(--blue);">📦 Productos:</span> <span class="value" style="color:var(--blue);">$${subtotal.toLocaleString('es-CO')}</span></div>
                 <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
+                <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green); font-size:15px;">$${totalCalculado.toLocaleString('es-CO')}</span></div>
             </div>
             ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
-            <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
             ${botonesHtml}
         </div>
     `;
@@ -1787,6 +1846,7 @@ console.log('📱 Modo AppCreator24 detectado automáticamente');
 console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 console.log('💰 Ganancia = SOLO costo del domicilio');
 console.log('📢 Notificación muestra: Productos + Domicilio + Total');
+console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 </script>
 </body>
 </html>
