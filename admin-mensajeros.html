@@ -186,7 +186,7 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
-        <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">⏰ Probar Despertador</button>
         <button class="btn-simular-pedido" onclick="simularPedidoAdmin()">🧪 Simular Pedido</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
@@ -292,12 +292,13 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO DE PITO DE MOTO PARA ADMIN
+// ⏰ SONIDO DE DESPERTADOR (RING RING) PARA ADMIN
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
+let temporizadorDespertador = null;
 
-function sonidoPitoMotoAdmin() {
+function sonidoDespertadorAdmin() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!audioContextAdmin) {
@@ -311,90 +312,65 @@ function sonidoPitoMotoAdmin() {
         const ahora = ctx.currentTime;
         
         // ============================================================
-        // 🔔 PITO DE MOTO - Sonido agudo y corto
+        // ⏰ RING RING - Sonido de despertador
         // ============================================================
         
-        // Oscilador principal (tono agudo)
-        const osc = ctx.createOscillator();
-        osc.type = 'square';  // Sonido más estridente como claxon
-        osc.frequency.setValueAtTime(880, ahora); // Nota La5 (aguda)
-        osc.frequency.exponentialRampToValueAtTime(1100, ahora + 0.1); // Sube un poco
+        // Frecuencias: 800Hz (ring) y 1000Hz (ring más agudo)
+        const frecuencias = [800, 1000, 800, 1000];
+        const duracionNota = 0.15;
+        const pausa = 0.05;
         
-        // Ganancia (volumen)
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.0001, ahora);
-        gain.gain.exponentialRampToValueAtTime(0.3, ahora + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.25, ahora + 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ahora + 0.15);
+        frecuencias.forEach((freq, index) => {
+            const inicio = ahora + index * (duracionNota + pausa);
+            
+            const osc = ctx.createOscillator();
+            osc.type = 'square'; // Sonido estridente como despertador
+            osc.frequency.setValueAtTime(freq, inicio);
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.0001, inicio);
+            gain.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, inicio + duracionNota);
+            
+            // Filtro para darle carácter de despertador
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1200;
+            filter.Q.value = 1.0;
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(inicio);
+            osc.stop(inicio + duracionNota);
+        });
         
-        // Filtro para darle carácter de claxon
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 1500;
-        filter.Q.value = 0.8;
-        
-        // Conectar: osc -> filter -> gain -> destino
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        
-        // Iniciar y detener
-        osc.start(ahora);
-        osc.stop(ahora + 0.15);
-        
-        // ============================================================
-        // 🔔 SEGUNDO PITO (más corto, como eco)
-        // ============================================================
-        const osc2 = ctx.createOscillator();
-        osc2.type = 'square';
-        osc2.frequency.setValueAtTime(1100, ahora + 0.15);
-        osc2.frequency.exponentialRampToValueAtTime(950, ahora + 0.25);
-        
-        const gain2 = ctx.createGain();
-        gain2.gain.setValueAtTime(0.0001, ahora + 0.15);
-        gain2.gain.exponentialRampToValueAtTime(0.2, ahora + 0.17);
-        gain2.gain.exponentialRampToValueAtTime(0.0001, ahora + 0.28);
-        
-        const filter2 = ctx.createBiquadFilter();
-        filter2.type = 'bandpass';
-        filter2.frequency.value = 1400;
-        filter2.Q.value = 0.8;
-        
-        osc2.connect(filter2);
-        filter2.connect(gain2);
-        gain2.connect(ctx.destination);
-        
-        osc2.start(ahora + 0.15);
-        osc2.stop(ahora + 0.28);
-        
-        console.log('📯 Pito de moto ADMIN reproducido');
+        console.log('⏰ Ring ring despertador ADMIN reproducido');
         
     } catch (e) {
-        console.warn('⚠️ Error en sonido de pito:', e);
-        // Sonido de respaldo simple
+        console.warn('⚠️ Error en sonido de despertador:', e);
+        // Sonido de respaldo con oscilador simple
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'square';
-            osc.frequency.value = 880;
-            gain.gain.value = 0.2;
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.15);
-            setTimeout(() => {
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'square';
-                osc2.frequency.value = 1100;
-                gain2.gain.value = 0.15;
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.start();
-                osc2.stop(ctx.currentTime + 0.12);
-            }, 150);
+            
+            const frecuencias = [800, 1000, 800, 1000];
+            const duracionNota = 0.15;
+            const pausa = 0.05;
+            
+            frecuencias.forEach((freq, index) => {
+                const inicio = ctx.currentTime + index * (duracionNota + pausa);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                gain.gain.value = 0.2;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(inicio);
+                osc.stop(inicio + duracionNota);
+            });
         } catch (e2) {}
     }
 }
@@ -403,9 +379,9 @@ function sonidoPitoMotoAdmin() {
 // PROBAR SONIDO ADMIN
 // ============================================================
 function probarSonidoAdmin() {
-    console.log('📯 Probando pito de moto ADMIN...');
-    sonidoPitoMotoAdmin();
-    toast('📯 ¡Pito de moto!', 'info', 2000);
+    console.log('⏰ Probando despertador ADMIN...');
+    sonidoDespertadorAdmin();
+    toast('⏰ ¡Ring ring!', 'info', 2000);
 }
 
 // ============================================================
@@ -421,7 +397,7 @@ document.addEventListener('click', function activarAudioAdmin() {
             }
             audioContextAdmin = ctx;
             audioInicializadoAdmin = true;
-            console.log('📯 Audio ADMIN activado por clic');
+            console.log('⏰ Audio ADMIN activado por clic');
         }
     } catch (e) {}
 }, { once: true });
@@ -566,7 +542,7 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('📯 Sonido de PITO DE MOTO activado');
+        console.log('⏰ Sonido de DESPERTADOR activado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -676,9 +652,9 @@ function escucharPedidosEnTiempoReal() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
                                             
-                                            // 📯 PITO DE MOTO PARA ADMIN
-                                            console.log(`📯 ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            sonidoPitoMotoAdmin();
+                                            // ⏰ DESPERTADOR PARA ADMIN
+                                            console.log(`⏰ ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            sonidoDespertadorAdmin();
                                             
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                             notificarMensajerosDisponibles(tiendaId, pedidoId, data);
@@ -1378,8 +1354,8 @@ function simularPedidoAdmin() {
     todosLosPedidos.push(pedidoFalso);
     console.log('✅ Pedido de prueba ADMIN agregado');
     
-    // 📯 PITO DE MOTO
-    sonidoPitoMotoAdmin();
+    // ⏰ DESPERTADOR
+    sonidoDespertadorAdmin();
     
     toast('🔔 NUEVO PEDIDO DE PRUEBA ADMIN', 'new', 5000);
     renderizarPedidosAsignar();
@@ -1444,8 +1420,8 @@ window.simularPedidoAdmin = simularPedidoAdmin;
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
-console.log('📯 SONIDO DE PITO DE MOTO ACTIVADO');
-console.log('🧪 Para probar: haz clic en "📯 Probar Pito" o "🧪 Simular Pedido"');
+console.log('⏰ SONIDO DE DESPERTADOR (RING RING) ACTIVADO');
+console.log('🧪 Para probar: haz clic en "⏰ Probar Despertador" o "🧪 Simular Pedido"');
 </script>
 </body>
 </html>
