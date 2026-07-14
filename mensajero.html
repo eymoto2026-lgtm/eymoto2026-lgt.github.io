@@ -456,7 +456,6 @@ class SonidoDespertador {
         this.reproduciendo = true;
         this.secuenciaRingRing();
         
-        // ✅ SIN TOAST EN EL INTERVALO
         this.intervalos[pedidoId] = setInterval(() => {
             if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
                 this.secuenciaRingRing();
@@ -546,13 +545,11 @@ function probarNotificacion() {
     }
 }
 
-// MOSTRAR NOTIFICACIÓN DE PEDIDO (SIN TOAST)
+// MOSTRAR NOTIFICACIÓN DE PEDIDO (SIN ALERT)
 function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
     console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
     
-    try {
-        alert(`📦 ¡NUEVO PEDIDO!\n\n🏪 Tienda: ${tiendaNombre}\n👤 Cliente: ${clienteNombre}\n💰 Total: $${total.toLocaleString('es-CO')}\n\n📱 Revisa el panel.`);
-    } catch (e) {}
+    // ALERT ELIMINADO - Solo se muestra en consola
     
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
@@ -981,7 +978,7 @@ function escucharPedidos() {
                                             // ✅ SOLO SONIDO, SIN TOAST
                                             sonidoDespertador.iniciarDespertador(pedidoId);
                                             
-                                            // Notificación del sistema (opcional)
+                                            // Notificación del sistema (opcional) - SIN ALERT
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
