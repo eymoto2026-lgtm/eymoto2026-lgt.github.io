@@ -1437,7 +1437,6 @@ window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
-        // Obtener el pedido
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
         
@@ -1449,92 +1448,35 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         const whatsappTienda = tienda.whatsapp || '';
         const telefonoCliente = pedido.cliente?.telefono || '';
         
-        // Solo enviar si el cliente tiene teléfono
         if (!telefonoCliente) {
             console.log('⚠️ Cliente sin teléfono, no se envía notificación');
             return;
         }
         
-        // Mensajes según el estado
         const mensajes = {
-            'Pendiente': {
-                emoji: '🛵',
-                texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.'
-            },
-            'En cocina': {
-                emoji: '👨‍🍳',
-                texto: 'Tu pedido está en la cocina, nuestros chefs están trabajando para que esté delicioso.'
-            },
-            'Preparando': {
-                emoji: '👨‍🍳',
-                texto: 'Tu pedido está siendo preparado, pronto estará listo.'
-            },
-            'En despacho': {
-                emoji: '📦',
-                texto: 'Tu pedido está siendo empacado y preparado para el envío.'
-            },
-            'Cortando': {
-                emoji: '🔪',
-                texto: 'Tu pedido está en proceso de preparación.'
-            },
-            'Horneando': {
-                emoji: '🔥',
-                texto: 'Tu pedido está en el horno, pronto estará listo.'
-            },
-            'Arreglando': {
-                emoji: '🌸',
-                texto: 'Tu pedido está siendo arreglado con mucho cuidado.'
-            },
-            'Asignado': {
-                emoji: '🛵',
-                texto: '¡Un mensajero ha tomado tu pedido! Está en camino al restaurante.'
-            },
-            'Listo para asignar': {
-                emoji: '✅',
-                texto: '¡Tu pedido está listo! Estamos buscando un mensajero disponible.'
-            },
-            'En camino al restaurante': {
-                emoji: '🛵',
-                texto: 'El mensajero está en camino al restaurante para recoger tu pedido.'
-            },
-            'Recogiendo pedido': {
-                emoji: '📦',
-                texto: 'El mensajero ha llegado al restaurante y está recogiendo tu pedido.'
-            },
-            'Recogido': {
-                emoji: '📦',
-                texto: 'El mensajero ha recogido tu pedido. ¡Va en camino a tu dirección!'
-            },
-            'En camino': {
-                emoji: '🚗',
-                texto: 'Tu pedido está en camino a tu dirección. ¡Llega muy pronto!'
-            },
-            'Entregado': {
-                emoji: '✅',
-                texto: '¡Tu pedido ha sido entregado! Gracias por confiar en EyMoto. 🎉'
-            },
-            'Cancelado': {
-                emoji: '❌',
-                texto: 'Tu pedido ha sido cancelado. Si tienes dudas, comunícate con nosotros.'
-            }
+            'Pendiente': { emoji: '🛵', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.' },
+            'En cocina': { emoji: '👨‍🍳', texto: 'Tu pedido está en la cocina, nuestros chefs están trabajando para que esté delicioso.' },
+            'Preparando': { emoji: '👨‍🍳', texto: 'Tu pedido está siendo preparado, pronto estará listo.' },
+            'En despacho': { emoji: '📦', texto: 'Tu pedido está siendo empacado y preparado para el envío.' },
+            'Cortando': { emoji: '🔪', texto: 'Tu pedido está en proceso de preparación.' },
+            'Horneando': { emoji: '🔥', texto: 'Tu pedido está en el horno, pronto estará listo.' },
+            'Arreglando': { emoji: '🌸', texto: 'Tu pedido está siendo arreglado con mucho cuidado.' },
+            'Asignado': { emoji: '🛵', texto: '¡Un mensajero ha tomado tu pedido! Está en camino al restaurante.' },
+            'Listo para asignar': { emoji: '✅', texto: '¡Tu pedido está listo! Estamos buscando un mensajero disponible.' },
+            'En camino al restaurante': { emoji: '🛵', texto: 'El mensajero está en camino al restaurante para recoger tu pedido.' },
+            'Recogiendo pedido': { emoji: '📦', texto: 'El mensajero ha llegado al restaurante y está recogiendo tu pedido.' },
+            'Recogido': { emoji: '📦', texto: 'El mensajero ha recogido tu pedido. ¡Va en camino a tu dirección!' },
+            'En camino': { emoji: '🚗', texto: 'Tu pedido está en camino a tu dirección. ¡Llega muy pronto!' },
+            'Entregado': { emoji: '✅', texto: '¡Tu pedido ha sido entregado! Gracias por confiar en EyMoto. 🎉' },
+            'Cancelado': { emoji: '❌', texto: 'Tu pedido ha sido cancelado. Si tienes dudas, comunícate con nosotros.' }
         };
         
-        const mensajeInfo = mensajes[estadoNuevo] || {
-            emoji: '📌',
-            texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}`
-        };
-        
+        const mensajeInfo = mensajes[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}` };
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
         const totalPedido = pedido.total || 0;
         
-        // Construir mensaje para WhatsApp
-        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n`;
-        mensajeWhatsApp += `📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n`;
-        mensajeWhatsApp += `${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n`;
-        mensajeWhatsApp += `${mensajeInfo.texto}\n\n`;
-        mensajeWhatsApp += `📋 *Detalles del pedido:*\n`;
+        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
         
-        // Productos
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => {
                 const nombreItem = item.nombre || 'Producto';
@@ -1545,38 +1487,22 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         }
         
         mensajeWhatsApp += `\n💰 *Total:* $${totalPedido.toLocaleString('es-CO')}`;
-        
-        // Método de pago
         const metodoPago = pedido.metodoPago || 'efectivo';
         if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
             mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
-            if (pedido.estadoPago === 'pagado') {
-                mensajeWhatsApp += ` ✅ Pagado`;
-            } else {
-                mensajeWhatsApp += ` ⏳ Pendiente de confirmación`;
-            }
+            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
         } else {
             mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
         }
         
-        // Dirección de entrega
-        if (pedido.cliente?.direccion) {
-            mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
-        }
-        if (pedido.cliente?.barrio) {
-            mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
-        }
-        
+        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
+        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
         mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
         
-        // Enviar por WhatsApp
         const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-        
-        // Abrir WhatsApp en una nueva ventana
         window.open(urlWhatsApp, '_blank');
         console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
         
-        // También guardar la notificación en Firestore
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .collection('notificaciones').add({
@@ -1750,7 +1676,6 @@ async function inicializarPanel() {
         iniciarEscuchaGlobal();
         toast('✅ Panel cargado correctamente', 'success', 2000);
         
-        // Cargar mensajeros después de un momento
         setTimeout(() => {
             cargarMensajerosAdmin();
         }, 3000);
@@ -3155,8 +3080,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
-    // ✅ BOTÓN EDITAR PEDIDO
-    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
+    // ✅ BOTÓN EDITAR PEDIDO - SIEMPRE VISIBLE (excepto entregado/cancelado)
+    if (estado !== 'Entregado' && estado !== 'Cancelado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
@@ -3452,7 +3377,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     }
     
     // ✅ BOTÓN EDITAR PEDIDO
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
+    if (estado !== 'Entregado' && estado !== 'Cancelado' && estado !== 'Asignado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
     }
     
@@ -3530,7 +3455,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
-        // Actualizar el estado
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({ 
@@ -3541,7 +3465,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         
         toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
         
-        // ===== 📱 ENVIAR NOTIFICACIÓN AL CLIENTE =====
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoActual, nuevoEstado);
         
         if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
@@ -3736,7 +3659,7 @@ async function cargarEstado() {
 }
 
 // ============================================================
-// ✏️ EDITAR PEDIDO (COMPLETO)
+// ✏️ EDITAR PEDIDO (COMPLETO Y CORREGIDO)
 // ============================================================
 async function abrirEditarPedido(tiendaId, pedidoId) {
     try {
@@ -3748,7 +3671,6 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
         pedidoEditando = { id: pedidoId, tiendaId, data: p };
         itemsEditando = p.items ? p.items.map(item => ({ ...item })) : [];
         
-        // Cargar productos de la tienda
         const snap = await db.collection('tiendas').doc(tiendaId)
             .collection('productos').get();
         productosDisponibles = [];
@@ -3787,19 +3709,22 @@ function renderizarEditarPedido() {
     let itemsHtml = '';
     
     itemsEditando.forEach((item, index) => {
-        const subtotal = item.precio * item.cantidad;
+        const precio = parseFloat(item.precio) || 0;
+        const cantidad = parseInt(item.cantidad) || 1;
+        const subtotal = precio * cantidad;
         total += subtotal;
+        
         let nombreItem = item.nombre || 'Producto';
         if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
         itemsHtml += `
             <div class="producto-editar-item">
                 <div class="info">
                     <div class="nombre">${nombreItem}</div>
-                    <div class="detalle">$${item.precio.toLocaleString('es-CO')} x ${item.cantidad}</div>
+                    <div class="detalle">$${precio.toLocaleString('es-CO')} x ${cantidad}</div>
                 </div>
                 <div class="acciones">
                     <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
-                    <span class="cantidad">${item.cantidad}</span>
+                    <span class="cantidad">${cantidad}</span>
                     <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
                     <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
                 </div>
@@ -3807,7 +3732,6 @@ function renderizarEditarPedido() {
         `;
     });
     
-    // Selector de productos disponibles
     let selectorProductos = '<option value="">➕ Agregar producto...</option>';
     productosDisponibles.forEach(prod => {
         const nombre = prod.name || 'Producto';
@@ -3849,7 +3773,8 @@ function renderizarEditarPedido() {
 
 function cambiarCantidadItem(index, delta) {
     if (index < 0 || index >= itemsEditando.length) return;
-    const nuevaCant = itemsEditando[index].cantidad + delta;
+    const item = itemsEditando[index];
+    const nuevaCant = (parseInt(item.cantidad) || 1) + delta;
     if (nuevaCant < 1) {
         itemsEditando.splice(index, 1);
     } else {
@@ -3870,23 +3795,29 @@ function agregarProductoAPedido() {
     const prodId = selector.value;
     if (!prodId) { toast('⚠️ Selecciona un producto', 'warn'); return; }
     const producto = productosDisponibles.find(p => p.id === prodId);
-    if (!producto) return;
+    if (!producto) {
+        toast('⚠️ Producto no encontrado', 'error');
+        return;
+    }
     
-    // Verificar stock
+    // ✅ VERIFICAR QUE EL PRODUCTO TENGA PRECIO
+    if (producto.precio === undefined || producto.precio === null) {
+        toast('⚠️ El producto no tiene precio definido', 'error');
+        return;
+    }
+    
     if (producto.stock !== undefined && producto.stock <= 0) {
         toast('⚠️ Producto sin stock disponible', 'warn');
         return;
     }
     
-    // Verificar si ya existe
     const existente = itemsEditando.find(i => i.id === prodId);
     if (existente) {
-        // Verificar stock disponible
         if (producto.stock !== undefined && existente.cantidad >= producto.stock) {
             toast('⚠️ No hay suficiente stock', 'warn');
             return;
         }
-        existente.cantidad++;
+        existente.cantidad = (existente.cantidad || 1) + 1;
         toast(`✅ ${producto.name} cantidad aumentada`, 'success', 1500);
     } else {
         let precio = producto.precio || 0;
@@ -3903,8 +3834,8 @@ function agregarProductoAPedido() {
             id: prodId,
             nombre: producto.name || 'Producto',
             cantidad: 1,
-            precio: Math.round(precio),
-            pesoGramos: pesoGramos
+            precio: Math.round(precio) || 0,
+            pesoGramos: pesoGramos || null
         });
         toast(`✅ ${producto.name} agregado al pedido`, 'success', 1500);
     }
@@ -3916,29 +3847,29 @@ async function guardarEdicionPedido() {
     if (!pedidoEditando) return;
     const { tiendaId, id } = pedidoEditando;
     
-    // Verificar que haya productos
     if (itemsEditando.length === 0) {
         toast('⚠️ El pedido debe tener al menos un producto', 'warn');
         return;
     }
     
     try {
-        // Calcular total
         let total = 0;
         const itemsParaGuardar = itemsEditando.map(item => {
-            const subtotal = item.precio * item.cantidad;
+            const precio = parseFloat(item.precio) || 0;
+            const cantidad = parseInt(item.cantidad) || 1;
+            const subtotal = precio * cantidad;
             total += subtotal;
+            
             return {
-                id: item.id,
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio: item.precio,
+                id: item.id || '',
+                nombre: item.nombre || 'Producto',
+                cantidad: cantidad,
+                precio: precio,
                 total: subtotal,
                 pesoGramos: item.pesoGramos || null
             };
         });
         
-        // Obtener el pedido actual para mantener el costo de domicilio
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(id).get();
         const data = doc.data();
@@ -3958,7 +3889,6 @@ async function guardarEdicionPedido() {
         toast(`✅ Pedido actualizado correctamente. Nuevo total: $${totalConDomicilio.toLocaleString('es-CO')}`, 'success', 4000);
         cerrarEditarPedido();
         
-        // Recargar la vista
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
@@ -4322,6 +4252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('🛵 Costo de domicilio integrado');
     console.log('📱 Notificaciones de estado al cliente integradas');
+    console.log('✏️ Editar pedido con validación de campos');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
@@ -4428,7 +4359,7 @@ window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
 
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
-console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA');
+console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
 console.log('📱 Notificaciones de estado al cliente: FUNCIONALIDAD ACTIVADA');
 </script>
 </body>
