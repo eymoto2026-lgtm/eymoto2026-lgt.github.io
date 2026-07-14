@@ -165,6 +165,64 @@
             50% { transform: scale(1.1); opacity: 0.7; }
         }
 
+        /* ============================================================ */
+        /* 🔽 HISTORIAL - BOTONES SIN FONDO AMARILLO */
+        /* ============================================================ */
+        .filtros-historial {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .filtros-historial button {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: auto;
+        }
+
+        .filtros-historial button.active {
+            background: var(--surface3);
+            color: #fff;
+            border-color: var(--blue);
+        }
+
+        .filtros-historial button:hover {
+            background: var(--surface2);
+            color: #fff;
+        }
+
+        .resumen-historial {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: var(--surface2);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .resumen-historial .item {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .resumen-historial .item .num {
+            font-weight: 800;
+            font-size: 16px;
+        }
+
+        .resumen-historial .item .num.yellow { color: var(--yellow); }
+        .resumen-historial .item .num.green { color: var(--green); }
+        .resumen-historial .item .num.orange { color: var(--orange); }
+
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
             .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
@@ -173,6 +231,7 @@
             .motivacion-box h2 { font-size: 22px; }
             .resumen-historial { flex-direction: column; gap: 4px; }
             header .mensajero-stats { font-size: 10px; padding: 2px 8px; gap: 6px; }
+            .filtros-historial button { font-size: 10px; padding: 4px 10px; }
         }
     </style>
 </head>
@@ -394,8 +453,7 @@ function sonidoRespaldo() {
 }
 
 // ============================================================
-// ⏰ DESPERTADOR (SIN TOAST)
-// ============================================================
+// ⏰ DESPERTADOR// ============================================================
 class SonidoDespertador {
     constructor() {
         this.ctx = null;
@@ -884,7 +942,7 @@ async function inicializarPanel() {
         
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🔊 Sonido activado (SIN TOAST)');
+        console.log('🔊 Sonido activado');
         
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
@@ -936,7 +994,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS (SIN TOAST)
+// 📢 ESCUCHAR PEDIDOS
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -975,7 +1033,7 @@ function escucharPedidos() {
                                         
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            // ✅ SOLO SONIDO, SIN TOAST
+                                            // ✅ SOLO SONIDO, SIN ALERT
                                             sonidoDespertador.iniciarDespertador(pedidoId);
                                             
                                             // Notificación del sistema (opcional) - SIN ALERT
@@ -1704,11 +1762,12 @@ window.cargarHistorialPedidos = cargarHistorialPedidos;
 window.filtrarHistorial = filtrarHistorial;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido activado (SIN TOAST FLOTANTE)');
+console.log('🔊 Sonido activado');
 console.log('📱 Notificaciones PERSISTENTES activadas');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
+console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 </script>
 </body>
 </html>
