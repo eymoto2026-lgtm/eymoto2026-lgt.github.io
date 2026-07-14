@@ -604,17 +604,23 @@ function probarNotificacion() {
     }
 }
 
-// MOSTRAR NOTIFICACIÓN DE PEDIDO (SIN ALERT)
-function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
+// ============================================================
+// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (CON PRODUCTOS Y DOMICILIO)
+// ============================================================
+function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total, costoDomicilio) {
     console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
     
     // ALERT ELIMINADO - Solo se muestra en consola
+    
+    // Calcular subtotal (total - domicilio)
+    const domicilio = costoDomicilio || 0;
+    const subtotal = total - domicilio;
     
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             navigator.serviceWorker.ready.then(function(registration) {
                 registration.showNotification('📦 Nuevo pedido disponible', {
-                    body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                    body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
                     icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
                     vibrate: [300, 100, 300, 100, 400],
                     requireInteraction: true,
@@ -624,7 +630,7 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
             }).catch(function() {
                 try {
                     const notification = new Notification('📦 Nuevo pedido disponible', {
-                        body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                        body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
                         icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
                     });
                     notification.onclick = function() {
@@ -1037,12 +1043,13 @@ function escucharPedidos() {
                                             // ✅ SOLO SONIDO, SIN ALERT
                                             sonidoDespertador.iniciarDespertador(pedidoId);
                                             
-                                            // Notificación del sistema (opcional) - SIN ALERT
+                                            // Notificación del sistema con PRODUCTOS y DOMICILIO
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
                                                 data.cliente?.nombre || 'Cliente',
-                                                data.total || 0
+                                                data.total || 0,
+                                                data.costoDomicilio || 0
                                             );
                                         }
                                     }
@@ -1393,7 +1400,7 @@ function simularPedidoPrueba() {
         numeroPedido: '#TEST',
         cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
         total: 25000,
-        costoDomicilio: 8000,  // ⬅️ NUEVO CAMPO
+        costoDomicilio: 8000,
         items: [{ nombre: 'Producto Test', cantidad: 2, precio: 8500 }]
     };
     
@@ -1403,7 +1410,7 @@ function simularPedidoPrueba() {
     sonidoDespertador.iniciarDespertador(pedidoFalso.id);
     renderizarPedidos();
     
-    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000);
+    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000, 8000);
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
@@ -1469,7 +1476,7 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN Y DOMICILIO)
+// 🎯 RENDERIZAR CARD DE PEDIDO (CON PRODUCTOS Y DOMICILIO)
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
@@ -1779,6 +1786,7 @@ console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
 console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 console.log('💰 Ganancia = SOLO costo del domicilio');
+console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 </script>
 </body>
 </html>
