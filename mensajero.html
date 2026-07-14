@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Mensajero - EyMoto</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
     <style>
@@ -68,6 +68,7 @@
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
         .pedido-card.disponible { border-left-color: var(--green); }
         
+        /* ✅ ANIMACIÓN DE NUEVO PEDIDO (PERSISTENTE) */
         .pedido-card.nuevo-pedido {
             animation: nuevoPedido 1s infinite;
         }
@@ -76,6 +77,18 @@
             0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
             50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; }
             100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
+        }
+
+        /* ✅ ALERTA PERSISTENTE - BORDE PARPADEANTE */
+        .pedido-card.alerta-persistente {
+            border-left-color: #FF3D00 !important;
+            animation: alertaPersistente 0.8s ease-in-out infinite;
+        }
+        
+        @keyframes alertaPersistente {
+            0% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
+            50% { border-left-color: #FFD600; box-shadow: 0 0 30px rgba(255,214,0,0.5); }
+            100% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
         }
         
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
@@ -140,24 +153,20 @@
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
 
-        /* Filtros historial */
-        .filtros-historial { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-        .filtros-historial button { width: auto; padding: 4px 12px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
-        .filtros-historial button:hover { border-color: var(--yellow); color: #fff; }
-        .filtros-historial button.active { background: var(--blue); color: #fff; border-color: var(--blue); }
-        .filtros-historial button.active.hoy { background: var(--blue); border-color: var(--blue); }
-        .filtros-historial button.active.todas { background: var(--yellow); color: #1a1a2e; border-color: var(--yellow); }
-
-        .resumen-historial { margin-top: 10px; padding: 12px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-        .resumen-historial .item { font-size: 13px; }
-        .resumen-historial .item .num { font-weight: 800; }
-        .resumen-historial .item .num.yellow { color: var(--yellow); }
-        .resumen-historial .item .num.green { color: var(--green); }
-        .resumen-historial .item .num.orange { color: var(--orange); }
-        .resumen-historial .item .num.blue { color: var(--blue); }
-
-        .pago-confirmado { margin-top: 6px; padding: 4px 12px; border-radius: 6px; background: var(--green-bg); color: var(--green); font-size: 11px; font-weight: 700; text-align: center; }
-        .pago-pendiente { margin-top: 6px; padding: 4px 12px; border-radius: 6px; background: var(--yellow-bg); color: var(--yellow); font-size: 11px; font-weight: 700; text-align: center; }
+        .badge-persistente {
+            background: #FF3D00;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            animation: pulseBadge 0.8s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes pulseBadge {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
 
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
@@ -310,12 +319,32 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 🔑 CONFIGURACIÓN VAPID (TU CLAVE PÚBLICA)
+// 📱 DETECTAR PEDIDO DESDE ENLACE WHATSAPP
+// ============================================================
+function detectarPedidoDesdeEnlace() {
+    const params = new URLSearchParams(window.location.search);
+    const pedidoId = params.get('pedido');
+    const tiendaId = params.get('tienda');
+    
+    if (pedidoId && tiendaId) {
+        console.log(`📱 Pedido detectado desde enlace: ${pedidoId} - Tienda: ${tiendaId}`);
+        window._pedidoDesdeEnlace = { pedidoId, tiendaId };
+        
+        setTimeout(() => {
+            toast('📱 Has llegado desde un enlace de WhatsApp. Buscando tu pedido...', 'info', 4000);
+        }, 2000);
+    }
+}
+
+detectarPedidoDesdeEnlace();
+
+// ============================================================
+// 🔑 CONFIGURACIÓN VAPID
 // ============================================================
 const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
 
 // ============================================================
-// ⏰ FUNCIÓN DE SONIDO CON MP3
+// ⏰ SONIDO CON ALARMA PERSISTENTE
 // ============================================================
 function sonidoEyMoto() {
     try {
@@ -368,7 +397,7 @@ function sonidoRespaldo() {
 }
 
 // ============================================================
-// ⏰ SISTEMA DE DESPERTADOR
+// ⏰ DESPERTADOR CON ALARMA PERSISTENTE
 // ============================================================
 class SonidoDespertador {
     constructor() {
@@ -402,6 +431,7 @@ class SonidoDespertador {
         }
     }
 
+    // ✅ REPRODUCIR CON REPETICIÓN PERSISTENTE
     reproducir() {
         try {
             if (!this.inicializado || !this.audioActivado) {
@@ -423,20 +453,23 @@ class SonidoDespertador {
             console.log(`⏰ Pedido ${pedidoId} ya fue procesado`);
             return;
         }
-        console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
+        console.log(`🔔 DESPERTADOR ACTIVADO (PERSISTENTE) - Pedido: ${pedidoId}`);
         
         this.iniciarAudio();
         this.pedidosActivos[pedidoId] = true;
         this.reproduciendo = true;
         this.secuenciaRingRing();
         
+        // ✅ REPETIR CADA 5 SEGUNDOS (PERSISTENTE)
         this.intervalos[pedidoId] = setInterval(() => {
             if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
                 this.secuenciaRingRing();
+                // ✅ Mostrar alerta persistente en el toast
+                toast(`⏰ ¡Pedido ${pedidoId.slice(-6)} esperando!`, 'new', 3000);
             } else {
                 this.detenerDespertador(pedidoId);
             }
-        }, 10000);
+        }, 5000);
     }
 
     detenerDespertador(pedidoId) {
@@ -536,7 +569,10 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
                 registration.showNotification('📦 Nuevo pedido disponible', {
                     body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
                     icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                    vibrate: [300, 100, 300, 100, 400]
+                    vibrate: [300, 100, 300, 100, 400],
+                    requireInteraction: true, // ✅ PERSISTENTE
+                    tag: 'nuevo-pedido-' + Date.now(),
+                    renotify: true // ✅ PERMITE QUE SUENE DE NUEVO
                 });
             }).catch(function() {
                 try {
@@ -859,15 +895,31 @@ async function inicializarPanel() {
         await cargarMensajeros();
         await escucharPedidos();
         
-        // Cargar historial y estadísticas
         await cargarHistorialPedidos();
         await actualizarEstadisticasMensajero();
         
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🔊 Sonido EyMoto configurado');
+        console.log('🔊 Sonido con ALARMA PERSISTENTE');
         
-        // Inicializar notificaciones después del login
+        // Verificar si hay un pedido desde enlace de WhatsApp
+        if (window._pedidoDesdeEnlace) {
+            setTimeout(() => {
+                const { pedidoId, tiendaId } = window._pedidoDesdeEnlace;
+                // Buscar el pedido y mostrarlo
+                const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                if (pedido) {
+                    toast(`📱 Pedido encontrado! #${pedido.numeroPedido || pedidoId.slice(-6)}`, 'success', 5000);
+                    // Activar sonido si está disponible
+                    if (pedido.estado === 'Listo para asignar' && !pedido.mensajeroId) {
+                        sonidoDespertador.iniciarDespertador(pedidoId);
+                    }
+                } else {
+                    toast('⏳ Buscando pedido, espera un momento...', 'info', 3000);
+                }
+            }, 3000);
+        }
+        
         setTimeout(() => {
             inicializarNotificaciones();
         }, 3000);
@@ -941,9 +993,14 @@ function escucharPedidos() {
                                         const tienda = tiendasCache[tiendaId] || {};
                                         
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
-                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE (PERSISTENTE): ${pedidoId}`);
+                                            
+                                            // ✅ ACTIVAR ALARMA PERSISTENTE
                                             sonidoDespertador.iniciarDespertador(pedidoId);
+                                            
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                            
+                                            // ✅ NOTIFICACIÓN PERSISTENTE DEL SISTEMA
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -1114,7 +1171,6 @@ function aplicarFiltroHistorial(filtro) {
 }
 
 function filtrarHistorial(filtro, btn) {
-    // Actualizar botones
     document.querySelectorAll('.filtros-historial button').forEach(b => b.classList.remove('active', 'hoy', 'todas'));
     if (btn) {
         btn.classList.add('active');
@@ -1305,7 +1361,7 @@ function simularPedidoPrueba() {
     
     mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 15000);
     
-    toast('🔔 Nuevo pedido de prueba', 'new', 5000);
+    toast('🔔 Nuevo pedido de prueba (PERSISTENTE)', 'new', 5000);
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
@@ -1371,7 +1427,7 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO
+// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN PERSISTENTE)
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
@@ -1436,16 +1492,22 @@ function renderizarPedidoCard(pedido, disponible) {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
     
+    // ✅ DETECTAR SI EL SONIDO ESTÁ ACTIVO PARA APLICAR ANIMACIÓN PERSISTENTE
     const sonidoActivo = sonidoDespertador.estaSonando(pedido.id);
     const claseDisponible = disponible 
-        ? (sonidoActivo ? 'disponible nuevo-pedido' : 'disponible') 
+        ? (sonidoActivo ? 'disponible nuevo-pedido alerta-persistente' : 'disponible') 
         : '';
+    
+    // ✅ BADGE DE ALERTA PERSISTENTE
+    const badgePersistente = sonidoActivo ? 
+        '<span class="badge-persistente">⏰ ALERTA ACTIVA</span>' : '';
     
     return `
         <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
             <div class="header">
                 <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
                 <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
+                ${badgePersistente}
             </div>
             <div class="info-grid">
                 <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1495,8 +1557,10 @@ async function tomarPedido(pedidoId, tiendaId) {
             notificacionEnviada: false
         });
         
+        // ✅ DETENER SONIDO PERSISTENTE AL TOMAR EL PEDIDO
         if (sonidoDespertador.estaSonando(pedidoId)) {
             sonidoDespertador.detenerDespertador(pedidoId);
+            toast('🔕 Alarma desactivada', 'info', 2000);
         }
         
         await cargarPedidosCompletos();
@@ -1604,6 +1668,7 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
         if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
             if (sonidoDespertador.estaSonando(pedidoId)) {
                 sonidoDespertador.detenerDespertador(pedidoId);
+                toast('🔕 Alarma desactivada', 'info', 2000);
             }
         }
         
@@ -1668,9 +1733,8 @@ window.cargarHistorialPedidos = cargarHistorialPedidos;
 window.filtrarHistorial = filtrarHistorial;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido con MP3 integrado');
-console.log('📢 Notificaciones push activadas');
-console.log('📊 Historial de pedidos activado');
+console.log('🔊 Alarma PERSISTENTE activada (suena cada 5 segundos)');
+console.log('📱 Notificaciones PERSISTENTES activadas');
 console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
