@@ -157,6 +157,9 @@
         .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
         .btn-whatsapp-envio:active { transform: scale(0.97); }
         .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        /* Botón de prueba de sonido */
+        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-test-sound:hover { background: #7d3c98; }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -182,6 +185,7 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">🔊 Probar Sonido</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -284,6 +288,84 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// ============================================================
+// ⏰ SONIDO PARA ADMIN
+// ============================================================
+let audioContextAdmin = null;
+let audioInicializadoAdmin = false;
+
+function sonidoEyMotoAdmin() {
+    try {
+        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
+        audio.volume = 1.0;
+        audio.preload = "auto";
+        
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('🔊 Sonido MP3 ADMIN reproducido');
+            }).catch(e => {
+                console.log('⚠️ Error con MP3 ADMIN:', e.message);
+                sonidoRespaldoAdmin();
+            });
+        }
+    } catch (e) {
+        sonidoRespaldoAdmin();
+    }
+}
+
+function sonidoRespaldoAdmin() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        const notas = [
+            {freq: 880, tiempo: 0.00, duracion: 0.10},
+            {freq: 1047, tiempo: 0.16, duracion: 0.10},
+            {freq: 1319, tiempo: 0.34, duracion: 0.28},
+            {freq: 1568, tiempo: 0.60, duracion: 0.45}
+        ];
+
+        notas.forEach(n => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.tiempo);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.tiempo);
+            gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + n.tiempo + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.tiempo + n.duracion);
+            osc.start(ctx.currentTime + n.tiempo);
+            osc.stop(ctx.currentTime + n.tiempo + n.duracion);
+        });
+        console.log('🔊 Sonido de respaldo ADMIN reproducido');
+    } catch (e) {}
+}
+
+function probarSonidoAdmin() {
+    console.log('🔊 Probando sonido ADMIN...');
+    sonidoEyMotoAdmin();
+    toast('🔊 Sonido de prueba ADMIN', 'info', 2000);
+}
+
+// ACTIVAR AUDIO CON UN CLIC (ADMIN)
+document.addEventListener('click', function activarAudioAdmin() {
+    try {
+        if (!audioInicializadoAdmin) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            audioInicializadoAdmin = true;
+            audioContextAdmin = ctx;
+            console.log('🔊 Audio ADMIN activado por clic');
+        }
+    } catch (e) {}
+}, { once: true });
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -424,6 +506,8 @@ async function inicializarPanel() {
         await cargarPedidosIniciales();
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
+        console.log('✅ Panel ADMIN cargado correctamente');
+        console.log('🔊 Sonido ADMIN activado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -502,7 +586,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ESCUCHAR PEDIDOS EN TIEMPO REAL
+// ESCUCHAR PEDIDOS EN TIEMPO REAL CON SONIDO
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -526,20 +610,17 @@ function escucharPedidosEnTiempoReal() {
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 const estaNotificado = data.notificacionEnviada === true;
                                 
-                                if (tieneMensajero || esEntregado) {
-                                    if (window._despertador && window._despertador.estaSonando(pedidoId)) {
-                                        window._despertador.detenerDespertador(pedidoId);
-                                    }
-                                }
-                                if (estaNotificado && window._despertador && window._despertador.estaSonando(pedidoId)) {
-                                    window._despertador.detenerDespertador(pedidoId);
-                                }
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (!existe) {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
+                                            
+                                            // 🔔 SONIDO PARA ADMIN
+                                            console.log(`🔔 ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            sonidoEyMotoAdmin();
+                                            
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                             notificarMensajerosDisponibles(tiendaId, pedidoId, data);
                                         }
@@ -1259,10 +1340,12 @@ window.copiarEnlace = copiarEnlace;
 window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
+window.probarSonidoAdmin = probarSonidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
+console.log('🔊 SONIDO ADMIN ACTIVADO - Sonará cuando lleguen nuevos pedidos');
 </script>
 </body>
 </html>
