@@ -44,6 +44,10 @@
         .btn-refrescar { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-refrescar:hover { background: var(--blue); color: #fff; }
         .btn-refrescar:active { transform: scale(0.95); }
+        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-test-sound:hover { background: #7d3c98; }
+        .btn-simular-pedido { background: var(--orange); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-simular-pedido:hover { background: #e65c00; }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
         #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
         #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
@@ -157,9 +161,6 @@
         .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
         .btn-whatsapp-envio:active { transform: scale(0.97); }
         .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        /* Botón de prueba de sonido */
-        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
-        .btn-test-sound:hover { background: #7d3c98; }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -185,7 +186,8 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
-        <button class="btn-test-sound" onclick="probarSonidoAdmin()">🔊 Probar Sonido</button>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
+        <button class="btn-simular-pedido" onclick="simularPedidoAdmin()">🧪 Simular Pedido</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -290,68 +292,125 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO PARA ADMIN
+// ⏰ SONIDO DE PITO DE MOTO PARA ADMIN
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
 
-function sonidoEyMotoAdmin() {
+function sonidoPitoMotoAdmin() {
     try {
-        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
-        audio.volume = 1.0;
-        audio.preload = "auto";
-        
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('🔊 Sonido MP3 ADMIN reproducido');
-            }).catch(e => {
-                console.log('⚠️ Error con MP3 ADMIN:', e.message);
-                sonidoRespaldoAdmin();
-            });
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!audioContextAdmin) {
+            audioContextAdmin = new AudioContext();
         }
+        if (audioContextAdmin.state === 'suspended') {
+            audioContextAdmin.resume();
+        }
+        
+        const ctx = audioContextAdmin;
+        const ahora = ctx.currentTime;
+        
+        // ============================================================
+        // 🔔 PITO DE MOTO - Sonido agudo y corto
+        // ============================================================
+        
+        // Oscilador principal (tono agudo)
+        const osc = ctx.createOscillator();
+        osc.type = 'square';  // Sonido más estridente como claxon
+        osc.frequency.setValueAtTime(880, ahora); // Nota La5 (aguda)
+        osc.frequency.exponentialRampToValueAtTime(1100, ahora + 0.1); // Sube un poco
+        
+        // Ganancia (volumen)
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, ahora);
+        gain.gain.exponentialRampToValueAtTime(0.3, ahora + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.25, ahora + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ahora + 0.15);
+        
+        // Filtro para darle carácter de claxon
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500;
+        filter.Q.value = 0.8;
+        
+        // Conectar: osc -> filter -> gain -> destino
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        // Iniciar y detener
+        osc.start(ahora);
+        osc.stop(ahora + 0.15);
+        
+        // ============================================================
+        // 🔔 SEGUNDO PITO (más corto, como eco)
+        // ============================================================
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(1100, ahora + 0.15);
+        osc2.frequency.exponentialRampToValueAtTime(950, ahora + 0.25);
+        
+        const gain2 = ctx.createGain();
+        gain2.gain.setValueAtTime(0.0001, ahora + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.2, ahora + 0.17);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, ahora + 0.28);
+        
+        const filter2 = ctx.createBiquadFilter();
+        filter2.type = 'bandpass';
+        filter2.frequency.value = 1400;
+        filter2.Q.value = 0.8;
+        
+        osc2.connect(filter2);
+        filter2.connect(gain2);
+        gain2.connect(ctx.destination);
+        
+        osc2.start(ahora + 0.15);
+        osc2.stop(ahora + 0.28);
+        
+        console.log('📯 Pito de moto ADMIN reproducido');
+        
     } catch (e) {
-        sonidoRespaldoAdmin();
+        console.warn('⚠️ Error en sonido de pito:', e);
+        // Sonido de respaldo simple
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = 880;
+            gain.gain.value = 0.2;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.15);
+            setTimeout(() => {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'square';
+                osc2.frequency.value = 1100;
+                gain2.gain.value = 0.15;
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start();
+                osc2.stop(ctx.currentTime + 0.12);
+            }, 150);
+        } catch (e2) {}
     }
 }
 
-function sonidoRespaldoAdmin() {
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') ctx.resume();
-        
-        const notas = [
-            {freq: 880, tiempo: 0.00, duracion: 0.10},
-            {freq: 1047, tiempo: 0.16, duracion: 0.10},
-            {freq: 1319, tiempo: 0.34, duracion: 0.28},
-            {freq: 1568, tiempo: 0.60, duracion: 0.45}
-        ];
-
-        notas.forEach(n => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = "triangle";
-            osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.tiempo);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.tiempo);
-            gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + n.tiempo + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.tiempo + n.duracion);
-            osc.start(ctx.currentTime + n.tiempo);
-            osc.stop(ctx.currentTime + n.tiempo + n.duracion);
-        });
-        console.log('🔊 Sonido de respaldo ADMIN reproducido');
-    } catch (e) {}
-}
-
+// ============================================================
+// PROBAR SONIDO ADMIN
+// ============================================================
 function probarSonidoAdmin() {
-    console.log('🔊 Probando sonido ADMIN...');
-    sonidoEyMotoAdmin();
-    toast('🔊 Sonido de prueba ADMIN', 'info', 2000);
+    console.log('📯 Probando pito de moto ADMIN...');
+    sonidoPitoMotoAdmin();
+    toast('📯 ¡Pito de moto!', 'info', 2000);
 }
 
+// ============================================================
 // ACTIVAR AUDIO CON UN CLIC (ADMIN)
+// ============================================================
 document.addEventListener('click', function activarAudioAdmin() {
     try {
         if (!audioInicializadoAdmin) {
@@ -360,9 +419,9 @@ document.addEventListener('click', function activarAudioAdmin() {
             if (ctx.state === 'suspended') {
                 ctx.resume();
             }
-            audioInicializadoAdmin = true;
             audioContextAdmin = ctx;
-            console.log('🔊 Audio ADMIN activado por clic');
+            audioInicializadoAdmin = true;
+            console.log('📯 Audio ADMIN activado por clic');
         }
     } catch (e) {}
 }, { once: true });
@@ -507,7 +566,7 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('🔊 Sonido ADMIN activado');
+        console.log('📯 Sonido de PITO DE MOTO activado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -617,9 +676,9 @@ function escucharPedidosEnTiempoReal() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
                                             
-                                            // 🔔 SONIDO PARA ADMIN
-                                            console.log(`🔔 ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            sonidoEyMotoAdmin();
+                                            // 📯 PITO DE MOTO PARA ADMIN
+                                            console.log(`📯 ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            sonidoPitoMotoAdmin();
                                             
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                             notificarMensajerosDisponibles(tiendaId, pedidoId, data);
@@ -1290,6 +1349,45 @@ function cerrarModal(event) {
 }
 
 // ============================================================
+// 🧪 SIMULAR PEDIDO DE PRUEBA PARA ADMIN
+// ============================================================
+function simularPedidoAdmin() {
+    console.log('🧪 ADMIN: Simulando pedido de prueba...');
+    
+    const pedidoFalso = {
+        id: 'PEDIDO-ADMIN-TEST-' + Date.now(),
+        tiendaId: 'test',
+        estado: 'Listo para asignar',
+        mensajeroId: null,
+        notificacionEnviada: false,
+        numeroPedido: '#ADMIN-TEST',
+        cliente: { 
+            nombre: 'Cliente de Prueba Admin', 
+            direccion: 'Calle Test 123',
+            telefono: '3123456789'
+        },
+        total: 35000,
+        costoDomicilio: 8000,
+        items: [
+            { nombre: 'Producto Test 1', cantidad: 2, precio: 10000, total: 20000 },
+            { nombre: 'Producto Test 2', cantidad: 1, precio: 7000, total: 7000 }
+        ],
+        _nuevo: true
+    };
+    
+    todosLosPedidos.push(pedidoFalso);
+    console.log('✅ Pedido de prueba ADMIN agregado');
+    
+    // 📯 PITO DE MOTO
+    sonidoPitoMotoAdmin();
+    
+    toast('🔔 NUEVO PEDIDO DE PRUEBA ADMIN', 'new', 5000);
+    renderizarPedidosAsignar();
+    actualizarEstadisticas();
+    actualizarHeaderBadge();
+}
+
+// ============================================================
 // FUNCIONES DE UTILIDAD
 // ============================================================
 function formatearFecha(fecha) {
@@ -1341,11 +1439,13 @@ window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
+window.simularPedidoAdmin = simularPedidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
-console.log('🔊 SONIDO ADMIN ACTIVADO - Sonará cuando lleguen nuevos pedidos');
+console.log('📯 SONIDO DE PITO DE MOTO ACTIVADO');
+console.log('🧪 Para probar: haz clic en "📯 Probar Pito" o "🧪 Simular Pedido"');
 </script>
 </body>
 </html>
