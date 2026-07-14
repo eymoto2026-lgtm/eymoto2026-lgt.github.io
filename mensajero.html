@@ -453,7 +453,8 @@ function sonidoRespaldo() {
 }
 
 // ============================================================
-// ⏰ DESPERTADOR// ============================================================
+// ⏰ DESPERTADOR
+// ============================================================
 class SonidoDespertador {
     constructor() {
         this.ctx = null;
@@ -1225,7 +1226,9 @@ function renderizarHistorial(pedidos) {
     
     pedidos.forEach(p => {
         const total = p.total || 0;
-        totalGanado += total;
+        // ✅ SOLO SE SUMA EL COSTO DEL DOMICILIO (GANANCIA DEL MENSAJERO)
+        const costoDomicilio = p.costoDomicilio || 0;
+        totalGanado += costoDomicilio;
         if (p.estado === 'Entregado') {
             entregados++;
         } else if (p.estado !== 'Cancelado') {
@@ -1256,6 +1259,7 @@ function renderizarHistorial(pedidos) {
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = p.cliente || {};
         const total = p.total || 0;
+        const costoDomicilio = p.costoDomicilio || 0;
         const fechaStr = formatearFecha(p.fecha);
         const estado = p.estado || 'Pendiente';
         
@@ -1304,6 +1308,7 @@ function renderizarHistorial(pedidos) {
                     <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                     <div><span class="label">💳 Pago:</span> <span class="value">${pagoLabel}</span></div>
                     <div><span class="label">💰 Total:</span> <span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+                    <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
                 </div>
                 ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
                 ${pagoHtml}
@@ -1342,8 +1347,10 @@ async function actualizarEstadisticasMensajero() {
             pedidosSnap.forEach(doc => {
                 const data = doc.data();
                 const total = data.total || 0;
+                // ✅ SOLO SE SUMA EL COSTO DEL DOMICILIO (GANANCIA DEL MENSAJERO)
+                const costoDomicilio = data.costoDomicilio || 0;
                 totalPedidos++;
-                totalGanado += total;
+                totalGanado += costoDomicilio;
                 
                 const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
                 if (data.estado === 'Entregado') {
@@ -1385,8 +1392,9 @@ function simularPedidoPrueba() {
         notificacionEnviada: true,
         numeroPedido: '#TEST',
         cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 15000,
-        items: [{ nombre: 'Producto Test', cantidad: 1, precio: 15000 }]
+        total: 25000,
+        costoDomicilio: 8000,  // ⬅️ NUEVO CAMPO
+        items: [{ nombre: 'Producto Test', cantidad: 2, precio: 8500 }]
     };
     
     todosLosPedidos.push(pedidoFalso);
@@ -1395,7 +1403,7 @@ function simularPedidoPrueba() {
     sonidoDespertador.iniciarDespertador(pedidoFalso.id);
     renderizarPedidos();
     
-    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 15000);
+    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000);
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
@@ -1461,13 +1469,14 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN)
+// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN Y DOMICILIO)
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
     const total = pedido.total || 0;
+    const costoDomicilio = pedido.costoDomicilio || 0;
     const fechaStr = formatearFecha(pedido.fecha);
     const estado = pedido.estado || 'Pendiente';
     
@@ -1548,6 +1557,7 @@ function renderizarPedidoCard(pedido, disponible) {
                 <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                 <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
                 <div><span class="label">💳 Pago:</span> <span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+                <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
             </div>
             ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
             <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
@@ -1768,6 +1778,7 @@ console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
 console.log('🎨 Botones del historial SIN FONDO AMARILLO');
+console.log('💰 Ganancia = SOLO costo del domicilio');
 </script>
 </body>
 </html>
