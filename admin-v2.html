@@ -125,153 +125,6 @@ label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margi
     color: var(--green);
 }
 
-/* Boton agregar producto */
-.btn-agregar-producto {
-    background: var(--green-bg);
-    color: var(--green);
-    border: 1px solid var(--green);
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    width: 100%;
-    cursor: pointer;
-    font-weight: 700;
-    transition: all 0.2s;
-    margin-top: 4px;
-}
-.btn-agregar-producto:hover {
-    background: var(--green);
-    color: #fff;
-}
-
-/* Modal agregar producto */
-.modal-agregar-producto {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.92);
-    z-index: 99999;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-.modal-agregar-producto.active {
-    display: flex;
-}
-.modal-agregar-producto .modal-content {
-    background: #1e1e1e;
-    border-radius: 20px;
-    max-width: 550px;
-    width: 100%;
-    padding: 24px;
-    border: 1px solid var(--yellow);
-    max-height: 90vh;
-    overflow-y: auto;
-}
-.modal-agregar-producto .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-}
-.modal-agregar-producto .modal-header h3 {
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
-}
-.modal-agregar-producto .modal-close {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 24px;
-    cursor: pointer;
-}
-.modal-agregar-producto .modal-close:hover {
-    color: var(--red);
-}
-.modal-agregar-producto .producto-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background: var(--surface2);
-    border-radius: 8px;
-    margin-bottom: 6px;
-    border: 1px solid var(--border);
-}
-.modal-agregar-producto .producto-item .info {
-    flex: 1;
-}
-.modal-agregar-producto .producto-item .info .nombre {
-    font-size: 13px;
-    font-weight: 600;
-}
-.modal-agregar-producto .producto-item .info .precio {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-.modal-agregar-producto .producto-item .btn-agregar-item {
-    background: var(--yellow);
-    color: #1a1a2e;
-    border: none;
-    padding: 4px 14px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    width: auto;
-}
-.modal-agregar-producto .producto-item .btn-agregar-item:hover {
-    background: var(--yellow-dim);
-}
-.modal-agregar-producto .btn-enviar-mensaje {
-    width: 100%;
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    background: #25D366;
-    color: #fff;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 12px;
-}
-.modal-agregar-producto .btn-enviar-mensaje:hover {
-    background: #1da851;
-}
-.modal-agregar-producto .productos-agregados {
-    background: var(--surface3);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 12px;
-    border: 1px solid var(--border);
-}
-.modal-agregar-producto .productos-agregados .item {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--border2);
-    font-size: 13px;
-}
-.modal-agregar-producto .productos-agregados .item:last-child {
-    border-bottom: none;
-}
-.modal-agregar-producto .productos-agregados .total-nuevo {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 8px;
-    border-top: 2px solid var(--yellow);
-    font-weight: 800;
-    font-size: 16px;
-    color: var(--green);
-}
-
 #toastWrap{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{background:#1e1e1e;border:1px solid var(--border2);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastIn .3s ease;pointer-events:auto;max-width:380px;cursor:pointer;}
 .toast:hover{opacity:0.9}
@@ -1125,17 +978,6 @@ header .spacer{flex:1}
     </div>
 </div>
 
-<!-- ===== MODAL AGREGAR PRODUCTO ===== -->
-<div class="modal-agregar-producto" id="modalAgregarProducto">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalAgregarTitulo">➕ Agregar producto al pedido</h3>
-            <button class="modal-close" onclick="window.cerrarModalAgregarProducto()">✕</button>
-        </div>
-        <div id="modalAgregarContenido"></div>
-    </div>
-</div>
-
 <!-- MODAL ESCÁNER ADMIN -->
 <div class="modal-scanner" id="modalScannerAdmin">
     <div class="modal-content">
@@ -1361,9 +1203,6 @@ let productosDisponibles = [];
 let itemsEditando = [];
 let pedidoAsignacion = null;
 let todosLosMensajeros = [];
-let pedidoAgregarProducto = null;
-let productosAgregados = [];
-let productosTienda = [];
 
 // ============================================================
 // TOAST
@@ -1594,353 +1433,164 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
-// 📦 AGREGAR PRODUCTOS OLVIDADOS
+// 📱 ENVIAR NOTIFICACIÓN DE ESTADO AL CLIENTE
 // ============================================================
-
-// Abrir modal para agregar productos
-async function abrirModalAgregarProducto(tiendaId, pedidoId) {
+async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
-        pedidoAgregarProducto = { tiendaId, pedidoId };
-        productosAgregados = [];
-        
         // Obtener el pedido
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
         
-        if (!doc.exists) {
-            toast('⚠️ Pedido no encontrado', 'error');
-            return;
-        }
+        if (!doc.exists) return;
         
         const pedido = doc.data();
         const tienda = tiendasCache[tiendaId] || {};
-        const nombreTienda = tienda.nombre || 'Tienda';
-        const cliente = pedido.cliente || {};
-        const totalOriginal = pedido.total || 0;
+        const nombreTienda = tienda.nombre || 'EyMoto';
+        const whatsappTienda = tienda.whatsapp || '';
+        const telefonoCliente = pedido.cliente?.telefono || '';
         
-        // Obtener productos de la tienda
-        const productosSnap = await db.collection('tiendas').doc(tiendaId)
-            .collection('productos').where('estado', '==', 'disponible').get();
-        
-        productosTienda = [];
-        productosSnap.forEach(d => {
-            const p = d.data();
-            productosTienda.push({ id: d.id, ...p });
-        });
-        
-        // Mostrar modal
-        const modal = document.getElementById('modalAgregarProducto');
-        const contenido = document.getElementById('modalAgregarContenido');
-        const titulo = document.getElementById('modalAgregarTitulo');
-        titulo.textContent = `➕ Agregar producto - ${nombreTienda}`;
-        
-        let productosHtml = '';
-        if (productosTienda.length === 0) {
-            productosHtml = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No hay productos disponibles en esta tienda</p>';
-        } else {
-            productosHtml = '<div style="max-height:300px;overflow-y:auto;">';
-            productosTienda.forEach(p => {
-                const precio = p.precio || 0;
-                productosHtml += `
-                    <div class="producto-item">
-                        <div class="info">
-                            <div class="nombre">${p.name || 'Producto'}</div>
-                            <div class="precio">$${precio.toLocaleString('es-CO')}</div>
-                        </div>
-                        <button class="btn-agregar-item" onclick="window.agregarProductoAlPedido('${p.id}')">
-                            ➕ Agregar
-                        </button>
-                    </div>
-                `;
-            });
-            productosHtml += '</div>';
-        }
-        
-        // Mostrar productos ya agregados
-        let agregadosHtml = `
-            <div class="productos-agregados">
-                <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">📦 Productos agregados:</div>
-                <div id="listaProductosAgregados">
-                    <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">No hay productos agregados aún</div>
-                </div>
-                <div class="total-nuevo" id="totalNuevoProductos">
-                    <span>💰 Nuevo total:</span>
-                    <span>$${totalOriginal.toLocaleString('es-CO')}</span>
-                </div>
-            </div>
-        `;
-        
-        contenido.innerHTML = `
-            <div class="pedido-info-resumen">
-                <div class="row"><span class="label">🧾 Pedido:</span><span class="value">${pedido.numeroPedido || '#' + pedidoId.slice(-6)}</span></div>
-                <div class="row"><span class="label">👤 Cliente:</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                <div class="row"><span class="label">📱 Teléfono:</span><span class="value">${cliente.telefono || 'N/A'}</span></div>
-                <div class="row"><span class="label">📍 Dirección:</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
-                <div class="row"><span class="label">💰 Total actual:</span><span class="value" style="color:var(--green);">$${totalOriginal.toLocaleString('es-CO')}</span></div>
-            </div>
-            <div style="font-weight:700;margin-bottom:8px;font-size:14px;">📋 Productos disponibles</div>
-            ${productosHtml}
-            ${agregadosHtml}
-            <button class="btn-enviar-mensaje" onclick="window.enviarMensajeActualizado()">
-                📱 Enviar mensaje actualizado al cliente
-            </button>
-            <button class="btn-cancelar-modal" onclick="window.cerrarModalAgregarProducto()" 
-                    style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;">
-                Cancelar
-            </button>
-        `;
-        
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-    } catch (error) {
-        console.error('❌ Error abriendo modal:', error);
-        toast('❌ Error: ' + error.message, 'error');
-    }
-}
-
-// Cerrar modal
-function cerrarModalAgregarProducto() {
-    document.getElementById('modalAgregarProducto').classList.remove('active');
-    document.body.style.overflow = '';
-    pedidoAgregarProducto = null;
-    productosAgregados = [];
-}
-
-// Agregar producto al pedido
-async function agregarProductoAlPedido(productoId) {
-    try {
-        const producto = productosTienda.find(p => p.id === productoId);
-        if (!producto) {
-            toast('⚠️ Producto no encontrado', 'error');
+        // Solo enviar si el cliente tiene teléfono
+        if (!telefonoCliente) {
+            console.log('⚠️ Cliente sin teléfono, no se envía notificación');
             return;
         }
         
-        // Verificar si ya está agregado
-        const existente = productosAgregados.find(p => p.id === productoId);
-        if (existente) {
-            existente.cantidad = (existente.cantidad || 1) + 1;
-        } else {
-            productosAgregados.push({
-                id: productoId,
-                nombre: producto.name || 'Producto',
-                precio: producto.precio || 0,
-                cantidad: 1
-            });
-        }
+        // Mensajes según el estado
+        const mensajes = {
+            'Pendiente': {
+                emoji: '🛵',
+                texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.'
+            },
+            'En cocina': {
+                emoji: '👨‍🍳',
+                texto: 'Tu pedido está en la cocina, nuestros chefs están trabajando para que esté delicioso.'
+            },
+            'Preparando': {
+                emoji: '👨‍🍳',
+                texto: 'Tu pedido está siendo preparado, pronto estará listo.'
+            },
+            'En despacho': {
+                emoji: '📦',
+                texto: 'Tu pedido está siendo empacado y preparado para el envío.'
+            },
+            'Cortando': {
+                emoji: '🔪',
+                texto: 'Tu pedido está en proceso de preparación.'
+            },
+            'Horneando': {
+                emoji: '🔥',
+                texto: 'Tu pedido está en el horno, pronto estará listo.'
+            },
+            'Arreglando': {
+                emoji: '🌸',
+                texto: 'Tu pedido está siendo arreglado con mucho cuidado.'
+            },
+            'Asignado': {
+                emoji: '🛵',
+                texto: '¡Un mensajero ha tomado tu pedido! Está en camino al restaurante.'
+            },
+            'Listo para asignar': {
+                emoji: '✅',
+                texto: '¡Tu pedido está listo! Estamos buscando un mensajero disponible.'
+            },
+            'En camino al restaurante': {
+                emoji: '🛵',
+                texto: 'El mensajero está en camino al restaurante para recoger tu pedido.'
+            },
+            'Recogiendo pedido': {
+                emoji: '📦',
+                texto: 'El mensajero ha llegado al restaurante y está recogiendo tu pedido.'
+            },
+            'Recogido': {
+                emoji: '📦',
+                texto: 'El mensajero ha recogido tu pedido. ¡Va en camino a tu dirección!'
+            },
+            'En camino': {
+                emoji: '🚗',
+                texto: 'Tu pedido está en camino a tu dirección. ¡Llega muy pronto!'
+            },
+            'Entregado': {
+                emoji: '✅',
+                texto: '¡Tu pedido ha sido entregado! Gracias por confiar en EyMoto. 🎉'
+            },
+            'Cancelado': {
+                emoji: '❌',
+                texto: 'Tu pedido ha sido cancelado. Si tienes dudas, comunícate con nosotros.'
+            }
+        };
         
-        // Actualizar la lista en el modal
-        actualizarListaProductosAgregados();
-        toast(`✅ ${producto.name || 'Producto'} agregado`, 'success', 1500);
+        const mensajeInfo = mensajes[estadoNuevo] || {
+            emoji: '📌',
+            texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}`
+        };
         
-    } catch (error) {
-        console.error('❌ Error agregando producto:', error);
-        toast('❌ Error: ' + error.message, 'error');
-    }
-}
-
-// Actualizar lista de productos agregados
-function actualizarListaProductosAgregados() {
-    const container = document.getElementById('listaProductosAgregados');
-    const totalContainer = document.getElementById('totalNuevoProductos');
-    
-    if (!container) return;
-    
-    // Obtener el pedido original para el total base
-    const pedido = obtenerPedidoDeCache(
-        pedidoAgregarProducto?.tiendaId, 
-        pedidoAgregarProducto?.pedidoId
-    );
-    const totalOriginal = pedido?.total || 0;
-    
-    if (productosAgregados.length === 0) {
-        container.innerHTML = `
-            <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">
-                No hay productos agregados aún
-            </div>
-        `;
-        if (totalContainer) {
-            totalContainer.innerHTML = `
-                <span>💰 Nuevo total:</span>
-                <span>$${totalOriginal.toLocaleString('es-CO')}</span>
-            `;
-        }
-        return;
-    }
-    
-    let totalAgregado = 0;
-    let html = '';
-    productosAgregados.forEach((item, index) => {
-        const subtotal = item.precio * item.cantidad;
-        totalAgregado += subtotal;
-        html += `
-            <div class="item">
-                <span>${item.nombre} x${item.cantidad}</span>
-                <span>
-                    $${subtotal.toLocaleString('es-CO')}
-                    <button onclick="window.quitarProductoAgregado(${index})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;margin-left:6px;">✕</button>
-                </span>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-    
-    const nuevoTotal = totalOriginal + totalAgregado;
-    if (totalContainer) {
-        totalContainer.innerHTML = `
-            <span>💰 Nuevo total:</span>
-            <span style="color:var(--green);">$${nuevoTotal.toLocaleString('es-CO')}</span>
-        `;
-    }
-}
-
-// Quitar producto agregado
-function quitarProductoAgregado(index) {
-    if (index >= 0 && index < productosAgregados.length) {
-        productosAgregados.splice(index, 1);
-        actualizarListaProductosAgregados();
-    }
-}
-
-// ============================================================
-// 📱 ENVIAR MENSAJE ACTUALIZADO
-// ============================================================
-async function enviarMensajeActualizado() {
-    try {
-        if (!pedidoAgregarProducto) {
-            toast('⚠️ No hay pedido seleccionado', 'error');
-            return;
-        }
-        
-        const { tiendaId, pedidoId } = pedidoAgregarProducto;
-        
-        if (productosAgregados.length === 0) {
-            toast('⚠️ No has agregado ningún producto', 'warn');
-            return;
-        }
-        
-        // Obtener el pedido original
-        const doc = await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId).get();
-        
-        if (!doc.exists) {
-            toast('⚠️ Pedido no encontrado', 'error');
-            return;
-        }
-        
-        const pedido = doc.data();
-        const tienda = tiendasCache[tiendaId] || {};
-        const nombreTienda = tienda.nombre || 'EYMOTOCOMIDAS';
-        const whatsapp = tienda.whatsapp || '';
-        const cliente = pedido.cliente || {};
-        const telefonoCliente = cliente.telefono || '';
-        
-        // Preparar datos actualizados
-        const itemsOriginales = pedido.items || [];
-        const itemsActualizados = [...itemsOriginales];
-        
-        // Agregar nuevos productos
-        let totalAgregado = 0;
-        productosAgregados.forEach(item => {
-            const subtotal = item.precio * item.cantidad;
-            totalAgregado += subtotal;
-            itemsActualizados.push({
-                nombre: item.nombre,
-                cantidad: item.cantidad,
-                precio: item.precio,
-                total: subtotal
-            });
-        });
-        
-        const nuevoTotal = (pedido.total || 0) + totalAgregado;
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        const totalPedido = pedido.total || 0;
         
-        // Guardar en Firestore
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                items: itemsActualizados,
-                total: nuevoTotal,
-                productosAgregados: productosAgregados,
-                fechaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-                actualizadoPor: auth.currentUser?.email || 'Admin'
-            });
+        // Construir mensaje para WhatsApp
+        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n`;
+        mensajeWhatsApp += `📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n`;
+        mensajeWhatsApp += `${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n`;
+        mensajeWhatsApp += `${mensajeInfo.texto}\n\n`;
+        mensajeWhatsApp += `📋 *Detalles del pedido:*\n`;
         
-        // Construir mensaje de WhatsApp
-        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n🛵 *PEDIDO ACTUALIZADO ${numeroPedido}*\n\n`;
-        mensajeWhatsApp += `👤 *Cliente:*\n${cliente.nombre || 'Desconocido'}\n\n`;
-        mensajeWhatsApp += `📱 *Teléfono:*\n${telefonoCliente || 'N/A'}\n\n`;
-        mensajeWhatsApp += `📍 *Dirección:*\n${cliente.direccion || 'N/A'}\n\n`;
-        mensajeWhatsApp += `🧾 *PRODUCTOS ACTUALIZADOS*\n\n`;
-        
-        itemsActualizados.forEach(item => {
-            let nombreItem = item.nombre || 'Producto';
-            if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
-            mensajeWhatsApp += `🍜 ${nombreItem} x${item.cantidad || 1} = $${(item.total || item.precio * item.cantidad || 0).toLocaleString('es-CO')}\n`;
-        });
-        
-        mensajeWhatsApp += `\n💰 *NUEVO TOTAL:* $${nuevoTotal.toLocaleString('es-CO')}`;
-        
-        // Marcar productos agregados
-        if (productosAgregados.length > 0) {
-            mensajeWhatsApp += `\n\n✅ *Productos agregados:*`;
-            productosAgregados.forEach(item => {
-                mensajeWhatsApp += `\n+ ${item.nombre} x${item.cantidad}`;
+        // Productos
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                const nombreItem = item.nombre || 'Producto';
+                const cantidad = item.cantidad || 1;
+                const precio = item.precio || 0;
+                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${(precio * cantidad).toLocaleString('es-CO')}\n`;
             });
         }
         
+        mensajeWhatsApp += `\n💰 *Total:* $${totalPedido.toLocaleString('es-CO')}`;
+        
+        // Método de pago
         const metodoPago = pedido.metodoPago || 'efectivo';
         if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
-            mensajeWhatsApp += `\n\n💳 *Pago pendiente de confirmación*`;
+            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
+            if (pedido.estadoPago === 'pagado') {
+                mensajeWhatsApp += ` ✅ Pagado`;
+            } else {
+                mensajeWhatsApp += ` ⏳ Pendiente de confirmación`;
+            }
         } else {
-            mensajeWhatsApp += `\n\n💵 *Pago en efectivo*`;
+            mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
         }
+        
+        // Dirección de entrega
+        if (pedido.cliente?.direccion) {
+            mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
+        }
+        if (pedido.cliente?.barrio) {
+            mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
+        }
+        
+        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
         
         // Enviar por WhatsApp
-        if (whatsapp) {
-            const urlWhatsApp = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-            window.open(urlWhatsApp, '_blank');
-        } else {
-            // Si no hay WhatsApp, mostrar el mensaje en una ventana
-            const ventana = window.open('', '_blank', 'width=500,height=600');
-            if (ventana) {
-                ventana.document.write(`
-                    <html>
-                    <head><title>Mensaje actualizado</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #1a1a2e; }
-                        pre { background: #f5f5f5; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: Arial; }
-                        .btn { padding: 10px 20px; background: #25D366; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
-                    </style>
-                    </head>
-                    <body>
-                        <h2>📱 Mensaje actualizado</h2>
-                        <p>El pedido ha sido actualizado. Copia y envía este mensaje al cliente:</p>
-                        <pre>${mensajeWhatsApp}</pre>
-                        <button class="btn" onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent); alert('¡Copiado!')">📋 Copiar mensaje</button>
-                        <br><br>
-                        <button onclick="window.close()">Cerrar</button>
-                    </body>
-                    </html>
-                `);
-                ventana.document.close();
-            }
-        }
+        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         
-        toast(`✅ Pedido actualizado con ${productosAgregados.length} productos nuevos`, 'success', 5000);
+        // Abrir WhatsApp en una nueva ventana
+        window.open(urlWhatsApp, '_blank');
+        console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
         
-        // Cerrar modal y recargar
-        cerrarModalAgregarProducto();
-        if (tiendaSeleccionada) {
-            escucharPedidosDeTienda(tiendaSeleccionada);
-        } else {
-            mostrarPedidosPendientesGlobal();
-        }
+        // También guardar la notificación en Firestore
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .collection('notificaciones').add({
+                estado: estadoNuevo,
+                mensaje: mensajeWhatsApp,
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                enviadoA: telefonoCliente
+            });
+        
+        return true;
         
     } catch (error) {
-        console.error('❌ Error enviando mensaje:', error);
-        toast('❌ Error: ' + error.message, 'error');
+        console.error('❌ Error enviando notificación:', error);
+        return false;
     }
 }
 
@@ -3334,7 +2984,7 @@ function escucharPedidosDeTienda(tiendaId) {
 }
 
 // ============================================================
-// FUNCIÓN: RENDER PEDIDO CON ESTADOS DINÁMICOS (CON DOMICILIO Y AGREGAR PRODUCTO)
+// FUNCIÓN: RENDER PEDIDO CON ESTADOS DINÁMICOS (CON DOMICILIO Y NOTIFICACIONES)
 // ============================================================
 function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, tipoNegocio) {
     const p = doc.data();
@@ -3505,17 +3155,9 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
+    // ✅ BOTÓN EDITAR PEDIDO
     if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    // ✅ BOTÓN PARA AGREGAR PRODUCTOS OLVIDADOS
-    if (estado !== 'Entregado' && estado !== 'Cancelado') {
-        acciones += `
-            <button class="btn-agregar-producto" onclick="window.abrirModalAgregarProducto('${tiendaId}','${pid}')">
-                ➕ Agregar producto olvidado
-            </button>
-        `;
     }
     
     if (esUltimoEstado || estado === 'Cancelado') {
@@ -3712,7 +3354,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== CAMPO DE DOMICILIO (GLOBAL) =====
     const campoDomicilio = `
         <div class="campo-domicilio">
             <span class="label-domicilio">🛵 Costo domicilio:</span>
@@ -3743,7 +3384,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         </div>
     `;
     
-    // ===== ACCIONES (GLOBAL) =====
+    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
@@ -3810,17 +3451,9 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
     }
     
+    // ✅ BOTÓN EDITAR PEDIDO
     if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && !tieneMensajero && estado !== 'Listo para asignar' && estado !== estadosNegocio[1]) {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    // ✅ BOTÓN PARA AGREGAR PRODUCTOS OLVIDADOS (GLOBAL)
-    if (estado !== 'Entregado' && estado !== 'Cancelado') {
-        acciones += `
-            <button class="btn-agregar-producto" onclick="window.abrirModalAgregarProducto('${tiendaId}','${pid}')">
-                ➕ Agregar producto olvidado
-            </button>
-        `;
     }
     
     if (esUltimo || estado === 'Cancelado') {
@@ -3870,7 +3503,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO
+// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE)
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -3885,6 +3518,7 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         }
         
         const data = doc.data();
+        const estadoActual = data.estado;
         
         if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
             toast('⚠️ Este pedido ya está finalizado', 'warn');
@@ -3896,6 +3530,7 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
+        // Actualizar el estado
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({ 
@@ -3906,14 +3541,20 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         
         toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
         
+        // ===== 📱 ENVIAR NOTIFICACIÓN AL CLIENTE =====
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoActual, nuevoEstado);
+        
         if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
             pedidosNotificados.delete(pedidoId);
             notificacionesMostradas.delete(pedidoId);
             detenerAlarmaGlobal(pedidoId);
         }
         
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
         
     } catch(e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -4095,7 +3736,7 @@ async function cargarEstado() {
 }
 
 // ============================================================
-// FUNCIONES DE EDICIÓN DE PEDIDOS
+// ✏️ EDITAR PEDIDO (COMPLETO)
 // ============================================================
 async function abrirEditarPedido(tiendaId, pedidoId) {
     try {
@@ -4107,6 +3748,7 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
         pedidoEditando = { id: pedidoId, tiendaId, data: p };
         itemsEditando = p.items ? p.items.map(item => ({ ...item })) : [];
         
+        // Cargar productos de la tienda
         const snap = await db.collection('tiendas').doc(tiendaId)
             .collection('productos').get();
         productosDisponibles = [];
@@ -4119,8 +3761,10 @@ async function abrirEditarPedido(tiendaId, pedidoId) {
         const modal = document.getElementById('modalEditarPedido');
         if (modal) modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        
     } catch(e) {
         toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
     }
 }
 
@@ -4163,12 +3807,17 @@ function renderizarEditarPedido() {
         `;
     });
     
-    let selectorProductos = '<option value="">Agregar producto...</option>';
+    // Selector de productos disponibles
+    let selectorProductos = '<option value="">➕ Agregar producto...</option>';
     productosDisponibles.forEach(prod => {
         const nombre = prod.name || 'Producto';
         const precio = prod.precio || 0;
-        selectorProductos += `<option value="${prod.id}">${nombre} - $${precio.toLocaleString('es-CO')}</option>`;
+        const stock = prod.stock !== undefined ? ` (Stock: ${prod.stock})` : '';
+        selectorProductos += `<option value="${prod.id}">${nombre} - $${precio.toLocaleString('es-CO')}${stock}</option>`;
     });
+    
+    const costoDomicilio = p.costoDomicilio || 0;
+    const totalConDomicilio = total + costoDomicilio;
     
     container.innerHTML = `
         <div class="pedido-info">
@@ -4176,11 +3825,12 @@ function renderizarEditarPedido() {
             <div class="row"><span class="label">👤 Cliente:</span><span>${cliente.nombre || 'Desconocido'}</span></div>
             <div class="row"><span class="label">📍 Dirección:</span><span>${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">📱 Teléfono:</span><span>${cliente.telefono || 'N/A'}</span></div>
+            <div class="row"><span class="label">🛵 Domicilio:</span><span>$${costoDomicilio.toLocaleString('es-CO')}</span></div>
         </div>
         
         <div style="font-weight:700;margin-bottom:8px;">🧾 Productos (${itemsEditando.length})</div>
         <div class="productos-lista">
-            ${itemsHtml || '<div style="color:var(--text-muted);text-align:center;padding:10px;">No hay productos</div>'}
+            ${itemsHtml || '<div style="color:var(--text-muted);text-align:center;padding:10px;">No hay productos en este pedido</div>'}
         </div>
         
         <div class="agregar-producto-area">
@@ -4190,7 +3840,7 @@ function renderizarEditarPedido() {
         
         <div class="total-editar">
             <span>💰 TOTAL</span>
-            <span class="val">$${total.toLocaleString('es-CO')}</span>
+            <span class="val">$${totalConDomicilio.toLocaleString('es-CO')}</span>
         </div>
         
         <button class="btn-guardar-edicion" onclick="window.guardarEdicionPedido()">💾 Guardar cambios</button>
@@ -4222,9 +3872,22 @@ function agregarProductoAPedido() {
     const producto = productosDisponibles.find(p => p.id === prodId);
     if (!producto) return;
     
-    const existente = itemsEditando.find(i => i.id === prodId && i.pesoGramos === (producto.pesoMinimo || null));
+    // Verificar stock
+    if (producto.stock !== undefined && producto.stock <= 0) {
+        toast('⚠️ Producto sin stock disponible', 'warn');
+        return;
+    }
+    
+    // Verificar si ya existe
+    const existente = itemsEditando.find(i => i.id === prodId);
     if (existente) {
+        // Verificar stock disponible
+        if (producto.stock !== undefined && existente.cantidad >= producto.stock) {
+            toast('⚠️ No hay suficiente stock', 'warn');
+            return;
+        }
         existente.cantidad++;
+        toast(`✅ ${producto.name} cantidad aumentada`, 'success', 1500);
     } else {
         let precio = producto.precio || 0;
         let pesoGramos = null;
@@ -4243,15 +3906,24 @@ function agregarProductoAPedido() {
             precio: Math.round(precio),
             pesoGramos: pesoGramos
         });
+        toast(`✅ ${producto.name} agregado al pedido`, 'success', 1500);
     }
+    
     renderizarEditarPedido();
-    toast('✅ Producto agregado', 'success', 1500);
 }
 
 async function guardarEdicionPedido() {
     if (!pedidoEditando) return;
     const { tiendaId, id } = pedidoEditando;
+    
+    // Verificar que haya productos
+    if (itemsEditando.length === 0) {
+        toast('⚠️ El pedido debe tener al menos un producto', 'warn');
+        return;
+    }
+    
     try {
+        // Calcular total
         let total = 0;
         const itemsParaGuardar = itemsEditando.map(item => {
             const subtotal = item.precio * item.cantidad;
@@ -4266,20 +3938,35 @@ async function guardarEdicionPedido() {
             };
         });
         
+        // Obtener el pedido actual para mantener el costo de domicilio
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(id).get();
+        const data = doc.data();
+        const costoDomicilio = data.costoDomicilio || 0;
+        const totalConDomicilio = total + costoDomicilio;
+        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(id)
             .update({
                 items: itemsParaGuardar,
                 total: Math.round(total),
+                totalConDomicilio: Math.round(totalConDomicilio),
                 editadoPor: auth.currentUser?.email || 'Admin',
                 fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
             });
         
-        toast('✅ Pedido actualizado correctamente', 'success');
+        toast(`✅ Pedido actualizado correctamente. Nuevo total: $${totalConDomicilio.toLocaleString('es-CO')}`, 'success', 4000);
         cerrarEditarPedido();
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
+        
+        // Recargar la vista
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
     } catch(e) {
+        console.error('❌ Error guardando:', e);
         toast('❌ Error: ' + e.message, 'error');
     }
 }
@@ -4634,7 +4321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('🛵 Costo de domicilio integrado');
-    console.log('📦 Agregar productos olvidados integrado');
+    console.log('📱 Notificaciones de estado al cliente integradas');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
@@ -4737,16 +4424,12 @@ window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
 window.cargarMensajerosAdmin = cargarMensajerosAdmin;
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
-window.abrirModalAgregarProducto = abrirModalAgregarProducto;
-window.cerrarModalAgregarProducto = cerrarModalAgregarProducto;
-window.agregarProductoAlPedido = agregarProductoAlPedido;
-window.quitarProductoAgregado = quitarProductoAgregado;
-window.enviarMensajeActualizado = enviarMensajeActualizado;
+window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
 
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
-console.log('📦 Agregar productos olvidados: FUNCIONALIDAD ACTIVADA');
-console.log('📱 Mensaje actualizado por WhatsApp: FUNCIONALIDAD ACTIVADA');
+console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA');
+console.log('📱 Notificaciones de estado al cliente: FUNCIONALIDAD ACTIVADA');
 </script>
 </body>
 </html>
