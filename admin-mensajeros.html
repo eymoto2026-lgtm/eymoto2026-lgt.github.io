@@ -32,6 +32,8 @@
         .btn-ghost:hover { background: var(--surface3); }
         .btn-whatsapp { background: #25D366; color: #fff; }
         .btn-whatsapp:hover { background: #1da851; }
+        .btn-editar-mensajero { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+        .btn-editar-mensajero:hover { background: var(--blue); color: #fff; }
         .hidden { display: none !important; }
         header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
@@ -114,6 +116,11 @@
         .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
         .modal .info-row .label { color: var(--text-muted); }
         .modal .info-row .value { color: #fff; font-weight: 500; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+        .modal .form-group input { width: 100%; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; font-size: 14px; outline: none; }
+        .modal .form-group input:focus { border-color: var(--yellow); }
+        .modal .form-group select { width: 100%; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; font-size: 14px; outline: none; }
         .filtros { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: var(--surface2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
         .filtros select, .filtros input { flex: 1; min-width: 150px; }
         .filtros button { flex: 0 0 auto; width: auto; }
@@ -146,8 +153,6 @@
         .auto-refresh-indicator { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
         .auto-refresh-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
-        .llamada-entrante { background: var(--red); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; animation: llamada-pulse 0.8s ease-in-out infinite; display: inline-block; }
-        @keyframes llamada-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
         .btn-whatsapp-envio { background: #25D366; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: 100%; }
         .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
         .btn-whatsapp-envio:active { transform: scale(0.97); }
@@ -226,6 +231,8 @@
         </div>
     </div>
 </div>
+
+<!-- ===== MODAL ASIGNACIÓN ===== -->
 <div class="modal" id="modalAsignacion" style="display:none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -235,6 +242,19 @@
         <div id="modalAsignacionContenido"></div>
     </div>
 </div>
+
+<!-- ===== MODAL EDITAR MENSAJERO ===== -->
+<div class="modal" id="modalEditarMensajero" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalEditarTitulo">✏️ Editar Mensajero</h3>
+            <button class="modal-close" onclick="window.cerrarModalEditarMensajero()">✕</button>
+        </div>
+        <div id="modalEditarContenido"></div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETALLE ===== -->
 <div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -278,18 +298,13 @@ let notificacionActiva = false;
 let pedidosEnProceso = new Set();
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (CORREGIDO)
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
 // ============================================================
 function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData) {
-    // Limpiar el teléfono: eliminar espacios, signos, etc.
     let telefono = String(mensajeroTelefono || '').replace(/[\s\-\(\)\+\.]/g, '');
-    
-    // Si no tiene código de país, agregar 57 (Colombia)
     if (telefono && !telefono.startsWith('57') && telefono.length === 10) {
         telefono = '57' + telefono;
     }
-    
-    // Si aún no hay teléfono, usar el de la tienda
     if (!telefono) {
         telefono = pedidoData?.telefonoTienda || '573169934516';
         telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
@@ -297,12 +312,8 @@ function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData
             telefono = '57' + telefono;
         }
     }
-    
-    // Construir el enlace directo al panel de mensajeros con el pedido
     const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
     const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
-    
-    // Mensaje personalizado
     const mensaje = `🛵 *¡Nuevo pedido disponible!*\n\n` +
                     `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n` +
                     `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n` +
@@ -313,37 +324,22 @@ function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData
                     `📱 *Haz clic en el enlace para ver el pedido:*\n` +
                     `${url}\n\n` +
                     `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
-    
-    const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-    return urlWhatsApp;
+    return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
 function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, esMasivo = false) {
     try {
-        // Obtener teléfono del mensajero
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
-        
         if (!telefono) {
             console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
             toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
-            
-            // Mostrar opción para copiar enlace manualmente
-            const url = generarEnlaceWhatsApp('', tiendaId, pedidoId, pedidoData);
-            toast(`📋 Copia el enlace manualmente: ${url}`, 'info', 5000);
             return;
         }
-        
         const url = generarEnlaceWhatsApp(telefono, tiendaId, pedidoId, pedidoData);
-        
         console.log(`📱 Abriendo WhatsApp para ${mensajero.nombre}: ${url}`);
-        
-        // Abrir WhatsApp en una nueva ventana
         window.open(url, '_blank');
-        
         const tipo = esMasivo ? 'notificación masiva' : 'asignación manual';
         toast(`📱 WhatsApp abierto para ${mensajero.nombre} (${tipo})`, 'success', 4000);
-        
-        // Guardar registro de notificación
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -354,10 +350,8 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, e
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     tipo: esMasivo ? 'masivo' : 'manual',
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
-                })
-                .catch(err => console.warn('Error guardando registro:', err));
+                }).catch(err => console.warn('Error guardando registro:', err));
         }
-        
     } catch (error) {
         console.error('❌ Error enviando WhatsApp:', error);
         toast('❌ Error al enviar notificación: ' + error.message, 'error');
@@ -515,7 +509,6 @@ function escucharPedidosEnTiempoReal() {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
-    
     db.collection('tiendas').get().then(snap => {
         snap.forEach(doc => {
             const tiendaId = doc.id;
@@ -538,25 +531,16 @@ function escucharPedidosEnTiempoReal() {
                                         window._despertador.detenerDespertador(pedidoId);
                                     }
                                 }
-                                
                                 if (estaNotificado && window._despertador && window._despertador.estaSonando(pedidoId)) {
                                     window._despertador.detenerDespertador(pedidoId);
                                 }
-                                
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (!existe) {
-                                            todosLosPedidos.push({ 
-                                                id: pedidoId, 
-                                                tiendaId: tiendaId, 
-                                                ...data,
-                                                _nuevo: true 
-                                            });
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
-                                            
-                                            // Notificar por WhatsApp a mensajeros disponibles
                                             notificarMensajerosDisponibles(tiendaId, pedidoId, data);
                                         }
                                     }
@@ -600,18 +584,13 @@ function escucharPedidosEnTiempoReal() {
 function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
     try {
         const tienda = tiendasCache[tiendaId] || {};
-        
-        // Obtener mensajeros disponibles (activos, conectados y NO ocupados)
         const mensajerosDisponibles = todosLosMensajeros.filter(m => 
             m.activo !== false && m.conectado !== false && !m.ocupado
         );
-        
         if (mensajerosDisponibles.length === 0) {
             console.log('⚠️ No hay mensajeros disponibles para notificar');
             return;
         }
-        
-        // Preparar datos del pedido para el mensaje
         const pedidoInfo = {
             numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
             nombreTienda: tienda.nombre || 'Tienda',
@@ -619,13 +598,9 @@ function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
             total: pedidoData.total || 0,
             telefonoTienda: tienda.whatsapp || ''
         };
-        
         console.log(`📢 Notificando a ${mensajerosDisponibles.length} mensajeros disponibles`);
-        
-        // Enviar notificación a cada mensajero disponible
         let enviados = 0;
         mensajerosDisponibles.forEach(mensajero => {
-            // Verificar si el mensajero tiene teléfono
             const telefono = mensajero.telefono || mensajero.whatsapp || '';
             if (telefono) {
                 enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
@@ -634,11 +609,9 @@ function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
                 console.warn(`⚠️ Mensajero ${mensajero.nombre || mensajero.email} sin teléfono`);
             }
         });
-        
         if (enviados > 0) {
             console.log(`✅ Notificaciones WhatsApp enviadas a ${enviados} mensajeros`);
         }
-        
     } catch (error) {
         console.error('❌ Error notificando mensajeros:', error);
     }
@@ -703,6 +676,7 @@ function renderizarMensajeros() {
                 </div>
                 <span class="estado ${estadoClass}">${estadoLabel}</span>
                 <div class="acciones">
+                    <button class="btn-editar-mensajero btn-sm" onclick="abrirModalEditarMensajero('${m.uid}')">✏️ Editar</button>
                     <button class="btn-info btn-sm" onclick="verDetalle('${m.uid}')">📋 Ver</button>
                     ${activo && !ocupado ? 
                         `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', false)">🔴 Desactivar</button>` :
@@ -782,26 +756,23 @@ function renderizarPedidosAsignar() {
 }
 
 // ============================================================
-// 📤 ABRIR MODAL DE ASIGNACIÓN (CON WHATSAPP)
+// 📤 ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
 let pedidoAsignacion = null;
 
 function abrirModalAsignacion(pedidoId, tiendaId) {
     console.log(`🔍 abrirModalAsignacion llamado para pedido: ${pedidoId}`);
-    
     const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (!pedido) { 
         toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); 
         recargarPedidos(); 
         return; 
     }
-    
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
         recargarPedidos();
         return;
     }
-    
     pedidoAsignacion = { tiendaId, pedidoId };
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
@@ -813,7 +784,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const contenido = document.getElementById('modalAsignacionContenido');
     const titulo = document.getElementById('modalAsignacionTitulo');
     titulo.textContent = `📦 Asignar Pedido ${numero}`;
-    
     let mensajerosOptions = '';
     if (mensajerosDisponibles.length === 0) {
         mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
@@ -825,7 +795,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'}${telefonoDisplay}</option>`;
         });
     }
-    
     contenido.innerHTML = `
         <div class="pedido-info-resumen">
             <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
@@ -833,45 +802,37 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
         </div>
-        
         <div class="opcion-asignacion" style="border-color: var(--blue);">
             <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
-            
             <div style="margin: 8px 0 4px 0;">
                 <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
                 <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
                     ${mensajerosOptions}
                 </select>
             </div>
-            
             <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
                     style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
                     ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                 ✅ Asignar a este mensajero
             </button>
         </div>
-        
         <div class="opcion-asignacion" style="border-color: var(--yellow);">
             <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
             <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp.</div>
-            
             <div class="mensajeros-disponibles">
                 📨 Mensajeros que recibirán la notificación: 
                 <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
             </div>
-            
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
                 ⚡ Cada mensajero recibirá un enlace directo al pedido en su WhatsApp.
             </div>
-            
             <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
                     style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
                     ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                 🔔 Notificar a todos por WhatsApp
             </button>
         </div>
-        
         <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);">
             <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">📱 Enlace directo del pedido</div>
             <div style="display:flex;gap:6px;">
@@ -879,7 +840,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 <button class="btn-sm" onclick="copiarEnlace()" style="width:auto;padding:4px 12px;background:var(--blue);color:#fff;border-radius:6px;">📋 Copiar</button>
             </div>
         </div>
-        
         <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
                 style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
             Cancelar
@@ -887,7 +847,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     `;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    
     actualizarHeaderBadge();
     renderizarPedidosAsignar();
 }
@@ -919,18 +878,14 @@ async function asignarPedidoManual() {
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
         cerrarModalAsignacion();
         recargarPedidos();
         return;
     }
-    
     try {
         toast('⏳ Asignando pedido...', 'info');
-        
-        // Obtener datos del pedido para el mensaje
         const pedidoData = pedidoActual || {};
         const tienda = tiendasCache[tiendaId] || {};
         const pedidoInfo = {
@@ -940,7 +895,6 @@ async function asignarPedidoManual() {
             total: pedidoData.total || 0,
             telefonoTienda: tienda.whatsapp || ''
         };
-        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -951,24 +905,18 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: false
             });
-        
-        // 📱 ENVIAR WHATSAPP
         if (mensajero) {
             enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, false);
         }
-        
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
-        
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
-        
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
             recargarPedidos();
             recargarMensajeros();
         }, 1000);
-        
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
@@ -986,18 +934,14 @@ async function asignarPedidoManual() {
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
         cerrarModalAsignacion();
         recargarPedidos();
         return;
     }
-    
     try {
         toast('⏳ Notificando mensajeros...', 'info');
-        
-        // Obtener datos del pedido
         const tienda = tiendasCache[tiendaId] || {};
         const pedidoInfo = {
             numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
@@ -1006,19 +950,14 @@ async function notificarATodos() {
             total: pedidoActual?.total || 0,
             telefonoTienda: tienda.whatsapp || ''
         };
-        
-        // Obtener mensajeros disponibles
         const mensajerosDisponibles = todosLosMensajeros.filter(m => 
             m.activo !== false && m.conectado !== false && !m.ocupado
         );
-        
         if (mensajerosDisponibles.length === 0) {
             toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
             cerrarModalAsignacion();
             return;
         }
-        
-        // Enviar notificación a cada mensajero disponible
         let enviados = 0;
         mensajerosDisponibles.forEach(mensajero => {
             const telefono = mensajero.telefono || mensajero.whatsapp || '';
@@ -1029,14 +968,11 @@ async function notificarATodos() {
                 console.warn(`⚠️ Mensajero ${mensajero.nombre} sin teléfono`);
             }
         });
-        
         if (enviados === 0) {
             toast('⚠️ Ningún mensajero tiene teléfono registrado', 'warn');
             cerrarModalAsignacion();
             return;
         }
-        
-        // Marcar pedido como notificado
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1045,20 +981,105 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: true
             });
-        
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         cerrarModalAsignacion();
-        
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
-        
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
             recargarPedidos();
         }, 1000);
-        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// ✏️ EDITAR MENSAJERO
+// ============================================================
+let mensajeroEditando = null;
+
+function abrirModalEditarMensajero(uid) {
+    const mensajero = todosLosMensajeros.find(m => m.uid === uid);
+    if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
+    mensajeroEditando = mensajero;
+    const modal = document.getElementById('modalEditarMensajero');
+    const contenido = document.getElementById('modalEditarContenido');
+    const titulo = document.getElementById('modalEditarTitulo');
+    titulo.textContent = `✏️ Editar: ${mensajero.nombre || 'Sin nombre'}`;
+    contenido.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border);">
+                <div style="width:48px;height:48px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--yellow);border:2px solid var(--border);">
+                    ${(mensajero.nombre || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;">${mensajero.nombre || 'Sin nombre'}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">${mensajero.email || 'Sin email'}</div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>👤 Nombre completo</label>
+            <input id="editNombre" value="${mensajero.nombre || ''}" placeholder="Nombre del mensajero">
+        </div>
+        <div class="form-group">
+            <label>📧 Email</label>
+            <input id="editEmail" value="${mensajero.email || ''}" disabled style="opacity:0.6;cursor:not-allowed;">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">El email no se puede modificar por seguridad</div>
+        </div>
+        <div class="form-group">
+            <label>📱 Teléfono (WhatsApp)</label>
+            <input id="editTelefono" value="${mensajero.telefono || mensajero.whatsapp || ''}" placeholder="573169934516">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Incluye código de país (ej: 573169934516)</div>
+        </div>
+        <div class="form-group">
+            <label>📌 Estado</label>
+            <select id="editEstado">
+                <option value="activo" ${mensajero.activo !== false ? 'selected' : ''}>🟢 Activo</option>
+                <option value="inactivo" ${mensajero.activo === false ? 'selected' : ''}>🔴 Inactivo</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+            <button onclick="guardarEditarMensajero()" style="flex:1;background:var(--yellow);color:#1a1a2e;font-weight:700;border:none;padding:12px;border-radius:8px;cursor:pointer;transition:all 0.2s;">💾 Guardar cambios</button>
+            <button class="btn-ghost" onclick="cerrarModalEditarMensajero()" style="width:auto;padding:12px 16px;">Cancelar</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalEditarMensajero() {
+    document.getElementById('modalEditarMensajero').style.display = 'none';
+    document.body.style.overflow = '';
+    mensajeroEditando = null;
+}
+
+async function guardarEditarMensajero() {
+    if (!mensajeroEditando) { toast('⚠️ No hay mensajero seleccionado', 'error'); return; }
+    const uid = mensajeroEditando.uid;
+    const nombre = document.getElementById('editNombre').value.trim();
+    const telefono = document.getElementById('editTelefono').value.trim();
+    const estado = document.getElementById('editEstado').value;
+    if (!nombre) { toast('⚠️ El nombre no puede estar vacío', 'error'); return; }
+    if (!telefono) { toast('⚠️ El teléfono no puede estar vacío', 'error'); return; }
+    try {
+        toast('⏳ Guardando cambios...', 'info');
+        await db.collection('usuarios').doc(uid).update({
+            nombre: nombre,
+            telefono: telefono,
+            whatsapp: telefono,
+            activo: estado === 'activo',
+            editadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+            editadoEn: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast(`✅ Mensajero "${nombre}" actualizado correctamente`, 'success', 3000);
+        cerrarModalEditarMensajero();
+        filtrarMensajeros();
+        actualizarEstadisticas();
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
     }
 }
 
@@ -1109,6 +1130,7 @@ async function crearMensajero() {
         const uid = result.user.uid;
         await db.collection('usuarios').doc(uid).set({
             email, nombre, telefono: telefono || '',
+            whatsapp: telefono || '',
             mensajero: true, rol: 'mensajero', activo: true, conectado: false,
             creadoEn: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -1173,6 +1195,7 @@ function verDetalle(uid) {
     `;
     if (mensajero.activadoEn) html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
     if (mensajero.desactivadoEn) html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
+    if (mensajero.editadoEn) html += `<div class="info-row"><span class="label">✏️ Editado</span><span class="value">${formatearFecha(mensajero.editadoEn)}</span></div>`;
     document.getElementById('modalTitulo').textContent = `📋 ${mensajero.nombre || 'Mensajero'}`;
     document.getElementById('modalContenido').innerHTML = html;
     document.getElementById('modalDetalle').classList.add('active');
@@ -1233,9 +1256,13 @@ window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
 window.enviarNotificacionWhatsApp = enviarNotificacionWhatsApp;
 window.copiarEnlace = copiarEnlace;
+window.abrirModalEditarMensajero = abrirModalEditarMensajero;
+window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
+window.guardarEditarMensajero = guardarEditarMensajero;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
+console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 </script>
 </body>
 </html>
