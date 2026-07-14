@@ -46,8 +46,6 @@
         .btn-refrescar:active { transform: scale(0.95); }
         .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-test-sound:hover { background: #7d3c98; }
-        .btn-simular-pedido { background: var(--orange); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
-        .btn-simular-pedido:hover { background: #e65c00; }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
         #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
         #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
@@ -187,7 +185,6 @@
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
         <button class="btn-test-sound" onclick="probarSonidoAdmin()">⏰ Probar Despertador</button>
-        <button class="btn-simular-pedido" onclick="simularPedidoAdmin()">🧪 Simular Pedido</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -1325,45 +1322,6 @@ function cerrarModal(event) {
 }
 
 // ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA PARA ADMIN
-// ============================================================
-function simularPedidoAdmin() {
-    console.log('🧪 ADMIN: Simulando pedido de prueba...');
-    
-    const pedidoFalso = {
-        id: 'PEDIDO-ADMIN-TEST-' + Date.now(),
-        tiendaId: 'test',
-        estado: 'Listo para asignar',
-        mensajeroId: null,
-        notificacionEnviada: false,
-        numeroPedido: '#ADMIN-TEST',
-        cliente: { 
-            nombre: 'Cliente de Prueba Admin', 
-            direccion: 'Calle Test 123',
-            telefono: '3123456789'
-        },
-        total: 35000,
-        costoDomicilio: 8000,
-        items: [
-            { nombre: 'Producto Test 1', cantidad: 2, precio: 10000, total: 20000 },
-            { nombre: 'Producto Test 2', cantidad: 1, precio: 7000, total: 7000 }
-        ],
-        _nuevo: true
-    };
-    
-    todosLosPedidos.push(pedidoFalso);
-    console.log('✅ Pedido de prueba ADMIN agregado');
-    
-    // ⏰ DESPERTADOR
-    sonidoDespertadorAdmin();
-    
-    toast('🔔 NUEVO PEDIDO DE PRUEBA ADMIN', 'new', 5000);
-    renderizarPedidosAsignar();
-    actualizarEstadisticas();
-    actualizarHeaderBadge();
-}
-
-// ============================================================
 // FUNCIONES DE UTILIDAD
 // ============================================================
 function formatearFecha(fecha) {
@@ -1415,13 +1373,12 @@ window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
-window.simularPedidoAdmin = simularPedidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ SONIDO DE DESPERTADOR (RING RING) ACTIVADO');
-console.log('🧪 Para probar: haz clic en "⏰ Probar Despertador" o "🧪 Simular Pedido"');
+console.log('🧪 Para probar: haz clic en "⏰ Probar Despertador"');
 </script>
 </body>
 </html>
