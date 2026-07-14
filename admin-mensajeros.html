@@ -30,10 +30,10 @@
         .btn-info:hover { background: #0277bd; }
         .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
-        .btn-warning { background: var(--orange); color: #1a1a2e; }
-        .btn-warning:hover { background: #e65c00; }
+        .btn-whatsapp { background: #25D366; color: #fff; }
+        .btn-whatsapp:hover { background: #1da851; }
         .hidden { display: none !important; }
-        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
         header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
@@ -88,6 +88,7 @@
         .mensajero-card .info .nombre { font-size: 15px; font-weight: 700; }
         .mensajero-card .info .email { font-size: 12px; color: var(--text-muted); }
         .mensajero-card .info .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .mensajero-card .info .telefono { font-size: 12px; color: var(--green); }
         .mensajero-card .estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
         .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
@@ -147,6 +148,10 @@
         @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
         .llamada-entrante { background: var(--red); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; animation: llamada-pulse 0.8s ease-in-out infinite; display: inline-block; }
         @keyframes llamada-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
+        .btn-whatsapp-envio { background: #25D366; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
+        .btn-whatsapp-envio:active { transform: scale(0.97); }
+        .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -201,7 +206,7 @@
                 <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label><input id="nuevoNombre" placeholder="Carlos Pérez"></div>
             </div>
             <div class="row2">
-                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono</label><input id="nuevoTelefono" placeholder="3169934516"></div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono (WhatsApp) *</label><input id="nuevoTelefono" placeholder="573169934516"></div>
                 <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label><input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!"></div>
             </div>
             <div class="acciones">
@@ -261,176 +266,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SISTEMA DE SONIDO - DESPERTADOR (RING RING)
-// ============================================================
-class SonidoDespertador {
-    constructor() {
-        this.ctx = null;
-        this.inicializado = false;
-        this.intervalos = {};
-        this.pedidosActivos = {};
-        this.temporizadores = {};
-        this.audioContextIniciado = false;
-        this.reproduciendo = false;
-        // 🔥 NUEVO: Control de pedidos ya procesados para evitar reactivación
-        this.pedidosProcesados = new Set();
-    }
-
-    iniciarAudio() {
-        try {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
-            this.inicializado = true;
-            this.audioContextIniciado = true;
-            return true;
-        } catch (e) { 
-            console.warn('⚠️ Error inicializando audio:', e.message);
-            return false; 
-        }
-    }
-
-    tonoDespertador(frecuencia, duracion, volumen = 0.3) {
-        try {
-            if (!this.inicializado || !this.ctx || this.ctx.state !== 'running') {
-                if (!this.iniciarAudio()) return;
-            }
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.frequency.value = frecuencia;
-            osc.type = 'square';
-            gain.gain.setValueAtTime(0, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(volumen, this.ctx.currentTime + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion);
-            osc.start(this.ctx.currentTime);
-            osc.stop(this.ctx.currentTime + duracion);
-
-            setTimeout(() => {
-                try {
-                    const osc2 = this.ctx.createOscillator();
-                    const gain2 = this.ctx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(this.ctx.destination);
-                    osc2.frequency.value = frecuencia * 1.5;
-                    osc2.type = 'sine';
-                    gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracion * 0.6);
-                    osc2.start(this.ctx.currentTime + 0.02);
-                    osc2.stop(this.ctx.currentTime + duracion * 0.6);
-                } catch (e) {}
-            }, 20);
-        } catch (e) {}
-    }
-
-    secuenciaRingRing() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            this.tonoDespertador(800, 0.3, 0.35);
-            setTimeout(() => {
-                try { this.tonoDespertador(1000, 0.3, 0.35); } catch (e) {}
-            }, 400);
-            setTimeout(() => {
-                try { this.tonoDespertador(800, 0.3, 0.35); } catch (e) {}
-            }, 800);
-            setTimeout(() => {
-                try { this.tonoDespertador(1000, 0.3, 0.35); } catch (e) {}
-            }, 1200);
-        } catch (e) {}
-    }
-
-    // 🔥 INICIAR DESPERTADOR - SOLO SI NO HA SIDO PROCESADO
-    iniciarDespertador(pedidoId) {
-        if (this.pedidosActivos[pedidoId]) return;
-        if (this.pedidosProcesados.has(pedidoId)) {
-            console.log(`⏰ [ADMIN] Pedido ${pedidoId} ya fue procesado, no se reactiva`);
-            return;
-        }
-        console.log(`⏰ [ADMIN] 🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
-        if (!this.inicializado) this.iniciarAudio();
-        this.pedidosActivos[pedidoId] = true;
-        this.reproduciendo = true;
-        this.secuenciaRingRing();
-        this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
-                this.secuenciaRingRing();
-            } else {
-                this.detenerDespertador(pedidoId);
-            }
-        }, 2500);
-    }
-
-    // 🔥 DETENER DESPERTADOR Y MARCAR COMO PROCESADO
-    detenerDespertador(pedidoId) {
-        if (!pedidoId) {
-            Object.keys(this.pedidosActivos).forEach(id => {
-                this.detenerDespertador(id);
-            });
-            return;
-        }
-        if (this.pedidosActivos[pedidoId]) {
-            console.log(`⏰ [ADMIN] 🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
-            delete this.pedidosActivos[pedidoId];
-            // 🔥 MARCAR COMO PROCESADO PARA QUE NO SE REACTIVE
-            this.pedidosProcesados.add(pedidoId);
-            if (this.intervalos[pedidoId]) {
-                clearInterval(this.intervalos[pedidoId]);
-                delete this.intervalos[pedidoId];
-            }
-            if (this.temporizadores[pedidoId]) {
-                clearTimeout(this.temporizadores[pedidoId]);
-                delete this.temporizadores[pedidoId];
-            }
-            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
-            if (!hayActivos) {
-                this.reproduciendo = false;
-                const badge = document.getElementById('headerBadge');
-                if (badge) {
-                    badge.style.animation = '';
-                    badge.textContent = '⏰🔔 0';
-                }
-            }
-        }
-    }
-
-    // 🔥 LIMPIAR PEDIDOS PROCESADOS (para recargas)
-    limpiarProcesados() {
-        this.pedidosProcesados.clear();
-    }
-
-    estaSonando(pedidoId) {
-        return this.pedidosActivos[pedidoId] === true;
-    }
-
-    sonidoConfirmacion() {
-        try {
-            if (!this.inicializado) this.iniciarAudio();
-            if (!this.ctx || this.ctx.state !== 'running') return;
-            [600, 800, 1000].forEach((freq, i) => {
-                const t = i * 0.1;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.frequency.value = freq;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.2, this.ctx.currentTime + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + t + 0.15);
-                osc.start(this.ctx.currentTime + t);
-                osc.stop(this.ctx.currentTime + t + 0.15);
-            });
-        } catch (e) {}
-    }
-}
-
-const sonidoDespertador = new SonidoDespertador();
-
-// ============================================================
 // VARIABLES GLOBALES
 // ============================================================
 let todosLosMensajeros = [];
@@ -440,8 +275,94 @@ let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
 let notificacionActiva = false;
-// 🔥 Control para evitar duplicados en el listener
 let pedidosEnProceso = new Set();
+
+// ============================================================
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (CORREGIDO)
+// ============================================================
+function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData) {
+    // Limpiar el teléfono: eliminar espacios, signos, etc.
+    let telefono = String(mensajeroTelefono || '').replace(/[\s\-\(\)\+\.]/g, '');
+    
+    // Si no tiene código de país, agregar 57 (Colombia)
+    if (telefono && !telefono.startsWith('57') && telefono.length === 10) {
+        telefono = '57' + telefono;
+    }
+    
+    // Si aún no hay teléfono, usar el de la tienda
+    if (!telefono) {
+        telefono = pedidoData?.telefonoTienda || '573169934516';
+        telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        if (!telefono.startsWith('57') && telefono.length === 10) {
+            telefono = '57' + telefono;
+        }
+    }
+    
+    // Construir el enlace directo al panel de mensajeros con el pedido
+    const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
+    const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+    
+    // Mensaje personalizado
+    const mensaje = `🛵 *¡Nuevo pedido disponible!*\n\n` +
+                    `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n` +
+                    `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n` +
+                    `👤 *Cliente:* ${pedidoData.cliente?.nombre || 'Cliente'}\n` +
+                    `💰 *Total:* $${(pedidoData.total || 0).toLocaleString('es-CO')}\n\n` +
+                    `📍 *Dirección:* ${pedidoData.cliente?.direccion || 'N/A'}\n` +
+                    `📱 *Teléfono cliente:* ${pedidoData.cliente?.telefono || 'N/A'}\n\n` +
+                    `📱 *Haz clic en el enlace para ver el pedido:*\n` +
+                    `${url}\n\n` +
+                    `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
+    
+    const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+    return urlWhatsApp;
+}
+
+function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, esMasivo = false) {
+    try {
+        // Obtener teléfono del mensajero
+        let telefono = mensajero.telefono || mensajero.whatsapp || '';
+        
+        if (!telefono) {
+            console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
+            toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
+            
+            // Mostrar opción para copiar enlace manualmente
+            const url = generarEnlaceWhatsApp('', tiendaId, pedidoId, pedidoData);
+            toast(`📋 Copia el enlace manualmente: ${url}`, 'info', 5000);
+            return;
+        }
+        
+        const url = generarEnlaceWhatsApp(telefono, tiendaId, pedidoId, pedidoData);
+        
+        console.log(`📱 Abriendo WhatsApp para ${mensajero.nombre}: ${url}`);
+        
+        // Abrir WhatsApp en una nueva ventana
+        window.open(url, '_blank');
+        
+        const tipo = esMasivo ? 'notificación masiva' : 'asignación manual';
+        toast(`📱 WhatsApp abierto para ${mensajero.nombre} (${tipo})`, 'success', 4000);
+        
+        // Guardar registro de notificación
+        if (pedidoId && mensajero.uid) {
+            db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .collection('notificacionesWhatsApp').add({
+                    mensajeroId: mensajero.uid,
+                    mensajeroNombre: mensajero.nombre || 'Mensajero',
+                    telefono: telefono,
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    tipo: esMasivo ? 'masivo' : 'manual',
+                    enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
+                })
+                .catch(err => console.warn('Error guardando registro:', err));
+        }
+        
+    } catch (error) {
+        console.error('❌ Error enviando WhatsApp:', error);
+        toast('❌ Error al enviar notificación: ' + error.message, 'error');
+    }
+}
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -452,7 +373,6 @@ function iniciarSesion() {
     const msg = document.getElementById('loginMsg');
     msg.textContent = '';
     if (!email || !pass) { msg.textContent = '❌ Completa todos los campos.'; return; }
-    sonidoDespertador.iniciarAudio();
     auth.signInWithEmailAndPassword(email, pass)
         .then(async (userCredential) => {
             const user = userCredential.user;
@@ -471,19 +391,19 @@ function iniciarSesion() {
         })
         .catch(e => { msg.textContent = '❌ Credenciales incorrectas.'; console.error(e); });
 }
+
 function logout() {
     if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
     if (window._listenersPedidos) {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
-    sonidoDespertador.detenerDespertador();
-    sonidoDespertador.limpiarProcesados();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
     toast('👋 Sesión cerrada', 'info');
 }
+
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('loginBox').classList.add('hidden');
@@ -497,8 +417,6 @@ auth.onAuthStateChanged(user => {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
         }
-        sonidoDespertador.detenerDespertador();
-        sonidoDespertador.limpiarProcesados();
     }
 });
 
@@ -507,7 +425,6 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 async function inicializarPanel() {
     try {
-        sonidoDespertador.limpiarProcesados();
         await cargarTiendas();
         await cargarMensajeros();
         await cargarPedidosIniciales();
@@ -518,6 +435,7 @@ async function inicializarPanel() {
         toast('❌ Error al cargar el panel', 'error');
     }
 }
+
 async function cargarTiendas() {
     try {
         const snap = await db.collection('tiendas').get();
@@ -525,6 +443,7 @@ async function cargarTiendas() {
         console.log('🏪 Tiendas cargadas:', Object.keys(tiendasCache).length);
     } catch (e) { console.error('Error cargando tiendas:', e); }
 }
+
 function cargarMensajeros() {
     if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
     listenerMensajeros = db.collection('usuarios')
@@ -589,10 +508,9 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ⏰ ESCUCHAR PEDIDOS - CON CONTROL DE REACTIVACIÓN
+// ESCUCHAR PEDIDOS EN TIEMPO REAL
 // ============================================================
 function escucharPedidosEnTiempoReal() {
-    // 🔥 LIMPIAR LISTENERS ANTERIORES
     if (window._listenersPedidos) {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
@@ -601,13 +519,11 @@ function escucharPedidosEnTiempoReal() {
     db.collection('tiendas').get().then(snap => {
         snap.forEach(doc => {
             const tiendaId = doc.id;
-            
             try {
                 const unsubscribe = db.collection('tiendas').doc(tiendaId)
                     .collection('pedidos')
                     .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                     .onSnapshot(snapPedidos => {
-                        // 🔥 EVITAR PROCESAR MÚLTIPLES VECES EL MISMO CAMBIO
                         snapPedidos.docChanges().forEach(change => {
                             try {
                                 const data = change.doc.data();
@@ -617,37 +533,16 @@ function escucharPedidosEnTiempoReal() {
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 const estaNotificado = data.notificacionEnviada === true;
                                 
-                                // 🔥 SI EL PEDIDO TIENE MENSAJERO O ESTÁ ENTREGADO → DETENER SONIDO
                                 if (tieneMensajero || esEntregado) {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        console.log(`⏰ Pedido ${pedidoId} asignado/entregado, apagando despertador`);
-                                        sonidoDespertador.detenerDespertador(pedidoId);
+                                    if (window._despertador && window._despertador.estaSonando(pedidoId)) {
+                                        window._despertador.detenerDespertador(pedidoId);
                                     }
                                 }
                                 
-                                // 🔥 SI EL PEDIDO ESTÁ NOTIFICADO → DETENER SONIDO (ya se notificó a mensajeros)
-                                if (estaNotificado && sonidoDespertador.estaSonando(pedidoId)) {
-                                    console.log(`⏰ Pedido ${pedidoId} notificado a mensajeros, apagando despertador`);
-                                    sonidoDespertador.detenerDespertador(pedidoId);
+                                if (estaNotificado && window._despertador && window._despertador.estaSonando(pedidoId)) {
+                                    window._despertador.detenerDespertador(pedidoId);
                                 }
                                 
-                                // 🔥 INICIAR SONIDO SOLO SI ESTÁ DISPONIBLE Y NO NOTIFICADO Y NO ESTÁ SONANDO
-                                if (estaDisponible && !estaNotificado) {
-                                    if (!sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.iniciarDespertador(pedidoId);
-                                        const tienda = tiendasCache[tiendaId] || {};
-                                        toast(`⏰ ¡DESPERTADOR! Nuevo pedido de ${tienda.nombre || 'Tienda'} listo para asignar`, 'new', 8000);
-                                        
-                                        const badge = document.getElementById('headerBadge');
-                                        if (badge) {
-                                            badge.style.display = 'inline-block';
-                                            badge.textContent = '⏰🔔';
-                                            badge.style.animation = 'pulse-badge 0.5s ease-in-out infinite';
-                                        }
-                                    }
-                                }
-                                
-                                // 🔥 ACTUALIZAR LISTA LOCAL
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
                                         const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -658,21 +553,15 @@ function escucharPedidosEnTiempoReal() {
                                                 ...data,
                                                 _nuevo: true 
                                             });
-                                        }
-                                    } else if (tieneMensajero) {
-                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (!existe) {
-                                            todosLosPedidos.push({ 
-                                                id: pedidoId, 
-                                                tiendaId: tiendaId, 
-                                                ...data
-                                            });
+                                            const tienda = tiendasCache[tiendaId] || {};
+                                            toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                            
+                                            // Notificar por WhatsApp a mensajeros disponibles
+                                            notificarMensajerosDisponibles(tiendaId, pedidoId, data);
                                         }
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    
-                                    // 🔥 ACTUALIZAR O AGREGAR
                                     if (index !== -1) {
                                         todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                     } else if (tieneMensajero || estaDisponible) {
@@ -682,9 +571,6 @@ function escucharPedidosEnTiempoReal() {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         todosLosPedidos.splice(index, 1);
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
                                     }
                                 }
                             } catch (err) {
@@ -696,11 +582,6 @@ function escucharPedidosEnTiempoReal() {
                         actualizarHeaderBadge();
                     }, err => { 
                         console.error(`Error escuchando pedidos en tienda ${tiendaId}:`, err);
-                        setTimeout(() => {
-                            if (window._listenersPedidos) {
-                                escucharPedidosEnTiempoReal();
-                            }
-                        }, 5000);
                     });
                 if (!window._listenersPedidos) window._listenersPedidos = [];
                 window._listenersPedidos.push(unsubscribe);
@@ -710,12 +591,57 @@ function escucharPedidosEnTiempoReal() {
         });
     }).catch(err => {
         console.error('Error obteniendo tiendas para escucha:', err);
-        setTimeout(() => {
-            if (!window._listenersPedidos) {
-                escucharPedidosEnTiempoReal();
-            }
-        }, 5000);
     });
+}
+
+// ============================================================
+// 📢 NOTIFICAR MENSAJEROS DISPONIBLES POR WHATSAPP
+// ============================================================
+function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
+    try {
+        const tienda = tiendasCache[tiendaId] || {};
+        
+        // Obtener mensajeros disponibles (activos, conectados y NO ocupados)
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && m.conectado !== false && !m.ocupado
+        );
+        
+        if (mensajerosDisponibles.length === 0) {
+            console.log('⚠️ No hay mensajeros disponibles para notificar');
+            return;
+        }
+        
+        // Preparar datos del pedido para el mensaje
+        const pedidoInfo = {
+            numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoData.cliente || {},
+            total: pedidoData.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        
+        console.log(`📢 Notificando a ${mensajerosDisponibles.length} mensajeros disponibles`);
+        
+        // Enviar notificación a cada mensajero disponible
+        let enviados = 0;
+        mensajerosDisponibles.forEach(mensajero => {
+            // Verificar si el mensajero tiene teléfono
+            const telefono = mensajero.telefono || mensajero.whatsapp || '';
+            if (telefono) {
+                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
+                enviados++;
+            } else {
+                console.warn(`⚠️ Mensajero ${mensajero.nombre || mensajero.email} sin teléfono`);
+            }
+        });
+        
+        if (enviados > 0) {
+            console.log(`✅ Notificaciones WhatsApp enviadas a ${enviados} mensajeros`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error notificando mensajeros:', error);
+    }
 }
 
 // ============================================================
@@ -741,15 +667,16 @@ function filtrarMensajeros() {
     });
     renderizarMensajeros();
 }
+
 function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
 function recargarPedidos() { cargarPedidosIniciales(); toast('🔄 Pedidos recargados', 'info', 1500); }
 function recargarTodo() {
     toast('🔄 Recargando todo...', 'info', 2000);
-    sonidoDespertador.limpiarProcesados();
     cargarMensajeros();
     cargarPedidosIniciales();
     setTimeout(() => { toast('✅ Todo recargado correctamente', 'success', 2000); }, 1500);
 }
+
 function renderizarMensajeros() {
     const container = document.getElementById('listaMensajeros');
     if (mensajerosFiltrados.length === 0) {
@@ -763,13 +690,16 @@ function renderizarMensajeros() {
         const iniciales = (m.nombre || m.email || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
         const estadoClass = ocupado ? 'ocupado' : (activo ? 'activo' : 'inactivo');
         const estadoLabel = ocupado ? '🟠 Ocupado' : (activo ? '🟢 Activo' : '🔴 Inactivo');
+        const telefono = m.telefono || m.whatsapp || '';
+        const telefonoDisplay = telefono ? `📱 ${telefono}` : '📱 Sin teléfono';
         html += `
             <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
                 <div class="avatar">${iniciales}</div>
                 <div class="info">
                     <div class="nombre">${m.nombre || 'Sin nombre'} ${ocupado ? '🛵' : ''}</div>
                     <div class="email">📧 ${m.email || 'Sin email'}</div>
-                    <div class="meta">${m.telefono ? '📱 ' + m.telefono : ''} ${m.creadoEn ? ' | 📅 ' + formatearFecha(m.creadoEn) : ''}</div>
+                    <div class="telefono">${telefonoDisplay}</div>
+                    <div class="meta">${m.creadoEn ? '📅 ' + formatearFecha(m.creadoEn) : ''}</div>
                 </div>
                 <span class="estado ${estadoClass}">${estadoLabel}</span>
                 <div class="acciones">
@@ -787,6 +717,7 @@ function renderizarMensajeros() {
     });
     container.innerHTML = html;
 }
+
 function renderizarPedidosAsignar() {
     const container = document.getElementById('listaPedidosAsignar');
     const badge = document.getElementById('badgePedidos');
@@ -819,13 +750,11 @@ function renderizarPedidosAsignar() {
         }
         const hayMensajeros = mensajerosActivos.length > 0;
         const claseNuevo = esNuevo ? 'nuevo' : '';
-        const sonidoActivo = sonidoDespertador.estaSonando(p.id);
-        const indicadorSonido = sonidoActivo ? '⏰🔔' : '';
         html += `
             <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
                 <div class="header">
-                    <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)} ${indicadorSonido}</span>
-                    ${sonidoActivo ? '<span class="alarma-indicador">⏰ DESPERTADOR ACTIVADO</span>' : '<span class="estado-badge">🔔 Listo para asignar</span>'}
+                    <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                    <span class="estado-badge">🔔 Listo para asignar</span>
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -846,19 +775,17 @@ function renderizarPedidosAsignar() {
                         <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
                     </div>`
                 }
-                ${sonidoActivo ? `<div style="font-size:10px;color:var(--red);margin-top:4px;text-align:center;animation:llamada-pulse 0.8s ease-in-out infinite;">⏰🔔 Despertador sonando...</div>` : ''}
             </div>
         `;
     });
     container.innerHTML = html;
-    actualizarEstadisticas();
-    actualizarHeaderBadge();
 }
 
 // ============================================================
-// ⏰ ABRIR MODAL DE ASIGNACIÓN - APAGA EL DESPERTADOR
+// 📤 ABRIR MODAL DE ASIGNACIÓN (CON WHATSAPP)
 // ============================================================
 let pedidoAsignacion = null;
+
 function abrirModalAsignacion(pedidoId, tiendaId) {
     console.log(`🔍 abrirModalAsignacion llamado para pedido: ${pedidoId}`);
     
@@ -871,17 +798,8 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
         recargarPedidos();
         return;
-    }
-    
-    // 🔥 APAGAR DESPERTADOR
-    if (sonidoDespertador.estaSonando(pedidoId)) {
-        console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al abrir modal - Pedido: ${pedidoId}`);
-        sonidoDespertador.detenerDespertador(pedidoId);
     }
     
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -895,15 +813,19 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const contenido = document.getElementById('modalAsignacionContenido');
     const titulo = document.getElementById('modalAsignacionTitulo');
     titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    
     let mensajerosOptions = '';
     if (mensajerosDisponibles.length === 0) {
         mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
     } else {
         mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
         mensajerosDisponibles.forEach(m => {
-            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'} (Disponible)</option>`;
+            const telefono = m.telefono || m.whatsapp || 'Sin teléfono';
+            const telefonoDisplay = telefono !== 'Sin teléfono' ? ` 📱${telefono}` : '';
+            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'}${telefonoDisplay}</option>`;
         });
     }
+    
     contenido.innerHTML = `
         <div class="pedido-info-resumen">
             <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
@@ -911,33 +833,71 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
         </div>
+        
         <div class="opcion-asignacion" style="border-color: var(--blue);">
             <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+            
             <div style="margin: 8px 0 4px 0;">
                 <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
-                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">${mensajerosOptions}</select>
+                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                    ${mensajerosOptions}
+                </select>
             </div>
-            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+            
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                 ✅ Asignar a este mensajero
             </button>
         </div>
+        
         <div class="opcion-asignacion" style="border-color: var(--yellow);">
             <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
-            <div class="mensajeros-disponibles">📨 Mensajeros que recibirán la notificación: <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span></div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.</div>
-            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;" ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                🔔 Notificar a todos los mensajeros
+            <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp.</div>
+            
+            <div class="mensajeros-disponibles">
+                📨 Mensajeros que recibirán la notificación: 
+                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+            </div>
+            
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                ⚡ Cada mensajero recibirá un enlace directo al pedido en su WhatsApp.
+            </div>
+            
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                🔔 Notificar a todos por WhatsApp
             </button>
         </div>
-        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()">Cancelar</button>
+        
+        <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);">
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">📱 Enlace directo del pedido</div>
+            <div style="display:flex;gap:6px;">
+                <input type="text" id="enlacePedido" value="https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}" readonly style="flex:1;padding:6px 10px;font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:#fff;">
+                <button class="btn-sm" onclick="copiarEnlace()" style="width:auto;padding:4px 12px;background:var(--blue);color:#fff;border-radius:6px;">📋 Copiar</button>
+            </div>
+        </div>
+        
+        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
+                style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
+            Cancelar
+        </button>
     `;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
     actualizarHeaderBadge();
     renderizarPedidosAsignar();
+}
+
+function copiarEnlace() {
+    const input = document.getElementById('enlacePedido');
+    if (!input) return;
+    input.select();
+    document.execCommand('copy');
+    toast('✅ Enlace copiado al portapapeles', 'success', 3000);
 }
 
 function cerrarModalAsignacion() {
@@ -948,7 +908,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ⏰ ASIGNAR PEDIDO - APAGA EL DESPERTADOR
+// ✅ ASIGNAR PEDIDO MANUAL
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -962,9 +922,6 @@ async function asignarPedidoManual() {
     
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -973,11 +930,16 @@ async function asignarPedidoManual() {
     try {
         toast('⏳ Asignando pedido...', 'info');
         
-        // 🔥 APAGAR DESPERTADOR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al asignar - Pedido: ${pedidoId}`);
-            sonidoDespertador.detenerDespertador(pedidoId);
-        }
+        // Obtener datos del pedido para el mensaje
+        const pedidoData = pedidoActual || {};
+        const tienda = tiendasCache[tiendaId] || {};
+        const pedidoInfo = {
+            numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoData.cliente || {},
+            total: pedidoData.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
         
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
@@ -990,12 +952,11 @@ async function asignarPedidoManual() {
                 notificacionEnviada: false
             });
         
-        // 🔥 VERIFICAR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            sonidoDespertador.detenerDespertador(pedidoId);
+        // 📱 ENVIAR WHATSAPP
+        if (mensajero) {
+            enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, false);
         }
         
-        sonidoDespertador.sonidoConfirmacion();
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         
@@ -1011,9 +972,6 @@ async function asignarPedidoManual() {
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
-            if (sonidoDespertador.estaSonando(pedidoId)) { 
-                sonidoDespertador.detenerDespertador(pedidoId); 
-            }
             cerrarModalAsignacion();
             recargarPedidos();
         } else {
@@ -1023,7 +981,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// ⏰ NOTIFICAR A TODOS - APAGA EL DESPERTADOR
+// 📢 NOTIFICAR A TODOS POR WHATSAPP
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -1031,9 +989,6 @@ async function notificarATodos() {
     
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -1042,12 +997,46 @@ async function notificarATodos() {
     try {
         toast('⏳ Notificando mensajeros...', 'info');
         
-        // 🔥 APAGAR DESPERTADOR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            console.log(`⏰ [ADMIN] 🔇 APAGANDO DESPERTADOR al notificar - Pedido: ${pedidoId}`);
-            sonidoDespertador.detenerDespertador(pedidoId);
+        // Obtener datos del pedido
+        const tienda = tiendasCache[tiendaId] || {};
+        const pedidoInfo = {
+            numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoActual?.cliente || {},
+            total: pedidoActual?.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        
+        // Obtener mensajeros disponibles
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && m.conectado !== false && !m.ocupado
+        );
+        
+        if (mensajerosDisponibles.length === 0) {
+            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
+            cerrarModalAsignacion();
+            return;
         }
         
+        // Enviar notificación a cada mensajero disponible
+        let enviados = 0;
+        mensajerosDisponibles.forEach(mensajero => {
+            const telefono = mensajero.telefono || mensajero.whatsapp || '';
+            if (telefono) {
+                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
+                enviados++;
+            } else {
+                console.warn(`⚠️ Mensajero ${mensajero.nombre} sin teléfono`);
+            }
+        });
+        
+        if (enviados === 0) {
+            toast('⚠️ Ningún mensajero tiene teléfono registrado', 'warn');
+            cerrarModalAsignacion();
+            return;
+        }
+        
+        // Marcar pedido como notificado
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1057,12 +1046,7 @@ async function notificarATodos() {
                 notificacionEnviada: true
             });
         
-        // 🔥 VERIFICAR
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            sonidoDespertador.detenerDespertador(pedidoId);
-        }
-        
-        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+        toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         cerrarModalAsignacion();
         
         actualizarHeaderBadge();
@@ -1075,9 +1059,6 @@ async function notificarATodos() {
         
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
-        if (sonidoDespertador.estaSonando(pedidoId)) { 
-            sonidoDespertador.detenerDespertador(pedidoId); 
-        }
     }
 }
 
@@ -1097,17 +1078,13 @@ function actualizarEstadisticas() {
     document.getElementById('statEnCamino').textContent = enCamino;
     document.getElementById('badgePedidos').textContent = pendientes;
 }
+
 function actualizarHeaderBadge() {
     const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
     const badge = document.getElementById('headerBadge');
     if (pendientes > 0) {
         badge.style.display = 'inline-block';
-        let sonando = false;
-        todosLosPedidos.forEach(p => {
-            if (sonidoDespertador.estaSonando(p.id)) sonando = true;
-        });
-        badge.textContent = sonando ? '⏰🔔 ' + pendientes : '🔔 ' + pendientes;
-        badge.style.animation = sonando ? 'pulse-badge 0.5s ease-in-out infinite' : '';
+        badge.textContent = '🔔 ' + pendientes;
     } else {
         badge.style.display = 'none';
         badge.textContent = '⏰🔔 0';
@@ -1124,6 +1101,7 @@ async function crearMensajero() {
     const password = document.getElementById('nuevoPassword').value.trim();
     if (!email) { toast('⚠️ Ingresa el Gmail del mensajero', 'error'); return; }
     if (!nombre) { toast('⚠️ Ingresa el nombre del mensajero', 'error'); return; }
+    if (!telefono) { toast('⚠️ Ingresa el teléfono del mensajero', 'error'); return; }
     if (!password || password.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
     try {
         toast('⏳ Creando mensajero...', 'info');
@@ -1147,12 +1125,14 @@ async function crearMensajero() {
         }
     }
 }
+
 function limpiarFormulario() {
     document.getElementById('nuevoEmail').value = '';
     document.getElementById('nuevoNombre').value = '';
     document.getElementById('nuevoTelefono').value = '';
     document.getElementById('nuevoPassword').value = 'Mensajero2026!';
 }
+
 async function toggleMensajero(uid, activo) {
     if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} este mensajero?`)) return;
     try {
@@ -1165,6 +1145,7 @@ async function toggleMensajero(uid, activo) {
         actualizarEstadisticas();
     } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
 }
+
 async function eliminarMensajero(uid) {
     if (!confirm('⚠️ ¿Eliminar este mensajero permanentemente?')) return;
     try {
@@ -1174,15 +1155,17 @@ async function eliminarMensajero(uid) {
         actualizarEstadisticas();
     } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
 }
+
 function verDetalle(uid) {
     const mensajero = todosLosMensajeros.find(m => m.uid === uid);
     if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
     const activo = mensajero.activo !== false;
     const ocupado = mensajero.ocupado === true;
+    const telefono = mensajero.telefono || mensajero.whatsapp || 'No registrado';
     let html = `
         <div class="info-row"><span class="label">👤 Nombre</span><span class="value">${mensajero.nombre || 'Sin nombre'}</span></div>
         <div class="info-row"><span class="label">📧 Email</span><span class="value">${mensajero.email || 'Sin email'}</span></div>
-        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${mensajero.telefono || 'N/A'}</span></div>
+        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${telefono}</span></div>
         <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? (ocupado ? 'var(--orange)' : 'var(--green)') : 'var(--red)'}">${activo ? (ocupado ? '🟠 Ocupado' : '🟢 Activo') : '🔴 Inactivo'}</span></div>
         <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
         <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
@@ -1195,6 +1178,7 @@ function verDetalle(uid) {
     document.getElementById('modalDetalle').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
+
 function cerrarModal(event) {
     if (event && event.target !== event.currentTarget) return;
     document.getElementById('modalDetalle').classList.remove('active');
@@ -1215,8 +1199,9 @@ function formatearFecha(fecha) {
                ' ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     } catch (e) { return '--/--/--'; }
 }
+
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '⏰' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🔔' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1246,11 +1231,11 @@ window.abrirModalAsignacion = abrirModalAsignacion;
 window.cerrarModalAsignacion = cerrarModalAsignacion;
 window.asignarPedidoManual = asignarPedidoManual;
 window.notificarATodos = notificarATodos;
+window.enviarNotificacionWhatsApp = enviarNotificacionWhatsApp;
+window.copiarEnlace = copiarEnlace;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
-console.log('⏰ Despertador activado para pedidos listos');
-console.log('🔇 El despertador se apaga al abrir el modal de asignación');
-console.log('🔄 Auto-refresco activado al asignar pedidos');
+console.log('📱 WhatsApp integrado para notificar mensajeros');
 </script>
 </body>
 </html>
