@@ -366,7 +366,6 @@ function sonidoDespertadorAdmin() {
 // INICIAR ALARMA PERSISTENTE PARA UN PEDIDO
 // ============================================================
 function iniciarAlarmaPedido(pedidoId) {
-    // Si ya tiene alarma activa, no crear otra
     if (intervalosAlarma[pedidoId]) {
         console.log(`⏰ Alarma ya activa para pedido: ${pedidoId}`);
         return;
@@ -374,19 +373,14 @@ function iniciarAlarmaPedido(pedidoId) {
     
     console.log(`⏰ INICIANDO ALARMA para pedido: ${pedidoId}`);
     
-    // Sonar inmediatamente
     sonidoDespertadorAdmin();
     
-    // Configurar intervalo cada 5 segundos
     intervalosAlarma[pedidoId] = setInterval(() => {
-        // Verificar si el pedido sigue sin asignar
         const pedido = todosLosPedidos.find(p => p.id === pedidoId);
         if (!pedido || pedido.mensajeroId || pedido.estado !== 'Listo para asignar') {
-            // El pedido ya fue asignado o ya no está disponible
             detenerAlarmaPedido(pedidoId);
             return;
         }
-        // Reproducir sonido
         sonidoDespertadorAdmin();
         console.log(`⏰ Alarma sonando para pedido: ${pedidoId}`);
     }, 5000);
@@ -400,6 +394,8 @@ function detenerAlarmaPedido(pedidoId) {
         clearInterval(intervalosAlarma[pedidoId]);
         delete intervalosAlarma[pedidoId];
         console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
+        // Actualizar la tarjeta visualmente
+        renderizarPedidosAsignar();
     }
 }
 
@@ -412,6 +408,7 @@ function detenerTodasLasAlarmas() {
         delete intervalosAlarma[pedidoId];
     });
     console.log('🔇 Todas las alarmas detenidas');
+    renderizarPedidosAsignar();
 }
 
 // ============================================================
@@ -574,7 +571,7 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('⏰ Sonido de DESPERTADOR con ALARMA PERSISTENTE activado');
+        console.log('⏰ Alarma persistente activada - Se detiene al asignar el pedido');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -644,7 +641,6 @@ async function cargarPedidosIniciales() {
         actualizarEstadisticas();
         actualizarHeaderBadge();
         
-        // Verificar si hay pedidos que necesiten alarma
         todosLosPedidos.forEach(p => {
             if (p.estado === 'Listo para asignar' && !p.mensajeroId) {
                 iniciarAlarmaPedido(p.id);
@@ -691,7 +687,6 @@ function escucharPedidosEnTiempoReal() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
                                             
-                                            // ⏰ INICIAR ALARMA PERSISTENTE
                                             console.log(`⏰ ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
                                             iniciarAlarmaPedido(pedidoId);
                                             
@@ -702,7 +697,6 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // Si el pedido ya tiene mensajero o ya no está disponible, detener alarma
                                     if (tieneMensajero || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -940,7 +934,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     }
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
-        // Detener alarma si ya fue asignado
         detenerAlarmaPedido(pedidoId);
         recargarPedidos();
         return;
@@ -1079,7 +1072,7 @@ async function asignarPedidoManual() {
                 notificacionEnviada: false
             });
         
-        // 🔇 DETENER ALARMA (pedido asignado)
+        // 🔇 DETENER ALARMA - PEDIDO ASIGNADO
         detenerAlarmaPedido(pedidoId);
         
         if (mensajero) {
@@ -1161,7 +1154,7 @@ async function notificarATodos() {
                 notificacionEnviada: true
             });
         
-        // 🔇 DETENER ALARMA (pedido notificado)
+        // 🔇 DETENER ALARMA - PEDIDO NOTIFICADO
         detenerAlarmaPedido(pedidoId);
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
@@ -1446,7 +1439,7 @@ window.guardarEditarMensajero = guardarEditarMensajero;
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
-console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Sonará cada 5 segundos hasta asignar el pedido');
+console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Se detiene al asignar el pedido');
 </script>
 </body>
 </html>
