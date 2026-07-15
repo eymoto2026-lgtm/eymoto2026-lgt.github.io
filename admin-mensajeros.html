@@ -44,8 +44,6 @@
         .btn-refrescar { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-refrescar:hover { background: var(--blue); color: #fff; }
         .btn-refrescar:active { transform: scale(0.95); }
-        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
-        .btn-test-sound:hover { background: #7d3c98; }
         .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
         #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
         #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
@@ -65,6 +63,8 @@
         .stat-card.c-purple .val { color: var(--purple); }
         .pedido-asignar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s ease; animation: slideIn 0.3s ease; }
         .pedido-asignar.nuevo { border-left-color: var(--green); animation: pulseNuevo 1.5s ease-in-out 3; }
+        .pedido-asignar.alarma-activa { border-left-color: var(--red) !important; animation: alarma-pulse-border 0.8s ease-in-out infinite; }
+        @keyframes alarma-pulse-border { 0%, 100% { border-left-color: var(--red); box-shadow: 0 0 15px rgba(255,61,0,0.3); } 50% { border-left-color: var(--yellow); box-shadow: 0 0 35px rgba(255,214,0,0.5); } }
         @keyframes pulseNuevo { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } 50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         .pedido-asignar .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
@@ -184,7 +184,6 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
-        <button class="btn-test-sound" onclick="probarSonidoAdmin()">⏰ Probar Despertador</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -289,11 +288,11 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO DE DESPERTADOR (RING RING) PARA ADMIN
+// ⏰ SONIDO DE DESPERTADOR (RING RING) CON REPETICIÓN
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
-let temporizadorDespertador = null;
+let intervalosAlarma = {};
 
 function sonidoDespertadorAdmin() {
     try {
@@ -308,11 +307,6 @@ function sonidoDespertadorAdmin() {
         const ctx = audioContextAdmin;
         const ahora = ctx.currentTime;
         
-        // ============================================================
-        // ⏰ RING RING - Sonido de despertador
-        // ============================================================
-        
-        // Frecuencias: 800Hz (ring) y 1000Hz (ring más agudo)
         const frecuencias = [800, 1000, 800, 1000];
         const duracionNota = 0.15;
         const pausa = 0.05;
@@ -321,7 +315,7 @@ function sonidoDespertadorAdmin() {
             const inicio = ahora + index * (duracionNota + pausa);
             
             const osc = ctx.createOscillator();
-            osc.type = 'square'; // Sonido estridente como despertador
+            osc.type = 'square';
             osc.frequency.setValueAtTime(freq, inicio);
             
             const gain = ctx.createGain();
@@ -329,7 +323,6 @@ function sonidoDespertadorAdmin() {
             gain.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
             gain.gain.exponentialRampToValueAtTime(0.0001, inicio + duracionNota);
             
-            // Filtro para darle carácter de despertador
             const filter = ctx.createBiquadFilter();
             filter.type = 'bandpass';
             filter.frequency.value = 1200;
@@ -347,15 +340,12 @@ function sonidoDespertadorAdmin() {
         
     } catch (e) {
         console.warn('⚠️ Error en sonido de despertador:', e);
-        // Sonido de respaldo con oscilador simple
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
-            
             const frecuencias = [800, 1000, 800, 1000];
             const duracionNota = 0.15;
             const pausa = 0.05;
-            
             frecuencias.forEach((freq, index) => {
                 const inicio = ctx.currentTime + index * (duracionNota + pausa);
                 const osc = ctx.createOscillator();
@@ -373,12 +363,55 @@ function sonidoDespertadorAdmin() {
 }
 
 // ============================================================
-// PROBAR SONIDO ADMIN
+// INICIAR ALARMA PERSISTENTE PARA UN PEDIDO
 // ============================================================
-function probarSonidoAdmin() {
-    console.log('⏰ Probando despertador ADMIN...');
+function iniciarAlarmaPedido(pedidoId) {
+    // Si ya tiene alarma activa, no crear otra
+    if (intervalosAlarma[pedidoId]) {
+        console.log(`⏰ Alarma ya activa para pedido: ${pedidoId}`);
+        return;
+    }
+    
+    console.log(`⏰ INICIANDO ALARMA para pedido: ${pedidoId}`);
+    
+    // Sonar inmediatamente
     sonidoDespertadorAdmin();
-    toast('⏰ ¡Ring ring!', 'info', 2000);
+    
+    // Configurar intervalo cada 5 segundos
+    intervalosAlarma[pedidoId] = setInterval(() => {
+        // Verificar si el pedido sigue sin asignar
+        const pedido = todosLosPedidos.find(p => p.id === pedidoId);
+        if (!pedido || pedido.mensajeroId || pedido.estado !== 'Listo para asignar') {
+            // El pedido ya fue asignado o ya no está disponible
+            detenerAlarmaPedido(pedidoId);
+            return;
+        }
+        // Reproducir sonido
+        sonidoDespertadorAdmin();
+        console.log(`⏰ Alarma sonando para pedido: ${pedidoId}`);
+    }, 5000);
+}
+
+// ============================================================
+// DETENER ALARMA DE UN PEDIDO
+// ============================================================
+function detenerAlarmaPedido(pedidoId) {
+    if (intervalosAlarma[pedidoId]) {
+        clearInterval(intervalosAlarma[pedidoId]);
+        delete intervalosAlarma[pedidoId];
+        console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
+    }
+}
+
+// ============================================================
+// DETENER TODAS LAS ALARMAS
+// ============================================================
+function detenerTodasLasAlarmas() {
+    Object.keys(intervalosAlarma).forEach(pedidoId => {
+        clearInterval(intervalosAlarma[pedidoId]);
+        delete intervalosAlarma[pedidoId];
+    });
+    console.log('🔇 Todas las alarmas detenidas');
 }
 
 // ============================================================
@@ -506,6 +539,7 @@ function logout() {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
     }
+    detenerTodasLasAlarmas();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
@@ -525,6 +559,7 @@ auth.onAuthStateChanged(user => {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
         }
+        detenerTodasLasAlarmas();
     }
 });
 
@@ -539,7 +574,7 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('⏰ Sonido de DESPERTADOR activado');
+        console.log('⏰ Sonido de DESPERTADOR con ALARMA PERSISTENTE activado');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -608,6 +643,13 @@ async function cargarPedidosIniciales() {
         renderizarPedidosAsignar();
         actualizarEstadisticas();
         actualizarHeaderBadge();
+        
+        // Verificar si hay pedidos que necesiten alarma
+        todosLosPedidos.forEach(p => {
+            if (p.estado === 'Listo para asignar' && !p.mensajeroId) {
+                iniciarAlarmaPedido(p.id);
+            }
+        });
     } catch (error) {
         console.error('❌ Error cargando pedidos iniciales:', error);
         toast('⚠️ Error al cargar pedidos. Reintentando...', 'warn');
@@ -618,7 +660,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ESCUCHAR PEDIDOS EN TIEMPO REAL CON SONIDO
+// ESCUCHAR PEDIDOS EN TIEMPO REAL CON ALARMA
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -649,9 +691,9 @@ function escucharPedidosEnTiempoReal() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
                                             
-                                            // ⏰ DESPERTADOR PARA ADMIN
+                                            // ⏰ INICIAR ALARMA PERSISTENTE
                                             console.log(`⏰ ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            sonidoDespertadorAdmin();
+                                            iniciarAlarmaPedido(pedidoId);
                                             
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                             notificarMensajerosDisponibles(tiendaId, pedidoId, data);
@@ -659,14 +701,24 @@ function escucharPedidosEnTiempoReal() {
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    
+                                    // Si el pedido ya tiene mensajero o ya no está disponible, detener alarma
+                                    if (tieneMensajero || esEntregado) {
+                                        detenerAlarmaPedido(pedidoId);
+                                    }
+                                    
                                     if (index !== -1) {
                                         todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                     } else if (tieneMensajero || estaDisponible) {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        if (estaDisponible) {
+                                            iniciarAlarmaPedido(pedidoId);
+                                        }
                                     }
                                 } else if (change.type === 'removed') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
+                                        detenerAlarmaPedido(pedidoId);
                                         todosLosPedidos.splice(index, 1);
                                     }
                                 }
@@ -823,6 +875,8 @@ function renderizarPedidosAsignar() {
         const total = p.total || 0;
         const fechaStr = formatearFecha(p.fecha);
         const esNuevo = p._nuevo === true;
+        const tieneAlarma = intervalosAlarma[p.id] !== undefined;
+        
         let itemsHtml = '';
         if (p.items && p.items.length > 0) {
             p.items.slice(0, 3).forEach(item => {
@@ -837,11 +891,14 @@ function renderizarPedidosAsignar() {
         }
         const hayMensajeros = mensajerosActivos.length > 0;
         const claseNuevo = esNuevo ? 'nuevo' : '';
+        const claseAlarma = tieneAlarma ? 'alarma-activa' : '';
+        
         html += `
-            <div class="pedido-asignar ${claseNuevo}" id="pedido-${p.id}">
+            <div class="pedido-asignar ${claseNuevo} ${claseAlarma}" id="pedido-${p.id}">
                 <div class="header">
                     <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
                     <span class="estado-badge">🔔 Listo para asignar</span>
+                    ${tieneAlarma ? '<span class="alarma-indicador">⏰ ALARMA ACTIVA</span>' : ''}
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -883,6 +940,8 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     }
     if (pedido.mensajeroId) {
         toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
+        // Detener alarma si ya fue asignado
+        detenerAlarmaPedido(pedidoId);
         recargarPedidos();
         return;
     }
@@ -980,7 +1039,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ✅ ASIGNAR PEDIDO MANUAL
+// ✅ ASIGNAR PEDIDO MANUAL (DETIENE ALARMA)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -993,6 +1052,7 @@ async function asignarPedidoManual() {
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        detenerAlarmaPedido(pedidoId);
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -1018,6 +1078,10 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: false
             });
+        
+        // 🔇 DETENER ALARMA (pedido asignado)
+        detenerAlarmaPedido(pedidoId);
+        
         if (mensajero) {
             enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, false);
         }
@@ -1033,6 +1097,7 @@ async function asignarPedidoManual() {
     } catch (e) {
         if (e.code === 'not-found' || e.message.includes('no such document')) {
             toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
+            detenerAlarmaPedido(pedidoId);
             cerrarModalAsignacion();
             recargarPedidos();
         } else {
@@ -1042,13 +1107,14 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS POR WHATSAPP
+// 📢 NOTIFICAR A TODOS POR WHATSAPP (DETIENE ALARMA)
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
         toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        detenerAlarmaPedido(pedidoId);
         cerrarModalAsignacion();
         recargarPedidos();
         return;
@@ -1094,6 +1160,10 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 notificacionEnviada: true
             });
+        
+        // 🔇 DETENER ALARMA (pedido notificado)
+        detenerAlarmaPedido(pedidoId);
+        
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
@@ -1372,13 +1442,11 @@ window.copiarEnlace = copiarEnlace;
 window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
-window.probarSonidoAdmin = probarSonidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
-console.log('⏰ SONIDO DE DESPERTADOR (RING RING) ACTIVADO');
-console.log('🧪 Para probar: haz clic en "⏰ Probar Despertador"');
+console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Sonará cada 5 segundos hasta asignar el pedido');
 </script>
 </body>
 </html>
