@@ -1433,7 +1433,7 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN DE ESTADO AL CLIENTE
+// 📱 ENVIAR NOTIFICACIÓN DE ESTADO AL CLIENTE (CON DOMICILIO)
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
@@ -1452,6 +1452,16 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             console.log('⚠️ Cliente sin teléfono, no se envía notificación');
             return;
         }
+        
+        // ✅ CALCULAR PRODUCTOS Y DOMICILIO
+        let subtotalProductos = 0;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
+        const costoDomicilio = pedido.costoDomicilio || 0;
+        const totalConDomicilio = subtotalProductos + costoDomicilio;
         
         const mensajes = {
             'Pendiente': { emoji: '🛵', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.' },
@@ -1473,7 +1483,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         
         const mensajeInfo = mensajes[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}` };
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        const totalPedido = pedido.total || 0;
         
         let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
         
@@ -1481,12 +1490,21 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             pedido.items.forEach(item => {
                 const nombreItem = item.nombre || 'Producto';
                 const cantidad = item.cantidad || 1;
-                const precio = item.precio || 0;
-                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${(precio * cantidad).toLocaleString('es-CO')}\n`;
+                const precioUnitario = item.precio || 0;
+                const subtotal = precioUnitario * cantidad;
+                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
             });
         }
         
-        mensajeWhatsApp += `\n💰 *Total:* $${totalPedido.toLocaleString('es-CO')}`;
+        // ✅ AGREGAR PRODUCTOS, DOMICILIO Y TOTAL
+        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
+        if (costoDomicilio > 0) {
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
+        } else {
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
+        }
+        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+        
         const metodoPago = pedido.metodoPago || 'efectivo';
         if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
             mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
@@ -4253,6 +4271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🛵 Costo de domicilio integrado');
     console.log('📱 Notificaciones de estado al cliente integradas');
     console.log('✏️ Editar pedido con validación de campos');
+    console.log('📱 Mensaje WhatsApp con PRODUCTOS + DOMICILIO + TOTAL');
     
     setTimeout(() => {
         cargarMensajerosAdmin();
@@ -4361,6 +4380,7 @@ console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
 console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
 console.log('📱 Notificaciones de estado al cliente: FUNCIONALIDAD ACTIVADA');
+console.log('📱 Mensaje WhatsApp incluye: PRODUCTOS + DOMICILIO + TOTAL');
 </script>
 </body>
 </html>
