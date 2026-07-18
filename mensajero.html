@@ -1023,7 +1023,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS
+// 📢 ESCUCHAR PEDIDOS - CORREGIDO
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -1049,7 +1049,9 @@ function escucharPedidos() {
                             
                             const esParaMi = data.mensajeroId === mensajeroUid;
                             const fueNotificado = data.notificacionEnviada === true;
-                            const esVisibleParaMi = (esParaMi || fueNotificado) && 
+                            // ✅ INCLUIR PEDIDOS "Listo para asignar" SIN IMPORTAR NOTIFICACIÓN
+                            const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                            const esVisibleParaMi = (esParaMi || fueNotificado || esListo) && 
                                                      data.estado !== 'Entregado' && 
                                                      data.estado !== 'Cancelado';
                             
@@ -1060,12 +1062,10 @@ function escucharPedidos() {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         const tienda = tiendasCache[tiendaId] || {};
                                         
-                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
+                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            // ✅ SOLO SONIDO, SIN ALERT
                                             sonidoDespertador.iniciarDespertador(pedidoId);
                                             
-                                            // Notificación del sistema con PRODUCTOS y DOMICILIO
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -1447,7 +1447,7 @@ function simularPedidoPrueba() {
         notificacionEnviada: true,
         numeroPedido: '#TEST',
         cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 25000, // ✅ Productos (17000) + Domicilio (8000)
+        total: 25000,
         costoDomicilio: 8000,
         items: [{ nombre: 'Producto Test 1', cantidad: 2, precio: 6000, total: 12000 },
                 { nombre: 'Producto Test 2', cantidad: 1, precio: 5000, total: 5000 }]
@@ -1485,15 +1485,14 @@ function renderizarPedidos() {
     }
     
     const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true) &&
+        (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true || (p.estado === 'Listo para asignar' && !p.mensajeroId)) &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
     
     const disponibles = pedidosVisibles.filter(p => 
         p.estado === 'Listo para asignar' && 
-        !p.mensajeroId && 
-        p.notificacionEnviada === true
+        !p.mensajeroId
     );
     
     const misPedidosActivos = pedidosVisibles.filter(p => 
@@ -1568,7 +1567,7 @@ function renderizarPedidoCard(pedido, disponible) {
     
     let botonesHtml = '';
     
-    if (estado === 'Listo para asignar' && !pedido.mensajeroId && pedido.notificacionEnviada === true) {
+    if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
         botonesHtml = `
             <div class="estados-acciones">
                 <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
@@ -1710,7 +1709,8 @@ async function cargarPedidosCompletos() {
                     
                     const esParaMi = data.mensajeroId === mensajeroUid;
                     const fueNotificado = data.notificacionEnviada === true;
-                    const esVisible = (esParaMi || fueNotificado) && 
+                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                    const esVisible = (esParaMi || fueNotificado || esListo) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
                     
@@ -1739,8 +1739,7 @@ async function actualizarContadores() {
     try {
         const disponibles = todosLosPedidos.filter(p => 
             p.estado === 'Listo para asignar' && 
-            !p.mensajeroId && 
-            p.notificacionEnviada === true
+            !p.mensajeroId
         );
         const misPedidos = todosLosPedidos.filter(p => 
             p.mensajeroId === mensajeroUid && 
@@ -1847,6 +1846,7 @@ console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 console.log('💰 Ganancia = SOLO costo del domicilio');
 console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
+console.log('🔧 Filtro corregido: AHORA ve pedidos "Listo para asignar" SIN notificación');
 </script>
 </body>
 </html>
