@@ -1023,17 +1023,22 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - CORREGIDO
+// 📢 ESCUCHAR PEDIDOS - VERSIÓN CORREGIDA
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
     if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
     listenerActivo = true;
     
+    // Limpiar pedidos anteriores
+    todosLosPedidos = [];
+    
     db.collection('tiendas').get()
         .then(snap => {
             const tiendas = snap.docs.map(doc => doc.id);
             console.log(`📢 Escuchando ${tiendas.length} tiendas para pedidos`);
+            
+            let listenersActivos = 0;
             
             tiendas.forEach(tiendaId => {
                 const unsubscribe = db.collection('tiendas')
@@ -1044,28 +1049,35 @@ function escucharPedidos() {
                         if (!listenerActivo || !mensajeroConectado) return;
                         
                         snapshot.docChanges().forEach(change => {
-                            const data = change.doc.data();
-                            const pedidoId = change.doc.id;
-                            
-                            const esParaMi = data.mensajeroId === mensajeroUid;
-                            const fueNotificado = data.notificacionEnviada === true;
-                            // ✅ INCLUIR PEDIDOS "Listo para asignar" SIN IMPORTAR NOTIFICACIÓN
-                            const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                            const esVisibleParaMi = (esParaMi || fueNotificado || esListo) && 
-                                                     data.estado !== 'Entregado' && 
-                                                     data.estado !== 'Cancelado';
-                            
-                            if (change.type === 'added') {
-                                if (esVisibleParaMi) {
-                                    const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (!existe) {
-                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                        const tienda = tiendasCache[tiendaId] || {};
+                            try {
+                                const data = change.doc.data();
+                                const pedidoId = change.doc.id;
+                                
+                                // ✅ VERIFICAR VISIBILIDAD
+                                const esParaMi = data.mensajeroId === mensajeroUid;
+                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                const esActivo = data.estado === 'En camino al restaurante' || 
+                                                data.estado === 'Recogiendo pedido' || 
+                                                data.estado === 'En camino';
+                                const esVisible = (esParaMi || esListo || (esParaMi && esActivo)) && 
+                                                 data.estado !== 'Entregado' && 
+                                                 data.estado !== 'Cancelado';
+                                
+                                console.log(`📌 Pedido ${pedidoId}: estado=${data.estado}, mensajeroId=${data.mensajeroId || 'null'}, visible=${esVisible}`);
+                                
+                                if (change.type === 'added' || change.type === 'modified') {
+                                    if (esVisible) {
+                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (index !== -1) {
+                                            todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                        } else {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        }
                                         
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            const tienda = tiendasCache[tiendaId] || {};
                                             sonidoDespertador.iniciarDespertador(pedidoId);
-                                            
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -1074,44 +1086,34 @@ function escucharPedidos() {
                                                 data.costoDomicilio || 0
                                             );
                                         }
+                                    } else {
+                                        // Eliminar si ya no es visible
+                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (index !== -1) {
+                                            if (sonidoDespertador.estaSonando(pedidoId)) {
+                                                sonidoDespertador.detenerDespertador(pedidoId);
+                                            }
+                                            todosLosPedidos.splice(index, 1);
+                                        }
                                     }
-                                }
-                            } else if (change.type === 'modified') {
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (!esVisibleParaMi) {
+                                } else if (change.type === 'removed') {
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         if (sonidoDespertador.estaSonando(pedidoId)) {
                                             sonidoDespertador.detenerDespertador(pedidoId);
                                         }
                                         todosLosPedidos.splice(index, 1);
-                                        renderizarPedidos();
-                                    }
-                                    return;
-                                }
-                                if (index !== -1) {
-                                    todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                } else if (esVisibleParaMi) {
-                                    todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                }
-                                
-                                if (data.mensajeroId || data.estado === 'Entregado' || data.estado === 'Cancelado') {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.detenerDespertador(pedidoId);
                                     }
                                 }
-                            } else if (change.type === 'removed') {
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (index !== -1) {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.detenerDespertador(pedidoId);
-                                    }
-                                    todosLosPedidos.splice(index, 1);
-                                }
+                            } catch (err) {
+                                console.error('Error procesando cambio de pedido:', err);
                             }
                         });
+                        
+                        console.log(`📊 Pedidos visibles actuales: ${todosLosPedidos.length}`);
                         renderizarPedidos();
                     }, err => {
-                        console.warn(`⚠️ Error en listener:`, err.message);
+                        console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
                         if (listenerActivo) {
                             clearTimeout(timeoutReconexion);
                             timeoutReconexion = setTimeout(() => {
@@ -1123,7 +1125,10 @@ function escucharPedidos() {
                 
                 if (!window._listeners) window._listeners = [];
                 window._listeners.push(unsubscribe);
+                listenersActivo++;
             });
+            
+            console.log(`✅ ${listenersActivo} listeners de tiendas activos`);
             
             pedidosListener = () => {
                 listenerActivo = false;
@@ -1485,7 +1490,7 @@ function renderizarPedidos() {
     }
     
     const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true || (p.estado === 'Listo para asignar' && !p.mensajeroId)) &&
+        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar' || p.notificacionEnviada === true) &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
@@ -1708,9 +1713,8 @@ async function cargarPedidosCompletos() {
                     const pedidoId = doc.id;
                     
                     const esParaMi = data.mensajeroId === mensajeroUid;
-                    const fueNotificado = data.notificacionEnviada === true;
                     const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                    const esVisible = (esParaMi || fueNotificado || esListo) && 
+                    const esVisible = (esParaMi || esListo || data.notificacionEnviada === true) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
                     
@@ -1846,7 +1850,7 @@ console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 console.log('💰 Ganancia = SOLO costo del domicilio');
 console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
-console.log('🔧 Filtro corregido: AHORA ve pedidos "Listo para asignar" SIN notificación');
+console.log('🔧 Filtro corregido: AHORA ve pedidos "Listo para asignar"');
 </script>
 </body>
 </html>
