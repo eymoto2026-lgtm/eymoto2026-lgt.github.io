@@ -396,16 +396,41 @@ function iniciarAlarmaPedido(pedidoId) {
 }
 
 // ============================================================
-// DETENER ALARMA DE UN PEDIDO - SE LLAMA AL ASIGNAR
+// DETENER ALARMA DE UN PEDIDO - DETIENE SONIDO INMEDIATAMENTE
 // ============================================================
 function detenerAlarmaPedido(pedidoId) {
+    // 1️⃣ DETENER EL INTERVALO
     if (intervalosAlarma[pedidoId]) {
         clearInterval(intervalosAlarma[pedidoId]);
         delete intervalosAlarma[pedidoId];
         console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
-        // Actualizar la tarjeta visualmente
-        renderizarPedidosAsignar();
     }
+    
+    // 2️⃣ DETENER EL SONIDO ACTIVO
+    try {
+        if (audioContextAdmin) {
+            // Crear un contexto temporal para "cortar" el sonido
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            gain.gain.value = 0.001;
+            osc.start();
+            osc.stop(ctx.currentTime + 0.01);
+            setTimeout(() => {
+                try { ctx.close(); } catch(e) {}
+            }, 50);
+        }
+    } catch(e) {}
+    
+    // 3️⃣ ACTUALIZAR LA TARJETA VISUALMENTE
+    renderizarPedidosAsignar();
+    
+    // 4️⃣ ACTUALIZAR BADGE Y ESTADÍSTICAS
+    actualizarHeaderBadge();
+    actualizarEstadisticas();
 }
 
 // ============================================================
@@ -1452,6 +1477,7 @@ console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Se detiene al asignar el pedido');
 console.log('📯 Sonido: RING RING de despertador');
+console.log('🔇 ALARMA SE DETIENE INMEDIATAMENTE AL ASIGNAR');
 </script>
 </body>
 </html>
