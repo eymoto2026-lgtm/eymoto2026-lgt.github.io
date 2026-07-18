@@ -36,8 +36,6 @@
         .btn-editar-mensajero:hover { background: var(--blue); color: #fff; }
         .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-test-sound:hover { background: #7d3c98; }
-        .btn-simular { background: var(--orange); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
-        .btn-simular:hover { background: #e65c00; }
         .hidden { display: none !important; }
         header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
@@ -189,7 +187,6 @@
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
         <button class="btn-test-sound" onclick="probarSonidoAdmin()">🔔 Probar Campana</button>
-        <button class="btn-simular" onclick="window.simularPedidoAdmin()">🧪 Simular Pedido</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -294,7 +291,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO DE CAMPANA (OPCIÓN 1 - PROFESIONAL)
+// ⏰ SONIDO PROFESIONAL DE CAMPANA (Do6 - Mi6 - Sol6)
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
@@ -313,7 +310,7 @@ function sonidoDespertadorAdmin() {
         const ctx = audioContextAdmin;
         const ahora = ctx.currentTime;
         
-        // 🔔 CAMPANA: 3 notas en secuencia (profesional y suave)
+        // 🔔 CAMPANA PROFESIONAL: 3 notas en secuencia
         const frecuencias = [1047, 1319, 1568]; // Do6, Mi6, Sol6
         const duracionNota = 0.25;
         const pausa = 0.08;
@@ -366,7 +363,7 @@ function sonidoDespertadorAdmin() {
 function probarSonidoAdmin() {
     console.log('🔔 Probando campana ADMIN...');
     sonidoDespertadorAdmin();
-    toast('🔔 ¡Campana!', 'info', 2000);
+    toast('🔔 ¡Campana profesional!', 'info', 2000);
 }
 
 // ============================================================
@@ -461,11 +458,9 @@ let listenerMensajeros = null;
 let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
-let notificacionActiva = false;
-let pedidosEnProceso = new Set();
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (SOLO AL MENSAJERO ELEGIDO)
 // ============================================================
 function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData) {
     let telefono = String(mensajeroTelefono || '').replace(/[\s\-\(\)\+\.]/g, '');
@@ -494,7 +489,7 @@ function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData
     return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 }
 
-function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, esMasivo = false) {
+function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
     try {
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
         if (!telefono) {
@@ -505,8 +500,8 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, e
         const url = generarEnlaceWhatsApp(telefono, tiendaId, pedidoId, pedidoData);
         console.log(`📱 Abriendo WhatsApp para ${mensajero.nombre}: ${url}`);
         window.open(url, '_blank');
-        const tipo = esMasivo ? 'notificación masiva' : 'asignación manual';
-        toast(`📱 WhatsApp abierto para ${mensajero.nombre} (${tipo})`, 'success', 4000);
+        toast(`📱 WhatsApp abierto para ${mensajero.nombre} (asignación manual)`, 'success', 4000);
+        
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -515,7 +510,7 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, e
                     mensajeroNombre: mensajero.nombre || 'Mensajero',
                     telefono: telefono,
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
-                    tipo: esMasivo ? 'masivo' : 'manual',
+                    tipo: 'manual',
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
                 }).catch(err => console.warn('Error guardando registro:', err));
         }
@@ -594,10 +589,9 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('🔔 Alarma con CAMPANA profesional activada');
+        console.log('🔔 Alarma con CAMPANA PROFESIONAL activada');
         console.log('⏰ Alarma persistente activada - Se detiene al asignar manualmente');
-        console.log('🔇 Alarma NO se detiene al NOTIFICAR A TODOS');
-        console.log('🧪 Para simular un pedido, usa: simularPedidoAdmin()');
+        console.log('📱 WhatsApp SOLO al mensajero elegido');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -716,7 +710,8 @@ function escucharPedidosEnTiempoReal() {
                                             iniciarAlarmaPedido(pedidoId);
                                             
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
-                                            notificarMensajerosDisponibles(tiendaId, pedidoId, data);
+                                            // ❌ NOTIFICACIÓN AUTOMÁTICA ELIMINADA
+                                            // Solo el admin asigna manualmente
                                         }
                                     }
                                 } else if (change.type === 'modified') {
@@ -760,45 +755,6 @@ function escucharPedidosEnTiempoReal() {
     }).catch(err => {
         console.error('Error obteniendo tiendas para escucha:', err);
     });
-}
-
-// ============================================================
-// 📢 NOTIFICAR MENSAJEROS DISPONIBLES POR WHATSAPP
-// ============================================================
-function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
-    try {
-        const tienda = tiendasCache[tiendaId] || {};
-        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
-            m.activo !== false && m.conectado !== false && !m.ocupado
-        );
-        if (mensajerosDisponibles.length === 0) {
-            console.log('⚠️ No hay mensajeros disponibles para notificar');
-            return;
-        }
-        const pedidoInfo = {
-            numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
-            nombreTienda: tienda.nombre || 'Tienda',
-            cliente: pedidoData.cliente || {},
-            total: pedidoData.total || 0,
-            telefonoTienda: tienda.whatsapp || ''
-        };
-        console.log(`📢 Notificando a ${mensajerosDisponibles.length} mensajeros disponibles`);
-        let enviados = 0;
-        mensajerosDisponibles.forEach(mensajero => {
-            const telefono = mensajero.telefono || mensajero.whatsapp || '';
-            if (telefono) {
-                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
-                enviados++;
-            } else {
-                console.warn(`⚠️ Mensajero ${mensajero.nombre || mensajero.email} sin teléfono`);
-            }
-        });
-        if (enviados > 0) {
-            console.log(`✅ Notificaciones WhatsApp enviadas a ${enviados} mensajeros`);
-        }
-    } catch (error) {
-        console.error('❌ Error notificando mensajeros:', error);
-    }
 }
 
 // ============================================================
@@ -992,6 +948,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
         </div>
+        
         <div class="opcion-asignacion" style="border-color: var(--blue);">
             <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
@@ -1007,22 +964,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 ✅ Asignar a este mensajero
             </button>
         </div>
-        <div class="opcion-asignacion" style="border-color: var(--yellow);">
-            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-            <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp. El primero que acepte tomará el pedido.</div>
-            <div class="mensajeros-disponibles">
-                📨 Mensajeros que recibirán la notificación: 
-                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                ⚡ Cada mensajero recibirá un enlace directo al pedido en su WhatsApp.
-            </div>
-            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
-                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                🔔 Notificar a todos los mensajeros
-            </button>
-        </div>
+        
         <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);">
             <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">📱 Enlace directo del pedido</div>
             <div style="display:flex;gap:6px;">
@@ -1113,7 +1055,7 @@ async function asignarPedidoManual() {
         
         // ✅ 3. ENVIAR NOTIFICACIÓN SOLO AL MENSAJERO ELEGIDO
         if (mensajero && telefonoMensajero) {
-            enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, false);
+            enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo);
             toast(`📱 Notificación enviada a ${nombreMensajero}`, 'success', 3000);
         } else {
             toast(`⚠️ ${nombreMensajero} no tiene teléfono registrado`, 'warn', 3000);
@@ -1142,79 +1084,6 @@ async function asignarPedidoManual() {
             toast('❌ Error: ' + e.message, 'error');
             console.error('Error en asignación manual:', e);
         }
-    }
-}
-
-// ============================================================
-// 📢 NOTIFICAR A TODOS - NO DETIENE ALARMA
-// ============================================================
-async function notificarATodos() {
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        detenerAlarmaPedido(pedidoId);
-        cerrarModalAsignacion();
-        recargarPedidos();
-        return;
-    }
-    try {
-        toast('⏳ Notificando mensajeros...', 'info');
-        const tienda = tiendasCache[tiendaId] || {};
-        const pedidoInfo = {
-            numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
-            nombreTienda: tienda.nombre || 'Tienda',
-            cliente: pedidoActual?.cliente || {},
-            total: pedidoActual?.total || 0,
-            telefonoTienda: tienda.whatsapp || ''
-        };
-        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
-            m.activo !== false && m.conectado !== false && !m.ocupado
-        );
-        if (mensajerosDisponibles.length === 0) {
-            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
-            cerrarModalAsignacion();
-            return;
-        }
-        let enviados = 0;
-        mensajerosDisponibles.forEach(mensajero => {
-            const telefono = mensajero.telefono || mensajero.whatsapp || '';
-            if (telefono) {
-                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
-                enviados++;
-            } else {
-                console.warn(`⚠️ Mensajero ${mensajero.nombre} sin teléfono`);
-            }
-        });
-        if (enviados === 0) {
-            toast('⚠️ Ningún mensajero tiene teléfono registrado', 'warn');
-            cerrarModalAsignacion();
-            return;
-        }
-        
-        // ✅ SOLO MARCAR COMO NOTIFICADO - NO CAMBIAR ESTADO, NO DETENER ALARMA
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                notificacionEnviada: true,
-                fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
-                notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionMasiva: true
-            });
-        
-        // ❌ NO DETENER ALARMA AQUÍ - El pedido sigue disponible
-        toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
-        toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
-        cerrarModalAsignacion();
-        actualizarHeaderBadge();
-        renderizarPedidosAsignar();
-        
-        setTimeout(() => {
-            recargarPedidos();
-        }, 500);
-        
-    } catch (e) {
-        toast('❌ Error: ' + e.message, 'error');
     }
 }
 
@@ -1459,96 +1328,6 @@ function toast(msg, type = 'info', dur = 4000) {
 }
 
 // ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA PARA ADMIN MENSAJEROS
-// ============================================================
-function simularPedidoAdmin() {
-    console.log('🧪 Simulando pedido de prueba para Admin Mensajeros...');
-    
-    const tiendaId = 'XCkKIiYidzVh0z7Nk4Op';
-    
-    const pedidoFalso = {
-        cliente: {
-            nombre: 'Cliente Simulación',
-            telefono: '3002937289',
-            direccion: 'Calle 123 #45-67, Barrio Centro',
-            barrio: 'Centro',
-            observaciones: 'Pedido de prueba - sin cebolla'
-        },
-        items: [
-            { 
-                nombre: 'Hamburguesa Doble', 
-                cantidad: 2, 
-                precio: 12000, 
-                total: 24000,
-                pesoGramos: null
-            },
-            { 
-                nombre: 'Gaseosa 1.5L', 
-                cantidad: 1, 
-                precio: 5000, 
-                total: 5000,
-                pesoGramos: null
-            },
-            { 
-                nombre: 'Papas Fritas', 
-                cantidad: 1, 
-                precio: 4000, 
-                total: 4000,
-                pesoGramos: null
-            }
-        ],
-        total: 33000,
-        costoDomicilio: 7000,
-        totalConDomicilio: 40000,
-        metodoPago: 'efectivo',
-        estadoPago: 'pendiente',
-        estado: 'Listo para asignar',
-        mensajeroId: null,
-        nombreMensajero: null,
-        numeroPedido: '#SIM-' + String(Math.floor(Math.random() * 9000) + 1000),
-        notificacionEnviada: false,
-        notificacionMasiva: false,
-        fecha: firebase.firestore.FieldValue.serverTimestamp(),
-        fuente: 'simulacion_admin'
-    };
-    
-    db.collection('tiendas').doc(tiendaId).get()
-        .then(doc => {
-            if (!doc.exists) {
-                toast('⚠️ La tienda de prueba no existe. Usa un ID válido.', 'error', 5000);
-                console.error('❌ Tienda no encontrada:', tiendaId);
-                console.log('📋 Tiendas disponibles:');
-                db.collection('tiendas').get().then(snap => {
-                    snap.forEach(d => console.log('  -', d.id, ':', d.data().nombre || 'Sin nombre'));
-                });
-                return;
-            }
-            
-            const tiendaNombre = doc.data().nombre || 'Tienda';
-            console.log(`✅ Tienda encontrada: ${tiendaNombre} (${tiendaId})`);
-            
-            return db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos')
-                .add(pedidoFalso);
-        })
-        .then(docRef => {
-            if (docRef) {
-                console.log('✅ Pedido de prueba creado con ID:', docRef.id);
-                toast('🧪 Pedido de prueba creado correctamente', 'success', 4000);
-                
-                setTimeout(() => {
-                    recargarPedidos();
-                    toast('🔔 El pedido debe aparecer en la lista con ALARMA ACTIVA', 'new', 5000);
-                }, 1000);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error al simular pedido:', error);
-            toast('❌ Error al simular pedido: ' + error.message, 'error', 5000);
-        });
-}
-
-// ============================================================
 // EXPONER FUNCIONES
 // ============================================================
 window.iniciarSesion = iniciarSesion;
@@ -1567,22 +1346,19 @@ window.toast = toast;
 window.abrirModalAsignacion = abrirModalAsignacion;
 window.cerrarModalAsignacion = cerrarModalAsignacion;
 window.asignarPedidoManual = asignarPedidoManual;
-window.notificarATodos = notificarATodos;
 window.enviarNotificacionWhatsApp = enviarNotificacionWhatsApp;
 window.copiarEnlace = copiarEnlace;
 window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
-window.simularPedidoAdmin = simularPedidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ Alarma se DETIENE al ASIGNAR MANUALMENTE');
-console.log('🔔 Alarma NO se detiene al NOTIFICAR A TODOS');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
-console.log('🧪 Para simular un pedido, usa: simularPedidoAdmin()');
+console.log('📱 WhatsApp SOLO al mensajero elegido');
 </script>
 </body>
 </html>
