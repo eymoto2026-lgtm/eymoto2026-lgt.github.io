@@ -67,14 +67,15 @@
 
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
         .pedido-card.disponible { border-left-color: var(--green); }
-        .pedido-card.nuevo-pedido { animation: nuevoPedido 1s infinite; }
-        @keyframes nuevoPedido { 0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); } 50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; } 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); } }
-
+        .pedido-card.esperando { border-left-color: var(--blue); animation: pulseBlue 1.5s ease-in-out infinite; }
+        @keyframes pulseBlue { 0%, 100% { border-left-color: var(--blue); } 50% { border-left-color: var(--yellow); } }
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
         .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .badge-estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         .badge-estado.disponible { background: var(--green); color: #1a1a2e; }
         .badge-estado.pendiente { background: var(--yellow); color: #1a1a2e; }
+        .badge-estado.esperando { background: var(--blue); color: #fff; animation: pulseBadge 1s ease-in-out infinite; }
+        @keyframes pulseBadge { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.05); } }
         .badge-estado.camino { background: var(--blue); color: #fff; }
         .badge-estado.recogido { background: var(--purple); color: #fff; }
         .badge-estado.entregado { background: var(--green); color: #fff; }
@@ -88,6 +89,9 @@
         .pedido-card .items .item:last-child { border-bottom: none; }
         .estados-acciones { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
         .estados-acciones button { flex: 1; min-width: 100px; padding: 10px 12px; font-size: 12px; border-radius: 8px; }
+        .btn-confirmar { background: var(--green); color: #fff; font-weight: 800; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; transition: all 0.2s; animation: pulseBtn 1.5s ease-in-out infinite; }
+        @keyframes pulseBtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .btn-confirmar:hover { background: #00b748; }
 
         .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
         .empty-state .icono { font-size: 48px; display: block; margin-bottom: 12px; }
@@ -483,6 +487,7 @@ let motivacionMostrada = false;
 let mensajerosGlobal = [];
 let historialPedidos = [];
 let filtroHistorialActual = 'hoy';
+let pedidosTomados = new Set();
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -548,7 +553,7 @@ auth.onAuthStateChanged(user => {
 // 🚀 NOTIFICACIÓN MOTIVACIONAL
 // ============================================================
 function mostrarMotivacion() {
-    const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
+    const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion);
     const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false)?.length || 0;
     document.getElementById('pedidosEsperando').textContent = pedidosDisponibles.length;
     document.getElementById('statActivosMotivacion').textContent = mensajerosActivos;
@@ -735,11 +740,12 @@ function escucharPedidos() {
                                 const pedidoId = change.doc.id;
                                 
                                 const esParaMi = data.mensajeroId === mensajeroUid;
-                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId && !data.pendienteConfirmacion;
+                                const esperandoConfirmacion = data.estado === 'Listo para asignar' && data.mensajeroId === mensajeroUid && data.pendienteConfirmacion === true;
                                 const esActivo = data.estado === 'En camino al restaurante' || 
                                                 data.estado === 'Recogiendo pedido' || 
                                                 data.estado === 'En camino';
-                                const esVisible = (esParaMi || esListo || (esParaMi && esActivo)) && 
+                                const esVisible = (esParaMi || esListo || esperandoConfirmacion || (esParaMi && esActivo)) && 
                                                  data.estado !== 'Entregado' && 
                                                  data.estado !== 'Cancelado';
                                 
@@ -753,7 +759,7 @@ function escucharPedidos() {
                                         }
                                         
                                         // ✅ SOLO notificación visual - SIN SONIDO
-                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
+                                        if (esListo) {
                                             console.log(`📢 Pedido disponible para mensajeros: ${pedidoId}`);
                                             const tienda = tiendasCache[tiendaId] || {};
                                             mostrarNotificacionSistema(
@@ -764,6 +770,9 @@ function escucharPedidos() {
                                                 data.costoDomicilio || 0
                                             );
                                             toast(`📦 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'info', 4000);
+                                        } else if (esperandoConfirmacion) {
+                                            console.log(`⏳ Pedido asignado a ti - Esperando confirmación: ${pedidoId}`);
+                                            toast(`⏳ Tienes un pedido asignado. Confirma con "TOMAR PEDIDO"`, 'info', 5000);
                                         }
                                     } else {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -1039,24 +1048,33 @@ function renderizarPedidos() {
     
     const disponibles = pedidosVisibles.filter(p => 
         p.estado === 'Listo para asignar' && 
-        !p.mensajeroId
+        !p.mensajeroId &&
+        !p.pendienteConfirmacion
+    );
+    
+    const esperandoConfirmacion = pedidosVisibles.filter(p => 
+        p.estado === 'Listo para asignar' && 
+        p.mensajeroId === mensajeroUid && 
+        p.pendienteConfirmacion === true
     );
     
     const misPedidosActivos = pedidosVisibles.filter(p => 
         p.mensajeroId === mensajeroUid && 
+        p.estado !== 'Listo para asignar' &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
     
-    document.getElementById('contadorDisponibles').textContent = disponibles.length;
+    document.getElementById('contadorDisponibles').textContent = disponibles.length + esperandoConfirmacion.length;
     document.getElementById('contadorMisPedidos').textContent = misPedidosActivos.length;
     
     const containerDisponibles = document.getElementById('listaPedidosDisponibles');
-    if (disponibles.length === 0) {
+    if (disponibles.length === 0 && esperandoConfirmacion.length === 0) {
         containerDisponibles.innerHTML = `<div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando que el admin te asigne pedidos...</span></div>`;
     } else {
         let html = '';
-        disponibles.forEach(p => { html += renderizarPedidoCard(p, true); });
+        disponibles.forEach(p => { html += renderizarPedidoCard(p, true, false); });
+        esperandoConfirmacion.forEach(p => { html += renderizarPedidoCard(p, false, true); });
         containerDisponibles.innerHTML = html;
     }
     
@@ -1065,12 +1083,15 @@ function renderizarPedidos() {
         containerMisPedidos.innerHTML = `<div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div>`;
     } else {
         let html = '';
-        misPedidosActivos.forEach(p => { html += renderizarPedidoCard(p, false); });
+        misPedidosActivos.forEach(p => { html += renderizarPedidoCard(p, false, false); });
         containerMisPedidos.innerHTML = html;
     }
 }
 
-function renderizarPedidoCard(pedido, disponible) {
+// ============================================================
+// 🎯 RENDERIZAR CARD DE PEDIDO
+// ============================================================
+function renderizarPedidoCard(pedido, disponible, esperando) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
@@ -1082,16 +1103,29 @@ function renderizarPedidoCard(pedido, disponible) {
     const totalCalculado = subtotal + costoDomicilio;
     const fechaStr = formatearFecha(pedido.fecha);
     const estado = pedido.estado || 'Pendiente';
+    
     let estadoColor = '', estadoLabel = '';
-    switch(estado) {
-        case 'Listo para asignar': estadoColor = 'disponible'; estadoLabel = '🔔 DISPONIBLE'; break;
-        case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
-        case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
-        case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
-        case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
-        case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
-        default: estadoColor = 'pendiente'; estadoLabel = '📋 ' + estado;
+    let claseExtra = '';
+    
+    if (esperando) {
+        estadoColor = 'esperando';
+        estadoLabel = '⏳ ESPERANDO CONFIRMACIÓN';
+        claseExtra = 'esperando';
+    } else if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
+        estadoColor = 'disponible';
+        estadoLabel = '🔔 DISPONIBLE';
+        claseExtra = 'disponible';
+    } else {
+        switch(estado) {
+            case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
+            case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
+            case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
+            case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
+            case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
+            default: estadoColor = 'pendiente'; estadoLabel = '📋 ' + estado;
+        }
     }
+    
     let itemsHtml = '';
     if (pedido.items && pedido.items.length > 0) {
         pedido.items.forEach(item => {
@@ -1100,10 +1134,32 @@ function renderizarPedidoCard(pedido, disponible) {
             itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
         });
     }
+    
     let botonesHtml = '';
-    if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
-        botonesHtml = `<div class="estados-acciones"><button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button></div>`;
-    } else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
+    
+    // ✅ BOTÓN "TOMAR PEDIDO" - Solo si está esperando confirmación
+    if (esperando && pedido.mensajeroId === mensajeroUid && pedido.pendienteConfirmacion === true) {
+        botonesHtml = `
+            <div class="estados-acciones">
+                <button class="btn-confirmar" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">
+                    ✅ TOMAR PEDIDO
+                </button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:4px;">
+                ⏳ Confirma para comenzar el servicio
+            </div>
+        `;
+    } 
+    // Pedido disponible para cualquier mensajero
+    else if (estado === 'Listo para asignar' && !pedido.mensajeroId && !pedido.pendienteConfirmacion) {
+        botonesHtml = `
+            <div class="estados-acciones">
+                <button class="btn-success" onclick="tomarPedidoDisponible('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
+            </div>
+        `;
+    } 
+    // Pedidos activos del mensajero
+    else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado' && !esperando) {
         switch(estado) {
             case 'En camino al restaurante':
                 botonesHtml = `<div class="estados-acciones"><button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 RECOGER PEDIDO</button></div>`;
@@ -1126,9 +1182,17 @@ function renderizarPedidoCard(pedido, disponible) {
     } else if (estado === 'Entregado' || estado === 'Cancelado') {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
-    const claseDisponible = disponible ? 'disponible' : '';
+    
+    // Mostrar nombre del mensajero si está asignado
+    let mensajeroInfo = '';
+    if (pedido.mensajeroId && pedido.mensajeroId !== mensajeroUid && !esperando) {
+        mensajeroInfo = `<div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:4px;">🛵 Asignado a otro mensajero</div>`;
+    } else if (pedido.mensajeroId === mensajeroUid && esperando) {
+        mensajeroInfo = `<div style="font-size:11px;color:var(--blue);text-align:center;margin-top:4px;">🛵 Te fue asignado - Confirma para comenzar</div>`;
+    }
+    
     return `
-        <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
+        <div class="pedido-card ${claseExtra}" id="pedido-${pedido.id}">
             <div class="header">
                 <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
                 <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
@@ -1145,15 +1209,77 @@ function renderizarPedidoCard(pedido, disponible) {
                 <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green); font-size:15px;">$${totalCalculado.toLocaleString('es-CO')}</span></div>
             </div>
             ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
+            ${mensajeroInfo}
             ${botonesHtml}
         </div>
     `;
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO
+// ✅ TOMAR PEDIDO (Confirmar la orden asignada)
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
+    if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
+    if (!mensajeroConectado) { 
+        toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn'); 
+        setTimeout(() => mostrarMotivacion(), 500);
+        return; 
+    }
+    
+    try {
+        const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
+        const data = doc.data();
+        
+        // ✅ VERIFICAR QUE EL PEDIDO ESTÁ ASIGNADO A ESTE MENSAJERO
+        if (data.mensajeroId !== mensajeroUid) {
+            toast('⚠️ Este pedido no está asignado a ti', 'error');
+            await cargarPedidosCompletos();
+            renderizarPedidos();
+            return;
+        }
+        
+        if (data.pendienteConfirmacion !== true) {
+            toast('⚠️ Este pedido ya fue confirmado', 'info');
+            await cargarPedidosCompletos();
+            renderizarPedidos();
+            return;
+        }
+        
+        toast('⏳ Confirmando pedido...', 'info');
+        
+        // ✅ CONFIRMAR EL PEDIDO - CAMBIAR A "En camino al restaurante"
+        await docRef.update({
+            estado: 'En camino al restaurante',
+            pendienteConfirmacion: false,
+            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp(),
+            confirmadoPor: auth.currentUser?.email || 'Mensajero'
+        });
+        
+        await cargarPedidosCompletos();
+        await actualizarContadores();
+        renderizarPedidos();
+        
+        toast('✅ Pedido confirmado. ¡En camino al restaurante! 🛵', 'success', 4000);
+        
+        // Recargar para actualizar
+        setTimeout(async () => {
+            await cargarPedidosCompletos();
+            await actualizarContadores();
+            renderizarPedidos();
+        }, 1000);
+        
+    } catch (e) {
+        console.error('Error confirmando pedido:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// ✅ TOMAR PEDIDO DISPONIBLE (Para pedidos sin asignar)
+// ============================================================
+async function tomarPedidoDisponible(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
     if (!mensajeroConectado) { 
         toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn'); 
@@ -1184,14 +1310,14 @@ async function tomarPedido(pedidoId, tiendaId) {
             estado: 'En camino al restaurante',
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
             notificacionEnviada: false,
-            tomadoPor: auth.currentUser?.email || 'Mensajero'
+            pendienteConfirmacion: false
         });
         
         await cargarPedidosCompletos();
         await actualizarContadores();
         renderizarPedidos();
         
-        toast('✅ Pedido tomado exitosamente', 'success', 3000);
+        toast('✅ Pedido tomado exitosamente. ¡En camino al restaurante! 🛵', 'success', 4000);
         
     } catch (e) {
         console.error('Error tomando pedido:', e);
@@ -1217,8 +1343,10 @@ async function cargarPedidosCompletos() {
                     const data = doc.data();
                     const pedidoId = doc.id;
                     const esParaMi = data.mensajeroId === mensajeroUid;
-                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                    const esVisible = (esParaMi || esListo) && 
+                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId && !data.pendienteConfirmacion;
+                    const esperandoMi = data.estado === 'Listo para asignar' && data.mensajeroId === mensajeroUid && data.pendienteConfirmacion === true;
+                    const esActivo = data.estado === 'En camino al restaurante' || data.estado === 'Recogiendo pedido' || data.estado === 'En camino';
+                    const esVisible = (esParaMi || esListo || esperandoMi || (esParaMi && esActivo)) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
                     if (esVisible) {
@@ -1240,9 +1368,23 @@ async function cargarPedidosCompletos() {
 
 async function actualizarContadores() {
     try {
-        const disponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
-        const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid && p.estado !== 'Entregado' && p.estado !== 'Cancelado');
-        document.getElementById('contadorDisponibles').textContent = disponibles.length;
+        const disponibles = todosLosPedidos.filter(p => 
+            p.estado === 'Listo para asignar' && 
+            !p.mensajeroId &&
+            !p.pendienteConfirmacion
+        );
+        const esperando = todosLosPedidos.filter(p => 
+            p.estado === 'Listo para asignar' && 
+            p.mensajeroId === mensajeroUid && 
+            p.pendienteConfirmacion === true
+        );
+        const misPedidos = todosLosPedidos.filter(p => 
+            p.mensajeroId === mensajeroUid && 
+            p.estado !== 'Listo para asignar' &&
+            p.estado !== 'Entregado' && 
+            p.estado !== 'Cancelado'
+        );
+        document.getElementById('contadorDisponibles').textContent = disponibles.length + esperando.length;
         document.getElementById('contadorMisPedidos').textContent = misPedidos.length;
     } catch (e) {}
 }
@@ -1312,6 +1454,7 @@ function toast(msg, type = 'info', dur = 4000) {
 window.iniciarSesion = iniciarSesion;
 window.cerrarSesion = cerrarSesion;
 window.tomarPedido = tomarPedido;
+window.tomarPedidoDisponible = tomarPedidoDisponible;
 window.cambiarEstado = cambiarEstado;
 window.toggleEstadoConexion = toggleEstadoConexion;
 window.mostrarModalConfirmacion = mostrarModalConfirmacion;
@@ -1328,6 +1471,7 @@ window.filtrarHistorial = filtrarHistorial;
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
 console.log('📱 Notificaciones SOLO visuales activadas');
+console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 </script>
 </body>
