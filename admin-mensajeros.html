@@ -36,6 +36,8 @@
         .btn-test-sound:hover { background: #7d3c98; }
         .btn-simular { background: var(--orange); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-simular:hover { background: #e65c00; }
+        .btn-forzar-recarga { background: var(--green); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-forzar-recarga:hover { background: #00b748; }
         .hidden { display: none !important; }
         header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
@@ -171,6 +173,7 @@
         .badge-esperando { background: var(--orange); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; animation: pulseBadge 1s ease-in-out infinite; }
         @keyframes pulseBadge { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .badge-sin-notificar { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
+        .mensajero-count { font-size: 12px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -190,13 +193,15 @@
         <h1>Administración de Mensajeros</h1>
         <span class="spacer"></span>
         <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span class="mensajero-count" id="mensajeroCount">📋 Mensajeros: 0</span>
         <span class="auto-refresh-indicator">
             <span class="dot"></span>
-            Auto-refresh activo
+            Auto-refresh
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
         <button class="btn-test-sound" onclick="probarSonidoAdmin()">🔔 Probar Campana</button>
-        <button class="btn-simular" onclick="window.simularPedidoAdmin()">🧪 Simular Pedido</button>
+        <button class="btn-simular" onclick="window.simularPedidoAdmin()">🧪 Simular</button>
+        <button class="btn-forzar-recarga" onclick="window.forzarRecargaMensajeros()">🔄 Forzar Recarga</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -404,6 +409,7 @@ let listenerMensajeros = null;
 let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
+let recargandoMensajeros = false;
 
 // ============================================================
 // 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
@@ -513,6 +519,62 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================
+// 🔄 FORZAR RECARGA DE MENSAJEROS
+// ============================================================
+function forzarRecargaMensajeros() {
+    if (recargandoMensajeros) {
+        toast('⏳ Ya hay una recarga en proceso...', 'info', 2000);
+        return;
+    }
+    
+    recargandoMensajeros = true;
+    toast('🔄 Forzando recarga de mensajeros...', 'info', 3000);
+    console.log('🔄 Forzando recarga de mensajeros...');
+    
+    // Eliminar el listener actual
+    if (listenerMensajeros) {
+        try { listenerMensajeros(); } catch(e) {}
+        listenerMensajeros = null;
+    }
+    
+    // Hacer una consulta directa a Firestore
+    db.collection('usuarios')
+        .where('mensajero', '==', true)
+        .get()
+        .then(snap => {
+            console.log('📋 RESULTADO DIRECTO - Mensajeros en Firestore:', snap.size);
+            snap.forEach(doc => {
+                const data = doc.data();
+                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 
+                    '| activo:', data.activo !== false, 
+                    '| conectado:', data.conectado !== false);
+            });
+            
+            if (snap.size === 0) {
+                toast('⚠️ No hay mensajeros en Firestore', 'warn', 4000);
+            } else {
+                toast(`✅ ${snap.size} mensajeros encontrados en Firestore`, 'success', 4000);
+            }
+            
+            // Reiniciar el listener
+            cargarMensajeros();
+            
+            setTimeout(() => {
+                recargandoMensajeros = false;
+                toast(`📋 Total mensajeros cargados: ${todosLosMensajeros.length}`, 'info', 3000);
+                document.getElementById('mensajeroCount').textContent = `📋 Mensajeros: ${todosLosMensajeros.length}`;
+            }, 1500);
+        })
+        .catch(err => {
+            console.error('❌ Error al forzar recarga:', err);
+            toast('❌ Error al recargar mensajeros: ' + err.message, 'error');
+            recargandoMensajeros = false;
+            // Intentar reconectar el listener
+            cargarMensajeros();
+        });
+}
+
+// ============================================================
 // INICIALIZAR PANEL
 // ============================================================
 async function inicializarPanel() {
@@ -544,28 +606,55 @@ async function cargarTiendas() {
 }
 
 function cargarMensajeros() {
-    if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+    if (listenerMensajeros) { 
+        try { listenerMensajeros(); } catch(e) {} 
+        listenerMensajeros = null; 
+    }
+    
+    console.log('🔄 Iniciando listener de mensajeros...');
+    
     listenerMensajeros = db.collection('usuarios')
         .where('mensajero', '==', true)
         .onSnapshot(snap => {
-            console.log('📋 Mensajeros encontrados en Firestore:', snap.size);
+            console.log('📋 LISTENER - Mensajeros encontrados en Firestore:', snap.size);
             todosLosMensajeros = [];
+            
+            if (snap.size === 0) {
+                console.warn('⚠️ No se encontraron mensajeros en Firestore');
+                document.getElementById('mensajeroCount').textContent = '📋 Mensajeros: 0';
+                filtrarMensajeros();
+                actualizarEstadisticas();
+                return;
+            }
+            
             snap.forEach(doc => {
                 const data = doc.data();
-                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 'activo:', data.activo, 'conectado:', data.conectado);
+                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 
+                    '| activo:', data.activo !== false, 
+                    '| conectado:', data.conectado !== false);
+                
                 const tienePedidoActivo = todosLosPedidos.some(p => 
                     p.mensajeroId === doc.id && 
                     (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
                 );
                 todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
             });
+            
             console.log('✅ Total mensajeros cargados:', todosLosMensajeros.length);
+            document.getElementById('mensajeroCount').textContent = `📋 Mensajeros: ${todosLosMensajeros.length}`;
             filtrarMensajeros();
             actualizarEstadisticas();
+            
+            // Mostrar mensaje si hay mensajeros disponibles
+            const disponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
+            if (disponibles.length > 0) {
+                console.log(`✅ ${disponibles.length} mensajeros disponibles para asignar`);
+            }
+            
         }, err => { 
-            console.error('Error en listener de mensajeros:', err);
+            console.error('❌ Error en listener de mensajeros:', err);
             toast('⚠️ Error al cargar mensajeros. Recargando...', 'warn');
-            setTimeout(() => cargarMensajeros(), 3000);
+            setTimeout(() => cargarMensajeros(), 5000);
         });
 }
 
@@ -956,6 +1045,9 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     );
     
     console.log('📋 Mensajeros disponibles para asignar:', mensajerosDisponibles.length);
+    mensajerosDisponibles.forEach(m => {
+        console.log('  -', m.nombre || 'Sin nombre', '| teléfono:', m.telefono || m.whatsapp || 'Sin teléfono');
+    });
     
     const modal = document.getElementById('modalAsignacion');
     const contenido = document.getElementById('modalAsignacionContenido');
@@ -1586,6 +1678,7 @@ window.filtrarMensajeros = filtrarMensajeros;
 window.recargarMensajeros = recargarMensajeros;
 window.recargarPedidos = recargarPedidos;
 window.recargarTodo = recargarTodo;
+window.forzarRecargaMensajeros = forzarRecargaMensajeros;
 window.toggleMensajero = toggleMensajero;
 window.eliminarMensajero = eliminarMensajero;
 window.verDetalle = verDetalle;
@@ -1615,6 +1708,7 @@ console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
+console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
 </script>
 </body>
 </html>
