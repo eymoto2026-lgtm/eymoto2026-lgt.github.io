@@ -161,8 +161,6 @@
         .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
         .btn-test-sound:hover { background: #7d3c98; }
-        .btn-silenciar-alarma { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); width: auto; padding: 6px 12px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
-        .btn-silenciar-alarma:hover { background: var(--red); color: #fff; }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -189,7 +187,6 @@
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
         <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
-        <button class="btn-silenciar-alarma" onclick="detenerTodasLasAlarmas()" style="display:none;" id="btnSilenciarAlarma">🔕 Silenciar Alarma</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -299,7 +296,6 @@ const db = firebase.firestore();
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
 let intervalosAlarma = {};
-let alarmaActiva = false;
 
 function sonidoDespertadorAdmin() {
     try {
@@ -370,7 +366,7 @@ function sonidoDespertadorAdmin() {
 }
 
 function probarSonidoAdmin() {
-    console.log('📯 Probando sonido ADMIN...');
+    console.log('📯 Probando pito de moto ADMIN...');
     sonidoDespertadorAdmin();
     toast('📯 ¡Ring ring!', 'info', 2000);
 }
@@ -385,10 +381,6 @@ function iniciarAlarmaPedido(pedidoId) {
     }
     
     console.log(`⏰ INICIANDO ALARMA para pedido: ${pedidoId}`);
-    alarmaActiva = true;
-    
-    const btn = document.getElementById('btnSilenciarAlarma');
-    if (btn) btn.style.display = 'inline-block';
     
     sonidoDespertadorAdmin();
     
@@ -414,15 +406,7 @@ function detenerAlarmaPedido(pedidoId) {
         console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
     }
     
-    // 2️⃣ VERIFICAR SI QUEDAN ALARMAS ACTIVAS
-    const hayAlarmasActivas = Object.keys(intervalosAlarma).length > 0;
-    if (!hayAlarmasActivas) {
-        alarmaActiva = false;
-        const btn = document.getElementById('btnSilenciarAlarma');
-        if (btn) btn.style.display = 'none';
-    }
-    
-    // 3️⃣ DETENER EL SONIDO ACTIVO
+    // 2️⃣ DETENER EL SONIDO ACTIVO
     try {
         if (audioContextAdmin) {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -440,10 +424,10 @@ function detenerAlarmaPedido(pedidoId) {
         }
     } catch(e) {}
     
-    // 4️⃣ ACTUALIZAR LA TARJETA VISUALMENTE
+    // 3️⃣ ACTUALIZAR LA TARJETA VISUALMENTE
     renderizarPedidosAsignar();
     
-    // 5️⃣ ACTUALIZAR BADGE Y ESTADÍSTICAS
+    // 4️⃣ ACTUALIZAR BADGE Y ESTADÍSTICAS
     actualizarHeaderBadge();
     actualizarEstadisticas();
 }
@@ -456,12 +440,8 @@ function detenerTodasLasAlarmas() {
         clearInterval(intervalosAlarma[pedidoId]);
         delete intervalosAlarma[pedidoId];
     });
-    alarmaActiva = false;
-    const btn = document.getElementById('btnSilenciarAlarma');
-    if (btn) btn.style.display = 'none';
     console.log('🔇 Todas las alarmas detenidas');
     renderizarPedidosAsignar();
-    toast('🔕 Todas las alarmas silenciadas', 'info', 2000);
 }
 
 // ============================================================
@@ -624,7 +604,7 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('⏰ Alarma persistente activada - Se detiene al asignar el pedido');
+        console.log('⏰ Alarma persistente activada - Se detiene al asignar manualmente');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -749,14 +729,8 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // SI EL PEDIDO YA TIENE MENSAJERO O YA NO ESTÁ DISPONIBLE, DETENER ALARMA
                                     if (tieneMensajero || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
-                                    }
-                                    
-                                    // SI EL PEDIDO SIGUE DISPONIBLE PERO NO TIENE ALARMA, INICIARLA
-                                    if (estaDisponible && !intervalosAlarma[pedidoId]) {
-                                        iniciarAlarmaPedido(pedidoId);
                                     }
                                     
                                     if (index !== -1) {
@@ -1130,7 +1104,7 @@ async function asignarPedidoManual() {
                 notificacionEnviada: false
             });
         
-        // 🔇 DETENER ALARMA - PEDIDO ASIGNADO
+        // 🔇 DETENER ALARMA - PEDIDO ASIGNADO MANUALMENTE
         detenerAlarmaPedido(pedidoId);
         
         if (mensajero) {
@@ -1158,7 +1132,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS - MANTIENE EL PEDIDO VISIBLE PARA MENSAJEROS
+// 📢 NOTIFICAR A TODOS - NO DETIENE ALARMA
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -1204,8 +1178,7 @@ async function notificarATodos() {
             return;
         }
         
-        // ✅ MANTENER EL PEDIDO EN "Listo para asignar" PARA QUE LOS MENSAJEROS LO VEAN
-        // Solo se actualiza la bandera de notificación para evitar la alarma
+        // ✅ SOLO MARCAR COMO NOTIFICADO - NO CAMBIAR ESTADO, NO DETENER ALARMA
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1215,19 +1188,18 @@ async function notificarATodos() {
                 notificacionMasiva: true
             });
         
-        // ✅ DETENER LA ALARMA PERO MANTENER EL PEDIDO VISIBLE
-        detenerAlarmaPedido(pedidoId);
-        
-        // ✅ FORZAR ACTUALIZACIÓN DEL PEDIDO PARA QUE APAREZCA COMO DISPONIBLE
-        setTimeout(() => {
-            recargarPedidos();
-        }, 500);
+        // ❌ NO DETENER ALARMA AQUÍ - El pedido sigue disponible
+        // La alarma solo se detiene cuando el mensajero TOMA el pedido
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
+        
+        setTimeout(() => {
+            recargarPedidos();
+        }, 500);
         
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -1500,14 +1472,13 @@ window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
-window.detenerTodasLasAlarmas = detenerTodasLasAlarmas;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
-console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Se detiene al asignar el pedido');
+console.log('⏰ Alarma se DETIENE al ASIGNAR MANUALMENTE');
+console.log('🔔 Alarma NO se detiene al NOTIFICAR A TODOS');
 console.log('📯 Sonido: RING RING de despertador');
-console.log('📦 Notificar a todos: MANTIENE el pedido visible para mensajeros');
 </script>
 </body>
 </html>
