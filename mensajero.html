@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panel Mensajero - EyMoto</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Mensajeros - EyMoto</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
@@ -15,352 +15,258 @@
             --surface: #141414; --surface2: #1e1e1e; --surface3: #252525; --border: #2e2e2e; --border2: #3a3a3a;
             --text-muted: #888; --radius: 10px;
         }
-        button { background: var(--yellow); color: #1a1a2e; font-weight: 700; border: none; padding: 12px 20px; border-radius: var(--radius); cursor: pointer; transition: background .15s, transform .1s; font-size: 14px; width: 100%; }
+        input, select, textarea, button { font-family: inherit; font-size: 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; padding: 11px 14px; width: 100%; box-sizing: border-box; outline: none; transition: border-color .2s, background .2s; }
+        input:focus, select:focus { border-color: var(--yellow); }
+        select option { background: #1e1e1e; }
+        button { background: var(--yellow); color: #1a1a2e; font-weight: 700; border: none; cursor: pointer; transition: background .15s, transform .1s; }
         button:hover { background: var(--yellow-dim); }
         button:active { transform: scale(.98); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-sm { padding: 8px 14px; font-size: 12px; width: auto; }
+        .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
         .btn-danger { background: #c0392b; color: #fff; }
         .btn-danger:hover { background: #a93226; }
-        .btn-success { background: var(--green); color: #fff; }
+        .btn-success { background: #00C853; color: #fff; }
         .btn-success:hover { background: #00b748; }
-        .btn-info { background: var(--blue); color: #fff; }
+        .btn-info { background: #0288d1; color: #fff; }
         .btn-info:hover { background: #0277bd; }
-        .btn-warning { background: var(--orange); color: #fff; }
-        .btn-warning:hover { background: #e65c00; }
-        .btn-purple { background: var(--purple); color: #fff; }
-        .btn-purple:hover { background: #7d3c98; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
+        .btn-whatsapp { background: #25D366; color: #fff; }
+        .btn-whatsapp:hover { background: #1da851; }
+        .btn-editar-mensajero { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+        .btn-editar-mensajero:hover { background: var(--blue); color: #fff; }
         .hidden { display: none !important; }
-
-        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
+        header { background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; }
         header .brand { background: var(--yellow); color: #1a1a2e; font-weight: 900; font-size: 14px; padding: 5px 14px; border-radius: 20px; }
-        header h1 { font-size: 15px; font-weight: 600; }
+        header h1 { font-size: 15px; font-weight: 600; color: #fff; }
         header .spacer { flex: 1; }
-        header .estado { font-size: 12px; padding: 4px 12px; border-radius: 12px; background: var(--green-bg); color: var(--green); cursor: pointer; transition: all 0.3s; user-select: none; }
-        header .estado:hover { transform: scale(1.05); }
-        header .estado.desconectado { background: var(--red-bg); color: var(--red); }
-        .push-status { font-size: 10px; padding: 4px 10px; border-radius: 12px; background: var(--surface2); color: var(--text-muted); }
-        .mensajero-stats { font-size: 11px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
-
-        .auto-refresh-indicator { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; background: var(--surface2); padding: 3px 10px; border-radius: 12px; }
-        .auto-refresh-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
-        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
-
-        .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        #loginBox { max-width: 400px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+        .header-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 10px; display: none; animation: pulse-badge 0.5s ease-in-out infinite; }
+        @keyframes pulse-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .btn-refrescar { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-refrescar:hover { background: var(--blue); color: #fff; }
+        .btn-refrescar:active { transform: scale(0.95); }
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 22px 20px; }
+        #loginBox { max-width: 420px; margin: 60px auto; padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
         #loginBox .brand { display: inline-block; background: var(--yellow); color: #1a1a2e; font-size: 26px; font-weight: 900; padding: 10px 24px; border-radius: 30px; }
         #loginBox h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        #loginBox .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
         #loginMsg { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
         .login-logo { text-align: center; margin-bottom: 28px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 11px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; font-size: 14px; outline: none; }
-        .form-group input:focus { border-color: var(--yellow); }
-
-        .seccion-pedidos { margin-bottom: 20px; }
-        .seccion-pedidos .titulo { font-size: 16px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .seccion-pedidos .titulo .badge-count { background: var(--red); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 20px; }
-        .seccion-pedidos .titulo .badge-count.blue { background: var(--blue); }
-
-        .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
-        .pedido-card.disponible { border-left-color: var(--green); }
-        
-        .pedido-card.nuevo-pedido {
-            animation: nuevoPedido 1s infinite;
-        }
-        
-        @keyframes nuevoPedido {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
-            50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; }
-            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
-        }
-
-        .pedido-card.alerta-persistente {
-            border-left-color: #FF3D00 !important;
-            animation: alertaPersistente 0.8s ease-in-out infinite;
-        }
-        
-        @keyframes alertaPersistente {
-            0% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
-            50% { border-left-color: #FFD600; box-shadow: 0 0 30px rgba(255,214,0,0.5); }
-            100% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
-        }
-        
-        .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
-        .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
-        .badge-estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .badge-estado.disponible { background: var(--green); color: #1a1a2e; }
-        .badge-estado.pendiente { background: var(--yellow); color: #1a1a2e; }
-        .badge-estado.camino { background: var(--blue); color: #fff; }
-        .badge-estado.recogido { background: var(--purple); color: #fff; }
-        .badge-estado.entregado { background: var(--green); color: #fff; }
-        .badge-estado.cancelado { background: var(--red); color: #fff; }
-        .pedido-card .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin: 6px 0; }
-        .pedido-card .info-grid .label { color: var(--text-muted); }
-        .pedido-card .info-grid .value { color: #fff; font-weight: 500; }
-        .pedido-card .total { text-align: right; font-size: 16px; font-weight: 800; color: var(--green); margin-top: 6px; }
-        .pedido-card .items { background: var(--surface2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
-        .pedido-card .items .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
-        .pedido-card .items .item:last-child { border-bottom: none; }
-        .estados-acciones { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-        .estados-acciones button { flex: 1; min-width: 100px; padding: 10px 12px; font-size: 12px; border-radius: 8px; }
-
-        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
-        .empty-state .icono { font-size: 48px; display: block; margin-bottom: 12px; }
-
-        .motivacion-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px; animation: fadeInMotivacion 0.5s ease; }
-        .motivacion-overlay.active { display: flex; }
-        @keyframes fadeInMotivacion { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .motivacion-box { background: linear-gradient(145deg, #1a1a2e, #16213e); border: 2px solid var(--yellow); border-radius: 24px; padding: 40px 32px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(255,214,0,0.15); animation: floatBox 3s ease-in-out infinite; }
-        @keyframes floatBox { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .motivacion-box .icono-grande { font-size: 72px; display: block; margin-bottom: 16px; animation: pulseIcon 1.5s ease-in-out infinite; }
-        @keyframes pulseIcon { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .motivacion-box h2 { font-size: 28px; font-weight: 900; color: var(--yellow); margin-bottom: 8px; }
-        .motivacion-box .subtitulo { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; }
-        .motivacion-box .mensaje { font-size: 15px; color: #ccc; line-height: 1.6; margin-bottom: 24px; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; border-left: 3px solid var(--yellow); }
-        .motivacion-box .beneficios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; text-align: left; }
-        .motivacion-box .btn-conectar { background: var(--yellow); color: #1a1a2e; font-size: 18px; font-weight: 800; padding: 16px 32px; border-radius: 50px; border: none; cursor: pointer; width: 100%; transition: all 0.3s; animation: pulseBtn 1.5s ease-in-out infinite; }
-        @keyframes pulseBtn { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,214,0,0.4); } 50% { transform: scale(1.02); box-shadow: 0 0 30px 10px rgba(255,214,0,0.2); } }
-        .motivacion-box .btn-conectar:hover { background: var(--yellow-dim); transform: scale(1.05); }
-        .motivacion-box .btn-cerrar { background: transparent; color: var(--text-muted); font-size: 13px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; width: 100%; margin-top: 8px; }
-        .motivacion-box .btn-cerrar:hover { background: var(--surface3); color: #fff; }
-        .motivacion-box .estadisticas { display: flex; justify-content: center; gap: 20px; margin: 16px 0; font-size: 12px; color: var(--text-muted); }
-        .motivacion-box .estadisticas .num { color: var(--yellow); font-weight: 800; font-size: 18px; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 400px; width: 100%; text-align: center; }
-        .modal-box h3 { font-size: 20px; margin-bottom: 8px; }
-        .modal-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
-        .modal-box .acciones { display: flex; gap: 10px; }
-        .modal-box .acciones button { flex: 1; }
-
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+        .stat-card .val { font-size: 28px; font-weight: 900; margin-bottom: 2px; line-height: 1; }
+        .stat-card .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+        .stat-card.c-yellow .val { color: var(--yellow); }
+        .stat-card.c-green .val { color: var(--green); }
+        .stat-card.c-blue .val { color: var(--blue); }
+        .stat-card.c-red .val { color: var(--red); }
+        .stat-card.c-orange .val { color: var(--orange); }
+        .stat-card.c-purple .val { color: var(--purple); }
+        .pedido-asignar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s ease; animation: slideIn 0.3s ease; }
+        .pedido-asignar.nuevo { border-left-color: var(--green); animation: pulseNuevo 1.5s ease-in-out 3; }
+        .pedido-asignar.alarma-activa { border-left-color: var(--red) !important; animation: alarma-pulse-border 0.8s ease-in-out infinite; }
+        @keyframes alarma-pulse-border { 0%, 100% { border-left-color: var(--red); box-shadow: 0 0 15px rgba(255,61,0,0.3); } 50% { border-left-color: var(--yellow); box-shadow: 0 0 35px rgba(255,214,0,0.5); } }
+        @keyframes pulseNuevo { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } 50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .pedido-asignar .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .pedido-asignar .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
+        .pedido-asignar .header .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--blue-bg); color: var(--blue); }
+        .pedido-asignar .header .estado-badge.asignado-badge { background: var(--green-bg); color: var(--green); }
+        .pedido-asignar .header .alarma-indicador { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--red); color: #fff; animation: alarma-pulse 0.8s ease-in-out infinite; display: inline-block; }
+        @keyframes alarma-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
+        .pedido-asignar .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin-bottom: 8px; }
+        .pedido-asignar .info-grid .label { color: var(--text-muted); }
+        .pedido-asignar .info-grid .value { color: #fff; font-weight: 500; }
+        .pedido-asignar .items-list { background: var(--surface2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
+        .pedido-asignar .items-list .item { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--border); }
+        .pedido-asignar .items-list .item:last-child { border-bottom: none; }
+        .pedido-asignar .total { font-size: 16px; font-weight: 800; text-align: right; color: var(--green); margin-top: 6px; }
+        .pedido-asignar .mensajero-info { font-size: 12px; color: var(--blue); text-align: center; padding: 6px; background: var(--blue-bg); border-radius: 6px; margin-top: 6px; }
+        .form-crear { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .form-crear .titulo { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .form-crear .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-crear .acciones { display: flex; gap: 8px; margin-top: 12px; }
+        .mensajero-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; transition: border-color 0.3s; }
+        .mensajero-card:hover { border-color: var(--yellow); }
+        .mensajero-card .avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: var(--yellow); flex-shrink: 0; border: 2px solid var(--border); }
+        .mensajero-card .info { flex: 1; min-width: 150px; }
+        .mensajero-card .info .nombre { font-size: 15px; font-weight: 700; }
+        .mensajero-card .info .email { font-size: 12px; color: var(--text-muted); }
+        .mensajero-card .info .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .mensajero-card .info .telefono { font-size: 12px; color: var(--green); }
+        .mensajero-card .estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .mensajero-card .estado.activo { background: var(--green-bg); color: var(--green); }
+        .mensajero-card .estado.inactivo { background: var(--red-bg); color: var(--red); }
+        .mensajero-card .estado.ocupado { background: var(--orange-bg); color: var(--orange); }
+        .mensajero-card .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
         #toastWrap { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         .toast { background: #1e1e1e; border: 1px solid var(--border2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: toastIn .3s ease; pointer-events: auto; max-width: 380px; cursor: pointer; }
         .toast.t-success { border-left: 3px solid var(--green); }
         .toast.t-error { border-left: 3px solid var(--red); }
         .toast.t-info { border-left: 3px solid var(--blue); }
         .toast.t-warn { border-left: 3px solid var(--yellow); }
-        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); }
-        .toast.t-motivacion { border-left: 3px solid var(--yellow); background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid var(--yellow); }
+        .toast.t-new { border-left: 3px solid var(--yellow); border-top-color: var(--yellow); border-left-color: var(--red); animation: toastIn .3s ease, alarma-pulse 0.8s ease-in-out infinite 0.3s; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
-
-        .badge-persistente {
-            background: #FF3D00;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            animation: pulseBadge 0.8s ease-in-out infinite;
-            display: inline-block;
-        }
-        @keyframes pulseBadge {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-        }
-
-        .filtros-historial {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .filtros-historial button {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border2);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: auto;
-        }
-
-        .filtros-historial button.active {
-            background: var(--surface3);
-            color: #fff;
-            border-color: var(--blue);
-        }
-
-        .filtros-historial button:hover {
-            background: var(--surface2);
-            color: #fff;
-        }
-
-        .resumen-historial {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            background: var(--surface2);
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-top: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .resumen-historial .item {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .resumen-historial .item .num {
-            font-weight: 800;
-            font-size: 16px;
-        }
-
-        .resumen-historial .item .num.yellow { color: var(--yellow); }
-        .resumen-historial .item .num.green { color: var(--green); }
-        .resumen-historial .item .num.orange { color: var(--orange); }
-
-        .pago-confirmado {
-            background: var(--green-bg);
-            color: var(--green);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 4px;
-            text-align: center;
-        }
-
-        .pago-pendiente {
-            background: var(--orange-bg);
-            color: var(--orange);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 4px;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-            .pedido-card .info-grid { grid-template-columns: 1fr; }
-            .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
-            .motivacion-box .beneficios { grid-template-columns: 1fr; }
-            .motivacion-box { padding: 24px 16px; }
-            .motivacion-box h2 { font-size: 22px; }
-            .resumen-historial { flex-direction: column; gap: 4px; }
-            header .mensajero-stats { font-size: 10px; padding: 2px 8px; gap: 6px; }
-            .filtros-historial button { font-size: 10px; padding: 4px 10px; }
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); z-index: 99999; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal .modal-content { background: #1e1e1e; border-radius: 20px; max-width: 550px; width: 100%; padding: 24px; border: 1px solid var(--yellow); max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .modal .modal-header h3 { color: #fff; font-size: 18px; font-weight: 700; }
+        .modal .modal-close { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+        .modal .modal-close:hover { color: var(--red); }
+        .modal .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+        .modal .info-row .label { color: var(--text-muted); }
+        .modal .info-row .value { color: #fff; font-weight: 500; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+        .modal .form-group input { width: 100%; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; font-size: 14px; outline: none; }
+        .modal .form-group input:focus { border-color: var(--yellow); }
+        .modal .form-group select { width: 100%; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface3); color: #fff; font-size: 14px; outline: none; }
+        .filtros { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; background: var(--surface2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .filtros select, .filtros input { flex: 1; min-width: 150px; }
+        .filtros button { flex: 0 0 auto; width: auto; }
+        .seccion-pedidos { margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border); }
+        .seccion-pedidos .titulo-seccion { font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .seccion-pedidos .titulo-seccion .badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
+        .opcion-asignacion { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; transition: all 0.3s ease; }
+        .opcion-asignacion:hover { border-color: var(--yellow); }
+        .opcion-asignacion .titulo { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .opcion-asignacion .descripcion { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+        .opcion-asignacion select { background: var(--surface3); border: 1px solid var(--border2); color: #fff; padding: 10px 12px; border-radius: 8px; width: 100%; margin-bottom: 8px; }
+        .opcion-asignacion select option { background: #1e1e1e; }
+        .opcion-asignacion .btn-asignar { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .opcion-asignacion .btn-asignar:hover { transform: scale(1.01); }
+        .opcion-asignacion .btn-asignar:active { transform: scale(0.97); }
+        .opcion-asignacion .btn-asignar.manual { background: var(--blue); color: #fff; }
+        .opcion-asignacion .btn-asignar.manual:hover { background: #0277bd; }
+        .opcion-asignacion .btn-asignar.broadcast { background: var(--yellow); color: #1a1a2e; }
+        .opcion-asignacion .btn-asignar.broadcast:hover { background: var(--yellow-dim); }
+        .opcion-asignacion .mensajeros-disponibles { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .opcion-asignacion .mensajeros-disponibles .count { color: var(--green); font-weight: 700; }
+        .btn-cancelar-modal { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border2); background: transparent; color: var(--text-muted); font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
+        .btn-cancelar-modal:hover { background: var(--surface3); color: #fff; }
+        .pedido-info-resumen { background: var(--surface3); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
+        .pedido-info-resumen .row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .pedido-info-resumen .label { color: var(--text-muted); }
+        .pedido-info-resumen .value { color: #fff; font-weight: 500; }
+        .sin-mensajeros { text-align: center; padding: 30px; color: var(--text-muted); }
+        .sin-mensajeros .icono { font-size: 48px; display: block; margin-bottom: 12px; }
+        .auto-refresh-indicator { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
+        .auto-refresh-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse-dot 1.5s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+        .btn-whatsapp-envio { background: #25D366; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
+        .btn-whatsapp-envio:active { transform: scale(0.97); }
+        .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-test-sound:hover { background: #7d3c98; }
+        @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
 <body>
-
-<div class="motivacion-overlay" id="motivacionOverlay">
-    <div class="motivacion-box">
-        <span class="icono-grande">🛵</span>
-        <h2>¡Conéctate y comienza a ganar!</h2>
-        <p class="subtitulo">Tienes pedidos esperando por ti</p>
-        <div class="mensaje">
-            <span class="emoji">💪</span> 
-            <strong>¡EyMoto te necesita!</strong><br>
-            Hay <strong style="color:var(--yellow);" id="pedidosEsperando">0</strong> pedidos esperando ser entregados.
-            Conéctate ahora y comienza a generar ingresos.
-        </div>
-        <div class="beneficios">
-            <div class="item"><span class="icon">💰</span> Gana por cada entrega</div>
-            <div class="item"><span class="icon">⏰</span> Horario flexible</div>
-            <div class="item"><span class="icon">📍</span> Trabaja cerca de ti</div>
-            <div class="item"><span class="icon">📈</span> Aumenta tus ingresos</div>
-        </div>
-        <div class="estadisticas">
-            <div><span class="num" id="statActivosMotivacion">0</span><br>Mensajeros activos</div>
-            <div><span class="num" id="statPedidosMotivacion">0</span><br>Pedidos disponibles</div>
-        </div>
-        <button class="btn-conectar" onclick="conectarDesdeMotivacion()">🔌 CONECTARME AHORA</button>
-        <button class="btn-cerrar" onclick="cerrarMotivacion()">⏳ Después me conecto</button>
-    </div>
-</div>
-
-<div class="modal-overlay" id="modalConfirmacion">
-    <div class="modal-box">
-        <h3 id="modalTitulo">⚠️ Cambiar estado</h3>
-        <p id="modalMensaje">¿Estás seguro de que quieres cambiar tu estado?</p>
-        <div class="acciones">
-            <button class="btn-ghost" onclick="cerrarModalConfirmacion()">Cancelar</button>
-            <button id="btnConfirmarAccion" class="btn-danger">Confirmar</button>
-        </div>
-    </div>
-</div>
-
 <div id="toastWrap"></div>
-
 <div id="loginBox">
     <div class="login-logo"><span class="brand">EyMoto</span></div>
-    <h2>Panel Mensajero</h2>
-    <p class="sub">Recibe y gestiona tus pedidos</p>
-    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="tu@email.com"></div>
+    <h2>Admin Mensajeros</h2>
+    <p class="sub">Gestiona tu equipo de repartidores y asigna pedidos</p>
+    <div class="form-group"><label>Correo</label><input type="email" id="email" placeholder="adminmensajeros@eymoto.com"></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()"></div>
     <button onclick="iniciarSesion()">Ingresar</button>
     <p id="loginMsg"></p>
 </div>
-
 <div id="panel" class="hidden">
     <header>
         <span class="brand">EyMoto</span>
-        <h1>Mis Pedidos</h1>
+        <h1>Administración de Mensajeros</h1>
         <span class="spacer"></span>
-        <span id="mensajeroInfo" style="font-size:12px;color:var(--text-muted);"></span>
-        <span class="mensajero-stats" id="mensajeroStats">
-            <span style="color:var(--yellow);">📦 Cargando...</span>
+        <span id="adminUser" style="font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:12px;"></span>
+        <span class="auto-refresh-indicator">
+            <span class="dot"></span>
+            Auto-refresh activo
         </span>
-        <span class="push-status" id="pushStatus">🔔 Notificaciones: Cargando...</span>
-        <span class="auto-refresh-indicator"><span class="dot"></span>Auto-refresh</span>
-        <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
-        <button class="btn-sm" onclick="activarNotificacionesPush()" style="width:auto;padding:6px 12px;background:var(--blue);color:#fff;border-radius:8px;">🔔 Activar</button>
-        <button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
-        <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
+        <span class="header-badge" id="headerBadge">⏰🔔 0</span>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
+        <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
+        <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
-
     <div class="wrap">
-        <div class="seccion-pedidos">
-            <div class="titulo">📦 Pedidos Disponibles <span class="badge-count" id="contadorDisponibles">0</span></div>
-            <div id="listaPedidosDisponibles"><div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span></div></div>
+        <div class="stats-grid">
+            <div class="stat-card c-green"><div class="val" id="statActivos">0</div><div class="lbl">Mensajeros activos</div></div>
+            <div class="stat-card c-red"><div class="val" id="statInactivos">0</div><div class="lbl">Inactivos</div></div>
+            <div class="stat-card c-orange"><div class="val" id="statOcupados">0</div><div class="lbl">Ocupados</div></div>
+            <div class="stat-card c-yellow"><div class="val" id="statPendientes">0</div><div class="lbl">Por asignar</div></div>
+            <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
         </div>
+        <div class="filtros">
+            <select id="filtroEstado" onchange="filtrarMensajeros()">
+                <option value="">📋 Todos</option>
+                <option value="activo">🟢 Activos</option>
+                <option value="inactivo">🔴 Inactivos</option>
+                <option value="ocupado">🟠 Ocupados</option>
+            </select>
+            <input type="text" id="filtroBusqueda" placeholder="🔍 Buscar por nombre o email..." oninput="filtrarMensajeros()">
+            <button class="btn-info btn-sm" onclick="recargarMensajeros()" style="width:auto;">🔄 Recargar</button>
+            <button class="btn-refrescar" onclick="recargarTodo()" style="padding:6px 14px;font-size:11px;">🔄 Refrescar todo</button>
+        </div>
+        <div class="form-crear">
+            <div class="titulo">➕ Crear nuevo mensajero</div>
+            <div class="row2">
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📧 Gmail del mensajero *</label><input id="nuevoEmail" placeholder="carlos.mensajero@gmail.com"></div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">👤 Nombre completo *</label><input id="nuevoNombre" placeholder="Carlos Pérez"></div>
+            </div>
+            <div class="row2">
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">📱 Teléfono (WhatsApp) *</label><input id="nuevoTelefono" placeholder="573169934516"></div>
+                <div><label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px;">🔑 Contraseña temporal *</label><input id="nuevoPassword" type="password" placeholder="Mínimo 6 caracteres" value="Mensajero2026!"></div>
+            </div>
+            <div class="acciones">
+                <button onclick="crearMensajero()" style="flex:1;">✅ Crear mensajero</button>
+                <button class="btn-ghost" onclick="limpiarFormulario()" style="width:auto;">🗑️ Limpiar</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">⚠️ El mensajero recibirá un email de verificación y deberá cambiar su contraseña al entrar.</div>
+        </div>
+        <div id="listaMensajeros"><div style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:12px;">🛵</div>Cargando mensajeros...</div></div>
+        <div class="seccion-pedidos" id="seccionPedidos">
+            <div class="titulo-seccion">
+                📦 Pedidos listos para asignar
+                <span class="badge" id="badgePedidos">0</span>
+                <button class="btn-refrescar" onclick="recargarPedidos()" style="padding:2px 10px;font-size:10px;">🔄</button>
+            </div>
+            <div id="listaPedidosAsignar"><div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">🍽️</div>No hay pedidos listos para asignar</div></div>
+        </div>
+    </div>
+</div>
 
-        <div class="seccion-pedidos">
-            <div class="titulo">🛵 Mis Pedidos Activos <span class="badge-count blue" id="contadorMisPedidos" style="background:var(--blue);">0</span></div>
-            <div id="listaMisPedidos"><div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div></div>
+<!-- ===== MODAL ASIGNACIÓN ===== -->
+<div class="modal" id="modalAsignacion" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalAsignacionTitulo">📦 Asignar Pedido</h3>
+            <button class="modal-close" onclick="window.cerrarModalAsignacion()">✕</button>
         </div>
+        <div id="modalAsignacionContenido"></div>
+    </div>
+</div>
 
-        <div class="seccion-pedidos">
-            <div class="titulo" style="color: var(--blue);">
-                📊 Mi Historial de Pedidos
-                <span class="badge-count blue" id="contadorHistorial" style="background: var(--blue);">0</span>
-                <button class="btn-sm" onclick="cargarHistorialPedidos()" style="width:auto;padding:4px 12px;font-size:10px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:6px;">🔄 Recargar</button>
-            </div>
-            
-            <div class="filtros-historial">
-                <button class="active hoy" onclick="filtrarHistorial('hoy', this)">📅 Hoy</button>
-                <button onclick="filtrarHistorial('ayer', this)">📅 Ayer</button>
-                <button onclick="filtrarHistorial('semana', this)">📅 Esta semana</button>
-                <button onclick="filtrarHistorial('todas', this)">📅 Todas</button>
-            </div>
-            
-            <div id="listaHistorialPedidos">
-                <div class="empty-state">
-                    <span class="icono">⏳</span>
-                    <p>Cargando historial...</p>
-                </div>
-            </div>
-            
-            <div class="resumen-historial">
-                <div class="item">📦 <span class="num yellow" id="totalPedidosHistorial">0</span> Total</div>
-                <div class="item">💰 <span class="num green" id="totalGanadoHistorial">$0</span> Ganado</div>
-                <div class="item">✅ <span class="num green" id="totalEntregadosHistorial">0</span> Entregados</div>
-                <div class="item">⏳ <span class="num orange" id="totalPendientesHistorial">0</span> Pendientes</div>
-            </div>
+<!-- ===== MODAL EDITAR MENSAJERO ===== -->
+<div class="modal" id="modalEditarMensajero" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalEditarTitulo">✏️ Editar Mensajero</h3>
+            <button class="modal-close" onclick="window.cerrarModalEditarMensajero()">✕</button>
         </div>
+        <div id="modalEditarContenido"></div>
+    </div>
+</div>
+
+<!-- ===== MODAL DETALLE ===== -->
+<div class="modal" id="modalDetalle" onclick="cerrarModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Detalle del mensajero</h3>
+            <button class="modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div id="modalContenido"></div>
     </div>
 </div>
 
@@ -385,394 +291,249 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// 📱 DETECTAR PEDIDO DESDE ENLACE WHATSAPP
+// ⏰ SONIDO DE DESPERTADOR (RING RING) CON REPETICIÓN
 // ============================================================
-function detectarPedidoDesdeEnlace() {
-    const params = new URLSearchParams(window.location.search);
-    const pedidoId = params.get('pedido');
-    const tiendaId = params.get('tienda');
-    
-    if (pedidoId && tiendaId) {
-        console.log(`📱 Pedido detectado desde enlace: ${pedidoId} - Tienda: ${tiendaId}`);
-        window._pedidoDesdeEnlace = { pedidoId, tiendaId };
-        
-        setTimeout(() => {
-            toast('📱 Has llegado desde un enlace de WhatsApp. Buscando tu pedido...', 'info', 4000);
-        }, 2000);
-    }
-}
+let audioContextAdmin = null;
+let audioInicializadoAdmin = false;
+let intervalosAlarma = {};
 
-detectarPedidoDesdeEnlace();
-
-// ============================================================
-// 🔑 CONFIGURACIÓN VAPID
-// ============================================================
-const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
-
-// ============================================================
-// ⏰ SONIDO
-// ============================================================
-function sonidoEyMoto() {
-    try {
-        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
-        audio.volume = 1.0;
-        audio.preload = "auto";
-        
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('🔊 Sonido MP3 reproducido');
-            }).catch(e => {
-                console.log('⚠️ Error con MP3:', e.message);
-                sonidoRespaldo();
-            });
-        }
-    } catch (e) {
-        sonidoRespaldo();
-    }
-}
-
-function sonidoRespaldo() {
+function sonidoDespertadorAdmin() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') ctx.resume();
+        if (!audioContextAdmin) {
+            audioContextAdmin = new AudioContext();
+        }
+        if (audioContextAdmin.state === 'suspended') {
+            audioContextAdmin.resume();
+        }
         
-        const notas = [
-            {freq: 880, tiempo: 0.00, duracion: 0.10},
-            {freq: 1047, tiempo: 0.16, duracion: 0.10},
-            {freq: 1319, tiempo: 0.34, duracion: 0.28},
-            {freq: 1568, tiempo: 0.60, duracion: 0.45}
-        ];
+        const ctx = audioContextAdmin;
+        const ahora = ctx.currentTime;
+        
+        const frecuencias = [800, 1000, 800, 1000];
+        const duracionNota = 0.15;
+        const pausa = 0.05;
+        
+        frecuencias.forEach((freq, index) => {
+            const inicio = ahora + index * (duracionNota + pausa);
+            
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, inicio);
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.0001, inicio);
+            gain.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, inicio + duracionNota);
+            
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1200;
+            filter.Q.value = 1.0;
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(inicio);
+            osc.stop(inicio + duracionNota);
+        });
+        
+        console.log('⏰ Ring ring despertador ADMIN reproducido');
+        
+    } catch (e) {
+        console.warn('⚠️ Error en sonido de despertador:', e);
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            const frecuencias = [800, 1000, 800, 1000];
+            const duracionNota = 0.15;
+            const pausa = 0.05;
+            frecuencias.forEach((freq, index) => {
+                const inicio = ctx.currentTime + index * (duracionNota + pausa);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                gain.gain.value = 0.2;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(inicio);
+                osc.stop(inicio + duracionNota);
+            });
+        } catch (e2) {}
+    }
+}
 
-        notas.forEach(n => {
+function probarSonidoAdmin() {
+    console.log('📯 Probando pito de moto ADMIN...');
+    sonidoDespertadorAdmin();
+    toast('📯 ¡Ring ring!', 'info', 2000);
+}
+
+// ============================================================
+// INICIAR ALARMA PERSISTENTE PARA UN PEDIDO
+// ============================================================
+function iniciarAlarmaPedido(pedidoId) {
+    if (intervalosAlarma[pedidoId]) {
+        console.log(`⏰ Alarma ya activa para pedido: ${pedidoId}`);
+        return;
+    }
+    
+    console.log(`⏰ INICIANDO ALARMA para pedido: ${pedidoId}`);
+    
+    sonidoDespertadorAdmin();
+    
+    intervalosAlarma[pedidoId] = setInterval(() => {
+        const pedido = todosLosPedidos.find(p => p.id === pedidoId);
+        if (!pedido || pedido.mensajeroId || pedido.estado !== 'Listo para asignar') {
+            detenerAlarmaPedido(pedidoId);
+            return;
+        }
+        sonidoDespertadorAdmin();
+        console.log(`⏰ Alarma sonando para pedido: ${pedidoId}`);
+    }, 5000);
+}
+
+// ============================================================
+// DETENER ALARMA DE UN PEDIDO - DETIENE SONIDO INMEDIATAMENTE
+// ============================================================
+function detenerAlarmaPedido(pedidoId) {
+    // 1️⃣ DETENER EL INTERVALO
+    if (intervalosAlarma[pedidoId]) {
+        clearInterval(intervalosAlarma[pedidoId]);
+        delete intervalosAlarma[pedidoId];
+        console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
+    }
+    
+    // 2️⃣ DETENER EL SONIDO ACTIVO
+    try {
+        if (audioContextAdmin) {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = "triangle";
-            osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.tiempo);
             osc.connect(gain);
             gain.connect(ctx.destination);
-            gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.tiempo);
-            gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + n.tiempo + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.tiempo + n.duracion);
-            osc.start(ctx.currentTime + n.tiempo);
-            osc.stop(ctx.currentTime + n.tiempo + n.duracion);
-        });
-        console.log('🔊 Sonido de respaldo reproducido');
+            gain.gain.value = 0.001;
+            osc.start();
+            osc.stop(ctx.currentTime + 0.01);
+            setTimeout(() => {
+                try { ctx.close(); } catch(e) {}
+            }, 50);
+        }
+    } catch(e) {}
+    
+    // 3️⃣ ACTUALIZAR LA TARJETA VISUALMENTE
+    renderizarPedidosAsignar();
+    
+    // 4️⃣ ACTUALIZAR BADGE Y ESTADÍSTICAS
+    actualizarHeaderBadge();
+    actualizarEstadisticas();
+}
+
+// ============================================================
+// DETENER TODAS LAS ALARMAS
+// ============================================================
+function detenerTodasLasAlarmas() {
+    Object.keys(intervalosAlarma).forEach(pedidoId => {
+        clearInterval(intervalosAlarma[pedidoId]);
+        delete intervalosAlarma[pedidoId];
+    });
+    console.log('🔇 Todas las alarmas detenidas');
+    renderizarPedidosAsignar();
+}
+
+// ============================================================
+// ACTIVAR AUDIO CON UN CLIC (ADMIN)
+// ============================================================
+document.addEventListener('click', function activarAudioAdmin() {
+    try {
+        if (!audioInicializadoAdmin) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            audioContextAdmin = ctx;
+            audioInicializadoAdmin = true;
+            console.log('⏰ Audio ADMIN activado por clic');
+        }
     } catch (e) {}
-}
-
-// ============================================================
-// ⏰ DESPERTADOR
-// ============================================================
-class SonidoDespertador {
-    constructor() {
-        this.ctx = null;
-        this.inicializado = false;
-        this.intervalos = {};
-        this.pedidosActivos = {};
-        this.reproduciendo = false;
-        this.pedidosProcesados = new Set();
-        this.audioActivado = false;
-        
-        setTimeout(() => {
-            this.iniciarAudio();
-        }, 500);
-    }
-
-    iniciarAudio() {
-        try {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-                console.log('🔊 Audio activado');
-            }
-            this.inicializado = true;
-            this.audioActivado = true;
-            return true;
-        } catch (e) { 
-            return false; 
-        }
-    }
-
-    reproducir() {
-        try {
-            if (!this.inicializado || !this.audioActivado) {
-                this.iniciarAudio();
-            }
-            sonidoEyMoto();
-        } catch (e) {
-            console.error('❌ Error en sonido:', e);
-        }
-    }
-
-    secuenciaRingRing() {
-        this.reproducir();
-    }
-
-    iniciarDespertador(pedidoId) {
-        if (this.pedidosActivos[pedidoId]) return;
-        if (this.pedidosProcesados.has(pedidoId)) {
-            console.log(`⏰ Pedido ${pedidoId} ya fue procesado`);
-            return;
-        }
-        console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
-        
-        this.iniciarAudio();
-        this.pedidosActivos[pedidoId] = true;
-        this.reproduciendo = true;
-        this.secuenciaRingRing();
-        
-        this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
-                this.secuenciaRingRing();
-            } else {
-                this.detenerDespertador(pedidoId);
-            }
-        }, 5000);
-    }
-
-    detenerDespertador(pedidoId) {
-        if (!pedidoId) {
-            Object.keys(this.pedidosActivos).forEach(id => {
-                this.detenerDespertador(id);
-            });
-            return;
-        }
-        if (this.pedidosActivos[pedidoId]) {
-            console.log(`🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
-            delete this.pedidosActivos[pedidoId];
-            this.pedidosProcesados.add(pedidoId);
-            if (this.intervalos[pedidoId]) {
-                clearInterval(this.intervalos[pedidoId]);
-                delete this.intervalos[pedidoId];
-            }
-            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
-            if (!hayActivos) {
-                this.reproduciendo = false;
-            }
-        }
-    }
-
-    estaSonando(pedidoId) {
-        return this.pedidosActivos[pedidoId] === true;
-    }
-
-    limpiarProcesados() {
-        this.pedidosProcesados.clear();
-    }
-}
-
-const sonidoDespertador = new SonidoDespertador();
-
-// ============================================================
-// 📢 NOTIFICACIONES
-// ============================================================
-
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-function arrayBufferToBase64(buffer) {
-    if (!buffer) return '';
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-}
-
-// PROBAR NOTIFICACIÓN
-function probarNotificacion() {
-    try {
-        alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas de nuevos pedidos.');
-        
-        if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-                const notification = new Notification('🔔 Notificación de prueba', {
-                    body: 'EyMoto funcionando correctamente.',
-                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
-                });
-                console.log('✅ Notification API funcionando');
-            } catch (e) {
-                console.log('ℹ️ Notification API no disponible');
-            }
-        }
-        console.log('✅ Notificación de prueba mostrada');
-    } catch (error) {
-        console.error('❌ Error:', error);
-    }
-}
-
-// ============================================================
-// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (CON PRODUCTOS Y DOMICILIO)
-// ============================================================
-function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total, costoDomicilio) {
-    console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
-    
-    const domicilio = costoDomicilio || 0;
-    const subtotal = total - domicilio;
-    
-    if ('Notification' in window && Notification.permission === 'granted') {
-        try {
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification('📦 Nuevo pedido disponible', {
-                    body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
-                    icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
-                    vibrate: [300, 100, 300, 100, 400],
-                    requireInteraction: true,
-                    tag: 'nuevo-pedido-' + Date.now(),
-                    renotify: true
-                });
-            }).catch(function() {
-                try {
-                    const notification = new Notification('📦 Nuevo pedido disponible', {
-                        body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
-                        icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
-                    });
-                    notification.onclick = function() {
-                        window.focus();
-                        this.close();
-                        renderizarPedidos();
-                    };
-                } catch (e) {}
-            });
-        } catch (e) {}
-    }
-}
-
-// ACTIVAR NOTIFICACIONES
-async function activarNotificacionesPush() {
-    try {
-        console.log('🔔 Activando notificaciones...');
-        
-        const isAppCreator = window.location.href.includes('appcreator') || 
-                            navigator.userAgent.includes('AppCreator') ||
-                            document.referrer.includes('appcreator');
-        
-        document.getElementById('pushStatus').textContent = isAppCreator ? '🔔 Notificaciones: Activadas (App)' : '🔔 Notificaciones: Activadas';
-        
-        if (isAppCreator) {
-            alert('✅ Notificaciones activadas correctamente en la app.\n\nRecibirás alertas de nuevos pedidos.');
-            return true;
-        }
-        
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.register('sw.js', {
-                    scope: '/'
-                });
-                console.log('✅ Service Worker registrado');
-                
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                    });
-                    
-                    if (mensajeroUid) {
-                        const subscriptionData = {
-                            endpoint: subscription.endpoint,
-                            expirationTime: subscription.expirationTime,
-                            keys: {
-                                p256dh: arrayBufferToBase64(subscription.getKey('p256dh')),
-                                auth: arrayBufferToBase64(subscription.getKey('auth'))
-                            }
-                        };
-                        await db.collection('usuarios').doc(mensajeroUid).set({
-                            pushSubscription: subscriptionData,
-                            pushEnabled: true,
-                            pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    }
-                    return true;
-                }
-            } catch (e) {
-                console.warn('⚠️ Error con Service Worker:', e);
-            }
-        }
-        
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        document.getElementById('pushStatus').textContent = '❌ Error';
-        return false;
-    }
-}
-
-// INICIALIZAR NOTIFICACIONES
-async function inicializarNotificaciones() {
-    try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const isAppCreator = window.location.href.includes('appcreator') || 
-                            navigator.userAgent.includes('AppCreator') ||
-                            document.referrer.includes('appcreator');
-        
-        if (isAppCreator) {
-            console.log('📱 Detectado AppCreator24 - Usando modo WebView');
-            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas (App)';
-            return;
-        }
-        
-        if (Notification.permission === 'granted') {
-            document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
-            try {
-                const registration = await navigator.serviceWorker.ready;
-                const subscription = await registration.pushManager.getSubscription();
-                if (!subscription) {
-                    await activarNotificacionesPush();
-                }
-            } catch (e) {}
-        } else if (Notification.permission === 'denied') {
-            document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
-        } else {
-            document.getElementById('pushStatus').textContent = '🔔 Activa las notificaciones';
-        }
-    } catch (error) {
-        console.warn('⚠️ Error inicializando notificaciones:', error);
-        document.getElementById('pushStatus').textContent = '🔔 Modo interfaz activo';
-    }
-}
-
-// ============================================================
-// ACTIVAR AUDIO CON UN CLIC
-// ============================================================
-document.addEventListener('click', function activarAudio() {
-    if (sonidoDespertador) {
-        sonidoDespertador.iniciarAudio();
-        console.log('🔊 Audio activado por clic');
-    }
 }, { once: true });
 
 // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
-let mensajeroUid = null;
-let mensajeroData = null;
-let pedidosListener = null;
-let tiendasCache = {};
+let todosLosMensajeros = [];
+let mensajerosFiltrados = [];
+let listenerMensajeros = null;
 let todosLosPedidos = [];
-let listenerActivo = false;
-let timeoutReconexion = null;
-let mensajeroConectado = true;
-let accionPendiente = null;
-let motivacionMostrada = false;
-let mensajerosGlobal = [];
-let historialPedidos = [];
-let filtroHistorialActual = 'hoy';
+let tiendasCache = {};
+let recargando = false;
+let notificacionActiva = false;
+let pedidosEnProceso = new Set();
+
+// ============================================================
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
+// ============================================================
+function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData) {
+    let telefono = String(mensajeroTelefono || '').replace(/[\s\-\(\)\+\.]/g, '');
+    if (telefono && !telefono.startsWith('57') && telefono.length === 10) {
+        telefono = '57' + telefono;
+    }
+    if (!telefono) {
+        telefono = pedidoData?.telefonoTienda || '573169934516';
+        telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        if (!telefono.startsWith('57') && telefono.length === 10) {
+            telefono = '57' + telefono;
+        }
+    }
+    const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
+    const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+    const mensaje = `🛵 *¡Nuevo pedido disponible!*\n\n` +
+                    `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n` +
+                    `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n` +
+                    `👤 *Cliente:* ${pedidoData.cliente?.nombre || 'Cliente'}\n` +
+                    `💰 *Total:* $${(pedidoData.total || 0).toLocaleString('es-CO')}\n\n` +
+                    `📍 *Dirección:* ${pedidoData.cliente?.direccion || 'N/A'}\n` +
+                    `📱 *Teléfono cliente:* ${pedidoData.cliente?.telefono || 'N/A'}\n\n` +
+                    `📱 *Haz clic en el enlace para ver el pedido:*\n` +
+                    `${url}\n\n` +
+                    `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
+    return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+}
+
+function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData, esMasivo = false) {
+    try {
+        let telefono = mensajero.telefono || mensajero.whatsapp || '';
+        if (!telefono) {
+            console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
+            toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
+            return;
+        }
+        const url = generarEnlaceWhatsApp(telefono, tiendaId, pedidoId, pedidoData);
+        console.log(`📱 Abriendo WhatsApp para ${mensajero.nombre}: ${url}`);
+        window.open(url, '_blank');
+        const tipo = esMasivo ? 'notificación masiva' : 'asignación manual';
+        toast(`📱 WhatsApp abierto para ${mensajero.nombre} (${tipo})`, 'success', 4000);
+        if (pedidoId && mensajero.uid) {
+            db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .collection('notificacionesWhatsApp').add({
+                    mensajeroId: mensajero.uid,
+                    mensajeroNombre: mensajero.nombre || 'Mensajero',
+                    telefono: telefono,
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    tipo: esMasivo ? 'masivo' : 'manual',
+                    enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
+                }).catch(err => console.warn('Error guardando registro:', err));
+        }
+    } catch (error) {
+        console.error('❌ Error enviando WhatsApp:', error);
+        toast('❌ Error al enviar notificación: ' + error.message, 'error');
+    }
+}
 
 // ============================================================
 // FUNCIONES DE AUTENTICACIÓN
@@ -787,33 +548,28 @@ function iniciarSesion() {
         .then(async (userCredential) => {
             const user = userCredential.user;
             const doc = await db.collection('usuarios').doc(user.uid).get();
-            if (!doc.exists) { await auth.signOut(); msg.textContent = '⛔ Usuario no registrado como mensajero.'; return; }
+            if (!doc.exists) { await auth.signOut(); msg.textContent = '⛔ Usuario no registrado.'; return; }
             const data = doc.data();
-            if (data.mensajero !== true) { await auth.signOut(); msg.textContent = '⛔ No tienes permisos de mensajero.'; return; }
-            mensajeroUid = user.uid;
-            mensajeroData = data;
-            mensajeroConectado = data.conectado !== false;
+            if (data.admin !== true && data.superAdmin !== true) {
+                await auth.signOut();
+                msg.textContent = '⛔ No tienes permisos de administrador.';
+                return;
+            }
             document.getElementById('loginBox').classList.add('hidden');
             document.getElementById('panel').classList.remove('hidden');
-            document.getElementById('mensajeroInfo').textContent = '👤 ' + (data.nombre || email);
-            actualizarIndicadorConexion();
-            await db.collection('usuarios').doc(user.uid).update({ conectado: mensajeroConectado, ultimaConexion: firebase.firestore.FieldValue.serverTimestamp() });
+            document.getElementById('adminUser').textContent = '👑 ' + (data.nombre || email);
             await inicializarPanel();
-            
-            if (!mensajeroConectado && !motivacionMostrada) {
-                setTimeout(() => { mostrarMotivacion(); }, 2000);
-            }
         })
-        .catch(e => { console.error('Error de login:', e); msg.textContent = '❌ Credenciales incorrectas.'; });
+        .catch(e => { msg.textContent = '❌ Credenciales incorrectas.'; console.error(e); });
 }
 
-function cerrarSesion() {
-    if (mensajeroUid) {
-        db.collection('usuarios').doc(mensajeroUid).update({ conectado: false, ultimaDesconexion: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+function logout() {
+    if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+    if (window._listenersPedidos) {
+        window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
+        window._listenersPedidos = [];
     }
-    if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
-    listenerActivo = false;
-    if (timeoutReconexion) { clearTimeout(timeoutReconexion); timeoutReconexion = null; }
+    detenerTodasLasAlarmas();
     auth.signOut();
     document.getElementById('loginBox').classList.remove('hidden');
     document.getElementById('panel').classList.add('hidden');
@@ -824,163 +580,34 @@ auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('loginBox').classList.add('hidden');
         document.getElementById('panel').classList.remove('hidden');
-        mensajeroUid = user.uid;
         inicializarPanel();
     } else {
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
-        if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
-        listenerActivo = false;
-        motivacionMostrada = false;
+        if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+        if (window._listenersPedidos) {
+            window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
+            window._listenersPedidos = [];
+        }
+        detenerTodasLasAlarmas();
     }
 });
-
-// ============================================================
-// 🚀 NOTIFICACIÓN MOTIVACIONAL
-// ============================================================
-function mostrarMotivacion() {
-    const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
-    const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado)?.length || 0;
-    document.getElementById('pedidosEsperando').textContent = pedidosDisponibles.length;
-    document.getElementById('statActivosMotivacion').textContent = mensajerosActivos;
-    document.getElementById('statPedidosMotivacion').textContent = pedidosDisponibles.length;
-    if (pedidosDisponibles.length > 0) {
-        document.querySelector('.motivacion-box .mensaje').innerHTML = `
-            <span class="emoji">🚀</span> 
-            <strong>¡Hay ${pedidosDisponibles.length} pedidos esperando por ti!</strong><br>
-            Conéctate ahora y comienza a ganar dinero. Cada pedido es una oportunidad.
-        `;
-    }
-    const overlay = document.getElementById('motivacionOverlay');
-    overlay.classList.add('active');
-    motivacionMostrada = true;
-}
-function cerrarMotivacion() {
-    document.getElementById('motivacionOverlay').classList.remove('active');
-    toast('💪 ¡Te esperamos cuando quieras! Recuerda que conectado ganas más.', 'motivacion', 5000);
-}
-function conectarDesdeMotivacion() {
-    document.getElementById('motivacionOverlay').classList.remove('active');
-    if (!mensajeroConectado) {
-        ejecutarCambioConexion(true);
-        toast('🟢 ¡Te has conectado! Ahora recibirás pedidos. 🚀', 'success', 4000);
-    } else {
-        toast('✅ Ya estás conectado. ¡A trabajar!', 'success', 3000);
-    }
-}
-
-// ============================================================
-// TOGGLE CONECTADO/DESCONECTADO
-// ============================================================
-function toggleEstadoConexion() {
-    if (!mensajeroUid) return;
-    const nuevoEstado = !mensajeroConectado;
-    mostrarModalConfirmacion(
-        nuevoEstado ? '🟢 Conectar' : '🔴 Desconectar',
-        nuevoEstado ? '¿Quieres conectarte y recibir pedidos?' : '¿Quieres desconectarte y no recibir más pedidos?',
-        () => { ejecutarCambioConexion(nuevoEstado); }
-    );
-}
-function ejecutarCambioConexion(nuevoEstado) {
-    mensajeroConectado = nuevoEstado;
-    db.collection('usuarios').doc(mensajeroUid).update({
-        conectado: nuevoEstado,
-        [`${nuevoEstado ? 'conectado' : 'desconectado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        actualizarIndicadorConexion();
-        if (nuevoEstado) {
-            toast('🟢 ¡Te has conectado! Recibirás pedidos. 🚀', 'success', 3000);
-            if (!listenerActivo) { escucharPedidos(); }
-        } else {
-            toast('🔴 Te has desconectado. No recibirás pedidos.', 'warn', 3000);
-            if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
-            listenerActivo = false;
-            renderizarPedidos();
-            setTimeout(() => {
-                if (!mensajeroConectado && !motivacionMostrada) { mostrarMotivacion(); }
-            }, 1500);
-        }
-    }).catch(e => {
-        console.error('Error actualizando estado:', e);
-        toast('❌ Error al cambiar estado', 'error');
-        mensajeroConectado = !nuevoEstado;
-        actualizarIndicadorConexion();
-    });
-}
-function actualizarIndicadorConexion() {
-    const estadoEl = document.getElementById('estadoConexion');
-    if (mensajeroConectado) {
-        estadoEl.textContent = '🟢 Conectado';
-        estadoEl.className = 'estado';
-    } else {
-        estadoEl.textContent = '🔴 Desconectado';
-        estadoEl.className = 'estado desconectado';
-    }
-}
-
-// ============================================================
-// MODAL DE CONFIRMACIÓN
-// ============================================================
-function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
-    document.getElementById('modalTitulo').textContent = titulo;
-    document.getElementById('modalMensaje').textContent = mensaje;
-    document.getElementById('modalConfirmacion').classList.add('active');
-    accionPendiente = onConfirm;
-    document.getElementById('btnConfirmarAccion').onclick = function() {
-        if (accionPendiente) { accionPendiente(); accionPendiente = null; }
-        cerrarModalConfirmacion();
-    };
-}
-function cerrarModalConfirmacion() {
-    document.getElementById('modalConfirmacion').classList.remove('active');
-    accionPendiente = null;
-}
 
 // ============================================================
 // INICIALIZAR PANEL
 // ============================================================
 async function inicializarPanel() {
     try {
-        const doc = await db.collection('usuarios').doc(mensajeroUid).get();
-        if (doc.exists) {
-            const data = doc.data();
-            mensajeroConectado = data.conectado !== false;
-            actualizarIndicadorConexion();
-        }
         await cargarTiendas();
         await cargarMensajeros();
-        await escucharPedidos();
-        
-        await cargarHistorialPedidos();
-        await actualizarEstadisticasMensajero();
-        
-        toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
-        console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🔊 Sonido activado');
-        
-        if (window._pedidoDesdeEnlace) {
-            setTimeout(() => {
-                const { pedidoId, tiendaId } = window._pedidoDesdeEnlace;
-                const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                if (pedido) {
-                    toast(`📱 Pedido encontrado! #${pedido.numeroPedido || pedidoId.slice(-6)}`, 'success', 5000);
-                    if (pedido.estado === 'Listo para asignar' && !pedido.mensajeroId) {
-                        sonidoDespertador.iniciarDespertador(pedidoId);
-                    }
-                } else {
-                    toast('⏳ Buscando pedido, espera un momento...', 'info', 3000);
-                }
-            }, 3000);
-        }
-        
-        setTimeout(() => {
-            inicializarNotificaciones();
-        }, 3000);
-        
+        await cargarPedidosIniciales();
+        await escucharPedidosEnTiempoReal();
+        toast('✅ Panel de administración cargado', 'success', 2000);
+        console.log('✅ Panel ADMIN cargado correctamente');
+        console.log('⏰ Alarma persistente activada - Se detiene al asignar manualmente');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
-        setTimeout(inicializarPanel, 5000);
     }
 }
 
@@ -992,96 +619,132 @@ async function cargarTiendas() {
     } catch (e) { console.error('Error cargando tiendas:', e); }
 }
 
-async function cargarMensajeros() {
-    try {
-        const snap = await db.collection('usuarios').where('mensajero', '==', true).get();
-        mensajerosGlobal = [];
-        snap.forEach(doc => {
-            const data = doc.data();
-            const tienePedidoActivo = todosLosPedidos.some(p => 
-                p.mensajeroId === doc.id && 
-                (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
-            );
-            mensajerosGlobal.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
+function cargarMensajeros() {
+    if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+    listenerMensajeros = db.collection('usuarios')
+        .where('mensajero', '==', true)
+        .onSnapshot(snap => {
+            todosLosMensajeros = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                const tienePedidoActivo = todosLosPedidos.some(p => 
+                    p.mensajeroId === doc.id && 
+                    (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
+                );
+                todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
+            });
+            filtrarMensajeros();
+            actualizarEstadisticas();
+        }, err => { 
+            console.error('Error en listener de mensajeros:', err);
+            toast('⚠️ Error al cargar mensajeros. Recargando...', 'warn');
+            setTimeout(() => cargarMensajeros(), 3000);
         });
-    } catch (e) { console.error('Error cargando mensajeros:', e); }
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - VERSIÓN CORREGIDA
+// CARGAR PEDIDOS INICIALES
 // ============================================================
-function escucharPedidos() {
-    if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
-    if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
-    listenerActivo = true;
-    
-    todosLosPedidos = [];
-    
-    db.collection('tiendas').get()
-        .then(snap => {
-            const tiendas = snap.docs.map(doc => doc.id);
-            console.log(`📢 Escuchando ${tiendas.length} tiendas para pedidos`);
-            
-            let listenersActivos = 0;
-            
-            tiendas.forEach(tiendaId => {
-                const unsubscribe = db.collection('tiendas')
+async function cargarPedidosIniciales() {
+    if (recargando) return;
+    recargando = true;
+    try {
+        const tiendasSnap = await db.collection('tiendas').get();
+        todosLosPedidos = [];
+        for (const tiendaDoc of tiendasSnap.docs) {
+            const tiendaId = tiendaDoc.id;
+            try {
+                const pedidosSnap = await db.collection('tiendas')
                     .doc(tiendaId)
                     .collection('pedidos')
+                    .where('estado', '==', 'Listo para asignar')
+                    .get();
+                pedidosSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.mensajeroId) {
+                        todosLosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data, _cargadoInicial: true });
+                    }
+                });
+            } catch (err) {
+                console.warn(`⚠️ Error cargando pedidos de tienda ${tiendaId}:`, err);
+            }
+        }
+        console.log(`📦 ${todosLosPedidos.length} pedidos listos para asignar`);
+        renderizarPedidosAsignar();
+        actualizarEstadisticas();
+        actualizarHeaderBadge();
+        
+        todosLosPedidos.forEach(p => {
+            if (p.estado === 'Listo para asignar' && !p.mensajeroId) {
+                iniciarAlarmaPedido(p.id);
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error cargando pedidos iniciales:', error);
+        toast('⚠️ Error al cargar pedidos. Reintentando...', 'warn');
+        setTimeout(() => { recargando = false; cargarPedidosIniciales(); }, 3000);
+    } finally {
+        recargando = false;
+    }
+}
+
+// ============================================================
+// ESCUCHAR PEDIDOS EN TIEMPO REAL CON ALARMA
+// ============================================================
+function escucharPedidosEnTiempoReal() {
+    if (window._listenersPedidos) {
+        window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
+        window._listenersPedidos = [];
+    }
+    db.collection('tiendas').get().then(snap => {
+        snap.forEach(doc => {
+            const tiendaId = doc.id;
+            try {
+                const unsubscribe = db.collection('tiendas').doc(tiendaId)
+                    .collection('pedidos')
                     .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
-                    .onSnapshot(snapshot => {
-                        if (!listenerActivo || !mensajeroConectado) return;
-                        
-                        snapshot.docChanges().forEach(change => {
+                    .onSnapshot(snapPedidos => {
+                        snapPedidos.docChanges().forEach(change => {
                             try {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
+                                const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                const tieneMensajero = !!data.mensajeroId;
+                                const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
                                 
-                                const esParaMi = data.mensajeroId === mensajeroUid;
-                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                                const esActivo = data.estado === 'En camino al restaurante' || 
-                                                data.estado === 'Recogiendo pedido' || 
-                                                data.estado === 'En camino';
-                                const esVisible = (esParaMi || esListo || (esParaMi && esActivo)) && 
-                                                 data.estado !== 'Entregado' && 
-                                                 data.estado !== 'Cancelado';
-                                
-                                if (change.type === 'added' || change.type === 'modified') {
-                                    if (esVisible) {
-                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (index !== -1) {
-                                            todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                        } else {
-                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                        }
-                                        
-                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
-                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                if (change.type === 'added') {
+                                    if (estaDisponible) {
+                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (!existe) {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            sonidoDespertador.iniciarDespertador(pedidoId);
-                                            mostrarNotificacionSistema(
-                                                tienda.nombre || 'Tienda',
-                                                data.numeroPedido || '#' + pedidoId.slice(-6),
-                                                data.cliente?.nombre || 'Cliente',
-                                                data.total || 0,
-                                                data.costoDomicilio || 0
-                                            );
+                                            
+                                            console.log(`⏰ ADMIN: NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            iniciarAlarmaPedido(pedidoId);
+                                            
+                                            toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
+                                            notificarMensajerosDisponibles(tiendaId, pedidoId, data);
                                         }
-                                    } else {
-                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                        if (index !== -1) {
-                                            if (sonidoDespertador.estaSonando(pedidoId)) {
-                                                sonidoDespertador.detenerDespertador(pedidoId);
-                                            }
-                                            todosLosPedidos.splice(index, 1);
+                                    }
+                                } else if (change.type === 'modified') {
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                    
+                                    if (tieneMensajero || esEntregado) {
+                                        detenerAlarmaPedido(pedidoId);
+                                    }
+                                    
+                                    if (index !== -1) {
+                                        todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                    } else if (tieneMensajero || estaDisponible) {
+                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        if (estaDisponible) {
+                                            iniciarAlarmaPedido(pedidoId);
                                         }
                                     }
                                 } else if (change.type === 'removed') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
+                                        detenerAlarmaPedido(pedidoId);
                                         todosLosPedidos.splice(index, 1);
                                     }
                                 }
@@ -1089,678 +752,672 @@ function escucharPedidos() {
                                 console.error('Error procesando cambio de pedido:', err);
                             }
                         });
-                        
-                        renderizarPedidos();
-                    }, err => {
-                        console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
-                        if (listenerActivo) {
-                            clearTimeout(timeoutReconexion);
-                            timeoutReconexion = setTimeout(() => {
-                                console.log('🔄 Reintentando conexión...');
-                                escucharPedidos();
-                            }, 5000);
-                        }
+                        renderizarPedidosAsignar();
+                        actualizarEstadisticas();
+                        actualizarHeaderBadge();
+                    }, err => { 
+                        console.error(`Error escuchando pedidos en tienda ${tiendaId}:`, err);
                     });
-                
-                if (!window._listeners) window._listeners = [];
-                window._listeners.push(unsubscribe);
-                listenersActivos++;
-            });
-            
-            console.log(`✅ ${listenersActivos} listeners de tiendas activos`);
-            
-            pedidosListener = () => {
-                listenerActivo = false;
-                if (window._listeners) {
-                    window._listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
-                    window._listeners = [];
-                }
-                sonidoDespertador.detenerDespertador();
-            };
-        })
-        .catch(err => {
-            console.error('❌ Error obteniendo tiendas:', err);
-            if (listenerActivo) {
-                clearTimeout(timeoutReconexion);
-                timeoutReconexion = setTimeout(() => {
-                    console.log('🔄 Reintentando conexión...');
-                    escucharPedidos();
-                }, 5000);
+                if (!window._listenersPedidos) window._listenersPedidos = [];
+                window._listenersPedidos.push(unsubscribe);
+            } catch (err) {
+                console.error(`Error configurando listener para tienda ${tiendaId}:`, err);
             }
         });
+    }).catch(err => {
+        console.error('Error obteniendo tiendas para escucha:', err);
+    });
 }
 
 // ============================================================
-// 📊 HISTORIAL DE PEDIDOS DEL MENSAJERO
+// 📢 NOTIFICAR MENSAJEROS DISPONIBLES POR WHATSAPP
 // ============================================================
-async function cargarHistorialPedidos() {
-    if (!mensajeroUid) {
-        console.warn('⚠️ No hay mensajero UID');
-        return;
-    }
-    
+function notificarMensajerosDisponibles(tiendaId, pedidoId, pedidoData) {
     try {
-        const tiendasSnap = await db.collection('tiendas').get();
-        historialPedidos = [];
-        
-        for (const tiendaDoc of tiendasSnap.docs) {
-            const tiendaId = tiendaDoc.id;
-            const pedidosSnap = await db.collection('tiendas')
-                .doc(tiendaId)
-                .collection('pedidos')
-                .where('mensajeroId', '==', mensajeroUid)
-                .get();
-            
-            pedidosSnap.forEach(doc => {
-                const data = doc.data();
-                historialPedidos.push({
-                    id: doc.id,
-                    tiendaId: tiendaId,
-                    ...data
-                });
-            });
+        const tienda = tiendasCache[tiendaId] || {};
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && m.conectado !== false && !m.ocupado
+        );
+        if (mensajerosDisponibles.length === 0) {
+            console.log('⚠️ No hay mensajeros disponibles para notificar');
+            return;
         }
-        
-        historialPedidos.sort((a, b) => {
-            const fechaA = a.fecha ? a.fecha.toDate?.() || new Date(a.fecha) : new Date(0);
-            const fechaB = b.fecha ? b.fecha.toDate?.() || new Date(b.fecha) : new Date(0);
-            return fechaB - fechaA;
+        const pedidoInfo = {
+            numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoData.cliente || {},
+            total: pedidoData.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        console.log(`📢 Notificando a ${mensajerosDisponibles.length} mensajeros disponibles`);
+        let enviados = 0;
+        mensajerosDisponibles.forEach(mensajero => {
+            const telefono = mensajero.telefono || mensajero.whatsapp || '';
+            if (telefono) {
+                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
+                enviados++;
+            } else {
+                console.warn(`⚠️ Mensajero ${mensajero.nombre || mensajero.email} sin teléfono`);
+            }
         });
-        
-        console.log(`📊 ${historialPedidos.length} pedidos en el historial`);
-        aplicarFiltroHistorial(filtroHistorialActual);
-        
+        if (enviados > 0) {
+            console.log(`✅ Notificaciones WhatsApp enviadas a ${enviados} mensajeros`);
+        }
     } catch (error) {
-        console.error('❌ Error cargando historial:', error);
-        document.getElementById('listaHistorialPedidos').innerHTML = `
-            <div class="empty-state">
-                <span class="icono">❌</span>
-                <p>Error al cargar el historial</p>
-            </div>
-        `;
+        console.error('❌ Error notificando mensajeros:', error);
     }
 }
 
-function aplicarFiltroHistorial(filtro) {
-    filtroHistorialActual = filtro;
-    
-    const ahora = new Date();
-    let fechaInicio = new Date(0);
-    let fechaFin = new Date();
-    
-    switch(filtro) {
-        case 'hoy':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setHours(0, 0, 0, 0);
-            break;
-        case 'ayer':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setDate(fechaInicio.getDate() - 1);
-            fechaInicio.setHours(0, 0, 0, 0);
-            fechaFin = new Date(ahora);
-            fechaFin.setHours(0, 0, 0, 0);
-            break;
-        case 'semana':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setDate(fechaInicio.getDate() - 7);
-            fechaInicio.setHours(0, 0, 0, 0);
-            break;
-        case 'todas':
-        default:
-            fechaInicio = new Date(0);
-            break;
-    }
-    
-    const pedidosFiltrados = historialPedidos.filter(pedido => {
-        const fechaPedido = pedido.fecha ? pedido.fecha.toDate?.() || new Date(pedido.fecha) : new Date(0);
-        return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
-    });
-    
-    renderizarHistorial(pedidosFiltrados);
-}
-
-function filtrarHistorial(filtro, btn) {
-    document.querySelectorAll('.filtros-historial button').forEach(b => b.classList.remove('active', 'hoy', 'todas'));
-    if (btn) {
-        btn.classList.add('active');
-        if (filtro === 'hoy') btn.classList.add('hoy');
-        if (filtro === 'todas') btn.classList.add('todas');
-    }
-    aplicarFiltroHistorial(filtro);
-}
-
-function renderizarHistorial(pedidos) {
-    const container = document.getElementById('listaHistorialPedidos');
-    const totalPedidos = pedidos.length;
-    let totalGanado = 0;
-    let entregados = 0;
-    let pendientes = 0;
-    
-    pedidos.forEach(p => {
-        let subtotal = 0;
-        if (p.items && p.items.length > 0) {
-            p.items.forEach(item => {
-                subtotal += item.total || (item.precio * item.cantidad) || 0;
-            });
+// ============================================================
+// FUNCIONES DE RENDERIZADO
+// ============================================================
+function filtrarMensajeros() {
+    const estado = document.getElementById('filtroEstado').value;
+    const busqueda = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+    mensajerosFiltrados = todosLosMensajeros.filter(m => {
+        if (estado) {
+            const activo = m.activo !== false;
+            const ocupado = m.ocupado === true;
+            if (estado === 'activo' && (!activo || ocupado)) return false;
+            if (estado === 'inactivo' && activo) return false;
+            if (estado === 'ocupado' && !ocupado) return false;
         }
-        const costoDomicilio = p.costoDomicilio || 0;
-        totalGanado += costoDomicilio;
-        
-        if (p.estado === 'Entregado') {
-            entregados++;
-        } else if (p.estado !== 'Cancelado') {
-            pendientes++;
+        if (busqueda) {
+            const nombre = (m.nombre || '').toLowerCase();
+            const email = (m.email || '').toLowerCase();
+            if (!nombre.includes(busqueda) && !email.includes(busqueda)) return false;
         }
+        return true;
     });
-    
-    document.getElementById('totalPedidosHistorial').textContent = totalPedidos;
-    document.getElementById('totalGanadoHistorial').textContent = '$' + totalGanado.toLocaleString('es-CO');
-    document.getElementById('totalEntregadosHistorial').textContent = entregados;
-    document.getElementById('totalPendientesHistorial').textContent = pendientes;
-    document.getElementById('contadorHistorial').textContent = totalPedidos;
-    
-    if (totalPedidos === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <span class="icono">📭</span>
-                <p>No hay pedidos en este período</p>
-                <span style="font-size:12px;color:var(--text-muted);">Comienza a entregar pedidos para ver tu historial</span>
-            </div>
-        `;
+    renderizarMensajeros();
+}
+
+function recargarMensajeros() { filtrarMensajeros(); toast('🔄 Mensajeros recargados', 'info', 1500); }
+function recargarPedidos() { cargarPedidosIniciales(); toast('🔄 Pedidos recargados', 'info', 1500); }
+function recargarTodo() {
+    toast('🔄 Recargando todo...', 'info', 2000);
+    cargarMensajeros();
+    cargarPedidosIniciales();
+    setTimeout(() => { toast('✅ Todo recargado correctamente', 'success', 2000); }, 1500);
+}
+
+function renderizarMensajeros() {
+    const container = document.getElementById('listaMensajeros');
+    if (mensajerosFiltrados.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:48px;margin-bottom:16px;">📭</div><p style="font-size:16px;">No hay mensajeros que coincidan con los filtros</p></div>`;
         return;
     }
-    
     let html = '';
-    pedidos.forEach(p => {
+    mensajerosFiltrados.forEach(m => {
+        const activo = m.activo !== false;
+        const ocupado = m.ocupado === true;
+        const iniciales = (m.nombre || m.email || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const estadoClass = ocupado ? 'ocupado' : (activo ? 'activo' : 'inactivo');
+        const estadoLabel = ocupado ? '🟠 Ocupado' : (activo ? '🟢 Activo' : '🔴 Inactivo');
+        const telefono = m.telefono || m.whatsapp || '';
+        const telefonoDisplay = telefono ? `📱 ${telefono}` : '📱 Sin teléfono';
+        html += `
+            <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
+                <div class="avatar">${iniciales}</div>
+                <div class="info">
+                    <div class="nombre">${m.nombre || 'Sin nombre'} ${ocupado ? '🛵' : ''}</div>
+                    <div class="email">📧 ${m.email || 'Sin email'}</div>
+                    <div class="telefono">${telefonoDisplay}</div>
+                    <div class="meta">${m.creadoEn ? '📅 ' + formatearFecha(m.creadoEn) : ''}</div>
+                </div>
+                <span class="estado ${estadoClass}">${estadoLabel}</span>
+                <div class="acciones">
+                    <button class="btn-editar-mensajero btn-sm" onclick="abrirModalEditarMensajero('${m.uid}')">✏️ Editar</button>
+                    <button class="btn-info btn-sm" onclick="verDetalle('${m.uid}')">📋 Ver</button>
+                    ${activo && !ocupado ? 
+                        `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', false)">🔴 Desactivar</button>` :
+                        activo && ocupado ? 
+                        `<button class="btn-warning btn-sm" onclick="toggleMensajero('${m.uid}', false)" style="background:var(--orange);">⏳ Esperando</button>` :
+                        `<button class="btn-success btn-sm" onclick="toggleMensajero('${m.uid}', true)">🟢 Activar</button>`
+                    }
+                    <button class="btn-danger btn-sm" onclick="eliminarMensajero('${m.uid}')">🗑️ Eliminar</button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function renderizarPedidosAsignar() {
+    const container = document.getElementById('listaPedidosAsignar');
+    const badge = document.getElementById('badgePedidos');
+    const pedidosPendientes = todosLosPedidos.filter(p => { return p.estado === 'Listo para asignar' && !p.mensajeroId; });
+    badge.textContent = pedidosPendientes.length;
+    if (pedidosPendientes.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos listos para asignar</div>`;
+        return;
+    }
+    const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado);
+    let html = '';
+    pedidosPendientes.forEach(p => {
         const tienda = tiendasCache[p.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = p.cliente || {};
-        
-        let subtotal = 0;
-        if (p.items && p.items.length > 0) {
-            p.items.forEach(item => {
-                subtotal += item.total || (item.precio * item.cantidad) || 0;
-            });
-        }
-        const costoDomicilio = p.costoDomicilio || 0;
-        const totalCalculado = subtotal + costoDomicilio;
-        
+        const total = p.total || 0;
         const fechaStr = formatearFecha(p.fecha);
-        const estado = p.estado || 'Pendiente';
-        
-        let estadoColor = '';
-        let estadoLabel = '';
-        switch(estado) {
-            case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
-            case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
-            case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
-            case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
-            case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
-            default: estadoColor = 'pendiente'; estadoLabel = '⏳ ' + estado;
-        }
+        const esNuevo = p._nuevo === true;
+        const tieneAlarma = intervalosAlarma[p.id] !== undefined;
         
         let itemsHtml = '';
         if (p.items && p.items.length > 0) {
             p.items.slice(0, 3).forEach(item => {
-                const nombre = item.nombre || 'Producto';
-                const itemTotal = item.total || (item.precio * item.cantidad) || 0;
-                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
+                let nombreItem = item.nombre || 'Producto';
+                if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+                const subtotal = item.total || (item.precio * item.cantidad) || 0;
+                itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
             });
             if (p.items.length > 3) {
                 itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
             }
         }
-        
-        const metodoPago = p.metodoPago || 'efectivo';
-        const pagoLabel = metodoPago === 'nequi' ? '🟢 Nequi' : 
-                         metodoPago === 'daviplata' ? '🔵 Daviplata' : '💵 Efectivo';
-        
-        const pagoConfirmado = p.estadoPago === 'pagado';
-        const pagoHtml = pagoConfirmado ? 
-            '<div class="pago-confirmado">✅ Pago confirmado</div>' : 
-            (p.estadoPago === 'rechazado' ? '<div class="pago-pendiente" style="background:var(--red-bg);color:var(--red);">❌ Pago rechazado</div>' : '');
+        const hayMensajeros = mensajerosActivos.length > 0;
+        const claseNuevo = esNuevo ? 'nuevo' : '';
+        const claseAlarma = tieneAlarma ? 'alarma-activa' : '';
         
         html += `
-            <div class="pedido-card" style="border-left-color: ${estado === 'Entregado' ? 'var(--green)' : 'var(--orange)'};">
+            <div class="pedido-asignar ${claseNuevo} ${claseAlarma}" id="pedido-${p.id}">
                 <div class="header">
-                    <span class="numero">🛵 #${p.numeroPedido || p.id.slice(-6).toUpperCase()}</span>
-                    <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
+                    <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                    <span class="estado-badge">🔔 Listo para asignar</span>
+                    ${tieneAlarma ? '<span class="alarma-indicador">⏰ ALARMA ACTIVA</span>' : ''}
                 </div>
                 <div class="info-grid">
                     <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
                     <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
                     <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
                     <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
-                    <div><span class="label">💳 Pago:</span> <span class="value">${pagoLabel}</span></div>
-                    <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
-                    <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green);">$${totalCalculado.toLocaleString('es-CO')}</span></div>
+                    <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
+                    <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
                 </div>
-                ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
-                ${pagoHtml}
-                ${p.observaciones ? `<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">📝 ${p.observaciones}</div>` : ''}
+                ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
+                <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
+                ${hayMensajeros ? 
+                    `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">
+                        👤 Asignar mensajero
+                    </button>` :
+                    `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;">
+                        <span style="font-size:14px;">⚠️</span>
+                        <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
+                    </div>`
+                }
             </div>
         `;
     });
-    
     container.innerHTML = html;
 }
 
 // ============================================================
-// ESTADÍSTICAS DEL MENSAJERO
+// 📤 ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
-async function actualizarEstadisticasMensajero() {
-    if (!mensajeroUid) return;
-    
-    try {
-        const tiendasSnap = await db.collection('tiendas').get();
-        let totalPedidos = 0;
-        let totalGanado = 0;
-        let entregadosHoy = 0;
-        let entregadosTotal = 0;
-        
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
-        for (const tiendaDoc of tiendasSnap.docs) {
-            const tiendaId = tiendaDoc.id;
-            const pedidosSnap = await db.collection('tiendas')
-                .doc(tiendaId)
-                .collection('pedidos')
-                .where('mensajeroId', '==', mensajeroUid)
-                .get();
-            
-            pedidosSnap.forEach(doc => {
-                const data = doc.data();
-                let subtotal = 0;
-                if (data.items && data.items.length > 0) {
-                    data.items.forEach(item => {
-                        subtotal += item.total || (item.precio * item.cantidad) || 0;
-                    });
-                }
-                const costoDomicilio = data.costoDomicilio || 0;
-                
-                totalPedidos++;
-                totalGanado += costoDomicilio;
-                
-                const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
-                if (data.estado === 'Entregado') {
-                    entregadosTotal++;
-                    if (fechaPedido >= hoy) {
-                        entregadosHoy++;
-                    }
-                }
-            });
-        }
-        
-        const statsElement = document.getElementById('mensajeroStats');
-        if (statsElement) {
-            statsElement.innerHTML = `
-                <span style="color:var(--green);">✅ ${entregadosHoy} hoy</span>
-                <span style="color:var(--yellow);">📦 ${totalPedidos} total</span>
-                <span style="color:var(--green);">💰 $${totalGanado.toLocaleString('es-CO')}</span>
-                <span style="color:var(--blue);">📊 ${entregadosTotal} entregados</span>
-            `;
-        }
-        
-        return { totalPedidos, totalGanado, entregadosHoy, entregadosTotal };
-    } catch (error) {
-        console.error('❌ Error actualizando estadísticas:', error);
-    }
-}
+let pedidoAsignacion = null;
 
-// ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA
-// ============================================================
-function simularPedidoPrueba() {
-    console.log('🧪 Simulando pedido de prueba...');
-    
-    const pedidoFalso = {
-        id: 'PEDIDO-TEST-' + Date.now(),
-        tiendaId: 'test',
-        estado: 'Listo para asignar',
-        mensajeroId: null,
-        notificacionEnviada: true,
-        numeroPedido: '#TEST',
-        cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 25000,
-        costoDomicilio: 8000,
-        items: [{ nombre: 'Producto Test 1', cantidad: 2, precio: 6000, total: 12000 },
-                { nombre: 'Producto Test 2', cantidad: 1, precio: 5000, total: 5000 }]
-    };
-    
-    todosLosPedidos.push(pedidoFalso);
-    console.log('✅ Pedido de prueba agregado');
-    
-    sonidoDespertador.iniciarDespertador(pedidoFalso.id);
-    renderizarPedidos();
-    
-    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000, 8000);
-}
-
-window.simularPedidoPrueba = simularPedidoPrueba;
-
-// ============================================================
-// RENDERIZAR PEDIDOS
-// ============================================================
-function renderizarPedidos() {
-    if (!mensajeroConectado) {
-        document.getElementById('listaPedidosDisponibles').innerHTML = `
-            <div class="empty-state">
-                <span class="icono">🔴</span>
-                <p style="font-size:18px;font-weight:700;color:var(--orange);">Estás desconectado</p>
-                <span style="font-size:13px;color:var(--text-muted);">Haz clic en <strong style="color:var(--yellow);">"🔴 Desconectado"</strong> para conectarte</span>
-                <br><br>
-                <button onclick="toggleEstadoConexion()" style="max-width:250px;margin:0 auto;background:var(--yellow);color:#1a1a2e;font-weight:700;border:none;padding:12px 24px;border-radius:10px;cursor:pointer;font-size:14px;">🔌 CONECTARME</button>
-            </div>
-        `;
-        document.getElementById('listaMisPedidos').innerHTML = `<div class="empty-state"><span class="icono">🔴</span><p>Desconectado</p></div>`;
-        document.getElementById('contadorDisponibles').textContent = '0';
-        document.getElementById('contadorMisPedidos').textContent = '0';
-        return;
-    }
-    
-    const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar' || p.notificacionEnviada === true) &&
-        p.estado !== 'Entregado' && 
-        p.estado !== 'Cancelado'
-    );
-    
-    const disponibles = pedidosVisibles.filter(p => 
-        p.estado === 'Listo para asignar' && 
-        !p.mensajeroId
-    );
-    
-    const misPedidosActivos = pedidosVisibles.filter(p => 
-        p.mensajeroId === mensajeroUid && 
-        p.estado !== 'Entregado' && 
-        p.estado !== 'Cancelado'
-    );
-    
-    document.getElementById('contadorDisponibles').textContent = disponibles.length;
-    document.getElementById('contadorMisPedidos').textContent = misPedidosActivos.length;
-    
-    const containerDisponibles = document.getElementById('listaPedidosDisponibles');
-    if (disponibles.length === 0) {
-        containerDisponibles.innerHTML = `<div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando que el admin te asigne pedidos...</span></div>`;
-    } else {
-        let html = '';
-        disponibles.forEach(p => { html += renderizarPedidoCard(p, true); });
-        containerDisponibles.innerHTML = html;
-    }
-    
-    const containerMisPedidos = document.getElementById('listaMisPedidos');
-    if (misPedidosActivos.length === 0) {
-        containerMisPedidos.innerHTML = `<div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div>`;
-    } else {
-        let html = '';
-        misPedidosActivos.forEach(p => { html += renderizarPedidoCard(p, false); });
-        containerMisPedidos.innerHTML = html;
-    }
-}
-
-// ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO
-// ============================================================
-function renderizarPedidoCard(pedido, disponible) {
-    const tienda = tiendasCache[pedido.tiendaId] || {};
-    const nombreTienda = tienda.nombre || 'Tienda';
-    const cliente = pedido.cliente || {};
-    
-    let subtotal = 0;
-    if (pedido.items && pedido.items.length > 0) {
-        pedido.items.forEach(item => {
-            subtotal += item.total || (item.precio * item.cantidad) || 0;
-        });
-    }
-    const costoDomicilio = pedido.costoDomicilio || 0;
-    const totalCalculado = subtotal + costoDomicilio;
-    
-    const fechaStr = formatearFecha(pedido.fecha);
-    const estado = pedido.estado || 'Pendiente';
-    
-    let estadoColor = '';
-    let estadoLabel = '';
-    switch(estado) {
-        case 'Listo para asignar': estadoColor = 'disponible'; estadoLabel = '🔔 DISPONIBLE'; break;
-        case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
-        case 'Recogiendo pedido': estadoColor = 'recogido'; estadoLabel = '📦 Recogiendo'; break;
-        case 'En camino': estadoColor = 'camino'; estadoLabel = '🚗 En camino'; break;
-        case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
-        case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
-        default: estadoColor = 'pendiente'; estadoLabel = '📋 ' + estado;
-    }
-    
-    let itemsHtml = '';
-    if (pedido.items && pedido.items.length > 0) {
-        pedido.items.forEach(item => {
-            const nombre = item.nombre || 'Producto';
-            const itemTotal = item.total || (item.precio * item.cantidad) || 0;
-            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
-        });
-    }
-    
-    let botonesHtml = '';
-    
-    if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
-        botonesHtml = `
-            <div class="estados-acciones">
-                <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
-            </div>
-        `;
-    } 
-    else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
-        switch(estado) {
-            case 'En camino al restaurante':
-                botonesHtml = `<div class="estados-acciones"><button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 RECOGER PEDIDO</button></div>`;
-                break;
-            case 'Recogiendo pedido':
-                botonesHtml = `<div class="estados-acciones"><button class="btn-warning" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino')">🚗 IR A ENTREGAR</button></div>`;
-                break;
-            case 'En camino':
-                botonesHtml = `<div class="estados-acciones"><button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ ENTREGAR PEDIDO</button></div>`;
-                break;
-            default:
-                botonesHtml = `
-                    <div class="estados-acciones">
-                        <button class="btn-info" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','En camino al restaurante')">🛵 En camino</button>
-                        <button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 Recogiendo</button>
-                        <button class="btn-success" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Entregado')">✅ Entregar</button>
-                    </div>
-                `;
-        }
-    } 
-    else if (estado === 'Entregado' || estado === 'Cancelado') {
-        botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
-    }
-    
-    const sonidoActivo = sonidoDespertador.estaSonando(pedido.id);
-    const claseDisponible = disponible 
-        ? (sonidoActivo ? 'disponible nuevo-pedido alerta-persistente' : 'disponible') 
-        : '';
-    
-    const badgePersistente = sonidoActivo ? 
-        '<span class="badge-persistente">⏰ ALERTA ACTIVA</span>' : '';
-    
-    return `
-        <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
-            <div class="header">
-                <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
-                <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
-                ${badgePersistente}
-            </div>
-            <div class="info-grid">
-                <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
-                <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
-                <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
-                <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
-                <div><span class="label">💳 Pago:</span> <span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
-                <div><span class="label" style="color:var(--blue);">📦 Productos:</span> <span class="value" style="color:var(--blue);">$${subtotal.toLocaleString('es-CO')}</span></div>
-                <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
-                <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green); font-size:15px;">$${totalCalculado.toLocaleString('es-CO')}</span></div>
-            </div>
-            ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
-            ${botonesHtml}
-        </div>
-    `;
-}
-
-// ============================================================
-// ✅ TOMAR PEDIDO
-// ============================================================
-async function tomarPedido(pedidoId, tiendaId) {
-    if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
-    if (!mensajeroConectado) { 
-        toast('⚠️ Estás desconectado. Conéctate para tomar pedidos.', 'warn'); 
-        setTimeout(() => mostrarMotivacion(), 500);
+function abrirModalAsignacion(pedidoId, tiendaId) {
+    console.log(`🔍 abrirModalAsignacion llamado para pedido: ${pedidoId}`);
+    const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    if (!pedido) { 
+        toast('⚠️ Pedido no encontrado. Recargando...', 'warn'); 
+        recargarPedidos(); 
         return; 
     }
-    
+    if (pedido.mensajeroId) {
+        toast('ℹ️ Este pedido ya fue asignado a un mensajero', 'info', 3000);
+        detenerAlarmaPedido(pedidoId);
+        recargarPedidos();
+        return;
+    }
+    pedidoAsignacion = { tiendaId, pedidoId };
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    const cliente = pedido.cliente || {};
+    const total = pedido.total || 0;
+    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+    const mensajerosDisponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado);
+    const modal = document.getElementById('modalAsignacion');
+    const contenido = document.getElementById('modalAsignacionContenido');
+    const titulo = document.getElementById('modalAsignacionTitulo');
+    titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    let mensajerosOptions = '';
+    if (mensajerosDisponibles.length === 0) {
+        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    } else {
+        mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
+        mensajerosDisponibles.forEach(m => {
+            const telefono = m.telefono || m.whatsapp || 'Sin teléfono';
+            const telefonoDisplay = telefono !== 'Sin teléfono' ? ` 📱${telefono}` : '';
+            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'}${telefonoDisplay}</option>`;
+        });
+    }
+    contenido.innerHTML = `
+        <div class="pedido-info-resumen">
+            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+        </div>
+        <div class="opcion-asignacion" style="border-color: var(--blue);">
+            <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
+            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+            <div style="margin: 8px 0 4px 0;">
+                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                    ${mensajerosOptions}
+                </select>
+            </div>
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                ✅ Asignar a este mensajero
+            </button>
+        </div>
+        <div class="opcion-asignacion" style="border-color: var(--yellow);">
+            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
+            <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp. El primero que acepte tomará el pedido.</div>
+            <div class="mensajeros-disponibles">
+                📨 Mensajeros que recibirán la notificación: 
+                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                ⚡ Cada mensajero recibirá un enlace directo al pedido en su WhatsApp.
+            </div>
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                🔔 Notificar a todos los mensajeros
+            </button>
+        </div>
+        <div style="margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border2);">
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:4px;">📱 Enlace directo del pedido</div>
+            <div style="display:flex;gap:6px;">
+                <input type="text" id="enlacePedido" value="https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}" readonly style="flex:1;padding:6px 10px;font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:#fff;">
+                <button class="btn-sm" onclick="copiarEnlace()" style="width:auto;padding:4px 12px;background:var(--blue);color:#fff;border-radius:6px;">📋 Copiar</button>
+            </div>
+        </div>
+        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
+                style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
+            Cancelar
+        </button>
+    `;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    actualizarHeaderBadge();
+    renderizarPedidosAsignar();
+}
+
+function copiarEnlace() {
+    const input = document.getElementById('enlacePedido');
+    if (!input) return;
+    input.select();
+    document.execCommand('copy');
+    toast('✅ Enlace copiado al portapapeles', 'success', 3000);
+}
+
+function cerrarModalAsignacion() {
+    const modal = document.getElementById('modalAsignacion');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    pedidoAsignacion = null;
+}
+
+// ============================================================
+// ✅ ASIGNAR PEDIDO MANUAL (DETIENE ALARMA)
+// ============================================================
+async function asignarPedidoManual() {
+    const select = document.getElementById('selectMensajeroManual');
+    if (!select) return;
+    const mensajeroId = select.value;
+    if (!mensajeroId) { toast('⚠️ Selecciona un mensajero de la lista', 'warn'); return; }
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
+    const nombreMensajero = mensajero?.nombre || 'Mensajero';
+    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    if (pedidoActual && pedidoActual.mensajeroId) {
+        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        detenerAlarmaPedido(pedidoId);
+        cerrarModalAsignacion();
+        recargarPedidos();
+        return;
+    }
     try {
-        const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
-        const doc = await docRef.get();
-        if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
-        const data = doc.data();
+        toast('⏳ Asignando pedido...', 'info');
+        const pedidoData = pedidoActual || {};
+        const tienda = tiendasCache[tiendaId] || {};
+        const pedidoInfo = {
+            numeroPedido: pedidoData.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoData.cliente || {},
+            total: pedidoData.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                mensajeroId: mensajeroId,
+                nombreMensajero: nombreMensajero,
+                estado: 'En camino al restaurante',
+                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
+                asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+                notificacionEnviada: false
+            });
         
-        if (data.mensajeroId) {
-            toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-            await cargarPedidosCompletos();
-            renderizarPedidos();
+        // 🔇 DETENER ALARMA - PEDIDO ASIGNADO MANUALMENTE
+        detenerAlarmaPedido(pedidoId);
+        
+        if (mensajero) {
+            enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, false);
+        }
+        toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
+        cerrarModalAsignacion();
+        actualizarHeaderBadge();
+        renderizarPedidosAsignar();
+        setTimeout(() => {
+            console.log('🔄 Auto-refresco: Recargando pedidos después de asignar');
+            recargarPedidos();
+            recargarMensajeros();
+        }, 1000);
+    } catch (e) {
+        if (e.code === 'not-found' || e.message.includes('no such document')) {
+            toast('⚠️ El pedido ya no existe o fue asignado por otro', 'warn');
+            detenerAlarmaPedido(pedidoId);
+            cerrarModalAsignacion();
+            recargarPedidos();
+        } else {
+            toast('❌ Error: ' + e.message, 'error');
+        }
+    }
+}
+
+// ============================================================
+// 📢 NOTIFICAR A TODOS - NO DETIENE ALARMA
+// ============================================================
+async function notificarATodos() {
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    if (pedidoActual && pedidoActual.mensajeroId) {
+        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        detenerAlarmaPedido(pedidoId);
+        cerrarModalAsignacion();
+        recargarPedidos();
+        return;
+    }
+    try {
+        toast('⏳ Notificando mensajeros...', 'info');
+        const tienda = tiendasCache[tiendaId] || {};
+        const pedidoInfo = {
+            numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoActual?.cliente || {},
+            total: pedidoActual?.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && m.conectado !== false && !m.ocupado
+        );
+        if (mensajerosDisponibles.length === 0) {
+            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
+            cerrarModalAsignacion();
+            return;
+        }
+        let enviados = 0;
+        mensajerosDisponibles.forEach(mensajero => {
+            const telefono = mensajero.telefono || mensajero.whatsapp || '';
+            if (telefono) {
+                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo, true);
+                enviados++;
+            } else {
+                console.warn(`⚠️ Mensajero ${mensajero.nombre} sin teléfono`);
+            }
+        });
+        if (enviados === 0) {
+            toast('⚠️ Ningún mensajero tiene teléfono registrado', 'warn');
+            cerrarModalAsignacion();
             return;
         }
         
-        toast('⏳ Tomando pedido...', 'info');
-        await docRef.update({
-            mensajeroId: mensajeroUid,
-            nombreMensajero: mensajeroData?.nombre || 'Mensajero',
-            estado: 'En camino al restaurante',
-            fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-            notificacionEnviada: false
-        });
+        // ✅ SOLO MARCAR COMO NOTIFICADO - NO CAMBIAR ESTADO, NO DETENER ALARMA
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                notificacionEnviada: true,
+                fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
+                notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+                notificacionMasiva: true
+            });
         
-        if (sonidoDespertador.estaSonando(pedidoId)) {
-            sonidoDespertador.detenerDespertador(pedidoId);
-        }
+        // ❌ NO DETENER ALARMA AQUÍ - El pedido sigue disponible
+        // La alarma solo se detiene cuando el mensajero TOMA el pedido
         
-        await cargarPedidosCompletos();
-        await actualizarContadores();
-        renderizarPedidos();
+        toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
+        toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
+        cerrarModalAsignacion();
+        actualizarHeaderBadge();
+        renderizarPedidosAsignar();
         
-        toast('✅ Pedido tomado exitosamente', 'success', 3000);
-        
-        setTimeout(async () => {
-            console.log('🔄 Auto-refresco adicional: Recargando pedidos');
-            await cargarPedidosCompletos();
-            await cargarMensajeros();
-            await actualizarContadores();
-            renderizarPedidos();
-        }, 1500);
-        
-    } catch (e) {
-        console.error('Error tomando pedido:', e);
-        toast('❌ Error: ' + e.message, 'error');
-    }
-}
-
-// ============================================================
-// 🔄 FUNCIONES DE AUTO-REFRESCO
-// ============================================================
-async function cargarPedidosCompletos() {
-    try {
-        const tiendasSnap = await db.collection('tiendas').get();
-        const nuevosPedidos = [];
-        for (const tiendaDoc of tiendasSnap.docs) {
-            const tiendaId = tiendaDoc.id;
-            try {
-                const pedidosSnap = await db.collection('tiendas')
-                    .doc(tiendaId)
-                    .collection('pedidos')
-                    .get();
-                    
-                pedidosSnap.forEach(doc => {
-                    const data = doc.data();
-                    const pedidoId = doc.id;
-                    
-                    const esParaMi = data.mensajeroId === mensajeroUid;
-                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                    const esVisible = (esParaMi || esListo || data.notificacionEnviada === true) && 
-                                     data.estado !== 'Entregado' && 
-                                     data.estado !== 'Cancelado';
-                    
-                    if (esVisible) {
-                        nuevosPedidos.push({ 
-                            id: pedidoId, 
-                            tiendaId: tiendaId, 
-                            ...data 
-                        });
-                    }
-                });
-            } catch (err) {
-                console.warn(`⚠️ Error recargando pedidos de tienda ${tiendaId}:`, err);
-            }
-        }
-        todosLosPedidos = nuevosPedidos;
-        console.log(`🔄 Auto-refresco: ${todosLosPedidos.length} pedidos visibles cargados`);
-        return nuevosPedidos;
-    } catch (e) {
-        console.error('❌ Error en auto-refresco:', e);
-        return [];
-    }
-}
-
-async function actualizarContadores() {
-    try {
-        const disponibles = todosLosPedidos.filter(p => 
-            p.estado === 'Listo para asignar' && 
-            !p.mensajeroId
-        );
-        const misPedidos = todosLosPedidos.filter(p => 
-            p.mensajeroId === mensajeroUid && 
-            p.estado !== 'Entregado' && 
-            p.estado !== 'Cancelado'
-        );
-        document.getElementById('contadorDisponibles').textContent = disponibles.length;
-        document.getElementById('contadorMisPedidos').textContent = misPedidos.length;
-    } catch (e) {}
-}
-
-// ============================================================
-// 🔄 CAMBIAR ESTADO
-// ============================================================
-async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
-    if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
-    if (!mensajeroConectado) { 
-        toast('⚠️ Estás desconectado. Conéctate para gestionar pedidos.', 'warn');
-        setTimeout(() => mostrarMotivacion(), 500);
-        return; 
-    }
-    
-    try {
-        const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId);
-        await docRef.update({
-            estado: nuevoEstado,
-            ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp(),
-            [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
-            if (sonidoDespertador.estaSonando(pedidoId)) {
-                sonidoDespertador.detenerDespertador(pedidoId);
-            }
-        }
-        
-        setTimeout(async () => {
-            await cargarPedidosCompletos();
-            await actualizarContadores();
-            renderizarPedidos();
+        setTimeout(() => {
+            recargarPedidos();
         }, 500);
         
-        toast(`✅ Pedido actualizado a: ${nuevoEstado}`, 'success', 3000);
-        
     } catch (e) {
-        console.error('Error actualizando estado:', e);
         toast('❌ Error: ' + e.message, 'error');
     }
+}
+
+// ============================================================
+// ✏️ EDITAR MENSAJERO
+// ============================================================
+let mensajeroEditando = null;
+
+function abrirModalEditarMensajero(uid) {
+    const mensajero = todosLosMensajeros.find(m => m.uid === uid);
+    if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
+    mensajeroEditando = mensajero;
+    const modal = document.getElementById('modalEditarMensajero');
+    const contenido = document.getElementById('modalEditarContenido');
+    const titulo = document.getElementById('modalEditarTitulo');
+    titulo.textContent = `✏️ Editar: ${mensajero.nombre || 'Sin nombre'}`;
+    contenido.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);padding:12px;border-radius:10px;border:1px solid var(--border);">
+                <div style="width:48px;height:48px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--yellow);border:2px solid var(--border);">
+                    ${(mensajero.nombre || 'M').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;">${mensajero.nombre || 'Sin nombre'}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">${mensajero.email || 'Sin email'}</div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>👤 Nombre completo</label>
+            <input id="editNombre" value="${mensajero.nombre || ''}" placeholder="Nombre del mensajero">
+        </div>
+        <div class="form-group">
+            <label>📧 Email</label>
+            <input id="editEmail" value="${mensajero.email || ''}" disabled style="opacity:0.6;cursor:not-allowed;">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">El email no se puede modificar por seguridad</div>
+        </div>
+        <div class="form-group">
+            <label>📱 Teléfono (WhatsApp)</label>
+            <input id="editTelefono" value="${mensajero.telefono || mensajero.whatsapp || ''}" placeholder="573169934516">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Incluye código de país (ej: 573169934516)</div>
+        </div>
+        <div class="form-group">
+            <label>📌 Estado</label>
+            <select id="editEstado">
+                <option value="activo" ${mensajero.activo !== false ? 'selected' : ''}>🟢 Activo</option>
+                <option value="inactivo" ${mensajero.activo === false ? 'selected' : ''}>🔴 Inactivo</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+            <button onclick="guardarEditarMensajero()" style="flex:1;background:var(--yellow);color:#1a1a2e;font-weight:700;border:none;padding:12px;border-radius:8px;cursor:pointer;transition:all 0.2s;">💾 Guardar cambios</button>
+            <button class="btn-ghost" onclick="cerrarModalEditarMensajero()" style="width:auto;padding:12px 16px;">Cancelar</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalEditarMensajero() {
+    document.getElementById('modalEditarMensajero').style.display = 'none';
+    document.body.style.overflow = '';
+    mensajeroEditando = null;
+}
+
+async function guardarEditarMensajero() {
+    if (!mensajeroEditando) { toast('⚠️ No hay mensajero seleccionado', 'error'); return; }
+    const uid = mensajeroEditando.uid;
+    const nombre = document.getElementById('editNombre').value.trim();
+    const telefono = document.getElementById('editTelefono').value.trim();
+    const estado = document.getElementById('editEstado').value;
+    if (!nombre) { toast('⚠️ El nombre no puede estar vacío', 'error'); return; }
+    if (!telefono) { toast('⚠️ El teléfono no puede estar vacío', 'error'); return; }
+    try {
+        toast('⏳ Guardando cambios...', 'info');
+        await db.collection('usuarios').doc(uid).update({
+            nombre: nombre,
+            telefono: telefono,
+            whatsapp: telefono,
+            activo: estado === 'activo',
+            editadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+            editadoEn: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast(`✅ Mensajero "${nombre}" actualizado correctamente`, 'success', 3000);
+        cerrarModalEditarMensajero();
+        filtrarMensajeros();
+        actualizarEstadisticas();
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
+    }
+}
+
+// ============================================================
+// ESTADÍSTICAS
+// ============================================================
+function actualizarEstadisticas() {
+    const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado).length;
+    const inactivos = todosLosMensajeros.filter(m => m.activo === false).length;
+    const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
+    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
+    const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
+    document.getElementById('statActivos').textContent = activos;
+    document.getElementById('statInactivos').textContent = inactivos;
+    document.getElementById('statOcupados').textContent = ocupados;
+    document.getElementById('statPendientes').textContent = pendientes;
+    document.getElementById('statEnCamino').textContent = enCamino;
+    document.getElementById('badgePedidos').textContent = pendientes;
+}
+
+function actualizarHeaderBadge() {
+    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
+    const badge = document.getElementById('headerBadge');
+    if (pendientes > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = '🔔 ' + pendientes;
+    } else {
+        badge.style.display = 'none';
+        badge.textContent = '⏰🔔 0';
+    }
+}
+
+// ============================================================
+// GESTIÓN DE MENSAJEROS
+// ============================================================
+async function crearMensajero() {
+    const email = document.getElementById('nuevoEmail').value.trim();
+    const nombre = document.getElementById('nuevoNombre').value.trim();
+    const telefono = document.getElementById('nuevoTelefono').value.trim();
+    const password = document.getElementById('nuevoPassword').value.trim();
+    if (!email) { toast('⚠️ Ingresa el Gmail del mensajero', 'error'); return; }
+    if (!nombre) { toast('⚠️ Ingresa el nombre del mensajero', 'error'); return; }
+    if (!telefono) { toast('⚠️ Ingresa el teléfono del mensajero', 'error'); return; }
+    if (!password || password.length < 6) { toast('⚠️ La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+    try {
+        toast('⏳ Creando mensajero...', 'info');
+        const result = await auth.createUserWithEmailAndPassword(email, password);
+        const uid = result.user.uid;
+        await db.collection('usuarios').doc(uid).set({
+            email, nombre, telefono: telefono || '',
+            whatsapp: telefono || '',
+            mensajero: true, rol: 'mensajero', activo: true, conectado: false,
+            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await result.user.sendEmailVerification();
+        toast(`✅ Mensajero "${nombre}" creado exitosamente`, 'success', 5000);
+        limpiarFormulario();
+        filtrarMensajeros();
+        actualizarEstadisticas();
+    } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+            toast('⚠️ Este email ya está registrado. Usa otro Gmail.', 'error');
+        } else {
+            toast('❌ Error: ' + error.message, 'error');
+        }
+    }
+}
+
+function limpiarFormulario() {
+    document.getElementById('nuevoEmail').value = '';
+    document.getElementById('nuevoNombre').value = '';
+    document.getElementById('nuevoTelefono').value = '';
+    document.getElementById('nuevoPassword').value = 'Mensajero2026!';
+}
+
+async function toggleMensajero(uid, activo) {
+    if (!confirm(`¿${activo ? 'Activar' : 'Desactivar'} este mensajero?`)) return;
+    try {
+        await db.collection('usuarios').doc(uid).update({
+            activo: activo,
+            [`${activo ? 'activado' : 'desactivado'}En`]: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast(`✅ Mensajero ${activo ? 'activado' : 'desactivado'}`, 'success');
+        filtrarMensajeros();
+        actualizarEstadisticas();
+    } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+async function eliminarMensajero(uid) {
+    if (!confirm('⚠️ ¿Eliminar este mensajero permanentemente?')) return;
+    try {
+        await db.collection('usuarios').doc(uid).delete();
+        toast('✅ Mensajero eliminado de Firestore', 'success');
+        filtrarMensajeros();
+        actualizarEstadisticas();
+    } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+}
+
+function verDetalle(uid) {
+    const mensajero = todosLosMensajeros.find(m => m.uid === uid);
+    if (!mensajero) { toast('⚠️ Mensajero no encontrado', 'error'); return; }
+    const activo = mensajero.activo !== false;
+    const ocupado = mensajero.ocupado === true;
+    const telefono = mensajero.telefono || mensajero.whatsapp || 'No registrado';
+    let html = `
+        <div class="info-row"><span class="label">👤 Nombre</span><span class="value">${mensajero.nombre || 'Sin nombre'}</span></div>
+        <div class="info-row"><span class="label">📧 Email</span><span class="value">${mensajero.email || 'Sin email'}</span></div>
+        <div class="info-row"><span class="label">📱 Teléfono</span><span class="value">${telefono}</span></div>
+        <div class="info-row"><span class="label">📌 Estado</span><span class="value" style="color:${activo ? (ocupado ? 'var(--orange)' : 'var(--green)') : 'var(--red)'}">${activo ? (ocupado ? '🟠 Ocupado' : '🟢 Activo') : '🔴 Inactivo'}</span></div>
+        <div class="info-row"><span class="label">🆔 UID</span><span class="value" style="font-size:11px;color:var(--text-muted);">${mensajero.uid}</span></div>
+        <div class="info-row"><span class="label">📅 Creado</span><span class="value">${formatearFecha(mensajero.creadoEn)}</span></div>
+        <div class="info-row"><span class="label">🔌 Conexión</span><span class="value" style="color:${mensajero.conectado ? 'var(--green)' : 'var(--red)'}">${mensajero.conectado ? '🟢 Conectado' : '🔴 Desconectado'}</span></div>
+    `;
+    if (mensajero.activadoEn) html += `<div class="info-row"><span class="label">✅ Activado</span><span class="value">${formatearFecha(mensajero.activadoEn)}</span></div>`;
+    if (mensajero.desactivadoEn) html += `<div class="info-row"><span class="label">❌ Desactivado</span><span class="value">${formatearFecha(mensajero.desactivadoEn)}</span></div>`;
+    if (mensajero.editadoEn) html += `<div class="info-row"><span class="label">✏️ Editado</span><span class="value">${formatearFecha(mensajero.editadoEn)}</span></div>`;
+    document.getElementById('modalTitulo').textContent = `📋 ${mensajero.nombre || 'Mensajero'}`;
+    document.getElementById('modalContenido').innerHTML = html;
+    document.getElementById('modalDetalle').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('modalDetalle').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 // ============================================================
@@ -1779,7 +1436,7 @@ function formatearFecha(fecha) {
 }
 
 function toast(msg, type = 'info', dur = 4000) {
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🔔', motivacion: '💪' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🔔' };
     const wrap = document.getElementById('toastWrap');
     const el = document.createElement('div');
     el.className = `toast t-${type}`;
@@ -1793,33 +1450,35 @@ function toast(msg, type = 'info', dur = 4000) {
 // EXPONER FUNCIONES
 // ============================================================
 window.iniciarSesion = iniciarSesion;
-window.cerrarSesion = cerrarSesion;
-window.tomarPedido = tomarPedido;
-window.cambiarEstado = cambiarEstado;
-window.toggleEstadoConexion = toggleEstadoConexion;
-window.mostrarModalConfirmacion = mostrarModalConfirmacion;
-window.cerrarModalConfirmacion = cerrarModalConfirmacion;
-window.mostrarMotivacion = mostrarMotivacion;
-window.cerrarMotivacion = cerrarMotivacion;
-window.conectarDesdeMotivacion = conectarDesdeMotivacion;
+window.logout = logout;
+window.crearMensajero = crearMensajero;
+window.limpiarFormulario = limpiarFormulario;
+window.filtrarMensajeros = filtrarMensajeros;
+window.recargarMensajeros = recargarMensajeros;
+window.recargarPedidos = recargarPedidos;
+window.recargarTodo = recargarTodo;
+window.toggleMensajero = toggleMensajero;
+window.eliminarMensajero = eliminarMensajero;
+window.verDetalle = verDetalle;
+window.cerrarModal = cerrarModal;
 window.toast = toast;
-window.simularPedidoPrueba = simularPedidoPrueba;
-window.activarNotificacionesPush = activarNotificacionesPush;
-window.probarNotificacion = probarNotificacion;
-window.cargarHistorialPedidos = cargarHistorialPedidos;
-window.filtrarHistorial = filtrarHistorial;
+window.abrirModalAsignacion = abrirModalAsignacion;
+window.cerrarModalAsignacion = cerrarModalAsignacion;
+window.asignarPedidoManual = asignarPedidoManual;
+window.notificarATodos = notificarATodos;
+window.enviarNotificacionWhatsApp = enviarNotificacionWhatsApp;
+window.copiarEnlace = copiarEnlace;
+window.abrirModalEditarMensajero = abrirModalEditarMensajero;
+window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
+window.guardarEditarMensajero = guardarEditarMensajero;
+window.probarSonidoAdmin = probarSonidoAdmin;
 
-console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido activado');
-console.log('📱 Notificaciones PERSISTENTES activadas');
-console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
-console.log('🔑 Clave VAPID configurada correctamente');
-console.log('📱 Modo AppCreator24 detectado automáticamente');
-console.log('🎨 Botones del historial SIN FONDO AMARILLO');
-console.log('💰 Ganancia = SOLO costo del domicilio');
-console.log('📢 Notificación muestra: Productos + Domicilio + Total');
-console.log('📋 Total calculado automáticamente: Productos + Domicilio');
-console.log('🔧 Filtro corregido: AHORA ve pedidos "Listo para asignar"');
+console.log('✅ Panel de administración de mensajeros cargado correctamente');
+console.log('📱 WhatsApp integrado para notificar mensajeros');
+console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
+console.log('⏰ Alarma se DETIENE al ASIGNAR MANUALMENTE');
+console.log('🔔 Alarma NO se detiene al NOTIFICAR A TODOS');
+console.log('📯 Sonido: RING RING de despertador');
 </script>
 </body>
 </html>
