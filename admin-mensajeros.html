@@ -30,8 +30,6 @@
         .btn-info:hover { background: #0277bd; }
         .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text-muted); }
         .btn-ghost:hover { background: var(--surface3); }
-        .btn-whatsapp { background: #25D366; color: #fff; }
-        .btn-whatsapp:hover { background: #1da851; }
         .btn-editar-mensajero { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
         .btn-editar-mensajero:hover { background: var(--blue); color: #fff; }
         .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
@@ -304,7 +302,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO PROFESIONAL DE CAMPANA (Do6 - Mi6 - Sol6)
+// ⏰ SONIDO PROFESIONAL DE CAMPANA
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
@@ -319,14 +317,11 @@ function sonidoDespertadorAdmin() {
         if (audioContextAdmin.state === 'suspended') {
             audioContextAdmin.resume();
         }
-        
         const ctx = audioContextAdmin;
         const ahora = ctx.currentTime;
-        
         const frecuencias = [1047, 1319, 1568];
         const duracionNota = 0.25;
         const pausa = 0.08;
-        
         frecuencias.forEach((freq, index) => {
             const inicio = ahora + index * (duracionNota + pausa);
             const osc = ctx.createOscillator();
@@ -353,7 +348,7 @@ function probarSonidoAdmin() {
 }
 
 // ============================================================
-// INICIAR ALARMA PERSISTENTE
+// INICIAR/DETENER ALARMA
 // ============================================================
 function iniciarAlarmaPedido(pedidoId) {
     if (intervalosAlarma[pedidoId]) return;
@@ -411,26 +406,22 @@ let tiendasCache = {};
 let recargando = false;
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (CORREGIDA)
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
 // ============================================================
 function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
     try {
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
         telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
-        
         if (!telefono) {
             console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
             toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
             return;
         }
-        
         if (!telefono.startsWith('57') && telefono.length === 10) {
             telefono = '57' + telefono;
         }
-        
         const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
         const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
-        
         let mensajeWhatsApp = `🛵 *¡Nuevo pedido disponible!*\n\n`;
         mensajeWhatsApp += `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n`;
         mensajeWhatsApp += `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n`;
@@ -441,15 +432,10 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
         mensajeWhatsApp += `📱 *Haz clic en el enlace para ver el pedido:*\n`;
         mensajeWhatsApp += `${url}\n\n`;
         mensajeWhatsApp += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
-        
         const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-        
         console.log(`📱 Enviando WhatsApp a ${mensajero.nombre}: ${telefono}`);
-        console.log(`📱 Enlace: ${urlWhatsApp}`);
-        
         window.open(urlWhatsApp, '_blank');
         toast(`📱 WhatsApp abierto para ${mensajero.nombre}`, 'success', 4000);
-        
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -462,7 +448,6 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
                 }).catch(err => console.warn('Error guardando registro:', err));
         }
-        
     } catch (error) {
         console.error('❌ Error enviando WhatsApp:', error);
         toast('❌ Error al enviar notificación: ' + error.message, 'error');
@@ -563,15 +548,18 @@ function cargarMensajeros() {
     listenerMensajeros = db.collection('usuarios')
         .where('mensajero', '==', true)
         .onSnapshot(snap => {
+            console.log('📋 Mensajeros encontrados en Firestore:', snap.size);
             todosLosMensajeros = [];
             snap.forEach(doc => {
                 const data = doc.data();
+                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 'activo:', data.activo, 'conectado:', data.conectado);
                 const tienePedidoActivo = todosLosPedidos.some(p => 
                     p.mensajeroId === doc.id && 
                     (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
                 );
                 todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
             });
+            console.log('✅ Total mensajeros cargados:', todosLosMensajeros.length);
             filtrarMensajeros();
             actualizarEstadisticas();
         }, err => { 
@@ -612,7 +600,6 @@ async function cargarPedidosIniciales() {
         actualizarHeaderBadge();
         
         todosLosPedidos.forEach(p => {
-            // ✅ SOLO ALARMA SI EL PEDIDO NO HA SIDO NOTIFICADO NI ASIGNADO
             if (p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion && !p.notificacionEnviada) {
                 iniciarAlarmaPedido(p.id);
             }
@@ -671,7 +658,6 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // ✅ DETENER ALARMA SI EL PEDIDO YA NO ESTÁ DISPONIBLE
                                     if (!estaDisponible || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -792,11 +778,13 @@ function renderizarMensajeros() {
     container.innerHTML = html;
 }
 
+// ============================================================
+// RENDERIZAR PEDIDOS PARA ADMIN
+// ============================================================
 function renderizarPedidosAsignar() {
     const container = document.getElementById('listaPedidosAsignar');
     const badge = document.getElementById('badgePedidos');
     
-    // ✅ PEDIDOS QUE EL ADMIN PUEDE GESTIONAR
     const pedidosPendientes = todosLosPedidos.filter(p => { 
         return p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion && !p.notificacionEnviada; 
     });
@@ -817,17 +805,14 @@ function renderizarPedidosAsignar() {
     const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
     let html = '';
     
-    // Pedidos disponibles para asignar (sin notificar)
     pedidosPendientes.forEach(p => {
         html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'disponible');
     });
     
-    // Pedidos notificados (modo automático)
     pedidosNotificados.forEach(p => {
         html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'notificado');
     });
     
-    // Pedidos esperando confirmación (manual)
     pedidosEsperando.forEach(p => {
         html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'esperando');
     });
@@ -835,6 +820,9 @@ function renderizarPedidosAsignar() {
     container.innerHTML = html;
 }
 
+// ============================================================
+// RENDERIZAR CARD DE PEDIDO PARA ADMIN
+// ============================================================
 function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
     const tienda = tiendasCache[p.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
@@ -843,7 +831,6 @@ function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
     const fechaStr = formatearFecha(p.fecha);
     const esNuevo = p._nuevo === true;
     const tieneAlarma = intervalosAlarma[p.id] !== undefined;
-    const tipoAsignacion = p.asignacionTipo || 'pendiente';
     
     let badgeTipo = '';
     let badgeEstado = '';
@@ -907,7 +894,7 @@ function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
     
     const claseNuevo = esNuevo ? 'nuevo' : '';
     
-    html += `
+    let cardHtml = `
         <div class="pedido-asignar ${claseNuevo} ${claseBorder}" id="pedido-${p.id}">
             <div class="header">
                 <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
@@ -929,7 +916,7 @@ function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
         </div>
     `;
     
-    return html;
+    return cardHtml;
 }
 
 // ============================================================
@@ -961,11 +948,14 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
+    // ✅ FILTRAR MENSAJEROS DISPONIBLES (activos, conectados, sin pedidos)
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
         !m.ocupado
     );
+    
+    console.log('📋 Mensajeros disponibles para asignar:', mensajerosDisponibles.length);
     
     const modal = document.getElementById('modalAsignacion');
     const contenido = document.getElementById('modalAsignacionContenido');
@@ -1068,7 +1058,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ✅ ASIGNACIÓN MANUAL (SOLO AL MENSAJERO ELEGIDO)
+// ✅ ASIGNACIÓN MANUAL
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -1107,7 +1097,6 @@ async function asignarPedidoManual() {
             telefonoTienda: tienda.whatsapp || ''
         };
         
-        // ✅ ASIGNAR EL PEDIDO AL MENSAJERO ELEGIDO - ESPERANDO CONFIRMACIÓN
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1115,17 +1104,15 @@ async function asignarPedidoManual() {
                 nombreMensajero: nombreMensajero,
                 estado: 'Listo para asignar',
                 pendienteConfirmacion: true,
-                notificacionEnviada: true,  // ✅ El mensajero lo ve
+                notificacionEnviada: true,
                 notificacionMasiva: false,
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 asignacionTipo: 'manual'
             });
         
-        // 🔇 DETENER ALARMA
         detenerAlarmaPedido(pedidoId);
         
-        // 📱 ENVIAR WHATSAPP SOLO AL MENSAJERO ELEGIDO
         if (mensajero && telefonoMensajero) {
             enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo);
             toast(`📱 Notificación enviada a ${nombreMensajero}`, 'success', 3000);
@@ -1157,7 +1144,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 ASIGNACIÓN AUTOMÁTICA (NOTIFICAR A TODOS LOS DISPONIBLES)
+// 📢 NOTIFICAR A TODOS (AUTOMÁTICO)
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -1195,7 +1182,6 @@ async function notificarATodos() {
             return;
         }
         
-        // 📱 ENVIAR WHATSAPP A TODOS LOS MENSAJEROS DISPONIBLES
         let enviados = 0;
         mensajerosDisponibles.forEach(mensajero => {
             const telefono = mensajero.telefono || mensajero.whatsapp || '';
@@ -1211,19 +1197,15 @@ async function notificarATodos() {
             return;
         }
         
-        // ✅ MARCAR COMO NOTIFICADO - EL PEDIDO ES VISIBLE PARA MENSAJEROS
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
-                notificacionEnviada: true,   // ✅ AHORA ES VISIBLE PARA MENSAJEROS
+                notificacionEnviada: true,
                 notificacionMasiva: true,
                 fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 asignacionTipo: 'automatica'
             });
-        
-        // ❌ NO DETENER ALARMA - EL PEDIDO SIGUE DISPONIBLE
-        // La alarma solo se detiene cuando un mensajero confirma con "TOMAR PEDIDO"
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
@@ -1242,11 +1224,10 @@ async function notificarATodos() {
 }
 
 // ============================================================
-// ❌ CANCELAR NOTIFICACIÓN (Modo automático)
+// ❌ CANCELAR NOTIFICACIÓN
 // ============================================================
 async function cancelarNotificacion(pedidoId, tiendaId) {
     if (!confirm('¿Cancelar la notificación de este pedido? Los mensajeros ya no lo verán.')) return;
-    
     try {
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
@@ -1256,21 +1237,18 @@ async function cancelarNotificacion(pedidoId, tiendaId) {
                 canceladoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 fechaCancelacion: firebase.firestore.FieldValue.serverTimestamp()
             });
-        
         toast('✅ Notificación cancelada. El pedido ya no es visible para mensajeros.', 'success');
         recargarPedidos();
-        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
     }
 }
 
 // ============================================================
-// ❌ CANCELAR ASIGNACIÓN (Modo manual)
+// ❌ CANCELAR ASIGNACIÓN
 // ============================================================
 async function cancelarAsignacion(pedidoId, tiendaId) {
     if (!confirm('¿Cancelar la asignación de este pedido? El mensajero ya no lo verá.')) return;
-    
     try {
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
@@ -1282,10 +1260,8 @@ async function cancelarAsignacion(pedidoId, tiendaId) {
                 canceladoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 fechaCancelacion: firebase.firestore.FieldValue.serverTimestamp()
             });
-        
         toast('✅ Asignación cancelada. El pedido vuelve a estar disponible.', 'success');
         recargarPedidos();
-        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
     }
@@ -1533,7 +1509,7 @@ function toast(msg, type = 'info', dur = 4000) {
 }
 
 // ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA (CORREGIDO)
+// 🧪 SIMULAR PEDIDO DE PRUEBA
 // ============================================================
 function simularPedidoAdmin() {
     console.log('🧪 Simulando pedido de prueba para Admin Mensajeros...');
@@ -1562,10 +1538,9 @@ function simularPedidoAdmin() {
         mensajeroId: null,
         nombreMensajero: null,
         numeroPedido: '#SIM-' + String(Math.floor(Math.random() * 9000) + 1000),
-        // ✅ CAMPOS CORRECTOS - EL PEDIDO NO ES VISIBLE PARA MENSAJEROS
-        notificacionEnviada: false,    // ✅ NO notificado
-        notificacionMasiva: false,     // ✅ NO masivo
-        pendienteConfirmacion: false,  // ✅ NO pendiente
+        notificacionEnviada: false,
+        notificacionMasiva: false,
+        pendienteConfirmacion: false,
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         fuente: 'simulacion_admin'
     };
@@ -1575,16 +1550,10 @@ function simularPedidoAdmin() {
             if (!doc.exists) {
                 toast('⚠️ La tienda de prueba no existe. Usa un ID válido.', 'error', 5000);
                 console.error('❌ Tienda no encontrada:', tiendaId);
-                console.log('📋 Tiendas disponibles:');
-                db.collection('tiendas').get().then(snap => {
-                    snap.forEach(d => console.log('  -', d.id, ':', d.data().nombre || 'Sin nombre'));
-                });
                 return;
             }
-            
             const tiendaNombre = doc.data().nombre || 'Tienda';
             console.log(`✅ Tienda encontrada: ${tiendaNombre} (${tiendaId})`);
-            
             return db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos')
                 .add(pedidoFalso);
@@ -1594,7 +1563,6 @@ function simularPedidoAdmin() {
                 console.log('✅ Pedido de prueba creado con ID:', docRef.id);
                 toast('🧪 Pedido de prueba creado. ¡ALARMA ACTIVADA!', 'success', 4000);
                 toast('🔔 El pedido NO es visible para mensajeros hasta que lo notifiques', 'info', 5000);
-                
                 setTimeout(() => {
                     recargarPedidos();
                     toast('🔔 El pedido aparecerá en la lista con ALARMA ACTIVA', 'new', 5000);
