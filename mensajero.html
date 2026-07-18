@@ -233,7 +233,7 @@
     <div class="wrap">
         <div class="seccion-pedidos">
             <div class="titulo">📦 Pedidos Disponibles <span class="badge-count" id="contadorDisponibles">0</span></div>
-            <div id="listaPedidosDisponibles"><div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span></div></div>
+            <div id="listaPedidosDisponibles"><div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando que el administrador asigne un pedido...</span></div></div>
         </div>
 
         <div class="seccion-pedidos">
@@ -553,7 +553,12 @@ auth.onAuthStateChanged(user => {
 // 🚀 NOTIFICACIÓN MOTIVACIONAL
 // ============================================================
 function mostrarMotivacion() {
-    const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion);
+    const pedidosDisponibles = todosLosPedidos.filter(p => 
+        p.estado === 'Listo para asignar' && 
+        !p.mensajeroId && 
+        p.pendienteConfirmacion !== true &&
+        p.notificacionEnviada === true
+    );
     const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false)?.length || 0;
     document.getElementById('pedidosEsperando').textContent = pedidosDisponibles.length;
     document.getElementById('statActivosMotivacion').textContent = mensajerosActivos;
@@ -561,7 +566,7 @@ function mostrarMotivacion() {
     if (pedidosDisponibles.length > 0) {
         document.querySelector('.motivacion-box .mensaje').innerHTML = `
             <span class="emoji">🚀</span> 
-            <strong>¡Hay ${pedidosDisponibles.length} pedidos esperando por ti!</strong><br>
+            <strong>¡Hay ${pedidosDisponibles.length} pedidos disponibles!</strong><br>
             Conéctate ahora y comienza a ganar dinero. Cada pedido es una oportunidad.
         `;
     }
@@ -669,6 +674,7 @@ async function inicializarPanel() {
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
+        console.log('📋 Solo ve pedidos que el ADMIN ha asignado o notificado');
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
                 const { pedidoId, tiendaId } = window._pedidoDesdeEnlace;
@@ -740,12 +746,12 @@ function escucharPedidos() {
                                 const pedidoId = change.doc.id;
                                 
                                 const esParaMi = data.mensajeroId === mensajeroUid;
-                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId && !data.pendienteConfirmacion;
                                 const esperandoConfirmacion = data.estado === 'Listo para asignar' && data.mensajeroId === mensajeroUid && data.pendienteConfirmacion === true;
+                                const esDisponibleParaTomar = data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true && data.pendienteConfirmacion !== true;
                                 const esActivo = data.estado === 'En camino al restaurante' || 
                                                 data.estado === 'Recogiendo pedido' || 
                                                 data.estado === 'En camino';
-                                const esVisible = (esParaMi || esListo || esperandoConfirmacion || (esParaMi && esActivo)) && 
+                                const esVisible = (esParaMi || esDisponibleParaTomar || esperandoConfirmacion || (esParaMi && esActivo)) && 
                                                  data.estado !== 'Entregado' && 
                                                  data.estado !== 'Cancelado';
                                 
@@ -759,8 +765,8 @@ function escucharPedidos() {
                                         }
                                         
                                         // ✅ SOLO notificación visual - SIN SONIDO
-                                        if (esListo) {
-                                            console.log(`📢 Pedido disponible para mensajeros: ${pedidoId}`);
+                                        if (esDisponibleParaTomar) {
+                                            console.log(`📢 Pedido disponible para mensajeros (notificado por admin): ${pedidoId}`);
                                             const tienda = tiendasCache[tiendaId] || {};
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
@@ -1041,7 +1047,8 @@ function renderizarPedidos() {
     }
     
     const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar') &&
+        (p.mensajeroId === mensajeroUid || 
+         (p.estado === 'Listo para asignar' && p.notificacionEnviada === true && !p.mensajeroId && p.pendienteConfirmacion !== true)) &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
@@ -1049,7 +1056,8 @@ function renderizarPedidos() {
     const disponibles = pedidosVisibles.filter(p => 
         p.estado === 'Listo para asignar' && 
         !p.mensajeroId &&
-        !p.pendienteConfirmacion
+        p.notificacionEnviada === true &&
+        p.pendienteConfirmacion !== true
     );
     
     const esperandoConfirmacion = pedidosVisibles.filter(p => 
@@ -1070,7 +1078,7 @@ function renderizarPedidos() {
     
     const containerDisponibles = document.getElementById('listaPedidosDisponibles');
     if (disponibles.length === 0 && esperandoConfirmacion.length === 0) {
-        containerDisponibles.innerHTML = `<div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando que el admin te asigne pedidos...</span></div>`;
+        containerDisponibles.innerHTML = `<div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando que el administrador asigne un pedido...</span></div>`;
     } else {
         let html = '';
         disponibles.forEach(p => { html += renderizarPedidoCard(p, true, false); });
@@ -1111,7 +1119,7 @@ function renderizarPedidoCard(pedido, disponible, esperando) {
         estadoColor = 'esperando';
         estadoLabel = '⏳ ESPERANDO CONFIRMACIÓN';
         claseExtra = 'esperando';
-    } else if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
+    } else if (estado === 'Listo para asignar' && !pedido.mensajeroId && pedido.notificacionEnviada === true) {
         estadoColor = 'disponible';
         estadoLabel = '🔔 DISPONIBLE';
         claseExtra = 'disponible';
@@ -1137,7 +1145,7 @@ function renderizarPedidoCard(pedido, disponible, esperando) {
     
     let botonesHtml = '';
     
-    // ✅ BOTÓN "TOMAR PEDIDO" - Solo si está esperando confirmación
+    // ✅ BOTÓN "TOMAR PEDIDO" - Solo si está esperando confirmación (asignación manual)
     if (esperando && pedido.mensajeroId === mensajeroUid && pedido.pendienteConfirmacion === true) {
         botonesHtml = `
             <div class="estados-acciones">
@@ -1150,11 +1158,14 @@ function renderizarPedidoCard(pedido, disponible, esperando) {
             </div>
         `;
     } 
-    // Pedido disponible para cualquier mensajero
-    else if (estado === 'Listo para asignar' && !pedido.mensajeroId && !pedido.pendienteConfirmacion) {
+    // Pedido disponible para cualquier mensajero (modo automático - notificación masiva)
+    else if (estado === 'Listo para asignar' && !pedido.mensajeroId && pedido.notificacionEnviada === true && pedido.pendienteConfirmacion !== true) {
         botonesHtml = `
             <div class="estados-acciones">
                 <button class="btn-success" onclick="tomarPedidoDisponible('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:4px;">
+                📢 El primero en tomar el pedido se lo queda
             </div>
         `;
     } 
@@ -1183,7 +1194,7 @@ function renderizarPedidoCard(pedido, disponible, esperando) {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
     
-    // Mostrar nombre del mensajero si está asignado
+    // Mostrar nombre del mensajero si está asignado a otro
     let mensajeroInfo = '';
     if (pedido.mensajeroId && pedido.mensajeroId !== mensajeroUid && !esperando) {
         mensajeroInfo = `<div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:4px;">🛵 Asignado a otro mensajero</div>`;
@@ -1216,7 +1227,7 @@ function renderizarPedidoCard(pedido, disponible, esperando) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO (Confirmar la orden asignada)
+// ✅ TOMAR PEDIDO (Confirmar la orden asignada manualmente)
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1263,7 +1274,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         toast('✅ Pedido confirmado. ¡En camino al restaurante! 🛵', 'success', 4000);
         
-        // Recargar para actualizar
         setTimeout(async () => {
             await cargarPedidosCompletos();
             await actualizarContadores();
@@ -1277,7 +1287,7 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO DISPONIBLE (Para pedidos sin asignar)
+// ✅ TOMAR PEDIDO DISPONIBLE (Para pedidos en modo automático)
 // ============================================================
 async function tomarPedidoDisponible(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1301,6 +1311,11 @@ async function tomarPedidoDisponible(pedidoId, tiendaId) {
             return;
         }
         
+        if (data.notificacionEnviada !== true) {
+            toast('⚠️ Este pedido no está disponible para tomar', 'warn');
+            return;
+        }
+        
         toast('⏳ Tomando pedido...', 'info');
         
         // ✅ ASIGNAR EL PEDIDO A ESTE MENSAJERO
@@ -1310,7 +1325,8 @@ async function tomarPedidoDisponible(pedidoId, tiendaId) {
             estado: 'En camino al restaurante',
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
             notificacionEnviada: false,
-            pendienteConfirmacion: false
+            pendienteConfirmacion: false,
+            tomadoPor: auth.currentUser?.email || 'Mensajero'
         });
         
         await cargarPedidosCompletos();
@@ -1343,10 +1359,10 @@ async function cargarPedidosCompletos() {
                     const data = doc.data();
                     const pedidoId = doc.id;
                     const esParaMi = data.mensajeroId === mensajeroUid;
-                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId && !data.pendienteConfirmacion;
+                    const esDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true && data.pendienteConfirmacion !== true;
                     const esperandoMi = data.estado === 'Listo para asignar' && data.mensajeroId === mensajeroUid && data.pendienteConfirmacion === true;
                     const esActivo = data.estado === 'En camino al restaurante' || data.estado === 'Recogiendo pedido' || data.estado === 'En camino';
-                    const esVisible = (esParaMi || esListo || esperandoMi || (esParaMi && esActivo)) && 
+                    const esVisible = (esParaMi || esDisponible || esperandoMi || (esParaMi && esActivo)) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
                     if (esVisible) {
@@ -1371,7 +1387,8 @@ async function actualizarContadores() {
         const disponibles = todosLosPedidos.filter(p => 
             p.estado === 'Listo para asignar' && 
             !p.mensajeroId &&
-            !p.pendienteConfirmacion
+            p.notificacionEnviada === true &&
+            p.pendienteConfirmacion !== true
         );
         const esperando = todosLosPedidos.filter(p => 
             p.estado === 'Listo para asignar' && 
@@ -1471,6 +1488,9 @@ window.filtrarHistorial = filtrarHistorial;
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
 console.log('📱 Notificaciones SOLO visuales activadas');
+console.log('📋 Solo ve pedidos que el ADMIN ha asignado o notificado');
+console.log('  👤 Manual: Solo ve el pedido si fue asignado a él');
+console.log('  📢 Automático: Ve el pedido si el admin notificó a todos');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 </script>
