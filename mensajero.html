@@ -67,16 +67,8 @@
 
         .pedido-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s; }
         .pedido-card.disponible { border-left-color: var(--green); }
-        
-        .pedido-card.nuevo-pedido {
-            animation: nuevoPedido 1s infinite;
-        }
-        
-        @keyframes nuevoPedido {
-            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
-            50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; }
-            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
-        }
+        .pedido-card.nuevo-pedido { animation: nuevoPedido 1s infinite; }
+        @keyframes nuevoPedido { 0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); } 50% { transform: scale(1.02); box-shadow: 0 0 25px #FFD600; } 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); } }
 
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
         .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
@@ -139,82 +131,20 @@
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
 
-        .filtros-historial {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
+        .filtros-historial { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+        .filtros-historial button { background: transparent; color: var(--text-muted); border: 1px solid var(--border2); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.3s; width: auto; }
+        .filtros-historial button.active { background: var(--surface3); color: #fff; border-color: var(--blue); }
+        .filtros-historial button:hover { background: var(--surface2); color: #fff; }
 
-        .filtros-historial button {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border2);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: auto;
-        }
-
-        .filtros-historial button.active {
-            background: var(--surface3);
-            color: #fff;
-            border-color: var(--blue);
-        }
-
-        .filtros-historial button:hover {
-            background: var(--surface2);
-            color: #fff;
-        }
-
-        .resumen-historial {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            background: var(--surface2);
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-top: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .resumen-historial .item {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .resumen-historial .item .num {
-            font-weight: 800;
-            font-size: 16px;
-        }
-
+        .resumen-historial { display: flex; gap: 20px; flex-wrap: wrap; background: var(--surface2); padding: 12px 16px; border-radius: 10px; margin-top: 12px; border: 1px solid var(--border); }
+        .resumen-historial .item { font-size: 13px; color: var(--text-muted); }
+        .resumen-historial .item .num { font-weight: 800; font-size: 16px; }
         .resumen-historial .item .num.yellow { color: var(--yellow); }
         .resumen-historial .item .num.green { color: var(--green); }
         .resumen-historial .item .num.orange { color: var(--orange); }
 
-        .pago-confirmado {
-            background: var(--green-bg);
-            color: var(--green);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 4px;
-            text-align: center;
-        }
-
-        .pago-pendiente {
-            background: var(--orange-bg);
-            color: var(--orange);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            margin-top: 4px;
-            text-align: center;
-        }
+        .pago-confirmado { background: var(--green-bg); color: var(--green); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 4px; text-align: center; }
+        .pago-pendiente { background: var(--orange-bg); color: var(--orange); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-top: 4px; text-align: center; }
 
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
@@ -365,17 +295,14 @@ function detectarPedidoDesdeEnlace() {
     const params = new URLSearchParams(window.location.search);
     const pedidoId = params.get('pedido');
     const tiendaId = params.get('tienda');
-    
     if (pedidoId && tiendaId) {
         console.log(`📱 Pedido detectado desde enlace: ${pedidoId} - Tienda: ${tiendaId}`);
         window._pedidoDesdeEnlace = { pedidoId, tiendaId };
-        
         setTimeout(() => {
             toast('📱 Has llegado desde un enlace de WhatsApp. Buscando tu pedido...', 'info', 4000);
         }, 2000);
     }
 }
-
 detectarPedidoDesdeEnlace();
 
 // ============================================================
@@ -386,7 +313,6 @@ const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta9
 // ============================================================
 // 📢 NOTIFICACIONES (SOLO VISUALES - SIN SONIDO)
 // ============================================================
-
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -408,11 +334,9 @@ function arrayBufferToBase64(buffer) {
     return btoa(binary);
 }
 
-// PROBAR NOTIFICACIÓN (SIN SONIDO)
 function probarNotificacion() {
     try {
         alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas visuales de nuevos pedidos.');
-        
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
                 const notification = new Notification('🔔 Notificación de prueba', {
@@ -420,26 +344,18 @@ function probarNotificacion() {
                     icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
                 });
                 console.log('✅ Notification API funcionando');
-            } catch (e) {
-                console.log('ℹ️ Notification API no disponible');
-            }
+            } catch (e) {}
         }
-        console.log('✅ Notificación de prueba mostrada');
     } catch (error) {
         console.error('❌ Error:', error);
     }
 }
 
-// ============================================================
-// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (SOLO VISUAL - SIN SONIDO)
-// ============================================================
 function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total, costoDomicilio) {
     console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
-    
     const domicilio = costoDomicilio || 0;
     const subtotal = total - domicilio;
     
-    // ✅ SOLO notificación visual, SIN sonido
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             navigator.serviceWorker.ready.then(function(registration) {
@@ -468,36 +384,27 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
     }
 }
 
-// ACTIVAR NOTIFICACIONES
 async function activarNotificacionesPush() {
     try {
         console.log('🔔 Activando notificaciones...');
-        
         const isAppCreator = window.location.href.includes('appcreator') || 
                             navigator.userAgent.includes('AppCreator') ||
                             document.referrer.includes('appcreator');
-        
         document.getElementById('pushStatus').textContent = isAppCreator ? '🔔 Notificaciones: Activadas (App)' : '🔔 Notificaciones: Activadas';
-        
         if (isAppCreator) {
             alert('✅ Notificaciones activadas correctamente en la app.\n\nRecibirás alertas de nuevos pedidos.');
             return true;
         }
-        
         if ('serviceWorker' in navigator) {
             try {
-                const registration = await navigator.serviceWorker.register('sw.js', {
-                    scope: '/'
-                });
+                const registration = await navigator.serviceWorker.register('sw.js', { scope: '/' });
                 console.log('✅ Service Worker registrado');
-                
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     const subscription = await registration.pushManager.subscribe({
                         userVisibleOnly: true,
                         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                     });
-                    
                     if (mensajeroUid) {
                         const subscriptionData = {
                             endpoint: subscription.endpoint,
@@ -519,9 +426,7 @@ async function activarNotificacionesPush() {
                 console.warn('⚠️ Error con Service Worker:', e);
             }
         }
-        
         return true;
-        
     } catch (error) {
         console.error('❌ Error:', error);
         document.getElementById('pushStatus').textContent = '❌ Error';
@@ -529,29 +434,23 @@ async function activarNotificacionesPush() {
     }
 }
 
-// INICIALIZAR NOTIFICACIONES
 async function inicializarNotificaciones() {
     try {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
         const isAppCreator = window.location.href.includes('appcreator') || 
                             navigator.userAgent.includes('AppCreator') ||
                             document.referrer.includes('appcreator');
-        
         if (isAppCreator) {
             console.log('📱 Detectado AppCreator24 - Usando modo WebView');
             document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas (App)';
             return;
         }
-        
         if (Notification.permission === 'granted') {
             document.getElementById('pushStatus').textContent = '🔔 Notificaciones: Activadas';
             try {
                 const registration = await navigator.serviceWorker.ready;
                 const subscription = await registration.pushManager.getSubscription();
-                if (!subscription) {
-                    await activarNotificacionesPush();
-                }
+                if (!subscription) await activarNotificacionesPush();
             } catch (e) {}
         } else if (Notification.permission === 'denied') {
             document.getElementById('pushStatus').textContent = '🔕 Notificaciones: Denegadas';
@@ -610,7 +509,6 @@ function iniciarSesion() {
             actualizarIndicadorConexion();
             await db.collection('usuarios').doc(user.uid).update({ conectado: mensajeroConectado, ultimaConexion: firebase.firestore.FieldValue.serverTimestamp() });
             await inicializarPanel();
-            
             if (!mensajeroConectado && !motivacionMostrada) {
                 setTimeout(() => { mostrarMotivacion(); }, 2000);
             }
@@ -651,7 +549,7 @@ auth.onAuthStateChanged(user => {
 // ============================================================
 function mostrarMotivacion() {
     const pedidosDisponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
-    const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado)?.length || 0;
+    const mensajerosActivos = mensajerosGlobal?.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false)?.length || 0;
     document.getElementById('pedidosEsperando').textContent = pedidosDisponibles.length;
     document.getElementById('statActivosMotivacion').textContent = mensajerosActivos;
     document.getElementById('statPedidosMotivacion').textContent = pedidosDisponibles.length;
@@ -761,14 +659,11 @@ async function inicializarPanel() {
         await cargarTiendas();
         await cargarMensajeros();
         await escucharPedidos();
-        
         await cargarHistorialPedidos();
         await actualizarEstadisticasMensajero();
-        
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
-        
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
                 const { pedidoId, tiendaId } = window._pedidoDesdeEnlace;
@@ -780,11 +675,7 @@ async function inicializarPanel() {
                 }
             }, 3000);
         }
-        
-        setTimeout(() => {
-            inicializarNotificaciones();
-        }, 3000);
-        
+        setTimeout(() => { inicializarNotificaciones(); }, 3000);
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -822,14 +713,12 @@ function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
     if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
     listenerActivo = true;
-    
     todosLosPedidos = [];
     
     db.collection('tiendas').get()
         .then(snap => {
             const tiendas = snap.docs.map(doc => doc.id);
             console.log(`📢 Escuchando ${tiendas.length} tiendas para pedidos`);
-            
             let listenersActivos = 0;
             
             tiendas.forEach(tiendaId => {
@@ -867,8 +756,6 @@ function escucharPedidos() {
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                                             console.log(`📢 Pedido disponible para mensajeros: ${pedidoId}`);
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            
-                                            // ✅ SOLO mostrar notificación visual
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -876,8 +763,6 @@ function escucharPedidos() {
                                                 data.total || 0,
                                                 data.costoDomicilio || 0
                                             );
-                                            
-                                            // ✅ Mostrar toast en la interfaz
                                             toast(`📦 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'info', 4000);
                                         }
                                     } else {
@@ -896,7 +781,6 @@ function escucharPedidos() {
                                 console.error('Error procesando cambio de pedido:', err);
                             }
                         });
-                        
                         renderizarPedidos();
                     }, err => {
                         console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
@@ -940,15 +824,10 @@ function escucharPedidos() {
 // 📊 HISTORIAL DE PEDIDOS DEL MENSAJERO
 // ============================================================
 async function cargarHistorialPedidos() {
-    if (!mensajeroUid) {
-        console.warn('⚠️ No hay mensajero UID');
-        return;
-    }
-    
+    if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
     try {
         const tiendasSnap = await db.collection('tiendas').get();
         historialPedidos = [];
-        
         for (const tiendaDoc of tiendasSnap.docs) {
             const tiendaId = tiendaDoc.id;
             const pedidosSnap = await db.collection('tiendas')
@@ -956,26 +835,18 @@ async function cargarHistorialPedidos() {
                 .collection('pedidos')
                 .where('mensajeroId', '==', mensajeroUid)
                 .get();
-            
             pedidosSnap.forEach(doc => {
                 const data = doc.data();
-                historialPedidos.push({
-                    id: doc.id,
-                    tiendaId: tiendaId,
-                    ...data
-                });
+                historialPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data });
             });
         }
-        
         historialPedidos.sort((a, b) => {
             const fechaA = a.fecha ? a.fecha.toDate?.() || new Date(a.fecha) : new Date(0);
             const fechaB = b.fecha ? b.fecha.toDate?.() || new Date(b.fecha) : new Date(0);
             return fechaB - fechaA;
         });
-        
         console.log(`📊 ${historialPedidos.length} pedidos en el historial`);
         aplicarFiltroHistorial(filtroHistorialActual);
-        
     } catch (error) {
         console.error('❌ Error cargando historial:', error);
         document.getElementById('listaHistorialPedidos').innerHTML = `
@@ -989,113 +860,65 @@ async function cargarHistorialPedidos() {
 
 function aplicarFiltroHistorial(filtro) {
     filtroHistorialActual = filtro;
-    
     const ahora = new Date();
     let fechaInicio = new Date(0);
     let fechaFin = new Date();
-    
     switch(filtro) {
-        case 'hoy':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setHours(0, 0, 0, 0);
-            break;
-        case 'ayer':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setDate(fechaInicio.getDate() - 1);
-            fechaInicio.setHours(0, 0, 0, 0);
-            fechaFin = new Date(ahora);
-            fechaFin.setHours(0, 0, 0, 0);
-            break;
-        case 'semana':
-            fechaInicio = new Date(ahora);
-            fechaInicio.setDate(fechaInicio.getDate() - 7);
-            fechaInicio.setHours(0, 0, 0, 0);
-            break;
-        case 'todas':
-        default:
-            fechaInicio = new Date(0);
-            break;
+        case 'hoy': fechaInicio = new Date(ahora); fechaInicio.setHours(0, 0, 0, 0); break;
+        case 'ayer': fechaInicio = new Date(ahora); fechaInicio.setDate(fechaInicio.getDate() - 1); fechaInicio.setHours(0, 0, 0, 0); fechaFin = new Date(ahora); fechaFin.setHours(0, 0, 0, 0); break;
+        case 'semana': fechaInicio = new Date(ahora); fechaInicio.setDate(fechaInicio.getDate() - 7); fechaInicio.setHours(0, 0, 0, 0); break;
+        case 'todas': default: fechaInicio = new Date(0); break;
     }
-    
     const pedidosFiltrados = historialPedidos.filter(pedido => {
         const fechaPedido = pedido.fecha ? pedido.fecha.toDate?.() || new Date(pedido.fecha) : new Date(0);
         return fechaPedido >= fechaInicio && fechaPedido <= fechaFin;
     });
-    
     renderizarHistorial(pedidosFiltrados);
 }
 
 function filtrarHistorial(filtro, btn) {
     document.querySelectorAll('.filtros-historial button').forEach(b => b.classList.remove('active', 'hoy', 'todas'));
-    if (btn) {
-        btn.classList.add('active');
-        if (filtro === 'hoy') btn.classList.add('hoy');
-        if (filtro === 'todas') btn.classList.add('todas');
-    }
+    if (btn) { btn.classList.add('active'); if (filtro === 'hoy') btn.classList.add('hoy'); if (filtro === 'todas') btn.classList.add('todas'); }
     aplicarFiltroHistorial(filtro);
 }
 
 function renderizarHistorial(pedidos) {
     const container = document.getElementById('listaHistorialPedidos');
     const totalPedidos = pedidos.length;
-    let totalGanado = 0;
-    let entregados = 0;
-    let pendientes = 0;
-    
+    let totalGanado = 0, entregados = 0, pendientes = 0;
     pedidos.forEach(p => {
         let subtotal = 0;
         if (p.items && p.items.length > 0) {
-            p.items.forEach(item => {
-                subtotal += item.total || (item.precio * item.cantidad) || 0;
-            });
+            p.items.forEach(item => { subtotal += item.total || (item.precio * item.cantidad) || 0; });
         }
         const costoDomicilio = p.costoDomicilio || 0;
         totalGanado += costoDomicilio;
-        
-        if (p.estado === 'Entregado') {
-            entregados++;
-        } else if (p.estado !== 'Cancelado') {
-            pendientes++;
-        }
+        if (p.estado === 'Entregado') entregados++;
+        else if (p.estado !== 'Cancelado') pendientes++;
     });
-    
     document.getElementById('totalPedidosHistorial').textContent = totalPedidos;
     document.getElementById('totalGanadoHistorial').textContent = '$' + totalGanado.toLocaleString('es-CO');
     document.getElementById('totalEntregadosHistorial').textContent = entregados;
     document.getElementById('totalPendientesHistorial').textContent = pendientes;
     document.getElementById('contadorHistorial').textContent = totalPedidos;
-    
     if (totalPedidos === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <span class="icono">📭</span>
-                <p>No hay pedidos en este período</p>
-                <span style="font-size:12px;color:var(--text-muted);">Comienza a entregar pedidos para ver tu historial</span>
-            </div>
-        `;
+        container.innerHTML = `<div class="empty-state"><span class="icono">📭</span><p>No hay pedidos en este período</p><span style="font-size:12px;color:var(--text-muted);">Comienza a entregar pedidos para ver tu historial</span></div>`;
         return;
     }
-    
     let html = '';
     pedidos.forEach(p => {
         const tienda = tiendasCache[p.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = p.cliente || {};
-        
         let subtotal = 0;
         if (p.items && p.items.length > 0) {
-            p.items.forEach(item => {
-                subtotal += item.total || (item.precio * item.cantidad) || 0;
-            });
+            p.items.forEach(item => { subtotal += item.total || (item.precio * item.cantidad) || 0; });
         }
         const costoDomicilio = p.costoDomicilio || 0;
         const totalCalculado = subtotal + costoDomicilio;
-        
         const fechaStr = formatearFecha(p.fecha);
         const estado = p.estado || 'Pendiente';
-        
-        let estadoColor = '';
-        let estadoLabel = '';
+        let estadoColor = '', estadoLabel = '';
         switch(estado) {
             case 'Entregado': estadoColor = 'entregado'; estadoLabel = '✅ Entregado'; break;
             case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
@@ -1104,7 +927,6 @@ function renderizarHistorial(pedidos) {
             case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
             default: estadoColor = 'pendiente'; estadoLabel = '⏳ ' + estado;
         }
-        
         let itemsHtml = '';
         if (p.items && p.items.length > 0) {
             p.items.slice(0, 3).forEach(item => {
@@ -1112,20 +934,12 @@ function renderizarHistorial(pedidos) {
                 const itemTotal = item.total || (item.precio * item.cantidad) || 0;
                 itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
             });
-            if (p.items.length > 3) {
-                itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
-            }
+            if (p.items.length > 3) itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
         }
-        
         const metodoPago = p.metodoPago || 'efectivo';
-        const pagoLabel = metodoPago === 'nequi' ? '🟢 Nequi' : 
-                         metodoPago === 'daviplata' ? '🔵 Daviplata' : '💵 Efectivo';
-        
+        const pagoLabel = metodoPago === 'nequi' ? '🟢 Nequi' : metodoPago === 'daviplata' ? '🔵 Daviplata' : '💵 Efectivo';
         const pagoConfirmado = p.estadoPago === 'pagado';
-        const pagoHtml = pagoConfirmado ? 
-            '<div class="pago-confirmado">✅ Pago confirmado</div>' : 
-            (p.estadoPago === 'rechazado' ? '<div class="pago-pendiente" style="background:var(--red-bg);color:var(--red);">❌ Pago rechazado</div>' : '');
-        
+        const pagoHtml = pagoConfirmado ? '<div class="pago-confirmado">✅ Pago confirmado</div>' : (p.estadoPago === 'rechazado' ? '<div class="pago-pendiente" style="background:var(--red-bg);color:var(--red);">❌ Pago rechazado</div>' : '');
         html += `
             <div class="pedido-card" style="border-left-color: ${estado === 'Entregado' ? 'var(--green)' : 'var(--orange)'};">
                 <div class="header">
@@ -1147,7 +961,6 @@ function renderizarHistorial(pedidos) {
             </div>
         `;
     });
-    
     container.innerHTML = html;
 }
 
@@ -1156,17 +969,10 @@ function renderizarHistorial(pedidos) {
 // ============================================================
 async function actualizarEstadisticasMensajero() {
     if (!mensajeroUid) return;
-    
     try {
         const tiendasSnap = await db.collection('tiendas').get();
-        let totalPedidos = 0;
-        let totalGanado = 0;
-        let entregadosHoy = 0;
-        let entregadosTotal = 0;
-        
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
+        let totalPedidos = 0, totalGanado = 0, entregadosHoy = 0, entregadosTotal = 0;
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
         for (const tiendaDoc of tiendasSnap.docs) {
             const tiendaId = tiendaDoc.id;
             const pedidosSnap = await db.collection('tiendas')
@@ -1174,30 +980,22 @@ async function actualizarEstadisticasMensajero() {
                 .collection('pedidos')
                 .where('mensajeroId', '==', mensajeroUid)
                 .get();
-            
             pedidosSnap.forEach(doc => {
                 const data = doc.data();
                 let subtotal = 0;
                 if (data.items && data.items.length > 0) {
-                    data.items.forEach(item => {
-                        subtotal += item.total || (item.precio * item.cantidad) || 0;
-                    });
+                    data.items.forEach(item => { subtotal += item.total || (item.precio * item.cantidad) || 0; });
                 }
                 const costoDomicilio = data.costoDomicilio || 0;
-                
                 totalPedidos++;
                 totalGanado += costoDomicilio;
-                
                 const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
                 if (data.estado === 'Entregado') {
                     entregadosTotal++;
-                    if (fechaPedido >= hoy) {
-                        entregadosHoy++;
-                    }
+                    if (fechaPedido >= hoy) entregadosHoy++;
                 }
             });
         }
-        
         const statsElement = document.getElementById('mensajeroStats');
         if (statsElement) {
             statsElement.innerHTML = `
@@ -1207,7 +1005,6 @@ async function actualizarEstadisticasMensajero() {
                 <span style="color:var(--blue);">📊 ${entregadosTotal} entregados</span>
             `;
         }
-        
         return { totalPedidos, totalGanado, entregadosHoy, entregadosTotal };
     } catch (error) {
         console.error('❌ Error actualizando estadísticas:', error);
@@ -1235,7 +1032,7 @@ function renderizarPedidos() {
     }
     
     const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar' || p.notificacionEnviada === true) &&
+        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar') &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
@@ -1273,28 +1070,19 @@ function renderizarPedidos() {
     }
 }
 
-// ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO
-// ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
-    
     let subtotal = 0;
     if (pedido.items && pedido.items.length > 0) {
-        pedido.items.forEach(item => {
-            subtotal += item.total || (item.precio * item.cantidad) || 0;
-        });
+        pedido.items.forEach(item => { subtotal += item.total || (item.precio * item.cantidad) || 0; });
     }
     const costoDomicilio = pedido.costoDomicilio || 0;
     const totalCalculado = subtotal + costoDomicilio;
-    
     const fechaStr = formatearFecha(pedido.fecha);
     const estado = pedido.estado || 'Pendiente';
-    
-    let estadoColor = '';
-    let estadoLabel = '';
+    let estadoColor = '', estadoLabel = '';
     switch(estado) {
         case 'Listo para asignar': estadoColor = 'disponible'; estadoLabel = '🔔 DISPONIBLE'; break;
         case 'En camino al restaurante': estadoColor = 'camino'; estadoLabel = '🛵 En camino'; break;
@@ -1304,7 +1092,6 @@ function renderizarPedidoCard(pedido, disponible) {
         case 'Cancelado': estadoColor = 'cancelado'; estadoLabel = '❌ Cancelado'; break;
         default: estadoColor = 'pendiente'; estadoLabel = '📋 ' + estado;
     }
-    
     let itemsHtml = '';
     if (pedido.items && pedido.items.length > 0) {
         pedido.items.forEach(item => {
@@ -1313,17 +1100,10 @@ function renderizarPedidoCard(pedido, disponible) {
             itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
         });
     }
-    
     let botonesHtml = '';
-    
     if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
-        botonesHtml = `
-            <div class="estados-acciones">
-                <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
-            </div>
-        `;
-    } 
-    else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
+        botonesHtml = `<div class="estados-acciones"><button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button></div>`;
+    } else if (pedido.mensajeroId === mensajeroUid && estado !== 'Entregado' && estado !== 'Cancelado') {
         switch(estado) {
             case 'En camino al restaurante':
                 botonesHtml = `<div class="estados-acciones"><button class="btn-purple" onclick="cambiarEstado('${pedido.id}','${pedido.tiendaId}','Recogiendo pedido')">📦 RECOGER PEDIDO</button></div>`;
@@ -1343,13 +1123,10 @@ function renderizarPedidoCard(pedido, disponible) {
                     </div>
                 `;
         }
-    } 
-    else if (estado === 'Entregado' || estado === 'Cancelado') {
+    } else if (estado === 'Entregado' || estado === 'Cancelado') {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
-    
     const claseDisponible = disponible ? 'disponible' : '';
-    
     return `
         <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
             <div class="header">
@@ -1390,6 +1167,7 @@ async function tomarPedido(pedidoId, tiendaId) {
         if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
         const data = doc.data();
         
+        // ✅ VERIFICAR SI EL PEDIDO YA FUE TOMADO POR OTRO MENSAJERO
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
             await cargarPedidosCompletos();
@@ -1398,12 +1176,15 @@ async function tomarPedido(pedidoId, tiendaId) {
         }
         
         toast('⏳ Tomando pedido...', 'info');
+        
+        // ✅ ASIGNAR EL PEDIDO A ESTE MENSAJERO
         await docRef.update({
             mensajeroId: mensajeroUid,
             nombreMensajero: mensajeroData?.nombre || 'Mensajero',
             estado: 'En camino al restaurante',
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-            notificacionEnviada: false
+            notificacionEnviada: false,
+            tomadoPor: auth.currentUser?.email || 'Mensajero'
         });
         
         await cargarPedidosCompletos();
@@ -1411,14 +1192,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         renderizarPedidos();
         
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
-        
-        setTimeout(async () => {
-            console.log('🔄 Auto-refresco adicional: Recargando pedidos');
-            await cargarPedidosCompletos();
-            await cargarMensajeros();
-            await actualizarContadores();
-            renderizarPedidos();
-        }, 1500);
         
     } catch (e) {
         console.error('Error tomando pedido:', e);
@@ -1440,23 +1213,16 @@ async function cargarPedidosCompletos() {
                     .doc(tiendaId)
                     .collection('pedidos')
                     .get();
-                    
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
                     const pedidoId = doc.id;
-                    
                     const esParaMi = data.mensajeroId === mensajeroUid;
                     const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
-                    const esVisible = (esParaMi || esListo || data.notificacionEnviada === true) && 
+                    const esVisible = (esParaMi || esListo) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
-                    
                     if (esVisible) {
-                        nuevosPedidos.push({ 
-                            id: pedidoId, 
-                            tiendaId: tiendaId, 
-                            ...data 
-                        });
+                        nuevosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                     }
                 });
             } catch (err) {
@@ -1474,15 +1240,8 @@ async function cargarPedidosCompletos() {
 
 async function actualizarContadores() {
     try {
-        const disponibles = todosLosPedidos.filter(p => 
-            p.estado === 'Listo para asignar' && 
-            !p.mensajeroId
-        );
-        const misPedidos = todosLosPedidos.filter(p => 
-            p.mensajeroId === mensajeroUid && 
-            p.estado !== 'Entregado' && 
-            p.estado !== 'Cancelado'
-        );
+        const disponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
+        const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid && p.estado !== 'Entregado' && p.estado !== 'Cancelado');
         document.getElementById('contadorDisponibles').textContent = disponibles.length;
         document.getElementById('contadorMisPedidos').textContent = misPedidos.length;
     } catch (e) {}
@@ -1569,11 +1328,6 @@ window.filtrarHistorial = filtrarHistorial;
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
 console.log('📱 Notificaciones SOLO visuales activadas');
-console.log('🔑 Clave VAPID configurada correctamente');
-console.log('📱 Modo AppCreator24 detectado automáticamente');
-console.log('🎨 Botones del historial SIN FONDO AMARILLO');
-console.log('💰 Ganancia = SOLO costo del domicilio');
-console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 </script>
 </body>
