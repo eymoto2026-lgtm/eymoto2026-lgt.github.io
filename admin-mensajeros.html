@@ -407,45 +407,55 @@ let tiendasCache = {};
 let recargando = false;
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (CORREGIDA)
 // ============================================================
-function generarEnlaceWhatsApp(mensajeroTelefono, tiendaId, pedidoId, pedidoData) {
-    let telefono = String(mensajeroTelefono || '').replace(/[\s\-\(\)\+\.]/g, '');
-    if (telefono && !telefono.startsWith('57') && telefono.length === 10) {
-        telefono = '57' + telefono;
-    }
-    if (!telefono) {
-        telefono = pedidoData?.telefonoTienda || '573169934516';
-        telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
-        if (!telefono.startsWith('57') && telefono.length === 10) {
-            telefono = '57' + telefono;
-        }
-    }
-    const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
-    const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
-    const mensaje = `🛵 *¡Nuevo pedido disponible!*\n\n` +
-                    `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n` +
-                    `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n` +
-                    `👤 *Cliente:* ${pedidoData.cliente?.nombre || 'Cliente'}\n` +
-                    `💰 *Total:* $${(pedidoData.total || 0).toLocaleString('es-CO')}\n\n` +
-                    `📍 *Dirección:* ${pedidoData.cliente?.direccion || 'N/A'}\n` +
-                    `📱 *Teléfono cliente:* ${pedidoData.cliente?.telefono || 'N/A'}\n\n` +
-                    `📱 *Haz clic en el enlace para ver el pedido:*\n` +
-                    `${url}\n\n` +
-                    `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
-    return `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-}
-
 function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
     try {
+        // ✅ 1. OBTENER EL TELÉFONO DEL MENSAJERO
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
+        
+        // ✅ 2. LIMPIAR EL TELÉFONO
+        telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        
+        // ✅ 3. VERIFICAR QUE TENGA TELÉFONO
         if (!telefono) {
+            console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
             toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
             return;
         }
-        const url = generarEnlaceWhatsApp(telefono, tiendaId, pedidoId, pedidoData);
-        window.open(url, '_blank');
+        
+        // ✅ 4. AGREGAR CÓDIGO DE PAÍS SI ES NECESARIO
+        if (!telefono.startsWith('57') && telefono.length === 10) {
+            telefono = '57' + telefono;
+        }
+        
+        // ✅ 5. CREAR EL MENSAJE DE WHATSAPP COMPLETO
+        const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
+        const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+        
+        let mensajeWhatsApp = `🛵 *¡Nuevo pedido disponible!*\n\n`;
+        mensajeWhatsApp += `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n`;
+        mensajeWhatsApp += `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n`;
+        mensajeWhatsApp += `👤 *Cliente:* ${pedidoData.cliente?.nombre || 'Cliente'}\n`;
+        mensajeWhatsApp += `💰 *Total:* $${(pedidoData.total || 0).toLocaleString('es-CO')}\n\n`;
+        mensajeWhatsApp += `📍 *Dirección:* ${pedidoData.cliente?.direccion || 'N/A'}\n`;
+        mensajeWhatsApp += `📱 *Teléfono cliente:* ${pedidoData.cliente?.telefono || 'N/A'}\n\n`;
+        mensajeWhatsApp += `📱 *Haz clic en el enlace para ver el pedido:*\n`;
+        mensajeWhatsApp += `${url}\n\n`;
+        mensajeWhatsApp += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
+        
+        // ✅ 6. CREAR EL ENLACE DE WHATSAPP
+        const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        
+        console.log(`📱 Enviando WhatsApp a ${mensajero.nombre}: ${telefono}`);
+        console.log(`📱 Enlace: ${urlWhatsApp}`);
+        
+        // ✅ 7. ABRIR WHATSAPP EN UNA NUEVA VENTANA
+        window.open(urlWhatsApp, '_blank');
+        
         toast(`📱 WhatsApp abierto para ${mensajero.nombre}`, 'success', 4000);
+        
+        // ✅ 8. GUARDAR REGISTRO DE NOTIFICACIÓN
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -453,13 +463,15 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
                     mensajeroId: mensajero.uid,
                     mensajeroNombre: mensajero.nombre || 'Mensajero',
                     telefono: telefono,
+                    mensaje: mensajeWhatsApp,
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
                 }).catch(err => console.warn('Error guardando registro:', err));
         }
+        
     } catch (error) {
         console.error('❌ Error enviando WhatsApp:', error);
-        toast('❌ Error al enviar notificación', 'error');
+        toast('❌ Error al enviar notificación: ' + error.message, 'error');
     }
 }
 
@@ -664,7 +676,6 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // ✅ SI EL PEDIDO YA NO ESTÁ DISPONIBLE O ESTÁ ENTREGADO/CANCELADO
                                     if (!estaDisponible || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -804,12 +815,10 @@ function renderizarPedidosAsignar() {
     const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
     let html = '';
     
-    // Pedidos disponibles para asignar
     pedidosPendientes.forEach(p => {
         html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'disponible');
     });
     
-    // Pedidos esperando confirmación del mensajero
     pedidosEsperando.forEach(p => {
         html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'esperando');
     });
@@ -1181,9 +1190,6 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 asignacionTipo: 'automatica'
             });
-        
-        // ❌ 3. NO DETENER ALARMA - EL PEDIDO SIGUE DISPONIBLE
-        // La alarma solo se detiene cuando un mensajero confirma con "TOMAR PEDIDO"
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
