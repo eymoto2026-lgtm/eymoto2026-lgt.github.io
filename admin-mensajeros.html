@@ -409,7 +409,6 @@ function detenerAlarmaPedido(pedidoId) {
     // 2️⃣ DETENER EL SONIDO ACTIVO
     try {
         if (audioContextAdmin) {
-            // Crear un contexto temporal para "cortar" el sonido
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
             const osc = ctx.createOscillator();
@@ -731,7 +730,6 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // ⚠️ SI EL PEDIDO YA TIENE MENSAJERO, DETENER ALARMA
                                     if (tieneMensajero || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -1135,7 +1133,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS POR WHATSAPP (DETIENE ALARMA)
+// 📢 NOTIFICAR A TODOS POR WHATSAPP - CAMBIA ESTADO DEL PEDIDO
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -1180,25 +1178,30 @@ async function notificarATodos() {
             cerrarModalAsignacion();
             return;
         }
+        
+        // ✅ CAMBIAR ESTADO A "En camino al restaurante" para evitar que la alarma se reinicie
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
-                estado: 'Listo para asignar',
-                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                estado: 'En camino al restaurante',
+                fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                notificacionEnviada: true
+                notificacionEnviada: true,
+                notificacionMasiva: true
             });
         
         // 🔇 DETENER ALARMA - PEDIDO NOTIFICADO
         detenerAlarmaPedido(pedidoId);
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
+        toast(`📦 Pedido ${pedidoInfo.numeroPedido} pasó a estado "En camino al restaurante"`, 'info', 3000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
         setTimeout(() => {
             console.log('🔄 Auto-refresco: Recargando pedidos después de notificar');
             recargarPedidos();
+            recargarMensajeros();
         }, 1000);
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -1477,7 +1480,7 @@ console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Se detiene al asignar el pedido');
 console.log('📯 Sonido: RING RING de despertador');
-console.log('🔇 ALARMA SE DETIENE INMEDIATAMENTE AL ASIGNAR');
+console.log('📦 Notificar a todos CAMBIA ESTADO a "En camino al restaurante" para evitar reinicio de alarma');
 </script>
 </body>
 </html>
