@@ -531,13 +531,11 @@ function forzarRecargaMensajeros() {
     toast('🔄 Forzando recarga de mensajeros...', 'info', 3000);
     console.log('🔄 Forzando recarga de mensajeros...');
     
-    // Eliminar el listener actual
     if (listenerMensajeros) {
         try { listenerMensajeros(); } catch(e) {}
         listenerMensajeros = null;
     }
     
-    // Hacer una consulta directa a Firestore
     db.collection('usuarios')
         .where('mensajero', '==', true)
         .get()
@@ -556,7 +554,6 @@ function forzarRecargaMensajeros() {
                 toast(`✅ ${snap.size} mensajeros encontrados en Firestore`, 'success', 4000);
             }
             
-            // Reiniciar el listener
             cargarMensajeros();
             
             setTimeout(() => {
@@ -569,7 +566,6 @@ function forzarRecargaMensajeros() {
             console.error('❌ Error al forzar recarga:', err);
             toast('❌ Error al recargar mensajeros: ' + err.message, 'error');
             recargandoMensajeros = false;
-            // Intentar reconectar el listener
             cargarMensajeros();
         });
 }
@@ -645,7 +641,6 @@ function cargarMensajeros() {
             filtrarMensajeros();
             actualizarEstadisticas();
             
-            // Mostrar mensaje si hay mensajeros disponibles
             const disponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
             if (disponibles.length > 0) {
                 console.log(`✅ ${disponibles.length} mensajeros disponibles para asignar`);
@@ -1037,7 +1032,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
-    // ✅ FILTRAR MENSAJEROS DISPONIBLES (activos, conectados, sin pedidos)
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
