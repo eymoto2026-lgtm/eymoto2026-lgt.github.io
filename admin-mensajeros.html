@@ -291,7 +291,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO DE DESPERTADOR (RING RING) CON REPETICIÓN
+// ⏰ SONIDO DE DESPERTADOR (RING RING)
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
@@ -366,7 +366,7 @@ function sonidoDespertadorAdmin() {
 }
 
 function probarSonidoAdmin() {
-    console.log('📯 Probando pito de moto ADMIN...');
+    console.log('📯 Probando sonido ADMIN...');
     sonidoDespertadorAdmin();
     toast('📯 ¡Ring ring!', 'info', 2000);
 }
@@ -396,45 +396,19 @@ function iniciarAlarmaPedido(pedidoId) {
 }
 
 // ============================================================
-// DETENER ALARMA DE UN PEDIDO - DETIENE SONIDO INMEDIATAMENTE
+// DETENER ALARMA DE UN PEDIDO
 // ============================================================
 function detenerAlarmaPedido(pedidoId) {
-    // 1️⃣ DETENER EL INTERVALO
     if (intervalosAlarma[pedidoId]) {
         clearInterval(intervalosAlarma[pedidoId]);
         delete intervalosAlarma[pedidoId];
         console.log(`🔇 Alarma DETENIDA para pedido: ${pedidoId}`);
     }
-    
-    // 2️⃣ DETENER EL SONIDO ACTIVO
-    try {
-        if (audioContextAdmin) {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            if (ctx.state === 'suspended') ctx.resume();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            gain.gain.value = 0.001;
-            osc.start();
-            osc.stop(ctx.currentTime + 0.01);
-            setTimeout(() => {
-                try { ctx.close(); } catch(e) {}
-            }, 50);
-        }
-    } catch(e) {}
-    
-    // 3️⃣ ACTUALIZAR LA TARJETA VISUALMENTE
     renderizarPedidosAsignar();
-    
-    // 4️⃣ ACTUALIZAR BADGE Y ESTADÍSTICAS
     actualizarHeaderBadge();
     actualizarEstadisticas();
 }
 
-// ============================================================
-// DETENER TODAS LAS ALARMAS
-// ============================================================
 function detenerTodasLasAlarmas() {
     Object.keys(intervalosAlarma).forEach(pedidoId => {
         clearInterval(intervalosAlarma[pedidoId]);
@@ -604,7 +578,8 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
-        console.log('⏰ Alarma persistente activada - Se detiene al asignar manualmente');
+        console.log('⏰ Alarma: se detiene al ASIGNAR MANUALMENTE');
+        console.log('🔔 Alarma: NO se detiene al NOTIFICAR A TODOS');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -689,7 +664,7 @@ async function cargarPedidosIniciales() {
 }
 
 // ============================================================
-// ESCUCHAR PEDIDOS EN TIEMPO REAL CON ALARMA
+// ESCUCHAR PEDIDOS EN TIEMPO REAL
 // ============================================================
 function escucharPedidosEnTiempoReal() {
     if (window._listenersPedidos) {
@@ -729,6 +704,7 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
+                                    // ✅ SI EL PEDIDO YA TIENE MENSAJERO, DETENER ALARMA
                                     if (tieneMensajero || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -1016,7 +992,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         </div>
         <div class="opcion-asignacion" style="border-color: var(--yellow);">
             <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-            <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp. El primero que acepte tomará el pedido.</div>
+            <div class="descripcion">Todos los mensajeros disponibles recibirán una notificación por WhatsApp.</div>
             <div class="mensajeros-disponibles">
                 📨 Mensajeros que recibirán la notificación: 
                 <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
