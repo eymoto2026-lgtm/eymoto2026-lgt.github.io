@@ -242,6 +242,22 @@
             text-align: center;
         }
 
+        .btn-debug {
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+        }
+        .btn-debug:hover {
+            background: #7d3c98;
+        }
+
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
             .estados-acciones button { min-width: 80px; font-size: 10px; padding: 8px; }
@@ -319,6 +335,7 @@
         <span class="estado" id="estadoConexion" onclick="toggleEstadoConexion()">🟢 Conectado</span>
         <button class="btn-sm" onclick="activarNotificacionesPush()" style="width:auto;padding:6px 12px;background:var(--blue);color:#fff;border-radius:8px;">🔔 Activar</button>
         <button class="btn-sm" onclick="probarNotificacion()" style="width:auto;padding:6px 12px;background:var(--yellow);color:#1a1a2e;border-radius:8px;">📨 Probar</button>
+        <button class="btn-debug" onclick="debugMisPedidos()">🔍 Debug</button>
         <button class="btn-ghost btn-sm" onclick="cerrarSesion()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
 
@@ -957,6 +974,7 @@ async function inicializarPanel() {
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔊 Sonido activado');
+        console.log('🔍 Botón DEBUG agregado - haz clic en "🔍 Debug" para diagnosticar');
         
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
@@ -1008,7 +1026,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS - VERSIÓN CORREGIDA
+// 📢 ESCUCHAR PEDIDOS - VERSIÓN CORREGIDA CON DEBUG
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -1051,6 +1069,11 @@ function escucharPedidos() {
                                                  data.estado !== 'Entregado' && 
                                                  data.estado !== 'Cancelado';
                                 
+                                // 🔍 LOG DE DEBUG
+                                if (esParaMi) {
+                                    console.log(`🔍 Pedido ${pedidoId} es PARA MÍ: estado=${data.estado}, visible=${esVisible}`);
+                                }
+                                
                                 if (change.type === 'added' || change.type === 'modified') {
                                     if (esVisible) {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -1058,6 +1081,9 @@ function escucharPedidos() {
                                             todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
                                         } else {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                            if (esParaMi) {
+                                                console.log(`✅ Pedido ${pedidoId} AGREGADO a mis pedidos`);
+                                            }
                                         }
                                         
                                         // Sonido solo para pedidos nuevos "Listo para asignar"
@@ -1088,6 +1114,9 @@ function escucharPedidos() {
                                                 sonidoDespertador.detenerDespertador(pedidoId);
                                             }
                                             todosLosPedidos.splice(index, 1);
+                                            if (esParaMi) {
+                                                console.log(`❌ Pedido ${pedidoId} ELIMINADO de mis pedidos`);
+                                            }
                                         }
                                     }
                                 } else if (change.type === 'removed') {
@@ -1144,6 +1173,44 @@ function escucharPedidos() {
             }
         });
 }
+
+// ============================================================
+// 🔍 DEBUG - VER PEDIDOS ASIGNADOS
+// ============================================================
+function debugMisPedidos() {
+    console.log('========== DEBUG MIS PEDIDOS ==========');
+    console.log('👤 Mi UID:', mensajeroUid);
+    console.log('📊 Total pedidos en memoria:', todosLosPedidos.length);
+    
+    const misPedidos = todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid);
+    console.log('📦 Pedidos con mi UID:', misPedidos.length);
+    if (misPedidos.length > 0) {
+        misPedidos.forEach(p => {
+            console.log('👉', p.id, 'estado:', p.estado, 'numero:', p.numeroPedido);
+        });
+    } else {
+        console.log('⚠️ NO hay pedidos con tu UID en memoria');
+        console.log('💡 Ejecuta: db.collectionGroup("pedidos").where("mensajeroId", "==", mensajeroUid).get()');
+    }
+    
+    const disponibles = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
+    console.log('📦 Pedidos disponibles:', disponibles.length);
+    if (disponibles.length > 0) {
+        disponibles.forEach(p => {
+            console.log('👉', p.id, p.numeroPedido);
+        });
+    }
+    
+    console.log('📌 Listener activo:', listenerActivo);
+    console.log('📌 Conectado:', mensajeroConectado);
+    console.log('=========================================');
+    
+    // Toast con resumen
+    toast(`📊 ${misPedidos.length} pedidos míos, ${disponibles.length} disponibles`, 'info', 5000);
+}
+
+// Exponer al global
+window.debugMisPedidos = debugMisPedidos;
 
 // ============================================================
 // 📊 HISTORIAL DE PEDIDOS DEL MENSAJERO
@@ -1639,7 +1706,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-            // 🔇 DETENER ALARMA SI EXISTE
             if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
                 sonidoDespertador.detenerDespertador(pedidoId);
                 console.log(`🔇 Alarma detenida (pedido ya tomado): ${pedidoId}`);
@@ -1658,7 +1724,6 @@ async function tomarPedido(pedidoId, tiendaId) {
             notificacionEnviada: false
         });
         
-        // 🔇 DETENER ALARMA - PEDIDO TOMADO POR EL MENSAJERO
         if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
             sonidoDespertador.detenerDespertador(pedidoId);
             console.log(`🔇 Alarma DETENIDA (mensajero tomó pedido): ${pedidoId}`);
@@ -1830,6 +1895,7 @@ window.activarNotificacionesPush = activarNotificacionesPush;
 window.probarNotificacion = probarNotificacion;
 window.cargarHistorialPedidos = cargarHistorialPedidos;
 window.filtrarHistorial = filtrarHistorial;
+window.debugMisPedidos = debugMisPedidos;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('🔊 Sonido activado');
@@ -1843,6 +1909,7 @@ console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 console.log('🔇 Alarma se DETIENE cuando el mensajero TOMA el pedido');
 console.log('👀 Pedidos asignados manualmente aparecen en "Mis Pedidos Activos"');
+console.log('🔍 Botón DEBUG agregado - haz clic en "🔍 Debug" para diagnosticar');
 </script>
 </body>
 </html>
