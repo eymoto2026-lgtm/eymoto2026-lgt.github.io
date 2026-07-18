@@ -66,6 +66,7 @@
         .pedido-asignar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--yellow); transition: all 0.3s ease; animation: slideIn 0.3s ease; }
         .pedido-asignar.nuevo { border-left-color: var(--green); animation: pulseNuevo 1.5s ease-in-out 3; }
         .pedido-asignar.alarma-activa { border-left-color: var(--red) !important; animation: alarma-pulse-border 0.8s ease-in-out infinite; }
+        .pedido-asignar.asignado-esperando { border-left-color: var(--blue) !important; }
         @keyframes alarma-pulse-border { 0%, 100% { border-left-color: var(--red); box-shadow: 0 0 15px rgba(255,61,0,0.3); } 50% { border-left-color: var(--yellow); box-shadow: 0 0 35px rgba(255,214,0,0.5); } }
         @keyframes pulseNuevo { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } 50% { border-color: var(--yellow); box-shadow: 0 0 20px 10px rgba(0,200,83,0.2); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(0,200,83,0.4); } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
@@ -73,6 +74,7 @@
         .pedido-asignar .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .pedido-asignar .header .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--blue-bg); color: var(--blue); }
         .pedido-asignar .header .estado-badge.asignado-badge { background: var(--green-bg); color: var(--green); }
+        .pedido-asignar .header .estado-badge.esperando-badge { background: var(--yellow-bg); color: var(--yellow); }
         .pedido-asignar .header .alarma-indicador { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--red); color: #fff; animation: alarma-pulse 0.8s ease-in-out infinite; display: inline-block; }
         @keyframes alarma-pulse { 0%, 100% { background: var(--red); transform: scale(1); } 50% { background: #ff6b6b; transform: scale(1.05); } }
         .pedido-asignar .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 13px; margin-bottom: 8px; }
@@ -166,6 +168,8 @@
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
         .badge-manual { background: var(--blue); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
         .badge-automatico { background: var(--yellow); color: #1a1a2e; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
+        .badge-esperando { background: var(--orange); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; animation: pulseBadge 1s ease-in-out infinite; }
+        @keyframes pulseBadge { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     </style>
 </head>
 <body>
@@ -353,7 +357,7 @@ function iniciarAlarmaPedido(pedidoId) {
     sonidoDespertadorAdmin();
     intervalosAlarma[pedidoId] = setInterval(() => {
         const pedido = todosLosPedidos.find(p => p.id === pedidoId);
-        if (!pedido || pedido.mensajeroId || pedido.estado !== 'Listo para asignar') {
+        if (!pedido || pedido.mensajeroId || pedido.estado !== 'Listo para asignar' || pedido.pendienteConfirmacion === true) {
             detenerAlarmaPedido(pedidoId);
             return;
         }
@@ -532,7 +536,7 @@ async function inicializarPanel() {
         console.log('📋 2 MODOS DE ASIGNACIÓN: Manual y Automático');
         console.log('📱 Manual: WhatsApp SOLO al mensajero elegido');
         console.log('📱 Automático: WhatsApp a TODOS los disponibles');
-        console.log('🔇 Alarma se detiene cuando el pedido es TOMADO');
+        console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -585,24 +589,23 @@ async function cargarPedidosIniciales() {
                 const pedidosSnap = await db.collection('tiendas')
                     .doc(tiendaId)
                     .collection('pedidos')
-                    .where('estado', '==', 'Listo para asignar')
+                    .where('estado', 'in', ['Listo para asignar', 'En camino al restaurante', 'Recogiendo pedido', 'En camino', 'Entregado', 'Cancelado'])
                     .get();
                 pedidosSnap.forEach(doc => {
                     const data = doc.data();
-                    if (!data.mensajeroId) {
-                        todosLosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data, _cargadoInicial: true });
-                    }
+                    todosLosPedidos.push({ id: doc.id, tiendaId: tiendaId, ...data, _cargadoInicial: true });
                 });
             } catch (err) {
                 console.warn(`⚠️ Error cargando pedidos de tienda ${tiendaId}:`, err);
             }
         }
-        console.log(`📦 ${todosLosPedidos.length} pedidos listos para asignar`);
+        console.log(`📦 ${todosLosPedidos.length} pedidos cargados`);
         renderizarPedidosAsignar();
         actualizarEstadisticas();
         actualizarHeaderBadge();
+        
         todosLosPedidos.forEach(p => {
-            if (p.estado === 'Listo para asignar' && !p.mensajeroId) {
+            if (p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion) {
                 iniciarAlarmaPedido(p.id);
             }
         });
@@ -635,9 +638,10 @@ function escucharPedidosEnTiempoReal() {
                             try {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
-                                const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                const estaDisponible = data.estado === 'Listo para asignar' && !data.mensajeroId && !data.pendienteConfirmacion;
                                 const tieneMensajero = !!data.mensajeroId;
                                 const esEntregado = data.estado === 'Entregado' || data.estado === 'Cancelado';
+                                const esperandoConfirmacion = data.estado === 'Listo para asignar' && data.mensajeroId && data.pendienteConfirmacion === true;
                                 
                                 if (change.type === 'added') {
                                     if (estaDisponible) {
@@ -649,19 +653,25 @@ function escucharPedidosEnTiempoReal() {
                                             iniciarAlarmaPedido(pedidoId);
                                             toast(`🔔 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'new', 5000);
                                         }
+                                    } else if (esperandoConfirmacion) {
+                                        const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (!existe) {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data, _nuevo: true });
+                                            const tienda = tiendasCache[tiendaId] || {};
+                                            toast(`⏳ Pedido asignado a ${data.nombreMensajero || 'mensajero'} - Esperando confirmación`, 'info', 4000);
+                                        }
                                     }
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
-                                    // ✅ SI EL PEDIDO YA TIENE MENSAJERO O ESTÁ ENTREGADO/CANCELADO
-                                    if (tieneMensajero || esEntregado) {
+                                    // ✅ SI EL PEDIDO YA NO ESTÁ DISPONIBLE O ESTÁ ENTREGADO/CANCELADO
+                                    if (!estaDisponible || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
-                                        console.log(`🔇 Alarma DETENIDA (pedido tomado por mensajero o finalizado): ${pedidoId}`);
                                     }
                                     
                                     if (index !== -1) {
                                         todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                    } else if (tieneMensajero || estaDisponible) {
+                                    } else if (tieneMensajero || estaDisponible || esperandoConfirmacion) {
                                         todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         if (estaDisponible) {
                                             iniciarAlarmaPedido(pedidoId);
@@ -778,73 +788,114 @@ function renderizarMensajeros() {
 function renderizarPedidosAsignar() {
     const container = document.getElementById('listaPedidosAsignar');
     const badge = document.getElementById('badgePedidos');
-    const pedidosPendientes = todosLosPedidos.filter(p => { return p.estado === 'Listo para asignar' && !p.mensajeroId; });
-    badge.textContent = pedidosPendientes.length;
-    if (pedidosPendientes.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos listos para asignar</div>`;
+    const pedidosPendientes = todosLosPedidos.filter(p => { 
+        return p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion; 
+    });
+    const pedidosEsperando = todosLosPedidos.filter(p => {
+        return p.estado === 'Listo para asignar' && p.mensajeroId && p.pendienteConfirmacion === true;
+    });
+    badge.textContent = pedidosPendientes.length + pedidosEsperando.length;
+    
+    if (pedidosPendientes.length === 0 && pedidosEsperando.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);"><div style="font-size:28px;margin-bottom:8px;">✅</div>No hay pedidos para gestionar</div>`;
         return;
     }
+    
     const mensajerosActivos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
     let html = '';
+    
+    // Pedidos disponibles para asignar
     pedidosPendientes.forEach(p => {
-        const tienda = tiendasCache[p.tiendaId] || {};
-        const nombreTienda = tienda.nombre || 'Tienda';
-        const cliente = p.cliente || {};
-        const total = p.total || 0;
-        const fechaStr = formatearFecha(p.fecha);
-        const esNuevo = p._nuevo === true;
-        const tieneAlarma = intervalosAlarma[p.id] !== undefined;
-        const tipoAsignacion = p.asignacionTipo || 'pendiente';
-        const badgeTipo = tipoAsignacion === 'manual' ? '<span class="badge-manual">👤 Manual</span>' : 
-                         tipoAsignacion === 'automatica' ? '<span class="badge-automatico">📢 Automática</span>' : '';
-        
-        let itemsHtml = '';
-        if (p.items && p.items.length > 0) {
-            p.items.slice(0, 3).forEach(item => {
-                let nombreItem = item.nombre || 'Producto';
-                if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
-                const subtotal = item.total || (item.precio * item.cantidad) || 0;
-                itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
-            });
-            if (p.items.length > 3) {
-                itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
-            }
-        }
+        html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'disponible');
+    });
+    
+    // Pedidos esperando confirmación del mensajero
+    pedidosEsperando.forEach(p => {
+        html += renderizarPedidoCardAdmin(p, mensajerosActivos, 'esperando');
+    });
+    
+    container.innerHTML = html;
+}
+
+function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
+    const tienda = tiendasCache[p.tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    const cliente = p.cliente || {};
+    const total = p.total || 0;
+    const fechaStr = formatearFecha(p.fecha);
+    const esNuevo = p._nuevo === true;
+    const tieneAlarma = intervalosAlarma[p.id] !== undefined;
+    const tipoAsignacion = p.asignacionTipo || 'pendiente';
+    
+    let badgeTipo = '';
+    let badgeEstado = '';
+    let claseBorder = '';
+    let botonesHtml = '';
+    
+    if (tipo === 'disponible') {
+        badgeTipo = '<span class="badge-manual">📋 Disponible</span>';
+        badgeEstado = '<span class="estado-badge">🔔 Listo para asignar</span>';
+        claseBorder = tieneAlarma ? 'alarma-activa' : '';
         const hayMensajeros = mensajerosActivos.length > 0;
-        const claseNuevo = esNuevo ? 'nuevo' : '';
-        const claseAlarma = tieneAlarma ? 'alarma-activa' : '';
-        
-        html += `
-            <div class="pedido-asignar ${claseNuevo} ${claseAlarma}" id="pedido-${p.id}">
-                <div class="header">
-                    <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
-                    <span class="estado-badge">🔔 Listo para asignar</span>
-                    ${tieneAlarma ? '<span class="alarma-indicador">⏰ ALARMA ACTIVA</span>' : ''}
-                    ${badgeTipo}
-                </div>
-                <div class="info-grid">
-                    <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
-                    <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
-                    <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-                    <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
-                    <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
-                    <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
-                </div>
-                ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
-                <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
-                ${hayMensajeros ? 
-                    `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">
-                        👤 Asignar mensajero
-                    </button>` :
-                    `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;">
-                        <span style="font-size:14px;">⚠️</span>
-                        <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
-                    </div>`
-                }
+        botonesHtml = hayMensajeros ? 
+            `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:12px;font-size:14px;">
+                👤 Asignar mensajero
+            </button>` :
+            `<div class="sin-mensajeros" style="padding:10px;background:var(--orange-bg);border-radius:8px;border:1px solid var(--orange);margin-top:8px;">
+                <span style="font-size:14px;">⚠️</span>
+                <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
+            </div>`;
+    } else if (tipo === 'esperando') {
+        badgeTipo = `<span class="badge-esperando">⏳ Esperando confirmación</span>`;
+        badgeEstado = `<span class="estado-badge esperando-badge">⏳ Pendiente</span>`;
+        claseBorder = 'asignado-esperando';
+        const nombreMensajero = p.nombreMensajero || 'Mensajero';
+        botonesHtml = `
+            <div style="margin-top:8px;padding:10px;background:var(--blue-bg);border-radius:8px;border:1px solid var(--blue);text-align:center;">
+                <div style="font-size:13px;color:var(--blue);">🛵 Asignado a: <strong>${nombreMensajero}</strong></div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">⏳ Esperando que el mensajero confirme la orden</div>
             </div>
         `;
-    });
-    container.innerHTML = html;
+    }
+    
+    let itemsHtml = '';
+    if (p.items && p.items.length > 0) {
+        p.items.slice(0, 3).forEach(item => {
+            let nombreItem = item.nombre || 'Producto';
+            if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+            const subtotal = item.total || (item.precio * item.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombreItem} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+        });
+        if (p.items.length > 3) {
+            itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
+        }
+    }
+    
+    const claseNuevo = esNuevo ? 'nuevo' : '';
+    
+    html += `
+        <div class="pedido-asignar ${claseNuevo} ${claseBorder}" id="pedido-${p.id}">
+            <div class="header">
+                <span class="numero">🛵 ${p.numeroPedido || '#' + p.id.slice(-6)}</span>
+                ${badgeEstado}
+                ${tieneAlarma ? '<span class="alarma-indicador">⏰ ALARMA ACTIVA</span>' : ''}
+                ${badgeTipo}
+            </div>
+            <div class="info-grid">
+                <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
+                <div><span class="label">📅 Fecha:</span> <span class="value">${fechaStr}</span></div>
+                <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+                <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
+                <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
+                <div><span class="label">💳 Pago:</span> <span class="value">${p.metodoPago || 'Efectivo'}</span></div>
+            </div>
+            ${itemsHtml ? `<div class="items-list">${itemsHtml}</div>` : ''}
+            <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
+            ${botonesHtml}
+        </div>
+    `;
+    
+    return html;
 }
 
 // ============================================================
@@ -872,7 +923,6 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
-    // ✅ FILTRAR MENSAJEROS DISPONIBLES (activos, conectados, sin pedidos)
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
@@ -908,7 +958,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         <!-- ===== MODO 1: ASIGNACIÓN MANUAL ===== -->
         <div class="opcion-asignacion" style="border-color: var(--blue);">
             <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
-            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido. <strong>SOLO él</strong> recibirá la notificación.</div>
+            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido. <strong>SOLO él</strong> recibirá la notificación y deberá confirmar la orden.</div>
             <div style="margin: 8px 0 4px 0;">
                 <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
                 <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
@@ -921,7 +971,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 ✅ Asignar a este mensajero
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                🔇 La alarma se DETIENE al asignar
+                🔇 La alarma se DETIENE al asignar. El mensajero debe confirmar con "TOMAR PEDIDO"
             </div>
         </div>
         
@@ -934,7 +984,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                ⚡ El mensajero más rápido gana el pedido
+                ⚡ El mensajero más rápido gana el pedido y debe confirmar con "TOMAR PEDIDO"
             </div>
             <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
                     style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
@@ -942,7 +992,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 🔔 Notificar a todos los mensajeros
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                🔔 La alarma SIGUE SONANDO hasta que alguien tome el pedido
+                🔔 La alarma SIGUE SONANDO hasta que alguien confirme con "TOMAR PEDIDO"
             </div>
         </div>
         
@@ -1019,13 +1069,14 @@ async function asignarPedidoManual() {
             telefonoTienda: tienda.whatsapp || ''
         };
         
-        // ✅ 1. ASIGNAR EL PEDIDO AL MENSAJERO ELEGIDO
+        // ✅ 1. ASIGNAR EL PEDIDO AL MENSAJERO ELEGIDO - ESPERANDO CONFIRMACIÓN
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
                 mensajeroId: mensajeroId,
                 nombreMensajero: nombreMensajero,
-                estado: 'En camino al restaurante',
+                estado: 'Listo para asignar',
+                pendienteConfirmacion: true,
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 asignacionTipo: 'manual',
@@ -1043,7 +1094,7 @@ async function asignarPedidoManual() {
             toast(`⚠️ ${nombreMensajero} no tiene teléfono registrado`, 'warn', 3000);
         }
         
-        toast(`✅ Pedido asignado manualmente a ${nombreMensajero}`, 'success', 4000);
+        toast(`✅ Pedido asignado manualmente a ${nombreMensajero} - Esperando confirmación`, 'success', 4000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
@@ -1093,7 +1144,6 @@ async function notificarATodos() {
             telefonoTienda: tienda.whatsapp || ''
         };
         
-        // ✅ FILTRAR MENSAJEROS DISPONIBLES (conectados, activos, sin pedidos)
         const mensajerosDisponibles = todosLosMensajeros.filter(m => 
             m.activo !== false && 
             m.conectado !== false && 
@@ -1133,8 +1183,7 @@ async function notificarATodos() {
             });
         
         // ❌ 3. NO DETENER ALARMA - EL PEDIDO SIGUE DISPONIBLE
-        // La alarma solo se detiene cuando un mensajero TOMA el pedido
-        // (El listener detectará el cambio y detendrá la alarma)
+        // La alarma solo se detiene cuando un mensajero confirma con "TOMAR PEDIDO"
         
         toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
         toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
@@ -1248,7 +1297,7 @@ function actualizarEstadisticas() {
     const activos = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false).length;
     const inactivos = todosLosMensajeros.filter(m => m.activo === false || m.conectado === false).length;
     const ocupados = todosLosMensajeros.filter(m => m.activo !== false && m.ocupado).length;
-    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
+    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion).length;
     const enCamino = todosLosPedidos.filter(p => p.estado === 'En camino' || p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido').length;
     document.getElementById('statActivos').textContent = activos;
     document.getElementById('statInactivos').textContent = inactivos;
@@ -1259,7 +1308,7 @@ function actualizarEstadisticas() {
 }
 
 function actualizarHeaderBadge() {
-    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId).length;
+    const pendientes = todosLosPedidos.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId && !p.pendienteConfirmacion).length;
     const badge = document.getElementById('headerBadge');
     if (pendientes > 0) {
         badge.style.display = 'inline-block';
@@ -1426,7 +1475,7 @@ console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('📋 2 MODOS DE ASIGNACIÓN:');
 console.log('  👤 Manual: WhatsApp SOLO al mensajero elegido');
 console.log('  📢 Automático: WhatsApp a TODOS los disponibles');
-console.log('⏰ Alarma: Se DETIENE cuando el pedido es TOMADO por un mensajero');
+console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 </script>
 </body>
