@@ -165,9 +165,6 @@
             50% { transform: scale(1.1); opacity: 0.7; }
         }
 
-        /* ============================================================ */
-        /* 🔽 HISTORIAL - BOTONES SIN FONDO AMARILLO */
-        /* ============================================================ */
         .filtros-historial {
             display: flex;
             gap: 8px;
@@ -222,6 +219,28 @@
         .resumen-historial .item .num.yellow { color: var(--yellow); }
         .resumen-historial .item .num.green { color: var(--green); }
         .resumen-historial .item .num.orange { color: var(--orange); }
+
+        .pago-confirmado {
+            background: var(--green-bg);
+            color: var(--green);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .pago-pendiente {
+            background: var(--orange-bg);
+            color: var(--orange);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: center;
+        }
 
         @media (max-width: 600px) {
             .pedido-card .info-grid { grid-template-columns: 1fr; }
@@ -304,25 +323,16 @@
     </header>
 
     <div class="wrap">
-        <!-- ============================================================ -->
-        <!-- 📦 PEDIDOS DISPONIBLES -->
-        <!-- ============================================================ -->
         <div class="seccion-pedidos">
             <div class="titulo">📦 Pedidos Disponibles <span class="badge-count" id="contadorDisponibles">0</span></div>
             <div id="listaPedidosDisponibles"><div class="empty-state"><span class="icono">✅</span><p>No hay pedidos disponibles</p><span style="font-size:12px;color:var(--text-muted);">Esperando nuevos pedidos...</span></div></div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- 🛵 MIS PEDIDOS ACTIVOS -->
-        <!-- ============================================================ -->
         <div class="seccion-pedidos">
             <div class="titulo">🛵 Mis Pedidos Activos <span class="badge-count blue" id="contadorMisPedidos" style="background:var(--blue);">0</span></div>
             <div id="listaMisPedidos"><div class="empty-state"><span class="icono">📭</span><p>No tienes pedidos activos</p></div></div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- 📊 MI HISTORIAL DE PEDIDOS -->
-        <!-- ============================================================ -->
         <div class="seccion-pedidos">
             <div class="titulo" style="color: var(--blue);">
                 📊 Mi Historial de Pedidos
@@ -453,7 +463,8 @@ function sonidoRespaldo() {
 }
 
 // ============================================================
-// ⏰ DESPERTADOR// ============================================================
+// ⏰ DESPERTADOR
+// ============================================================
 class SonidoDespertador {
     constructor() {
         this.ctx = null;
@@ -603,17 +614,20 @@ function probarNotificacion() {
     }
 }
 
-// MOSTRAR NOTIFICACIÓN DE PEDIDO (SIN ALERT)
-function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total) {
+// ============================================================
+// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (CON PRODUCTOS Y DOMICILIO)
+// ============================================================
+function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total, costoDomicilio) {
     console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
     
-    // ALERT ELIMINADO - Solo se muestra en consola
+    const domicilio = costoDomicilio || 0;
+    const subtotal = total - domicilio;
     
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             navigator.serviceWorker.ready.then(function(registration) {
                 registration.showNotification('📦 Nuevo pedido disponible', {
-                    body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                    body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
                     icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png',
                     vibrate: [300, 100, 300, 100, 400],
                     requireInteraction: true,
@@ -623,7 +637,7 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
             }).catch(function() {
                 try {
                     const notification = new Notification('📦 Nuevo pedido disponible', {
-                        body: `${tiendaNombre} - ${clienteNombre} - $${total.toLocaleString('es-CO')}`,
+                        body: `📦 Productos: $${subtotal.toLocaleString('es-CO')} | 🚚 Domicilio: $${domicilio.toLocaleString('es-CO')} | 💰 Total: $${total.toLocaleString('es-CO')}`,
                         icon: 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/icono.png'
                     });
                     notification.onclick = function() {
@@ -1001,10 +1015,14 @@ function escucharPedidos() {
     if (!mensajeroUid) { console.warn('⚠️ No hay mensajero UID'); return; }
     listenerActivo = true;
     
+    todosLosPedidos = [];
+    
     db.collection('tiendas').get()
         .then(snap => {
             const tiendas = snap.docs.map(doc => doc.id);
             console.log(`📢 Escuchando ${tiendas.length} tiendas para pedidos`);
+            
+            let listenersActivos = 0;
             
             tiendas.forEach(tiendaId => {
                 const unsubscribe = db.collection('tiendas')
@@ -1015,73 +1033,66 @@ function escucharPedidos() {
                         if (!listenerActivo || !mensajeroConectado) return;
                         
                         snapshot.docChanges().forEach(change => {
-                            const data = change.doc.data();
-                            const pedidoId = change.doc.id;
-                            
-                            const esParaMi = data.mensajeroId === mensajeroUid;
-                            const fueNotificado = data.notificacionEnviada === true;
-                            const esVisibleParaMi = (esParaMi || fueNotificado) && 
-                                                     data.estado !== 'Entregado' && 
-                                                     data.estado !== 'Cancelado';
-                            
-                            if (change.type === 'added') {
-                                if (esVisibleParaMi) {
-                                    const existe = todosLosPedidos.some(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                    if (!existe) {
-                                        todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                        const tienda = tiendasCache[tiendaId] || {};
+                            try {
+                                const data = change.doc.data();
+                                const pedidoId = change.doc.id;
+                                
+                                const esParaMi = data.mensajeroId === mensajeroUid;
+                                const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                                const esActivo = data.estado === 'En camino al restaurante' || 
+                                                data.estado === 'Recogiendo pedido' || 
+                                                data.estado === 'En camino';
+                                const esVisible = (esParaMi || esListo || (esParaMi && esActivo)) && 
+                                                 data.estado !== 'Entregado' && 
+                                                 data.estado !== 'Cancelado';
+                                
+                                if (change.type === 'added' || change.type === 'modified') {
+                                    if (esVisible) {
+                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (index !== -1) {
+                                            todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
+                                        } else {
+                                            todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
+                                        }
                                         
-                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId && data.notificacionEnviada === true) {
+                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
-                                            // ✅ SOLO SONIDO, SIN ALERT
+                                            const tienda = tiendasCache[tiendaId] || {};
                                             sonidoDespertador.iniciarDespertador(pedidoId);
-                                            
-                                            // Notificación del sistema (opcional) - SIN ALERT
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
                                                 data.cliente?.nombre || 'Cliente',
-                                                data.total || 0
+                                                data.total || 0,
+                                                data.costoDomicilio || 0
                                             );
                                         }
+                                    } else {
+                                        const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
+                                        if (index !== -1) {
+                                            if (sonidoDespertador.estaSonando(pedidoId)) {
+                                                sonidoDespertador.detenerDespertador(pedidoId);
+                                            }
+                                            todosLosPedidos.splice(index, 1);
+                                        }
                                     }
-                                }
-                            } else if (change.type === 'modified') {
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (!esVisibleParaMi) {
+                                } else if (change.type === 'removed') {
+                                    const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
                                         if (sonidoDespertador.estaSonando(pedidoId)) {
                                             sonidoDespertador.detenerDespertador(pedidoId);
                                         }
                                         todosLosPedidos.splice(index, 1);
-                                        renderizarPedidos();
-                                    }
-                                    return;
-                                }
-                                if (index !== -1) {
-                                    todosLosPedidos[index] = { id: pedidoId, tiendaId: tiendaId, ...data };
-                                } else if (esVisibleParaMi) {
-                                    todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
-                                }
-                                
-                                if (data.mensajeroId || data.estado === 'Entregado' || data.estado === 'Cancelado') {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.detenerDespertador(pedidoId);
                                     }
                                 }
-                            } else if (change.type === 'removed') {
-                                const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
-                                if (index !== -1) {
-                                    if (sonidoDespertador.estaSonando(pedidoId)) {
-                                        sonidoDespertador.detenerDespertador(pedidoId);
-                                    }
-                                    todosLosPedidos.splice(index, 1);
-                                }
+                            } catch (err) {
+                                console.error('Error procesando cambio de pedido:', err);
                             }
                         });
+                        
                         renderizarPedidos();
                     }, err => {
-                        console.warn(`⚠️ Error en listener:`, err.message);
+                        console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
                         if (listenerActivo) {
                             clearTimeout(timeoutReconexion);
                             timeoutReconexion = setTimeout(() => {
@@ -1093,7 +1104,10 @@ function escucharPedidos() {
                 
                 if (!window._listeners) window._listeners = [];
                 window._listeners.push(unsubscribe);
+                listenersActivos++;
             });
+            
+            console.log(`✅ ${listenersActivos} listeners de tiendas activos`);
             
             pedidosListener = () => {
                 listenerActivo = false;
@@ -1119,7 +1133,6 @@ function escucharPedidos() {
 // ============================================================
 // 📊 HISTORIAL DE PEDIDOS DEL MENSAJERO
 // ============================================================
-
 async function cargarHistorialPedidos() {
     if (!mensajeroUid) {
         console.warn('⚠️ No hay mensajero UID');
@@ -1224,8 +1237,15 @@ function renderizarHistorial(pedidos) {
     let pendientes = 0;
     
     pedidos.forEach(p => {
-        const total = p.total || 0;
-        totalGanado += total;
+        let subtotal = 0;
+        if (p.items && p.items.length > 0) {
+            p.items.forEach(item => {
+                subtotal += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
+        const costoDomicilio = p.costoDomicilio || 0;
+        totalGanado += costoDomicilio;
+        
         if (p.estado === 'Entregado') {
             entregados++;
         } else if (p.estado !== 'Cancelado') {
@@ -1255,7 +1275,16 @@ function renderizarHistorial(pedidos) {
         const tienda = tiendasCache[p.tiendaId] || {};
         const nombreTienda = tienda.nombre || 'Tienda';
         const cliente = p.cliente || {};
-        const total = p.total || 0;
+        
+        let subtotal = 0;
+        if (p.items && p.items.length > 0) {
+            p.items.forEach(item => {
+                subtotal += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
+        const costoDomicilio = p.costoDomicilio || 0;
+        const totalCalculado = subtotal + costoDomicilio;
+        
         const fechaStr = formatearFecha(p.fecha);
         const estado = p.estado || 'Pendiente';
         
@@ -1274,8 +1303,8 @@ function renderizarHistorial(pedidos) {
         if (p.items && p.items.length > 0) {
             p.items.slice(0, 3).forEach(item => {
                 const nombre = item.nombre || 'Producto';
-                const subtotal = item.total || (item.precio * item.cantidad) || 0;
-                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+                const itemTotal = item.total || (item.precio * item.cantidad) || 0;
+                itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
             });
             if (p.items.length > 3) {
                 itemsHtml += `<div class="item" style="color:var(--text-muted);font-style:italic;">+ ${p.items.length - 3} más...</div>`;
@@ -1303,7 +1332,8 @@ function renderizarHistorial(pedidos) {
                     <div><span class="label">👤 Cliente:</span> <span class="value">${cliente.nombre || 'Desconocido'}</span></div>
                     <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                     <div><span class="label">💳 Pago:</span> <span class="value">${pagoLabel}</span></div>
-                    <div><span class="label">💰 Total:</span> <span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+                    <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
+                    <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green);">$${totalCalculado.toLocaleString('es-CO')}</span></div>
                 </div>
                 ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
                 ${pagoHtml}
@@ -1341,9 +1371,16 @@ async function actualizarEstadisticasMensajero() {
             
             pedidosSnap.forEach(doc => {
                 const data = doc.data();
-                const total = data.total || 0;
+                let subtotal = 0;
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
+                        subtotal += item.total || (item.precio * item.cantidad) || 0;
+                    });
+                }
+                const costoDomicilio = data.costoDomicilio || 0;
+                
                 totalPedidos++;
-                totalGanado += total;
+                totalGanado += costoDomicilio;
                 
                 const fechaPedido = data.fecha ? data.fecha.toDate?.() || new Date(data.fecha) : new Date(0);
                 if (data.estado === 'Entregado') {
@@ -1385,8 +1422,10 @@ function simularPedidoPrueba() {
         notificacionEnviada: true,
         numeroPedido: '#TEST',
         cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 15000,
-        items: [{ nombre: 'Producto Test', cantidad: 1, precio: 15000 }]
+        total: 25000,
+        costoDomicilio: 8000,
+        items: [{ nombre: 'Producto Test 1', cantidad: 2, precio: 6000, total: 12000 },
+                { nombre: 'Producto Test 2', cantidad: 1, precio: 5000, total: 5000 }]
     };
     
     todosLosPedidos.push(pedidoFalso);
@@ -1395,7 +1434,7 @@ function simularPedidoPrueba() {
     sonidoDespertador.iniciarDespertador(pedidoFalso.id);
     renderizarPedidos();
     
-    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 15000);
+    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000, 8000);
 }
 
 window.simularPedidoPrueba = simularPedidoPrueba;
@@ -1421,15 +1460,14 @@ function renderizarPedidos() {
     }
     
     const pedidosVisibles = todosLosPedidos.filter(p => 
-        (p.mensajeroId === mensajeroUid || p.notificacionEnviada === true) &&
+        (p.mensajeroId === mensajeroUid || p.estado === 'Listo para asignar' || p.notificacionEnviada === true) &&
         p.estado !== 'Entregado' && 
         p.estado !== 'Cancelado'
     );
     
     const disponibles = pedidosVisibles.filter(p => 
         p.estado === 'Listo para asignar' && 
-        !p.mensajeroId && 
-        p.notificacionEnviada === true
+        !p.mensajeroId
     );
     
     const misPedidosActivos = pedidosVisibles.filter(p => 
@@ -1461,13 +1499,22 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// 🎯 RENDERIZAR CARD DE PEDIDO (CON ANIMACIÓN)
+// 🎯 RENDERIZAR CARD DE PEDIDO
 // ============================================================
 function renderizarPedidoCard(pedido, disponible) {
     const tienda = tiendasCache[pedido.tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
-    const total = pedido.total || 0;
+    
+    let subtotal = 0;
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.forEach(item => {
+            subtotal += item.total || (item.precio * item.cantidad) || 0;
+        });
+    }
+    const costoDomicilio = pedido.costoDomicilio || 0;
+    const totalCalculado = subtotal + costoDomicilio;
+    
     const fechaStr = formatearFecha(pedido.fecha);
     const estado = pedido.estado || 'Pendiente';
     
@@ -1487,14 +1534,14 @@ function renderizarPedidoCard(pedido, disponible) {
     if (pedido.items && pedido.items.length > 0) {
         pedido.items.forEach(item => {
             const nombre = item.nombre || 'Producto';
-            const subtotal = item.total || (item.precio * item.cantidad) || 0;
-            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${subtotal.toLocaleString('es-CO')}</span></div>`;
+            const itemTotal = item.total || (item.precio * item.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombre} x${item.cantidad || 1}</span><span>$${itemTotal.toLocaleString('es-CO')}</span></div>`;
         });
     }
     
     let botonesHtml = '';
     
-    if (estado === 'Listo para asignar' && !pedido.mensajeroId && pedido.notificacionEnviada === true) {
+    if (estado === 'Listo para asignar' && !pedido.mensajeroId) {
         botonesHtml = `
             <div class="estados-acciones">
                 <button class="btn-success" onclick="tomarPedido('${pedido.id}','${pedido.tiendaId}')">✅ TOMAR PEDIDO</button>
@@ -1548,16 +1595,18 @@ function renderizarPedidoCard(pedido, disponible) {
                 <div><span class="label">📍 Dirección:</span> <span class="value">${cliente.direccion || 'N/A'}</span></div>
                 <div><span class="label">📱 Teléfono:</span> <span class="value">${cliente.telefono || 'N/A'}</span></div>
                 <div><span class="label">💳 Pago:</span> <span class="value">${pedido.metodoPago || 'Efectivo'}</span></div>
+                <div><span class="label" style="color:var(--blue);">📦 Productos:</span> <span class="value" style="color:var(--blue);">$${subtotal.toLocaleString('es-CO')}</span></div>
+                <div><span class="label" style="color:var(--orange);">🚚 Domicilio:</span> <span class="value" style="color:var(--orange);">$${costoDomicilio.toLocaleString('es-CO')}</span></div>
+                <div><span class="label" style="color:var(--green);">💰 Total:</span> <span class="value" style="color:var(--green); font-size:15px;">$${totalCalculado.toLocaleString('es-CO')}</span></div>
             </div>
             ${itemsHtml ? `<div class="items">${itemsHtml}</div>` : ''}
-            <div class="total">💰 Total: $${total.toLocaleString('es-CO')}</div>
             ${botonesHtml}
         </div>
     `;
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO
+// ✅ TOMAR PEDIDO (CON DETENCIÓN DE ALARMA)
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1575,6 +1624,11 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
+            // 🔇 DETENER ALARMA SI EXISTE
+            if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
+                sonidoDespertador.detenerDespertador(pedidoId);
+                console.log(`🔇 Alarma detenida (pedido ya tomado): ${pedidoId}`);
+            }
             await cargarPedidosCompletos();
             renderizarPedidos();
             return;
@@ -1589,8 +1643,10 @@ async function tomarPedido(pedidoId, tiendaId) {
             notificacionEnviada: false
         });
         
-        if (sonidoDespertador.estaSonando(pedidoId)) {
+        // 🔇 DETENER ALARMA - PEDIDO TOMADO POR EL MENSAJERO
+        if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
             sonidoDespertador.detenerDespertador(pedidoId);
+            console.log(`🔇 Alarma DETENIDA (mensajero tomó pedido): ${pedidoId}`);
         }
         
         await cargarPedidosCompletos();
@@ -1633,8 +1689,8 @@ async function cargarPedidosCompletos() {
                     const pedidoId = doc.id;
                     
                     const esParaMi = data.mensajeroId === mensajeroUid;
-                    const fueNotificado = data.notificacionEnviada === true;
-                    const esVisible = (esParaMi || fueNotificado) && 
+                    const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
+                    const esVisible = (esParaMi || esListo || data.notificacionEnviada === true) && 
                                      data.estado !== 'Entregado' && 
                                      data.estado !== 'Cancelado';
                     
@@ -1663,8 +1719,7 @@ async function actualizarContadores() {
     try {
         const disponibles = todosLosPedidos.filter(p => 
             p.estado === 'Listo para asignar' && 
-            !p.mensajeroId && 
-            p.notificacionEnviada === true
+            !p.mensajeroId
         );
         const misPedidos = todosLosPedidos.filter(p => 
             p.mensajeroId === mensajeroUid && 
@@ -1768,6 +1823,10 @@ console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
 console.log('🎨 Botones del historial SIN FONDO AMARILLO');
+console.log('💰 Ganancia = SOLO costo del domicilio');
+console.log('📢 Notificación muestra: Productos + Domicilio + Total');
+console.log('📋 Total calculado automáticamente: Productos + Domicilio');
+console.log('🔇 Alarma se DETIENE cuando el mensajero TOMA el pedido');
 </script>
 </body>
 </html>
