@@ -159,6 +159,8 @@
         .btn-whatsapp-envio:hover { background: #1da851; transform: scale(1.02); }
         .btn-whatsapp-envio:active { transform: scale(0.97); }
         .btn-whatsapp-envio:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-test-sound { background: var(--purple); color: #fff; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: auto; font-size: 12px; }
+        .btn-test-sound:hover { background: #7d3c98; }
         @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr 1fr 1fr; } .form-crear .row2 { grid-template-columns: 1fr; } .mensajero-card { flex-direction: column; align-items: stretch; } .pedido-asignar .info-grid { grid-template-columns: 1fr; } .pedido-asignar .asignar-area { flex-direction: column; } }
     </style>
 </head>
@@ -184,6 +186,7 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -362,6 +365,12 @@ function sonidoDespertadorAdmin() {
     }
 }
 
+function probarSonidoAdmin() {
+    console.log('📯 Probando pito de moto ADMIN...');
+    sonidoDespertadorAdmin();
+    toast('📯 ¡Ring ring!', 'info', 2000);
+}
+
 // ============================================================
 // INICIAR ALARMA PERSISTENTE PARA UN PEDIDO
 // ============================================================
@@ -387,7 +396,7 @@ function iniciarAlarmaPedido(pedidoId) {
 }
 
 // ============================================================
-// DETENER ALARMA DE UN PEDIDO
+// DETENER ALARMA DE UN PEDIDO - SE LLAMA AL ASIGNAR
 // ============================================================
 function detenerAlarmaPedido(pedidoId) {
     if (intervalosAlarma[pedidoId]) {
@@ -697,6 +706,7 @@ function escucharPedidosEnTiempoReal() {
                                 } else if (change.type === 'modified') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     
+                                    // ⚠️ SI EL PEDIDO YA TIENE MENSAJERO, DETENER ALARMA
                                     if (tieneMensajero || esEntregado) {
                                         detenerAlarmaPedido(pedidoId);
                                     }
@@ -1435,11 +1445,13 @@ window.copiarEnlace = copiarEnlace;
 window.abrirModalEditarMensajero = abrirModalEditarMensajero;
 window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
+window.probarSonidoAdmin = probarSonidoAdmin;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ ALARMA PERSISTENTE ACTIVADA - Se detiene al asignar el pedido');
+console.log('📯 Sonido: RING RING de despertador');
 </script>
 </body>
 </html>
