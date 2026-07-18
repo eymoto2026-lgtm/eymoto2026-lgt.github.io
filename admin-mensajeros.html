@@ -186,7 +186,7 @@
             Auto-refresh activo
         </span>
         <span class="header-badge" id="headerBadge">⏰🔔 0</span>
-        <button class="btn-test-sound" onclick="probarSonidoAdmin()">📯 Probar Pito</button>
+        <button class="btn-test-sound" onclick="probarSonidoAdmin()">🔔 Probar Campana</button>
         <button class="btn-refrescar" onclick="window.recargarTodo()">🔄 Recargar</button>
         <button class="btn-ghost btn-sm" onclick="window.logout()" style="width:auto;padding:8px 16px;">Salir</button>
     </header>
@@ -291,7 +291,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ============================================================
-// ⏰ SONIDO DE DESPERTADOR (RING RING) CON REPETICIÓN
+// ⏰ SONIDO DE CAMPANA (OPCIÓN 1 - PROFESIONAL)
 // ============================================================
 let audioContextAdmin = null;
 let audioInicializadoAdmin = false;
@@ -310,50 +310,46 @@ function sonidoDespertadorAdmin() {
         const ctx = audioContextAdmin;
         const ahora = ctx.currentTime;
         
-        const frecuencias = [800, 1000, 800, 1000];
-        const duracionNota = 0.15;
-        const pausa = 0.05;
+        // 🔔 CAMPANA: 3 notas en secuencia (profesional y suave)
+        const frecuencias = [1047, 1319, 1568]; // Do6, Mi6, Sol6
+        const duracionNota = 0.25;
+        const pausa = 0.08;
         
         frecuencias.forEach((freq, index) => {
             const inicio = ahora + index * (duracionNota + pausa);
             
             const osc = ctx.createOscillator();
-            osc.type = 'square';
+            osc.type = 'sine'; // Onda sinusoidal (más suave y agradable)
             osc.frequency.setValueAtTime(freq, inicio);
             
             const gain = ctx.createGain();
             gain.gain.setValueAtTime(0.0001, inicio);
-            gain.gain.exponentialRampToValueAtTime(0.25, inicio + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.2, inicio + 0.02);
             gain.gain.exponentialRampToValueAtTime(0.0001, inicio + duracionNota);
             
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 1200;
-            filter.Q.value = 1.0;
-            
-            osc.connect(filter);
-            filter.connect(gain);
+            osc.connect(gain);
             gain.connect(ctx.destination);
             
             osc.start(inicio);
             osc.stop(inicio + duracionNota);
         });
         
-        console.log('⏰ Ring ring despertador ADMIN reproducido');
+        console.log('🔔 Campana ADMIN reproducida');
         
     } catch (e) {
-        console.warn('⚠️ Error en sonido de despertador:', e);
+        console.warn('⚠️ Error en sonido de campana:', e);
+        // Sonido de respaldo simple
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             if (ctx.state === 'suspended') ctx.resume();
-            const frecuencias = [800, 1000, 800, 1000];
-            const duracionNota = 0.15;
-            const pausa = 0.05;
+            const frecuencias = [1047, 1319, 1568];
+            const duracionNota = 0.25;
+            const pausa = 0.08;
             frecuencias.forEach((freq, index) => {
                 const inicio = ctx.currentTime + index * (duracionNota + pausa);
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = 'square';
+                osc.type = 'sine';
                 osc.frequency.value = freq;
                 gain.gain.value = 0.2;
                 osc.connect(gain);
@@ -366,9 +362,9 @@ function sonidoDespertadorAdmin() {
 }
 
 function probarSonidoAdmin() {
-    console.log('📯 Probando pito de moto ADMIN...');
+    console.log('🔔 Probando campana ADMIN...');
     sonidoDespertadorAdmin();
-    toast('📯 ¡Ring ring!', 'info', 2000);
+    toast('🔔 ¡Campana!', 'info', 2000);
 }
 
 // ============================================================
@@ -457,7 +453,7 @@ document.addEventListener('click', function activarAudioAdmin() {
             }
             audioContextAdmin = ctx;
             audioInicializadoAdmin = true;
-            console.log('⏰ Audio ADMIN activado por clic');
+            console.log('🔔 Audio ADMIN activado por clic');
         }
     } catch (e) {}
 }, { once: true });
@@ -604,7 +600,9 @@ async function inicializarPanel() {
         await escucharPedidosEnTiempoReal();
         toast('✅ Panel de administración cargado', 'success', 2000);
         console.log('✅ Panel ADMIN cargado correctamente');
+        console.log('🔔 Alarma con CAMPANA profesional activada');
         console.log('⏰ Alarma persistente activada - Se detiene al asignar manualmente');
+        console.log('🔇 Alarma NO se detiene al NOTIFICAR A TODOS');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -1478,7 +1476,7 @@ console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('⏰ Alarma se DETIENE al ASIGNAR MANUALMENTE');
 console.log('🔔 Alarma NO se detiene al NOTIFICAR A TODOS');
-console.log('📯 Sonido: RING RING de despertador');
+console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 </script>
 </body>
 </html>
