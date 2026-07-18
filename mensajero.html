@@ -78,17 +78,6 @@
             100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,214,0,0); }
         }
 
-        .pedido-card.alerta-persistente {
-            border-left-color: #FF3D00 !important;
-            animation: alertaPersistente 0.8s ease-in-out infinite;
-        }
-        
-        @keyframes alertaPersistente {
-            0% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
-            50% { border-left-color: #FFD600; box-shadow: 0 0 30px rgba(255,214,0,0.5); }
-            100% { border-left-color: #FF3D00; box-shadow: 0 0 10px rgba(255,61,0,0.3); }
-        }
-        
         .pedido-card .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px; }
         .pedido-card .header .numero { font-size: 16px; font-weight: 800; color: var(--yellow); }
         .badge-estado { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
@@ -149,21 +138,6 @@
         @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .toast-fade { animation: toastOut .3s ease forwards; }
         @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
-
-        .badge-persistente {
-            background: #FF3D00;
-            color: #fff;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            animation: pulseBadge 0.8s ease-in-out infinite;
-            display: inline-block;
-        }
-        @keyframes pulseBadge {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-        }
 
         .filtros-historial {
             display: flex;
@@ -410,165 +384,7 @@ detectarPedidoDesdeEnlace();
 const VAPID_PUBLIC_KEY = 'BBEttrPXOd_g48FOmoUSZXhIZSvjQcMtS3v-brxC9EY2RK1x231ta93eFh5l9s3xjXnSwNUawfmyCdWg4haTSUU';
 
 // ============================================================
-// ⏰ SONIDO
-// ============================================================
-function sonidoEyMoto() {
-    try {
-        const audio = new Audio('https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/notificacion-ymoto.mp3');
-        audio.volume = 1.0;
-        audio.preload = "auto";
-        
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('🔊 Sonido MP3 reproducido');
-            }).catch(e => {
-                console.log('⚠️ Error con MP3:', e.message);
-                sonidoRespaldo();
-            });
-        }
-    } catch (e) {
-        sonidoRespaldo();
-    }
-}
-
-function sonidoRespaldo() {
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') ctx.resume();
-        
-        const notas = [
-            {freq: 880, tiempo: 0.00, duracion: 0.10},
-            {freq: 1047, tiempo: 0.16, duracion: 0.10},
-            {freq: 1319, tiempo: 0.34, duracion: 0.28},
-            {freq: 1568, tiempo: 0.60, duracion: 0.45}
-        ];
-
-        notas.forEach(n => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = "triangle";
-            osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.tiempo);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            gain.gain.setValueAtTime(0.0001, ctx.currentTime + n.tiempo);
-            gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + n.tiempo + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n.tiempo + n.duracion);
-            osc.start(ctx.currentTime + n.tiempo);
-            osc.stop(ctx.currentTime + n.tiempo + n.duracion);
-        });
-        console.log('🔊 Sonido de respaldo reproducido');
-    } catch (e) {}
-}
-
-// ============================================================
-// ⏰ DESPERTADOR
-// ============================================================
-class SonidoDespertador {
-    constructor() {
-        this.ctx = null;
-        this.inicializado = false;
-        this.intervalos = {};
-        this.pedidosActivos = {};
-        this.reproduciendo = false;
-        this.pedidosProcesados = new Set();
-        this.audioActivado = false;
-        
-        setTimeout(() => {
-            this.iniciarAudio();
-        }, 500);
-    }
-
-    iniciarAudio() {
-        try {
-            if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-                console.log('🔊 Audio activado');
-            }
-            this.inicializado = true;
-            this.audioActivado = true;
-            return true;
-        } catch (e) { 
-            return false; 
-        }
-    }
-
-    reproducir() {
-        try {
-            if (!this.inicializado || !this.audioActivado) {
-                this.iniciarAudio();
-            }
-            sonidoEyMoto();
-        } catch (e) {
-            console.error('❌ Error en sonido:', e);
-        }
-    }
-
-    secuenciaRingRing() {
-        this.reproducir();
-    }
-
-    iniciarDespertador(pedidoId) {
-        if (this.pedidosActivos[pedidoId]) return;
-        if (this.pedidosProcesados.has(pedidoId)) {
-            console.log(`⏰ Pedido ${pedidoId} ya fue procesado`);
-            return;
-        }
-        console.log(`🔔 DESPERTADOR ACTIVADO - Pedido: ${pedidoId}`);
-        
-        this.iniciarAudio();
-        this.pedidosActivos[pedidoId] = true;
-        this.reproduciendo = true;
-        this.secuenciaRingRing();
-        
-        this.intervalos[pedidoId] = setInterval(() => {
-            if (this.pedidosActivos[pedidoId] && this.reproduciendo) {
-                this.secuenciaRingRing();
-            } else {
-                this.detenerDespertador(pedidoId);
-            }
-        }, 5000);
-    }
-
-    detenerDespertador(pedidoId) {
-        if (!pedidoId) {
-            Object.keys(this.pedidosActivos).forEach(id => {
-                this.detenerDespertador(id);
-            });
-            return;
-        }
-        if (this.pedidosActivos[pedidoId]) {
-            console.log(`🔇 DESPERTADOR APAGADO - Pedido: ${pedidoId}`);
-            delete this.pedidosActivos[pedidoId];
-            this.pedidosProcesados.add(pedidoId);
-            if (this.intervalos[pedidoId]) {
-                clearInterval(this.intervalos[pedidoId]);
-                delete this.intervalos[pedidoId];
-            }
-            const hayActivos = Object.keys(this.pedidosActivos).length > 0;
-            if (!hayActivos) {
-                this.reproduciendo = false;
-            }
-        }
-    }
-
-    estaSonando(pedidoId) {
-        return this.pedidosActivos[pedidoId] === true;
-    }
-
-    limpiarProcesados() {
-        this.pedidosProcesados.clear();
-    }
-}
-
-const sonidoDespertador = new SonidoDespertador();
-
-// ============================================================
-// 📢 NOTIFICACIONES
+// 📢 NOTIFICACIONES (SOLO VISUALES - SIN SONIDO)
 // ============================================================
 
 function urlBase64ToUint8Array(base64String) {
@@ -592,10 +408,10 @@ function arrayBufferToBase64(buffer) {
     return btoa(binary);
 }
 
-// PROBAR NOTIFICACIÓN
+// PROBAR NOTIFICACIÓN (SIN SONIDO)
 function probarNotificacion() {
     try {
-        alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas de nuevos pedidos.');
+        alert('🔔 ¡Notificación de prueba!\n\nEyMoto funcionando correctamente.\nRecibirás alertas visuales de nuevos pedidos.');
         
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
@@ -615,7 +431,7 @@ function probarNotificacion() {
 }
 
 // ============================================================
-// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (CON PRODUCTOS Y DOMICILIO)
+// 📢 MOSTRAR NOTIFICACIÓN DE PEDIDO (SOLO VISUAL - SIN SONIDO)
 // ============================================================
 function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, total, costoDomicilio) {
     console.log(`📢 Nuevo pedido: ${tiendaNombre} - ${clienteNombre}`);
@@ -623,6 +439,7 @@ function mostrarNotificacionSistema(tiendaNombre, pedidoNumero, clienteNombre, t
     const domicilio = costoDomicilio || 0;
     const subtotal = total - domicilio;
     
+    // ✅ SOLO notificación visual, SIN sonido
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             navigator.serviceWorker.ready.then(function(registration) {
@@ -748,14 +565,8 @@ async function inicializarNotificaciones() {
 }
 
 // ============================================================
-// ACTIVAR AUDIO CON UN CLIC
+// ❌ NO HAY SONIDO EN ESTE PANEL - SOLO VISUAL
 // ============================================================
-document.addEventListener('click', function activarAudio() {
-    if (sonidoDespertador) {
-        sonidoDespertador.iniciarAudio();
-        console.log('🔊 Audio activado por clic');
-    }
-}, { once: true });
 
 // ============================================================
 // VARIABLES GLOBALES
@@ -956,7 +767,7 @@ async function inicializarPanel() {
         
         toast('✅ Panel de mensajero cargado correctamente', 'success', 2000);
         console.log('✅ Panel de mensajero cargado correctamente');
-        console.log('🔊 Sonido activado');
+        console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
         
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
@@ -964,9 +775,6 @@ async function inicializarPanel() {
                 const pedido = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
                 if (pedido) {
                     toast(`📱 Pedido encontrado! #${pedido.numeroPedido || pedidoId.slice(-6)}`, 'success', 5000);
-                    if (pedido.estado === 'Listo para asignar' && !pedido.mensajeroId) {
-                        sonidoDespertador.iniciarDespertador(pedidoId);
-                    }
                 } else {
                     toast('⏳ Buscando pedido, espera un momento...', 'info', 3000);
                 }
@@ -1008,7 +816,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS
+// 📢 ESCUCHAR PEDIDOS (SIN SONIDO - SOLO VISUAL)
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -1055,10 +863,12 @@ function escucharPedidos() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         }
                                         
+                                        // ✅ SOLO notificación visual - SIN SONIDO
                                         if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
-                                            console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
+                                            console.log(`📢 Pedido disponible para mensajeros: ${pedidoId}`);
                                             const tienda = tiendasCache[tiendaId] || {};
-                                            sonidoDespertador.iniciarDespertador(pedidoId);
+                                            
+                                            // ✅ SOLO mostrar notificación visual
                                             mostrarNotificacionSistema(
                                                 tienda.nombre || 'Tienda',
                                                 data.numeroPedido || '#' + pedidoId.slice(-6),
@@ -1066,22 +876,19 @@ function escucharPedidos() {
                                                 data.total || 0,
                                                 data.costoDomicilio || 0
                                             );
+                                            
+                                            // ✅ Mostrar toast en la interfaz
+                                            toast(`📦 Nuevo pedido disponible de ${tienda.nombre || 'Tienda'}`, 'info', 4000);
                                         }
                                     } else {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                         if (index !== -1) {
-                                            if (sonidoDespertador.estaSonando(pedidoId)) {
-                                                sonidoDespertador.detenerDespertador(pedidoId);
-                                            }
                                             todosLosPedidos.splice(index, 1);
                                         }
                                     }
                                 } else if (change.type === 'removed') {
                                     const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
                                     if (index !== -1) {
-                                        if (sonidoDespertador.estaSonando(pedidoId)) {
-                                            sonidoDespertador.detenerDespertador(pedidoId);
-                                        }
                                         todosLosPedidos.splice(index, 1);
                                     }
                                 }
@@ -1115,7 +922,6 @@ function escucharPedidos() {
                     window._listeners.forEach(unsub => { try { unsub(); } catch(e) {} });
                     window._listeners = [];
                 }
-                sonidoDespertador.detenerDespertador();
             };
         })
         .catch(err => {
@@ -1409,37 +1215,6 @@ async function actualizarEstadisticasMensajero() {
 }
 
 // ============================================================
-// 🧪 SIMULAR PEDIDO DE PRUEBA
-// ============================================================
-function simularPedidoPrueba() {
-    console.log('🧪 Simulando pedido de prueba...');
-    
-    const pedidoFalso = {
-        id: 'PEDIDO-TEST-' + Date.now(),
-        tiendaId: 'test',
-        estado: 'Listo para asignar',
-        mensajeroId: null,
-        notificacionEnviada: true,
-        numeroPedido: '#TEST',
-        cliente: { nombre: 'Cliente de Prueba', direccion: 'Calle Test 123' },
-        total: 25000,
-        costoDomicilio: 8000,
-        items: [{ nombre: 'Producto Test 1', cantidad: 2, precio: 6000, total: 12000 },
-                { nombre: 'Producto Test 2', cantidad: 1, precio: 5000, total: 5000 }]
-    };
-    
-    todosLosPedidos.push(pedidoFalso);
-    console.log('✅ Pedido de prueba agregado');
-    
-    sonidoDespertador.iniciarDespertador(pedidoFalso.id);
-    renderizarPedidos();
-    
-    mostrarNotificacionSistema('Tienda de Prueba', '#TEST', 'Cliente de Prueba', 25000, 8000);
-}
-
-window.simularPedidoPrueba = simularPedidoPrueba;
-
-// ============================================================
 // RENDERIZAR PEDIDOS
 // ============================================================
 function renderizarPedidos() {
@@ -1573,20 +1348,13 @@ function renderizarPedidoCard(pedido, disponible) {
         botonesHtml = `<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;color:var(--text-muted);font-size:13px;">✅ Pedido ${estado === 'Entregado' ? 'entregado' : 'cancelado'} - Proceso finalizado</div>`;
     }
     
-    const sonidoActivo = sonidoDespertador.estaSonando(pedido.id);
-    const claseDisponible = disponible 
-        ? (sonidoActivo ? 'disponible nuevo-pedido alerta-persistente' : 'disponible') 
-        : '';
-    
-    const badgePersistente = sonidoActivo ? 
-        '<span class="badge-persistente">⏰ ALERTA ACTIVA</span>' : '';
+    const claseDisponible = disponible ? 'disponible' : '';
     
     return `
         <div class="pedido-card ${claseDisponible}" id="pedido-${pedido.id}">
             <div class="header">
                 <span class="numero">🛵 #${pedido.numeroPedido || pedido.id.slice(-6).toUpperCase()}</span>
                 <span class="badge-estado ${estadoColor}">${estadoLabel}</span>
-                ${badgePersistente}
             </div>
             <div class="info-grid">
                 <div><span class="label">🏪 Tienda:</span> <span class="value">${nombreTienda}</span></div>
@@ -1606,7 +1374,7 @@ function renderizarPedidoCard(pedido, disponible) {
 }
 
 // ============================================================
-// ✅ TOMAR PEDIDO (CON DETENCIÓN DE ALARMA)
+// ✅ TOMAR PEDIDO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (!mensajeroUid) { toast('⚠️ No has iniciado sesión', 'error'); return; }
@@ -1624,11 +1392,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
-            // 🔇 DETENER ALARMA SI EXISTE
-            if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
-                sonidoDespertador.detenerDespertador(pedidoId);
-                console.log(`🔇 Alarma detenida (pedido ya tomado): ${pedidoId}`);
-            }
             await cargarPedidosCompletos();
             renderizarPedidos();
             return;
@@ -1642,12 +1405,6 @@ async function tomarPedido(pedidoId, tiendaId) {
             fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
             notificacionEnviada: false
         });
-        
-        // 🔇 DETENER ALARMA - PEDIDO TOMADO POR EL MENSAJERO
-        if (sonidoDespertador && sonidoDespertador.estaSonando(pedidoId)) {
-            sonidoDespertador.detenerDespertador(pedidoId);
-            console.log(`🔇 Alarma DETENIDA (mensajero tomó pedido): ${pedidoId}`);
-        }
         
         await cargarPedidosCompletos();
         await actualizarContadores();
@@ -1750,12 +1507,6 @@ async function cambiarEstado(pedidoId, tiendaId, nuevoEstado) {
             [`estado_${nuevoEstado.toLowerCase().replace(/ /g, '_')}_en`]: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
-            if (sonidoDespertador.estaSonando(pedidoId)) {
-                sonidoDespertador.detenerDespertador(pedidoId);
-            }
-        }
-        
         setTimeout(async () => {
             await cargarPedidosCompletos();
             await actualizarContadores();
@@ -1810,23 +1561,20 @@ window.mostrarMotivacion = mostrarMotivacion;
 window.cerrarMotivacion = cerrarMotivacion;
 window.conectarDesdeMotivacion = conectarDesdeMotivacion;
 window.toast = toast;
-window.simularPedidoPrueba = simularPedidoPrueba;
 window.activarNotificacionesPush = activarNotificacionesPush;
 window.probarNotificacion = probarNotificacion;
 window.cargarHistorialPedidos = cargarHistorialPedidos;
 window.filtrarHistorial = filtrarHistorial;
 
 console.log('✅ Panel de mensajero cargado correctamente');
-console.log('🔊 Sonido activado');
-console.log('📱 Notificaciones PERSISTENTES activadas');
-console.log('🧪 Para probar, escribe: simularPedidoPrueba()');
+console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
+console.log('📱 Notificaciones SOLO visuales activadas');
 console.log('🔑 Clave VAPID configurada correctamente');
 console.log('📱 Modo AppCreator24 detectado automáticamente');
 console.log('🎨 Botones del historial SIN FONDO AMARILLO');
 console.log('💰 Ganancia = SOLO costo del domicilio');
 console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
-console.log('🔇 Alarma se DETIENE cuando el mensajero TOMA el pedido');
 </script>
 </body>
 </html>
