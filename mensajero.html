@@ -1008,7 +1008,7 @@ async function cargarMensajeros() {
 }
 
 // ============================================================
-// 📢 ESCUCHAR PEDIDOS
+// 📢 ESCUCHAR PEDIDOS - VERSIÓN CORREGIDA
 // ============================================================
 function escucharPedidos() {
     if (pedidosListener) { try { pedidosListener(); } catch(e) {} pedidosListener = null; }
@@ -1037,12 +1037,17 @@ function escucharPedidos() {
                                 const data = change.doc.data();
                                 const pedidoId = change.doc.id;
                                 
+                                // ✅ CONDICIÓN CORREGIDA
                                 const esParaMi = data.mensajeroId === mensajeroUid;
                                 const esListo = data.estado === 'Listo para asignar' && !data.mensajeroId;
                                 const esActivo = data.estado === 'En camino al restaurante' || 
                                                 data.estado === 'Recogiendo pedido' || 
                                                 data.estado === 'En camino';
-                                const esVisible = (esParaMi || esListo || (esParaMi && esActivo)) && 
+                                
+                                // ✅ UN MENSAJERO VE:
+                                // 1. Pedidos que son para él (esParaMi) - incluye activos
+                                // 2. Pedidos listos para asignar (esListo)
+                                const esVisible = (esParaMi || esListo) && 
                                                  data.estado !== 'Entregado' && 
                                                  data.estado !== 'Cancelado';
                                 
@@ -1055,7 +1060,8 @@ function escucharPedidos() {
                                             todosLosPedidos.push({ id: pedidoId, tiendaId: tiendaId, ...data });
                                         }
                                         
-                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
+                                        // Sonido solo para pedidos nuevos "Listo para asignar"
+                                        if (data.estado === 'Listo para asignar' && !data.mensajeroId && change.type === 'added') {
                                             console.log(`🔔 NUEVO PEDIDO DISPONIBLE: ${pedidoId}`);
                                             const tienda = tiendasCache[tiendaId] || {};
                                             sonidoDespertador.iniciarDespertador(pedidoId);
@@ -1066,6 +1072,14 @@ function escucharPedidos() {
                                                 data.total || 0,
                                                 data.costoDomicilio || 0
                                             );
+                                        }
+                                        
+                                        // Si el pedido es para mí y está activo, detener alarma
+                                        if (esParaMi && esActivo) {
+                                            if (sonidoDespertador.estaSonando(pedidoId)) {
+                                                sonidoDespertador.detenerDespertador(pedidoId);
+                                                console.log(`🔇 Alarma detenida (pedido asignado a mí): ${pedidoId}`);
+                                            }
                                         }
                                     } else {
                                         const index = todosLosPedidos.findIndex(p => p.id === pedidoId && p.tiendaId === tiendaId);
@@ -1090,6 +1104,7 @@ function escucharPedidos() {
                             }
                         });
                         
+                        console.log(`📊 Pedidos visibles: ${todosLosPedidos.length} (${todosLosPedidos.filter(p => p.mensajeroId === mensajeroUid).length} míos)`);
                         renderizarPedidos();
                     }, err => {
                         console.warn(`⚠️ Error en listener de tienda ${tiendaId}:`, err.message);
@@ -1827,6 +1842,7 @@ console.log('💰 Ganancia = SOLO costo del domicilio');
 console.log('📢 Notificación muestra: Productos + Domicilio + Total');
 console.log('📋 Total calculado automáticamente: Productos + Domicilio');
 console.log('🔇 Alarma se DETIENE cuando el mensajero TOMA el pedido');
+console.log('👀 Pedidos asignados manualmente aparecen en "Mis Pedidos Activos"');
 </script>
 </body>
 </html>
