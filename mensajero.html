@@ -675,6 +675,10 @@ async function inicializarPanel() {
         console.log('✅ Panel de mensajero cargado correctamente');
         console.log('🔇 SIN SONIDO - Los mensajeros solo ven pedidos visualmente');
         console.log('📋 Solo ve pedidos que el ADMIN ha asignado o notificado');
+        console.log('  👤 Manual: Solo ve el pedido si fue asignado a él');
+        console.log('  📢 Automático: Ve el pedido si el admin notificó a todos');
+        console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
+        console.log('📋 Total calculado automáticamente: Productos + Domicilio');
         if (window._pedidoDesdeEnlace) {
             setTimeout(() => {
                 const { pedidoId, tiendaId } = window._pedidoDesdeEnlace;
@@ -1243,7 +1247,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
         const data = doc.data();
         
-        // ✅ VERIFICAR QUE EL PEDIDO ESTÁ ASIGNADO A ESTE MENSAJERO
         if (data.mensajeroId !== mensajeroUid) {
             toast('⚠️ Este pedido no está asignado a ti', 'error');
             await cargarPedidosCompletos();
@@ -1260,7 +1263,6 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         toast('⏳ Confirmando pedido...', 'info');
         
-        // ✅ CONFIRMAR EL PEDIDO - CAMBIAR A "En camino al restaurante"
         await docRef.update({
             estado: 'En camino al restaurante',
             pendienteConfirmacion: false,
@@ -1303,7 +1305,6 @@ async function tomarPedidoDisponible(pedidoId, tiendaId) {
         if (!doc.exists) { toast('⚠️ El pedido ya no existe', 'warn'); return; }
         const data = doc.data();
         
-        // ✅ VERIFICAR SI EL PEDIDO YA FUE TOMADO POR OTRO MENSAJERO
         if (data.mensajeroId) {
             toast('⚠️ Este pedido ya fue tomado por otro mensajero', 'warn');
             await cargarPedidosCompletos();
@@ -1318,7 +1319,6 @@ async function tomarPedidoDisponible(pedidoId, tiendaId) {
         
         toast('⏳ Tomando pedido...', 'info');
         
-        // ✅ ASIGNAR EL PEDIDO A ESTE MENSAJERO
         await docRef.update({
             mensajeroId: mensajeroUid,
             nombreMensajero: mensajeroData?.nombre || 'Mensajero',
