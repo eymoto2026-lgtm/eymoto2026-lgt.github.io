@@ -410,6 +410,7 @@ let todosLosPedidos = [];
 let tiendasCache = {};
 let recargando = false;
 let recargandoMensajeros = false;
+let mensajerosListenersActivos = 0;
 
 // ============================================================
 // 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
@@ -452,7 +453,7 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
                     mensaje: mensajeWhatsApp,
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
-                }).catch(err => console.warn('Error guardando registro:', err));
+                }).catch(err => console.warn('⚠️ Error guardando registro (no crítico):', err));
         }
     } catch (error) {
         console.error('❌ Error enviando WhatsApp:', error);
@@ -490,6 +491,7 @@ function iniciarSesion() {
 
 function logout() {
     if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+    mensajerosListenersActivos = 0;
     if (window._listenersPedidos) {
         window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
         window._listenersPedidos = [];
@@ -510,6 +512,7 @@ auth.onAuthStateChanged(user => {
         document.getElementById('loginBox').classList.remove('hidden');
         document.getElementById('panel').classList.add('hidden');
         if (listenerMensajeros) { try { listenerMensajeros(); } catch(e) {} listenerMensajeros = null; }
+        mensajerosListenersActivos = 0;
         if (window._listenersPedidos) {
             window._listenersPedidos.forEach(unsub => { try { unsub(); } catch(e) {} });
             window._listenersPedidos = [];
@@ -532,41 +535,47 @@ function forzarRecargaMensajeros() {
     console.log('🔄 Forzando recarga de mensajeros...');
     
     if (listenerMensajeros) {
-        try { listenerMensajeros(); } catch(e) {}
+        try { 
+            listenerMensajeros(); 
+            console.log('✅ Listener anterior detenido');
+        } catch(e) {
+            console.warn('⚠️ Error al detener listener:', e);
+        }
         listenerMensajeros = null;
     }
+    
+    mensajerosListenersActivos = 0;
     
     db.collection('usuarios')
         .where('mensajero', '==', true)
         .get()
         .then(snap => {
             console.log('📋 RESULTADO DIRECTO - Mensajeros en Firestore:', snap.size);
-            snap.forEach(doc => {
-                const data = doc.data();
-                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 
-                    '| activo:', data.activo !== false, 
-                    '| conectado:', data.conectado !== false);
-            });
             
             if (snap.size === 0) {
                 toast('⚠️ No hay mensajeros en Firestore', 'warn', 4000);
-            } else {
-                toast(`✅ ${snap.size} mensajeros encontrados en Firestore`, 'success', 4000);
+                document.getElementById('mensajeroCount').textContent = '📋 Mensajeros: 0';
+                recargandoMensajeros = false;
+                return;
             }
             
-            cargarMensajeros();
+            snap.forEach(doc => {
+                const data = doc.data();
+                console.log(`  📱 ${data.telefono || data.whatsapp || 'Sin teléfono'} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
+            });
+            
+            toast(`✅ ${snap.size} mensajeros encontrados en Firestore`, 'success', 4000);
             
             setTimeout(() => {
+                cargarMensajeros();
                 recargandoMensajeros = false;
-                toast(`📋 Total mensajeros cargados: ${todosLosMensajeros.length}`, 'info', 3000);
-                document.getElementById('mensajeroCount').textContent = `📋 Mensajeros: ${todosLosMensajeros.length}`;
-            }, 1500);
+            }, 500);
         })
         .catch(err => {
             console.error('❌ Error al forzar recarga:', err);
             toast('❌ Error al recargar mensajeros: ' + err.message, 'error');
             recargandoMensajeros = false;
-            cargarMensajeros();
+            setTimeout(() => cargarMensajeros(), 2000);
         });
 }
 
@@ -601,56 +610,84 @@ async function cargarTiendas() {
     } catch (e) { console.error('Error cargando tiendas:', e); }
 }
 
+// ============================================================
+// CARGAR MENSAJEROS - VERSIÓN ESTABLE
+// ============================================================
 function cargarMensajeros() {
+    if (mensajerosListenersActivos > 0) {
+        console.log('⚠️ Ya hay un listener de mensajeros activo, ignorando...');
+        return;
+    }
+    
     if (listenerMensajeros) { 
         try { listenerMensajeros(); } catch(e) {} 
         listenerMensajeros = null; 
     }
     
+    mensajerosListenersActivos++;
     console.log('🔄 Iniciando listener de mensajeros...');
     
     listenerMensajeros = db.collection('usuarios')
         .where('mensajero', '==', true)
-        .onSnapshot(snap => {
-            console.log('📋 LISTENER - Mensajeros encontrados en Firestore:', snap.size);
-            todosLosMensajeros = [];
-            
-            if (snap.size === 0) {
-                console.warn('⚠️ No se encontraron mensajeros en Firestore');
-                document.getElementById('mensajeroCount').textContent = '📋 Mensajeros: 0';
+        .onSnapshot(
+            (snap) => {
+                console.log('📋 LISTENER - Mensajeros en Firestore:', snap.size);
+                todosLosMensajeros = [];
+                
+                if (snap.size === 0) {
+                    console.warn('⚠️ No se encontraron mensajeros en Firestore');
+                    document.getElementById('mensajeroCount').textContent = '📋 Mensajeros: 0';
+                    filtrarMensajeros();
+                    actualizarEstadisticas();
+                    mensajerosListenersActivos = 0;
+                    return;
+                }
+                
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const uid = doc.id;
+                    
+                    if (!data.nombre) {
+                        console.warn(`⚠️ Mensajero sin nombre: ${uid}`);
+                    }
+                    
+                    console.log(`  📱 ${data.telefono || data.whatsapp || 'Sin teléfono'} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
+                    
+                    const tienePedidoActivo = todosLosPedidos.some(p => 
+                        p.mensajeroId === uid && 
+                        (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
+                    );
+                    
+                    todosLosMensajeros.push({ 
+                        uid: uid, 
+                        ...data, 
+                        ocupado: tienePedidoActivo 
+                    });
+                });
+                
+                console.log('✅ Total mensajeros cargados:', todosLosMensajeros.length);
+                document.getElementById('mensajeroCount').textContent = `📋 Mensajeros: ${todosLosMensajeros.length}`;
                 filtrarMensajeros();
                 actualizarEstadisticas();
-                return;
-            }
-            
-            snap.forEach(doc => {
-                const data = doc.data();
-                console.log('  -', doc.id, ':', data.nombre || 'Sin nombre', 
-                    '| activo:', data.activo !== false, 
-                    '| conectado:', data.conectado !== false);
                 
-                const tienePedidoActivo = todosLosPedidos.some(p => 
-                    p.mensajeroId === doc.id && 
-                    (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
-                );
-                todosLosMensajeros.push({ uid: doc.id, ...data, ocupado: tienePedidoActivo });
-            });
-            
-            console.log('✅ Total mensajeros cargados:', todosLosMensajeros.length);
-            document.getElementById('mensajeroCount').textContent = `📋 Mensajeros: ${todosLosMensajeros.length}`;
-            filtrarMensajeros();
-            actualizarEstadisticas();
-            
-            const disponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
-            if (disponibles.length > 0) {
+                const disponibles = todosLosMensajeros.filter(m => m.activo !== false && !m.ocupado && m.conectado !== false);
                 console.log(`✅ ${disponibles.length} mensajeros disponibles para asignar`);
+                
+                mensajerosListenersActivos = 0;
+            },
+            (err) => {
+                console.error('❌ Error en listener de mensajeros:', err);
+                mensajerosListenersActivos = 0;
+                
+                if (err.code === 'permission-denied') {
+                    toast('⚠️ Error de permisos en Firestore. Verifica las reglas.', 'error', 5000);
+                    console.error('❌ PERMISSION DENIED: Asegúrate de que las reglas de Firestore permitan lectura/escritura');
+                } else {
+                    toast('⚠️ Error al cargar mensajeros. Reintentando...', 'warn');
+                    setTimeout(() => cargarMensajeros(), 5000);
+                }
             }
-            
-        }, err => { 
-            console.error('❌ Error en listener de mensajeros:', err);
-            toast('⚠️ Error al cargar mensajeros. Recargando...', 'warn');
-            setTimeout(() => cargarMensajeros(), 5000);
-        });
+        );
 }
 
 // ============================================================
