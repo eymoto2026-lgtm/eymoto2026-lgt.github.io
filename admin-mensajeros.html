@@ -179,16 +179,6 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
-        #modalMensajeCadena pre::-webkit-scrollbar {
-            width: 4px;
-        }
-        #modalMensajeCadena pre::-webkit-scrollbar-track {
-            background: #141414;
-        }
-        #modalMensajeCadena pre::-webkit-scrollbar-thumb {
-            background: #FFD600;
-            border-radius: 4px;
-        }
     </style>
 </head>
 <body>
@@ -501,7 +491,7 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS - VERSIÓN MENSAJE EN CADENA
+// 📢 NOTIFICAR A TODOS - ABRE WHATSAPP PARA CADA MENSAJERO
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -516,7 +506,7 @@ async function notificarATodos() {
     }
     
     try {
-        toast('⏳ Generando mensaje en cadena para mensajeros...', 'info');
+        toast('⏳ Enviando notificaciones a mensajeros disponibles...', 'info');
         
         const tienda = tiendasCache[tiendaId] || {};
         const pedidoInfo = {
@@ -591,34 +581,7 @@ async function notificarATodos() {
             return;
         }
         
-        // ✅ CREAR MENSAJE EN CADENA COMPLETO
-        let mensajeCadena = `📢 *NOTIFICACIÓN MASIVA DE PEDIDO - MENSAJE EN CADENA*\n\n`;
-        mensajeCadena += `📦 *Pedido:* ${pedidoInfo.numeroPedido}\n`;
-        mensajeCadena += `🏪 *Tienda:* ${pedidoInfo.nombreTienda}\n`;
-        mensajeCadena += `👤 *Cliente:* ${pedidoInfo.cliente?.nombre || 'Cliente'}\n`;
-        mensajeCadena += `💰 *Total:* $${(pedidoInfo.total || 0).toLocaleString('es-CO')}\n\n`;
-        mensajeCadena += `📋 *MENSAJEROS NOTIFICADOS (${mensajerosConEnlace.length}):*\n\n`;
-        
-        mensajerosConEnlace.forEach((m, index) => {
-            mensajeCadena += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-            mensajeCadena += `${index + 1}. 👤 *${m.nombre}*\n`;
-            mensajeCadena += `📱 Teléfono: ${m.telefono}\n`;
-            mensajeCadena += `🔗 Enlace: ${m.url}\n\n`;
-        });
-        
-        mensajeCadena += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-        mensajeCadena += `📱 *INSTRUCCIONES PARA REENVIAR:*\n`;
-        mensajeCadena += `1. Copia este mensaje completo\n`;
-        mensajeCadena += `2. Abre WhatsApp y pégalo\n`;
-        mensajeCadena += `3. Reenvía a CADA mensajero usando el enlace que corresponde\n`;
-        mensajeCadena += `4. El primero que confirme tomará el pedido\n\n`;
-        mensajeCadena += `⚡ *El pedido seguirá disponible hasta que alguien lo tome.*\n`;
-        mensajeCadena += `📌 *Tiempo límite: 5 minutos para confirmar.*`;
-        
-        // ✅ MOSTRAR MODAL CON EL MENSAJE EN CADENA
-        mostrarModalMensajeCadena(mensajeCadena, mensajerosConEnlace, tiendaId, pedidoId);
-        
-        // ✅ GUARDAR EN FIRESTORE
+        // ✅ GUARDAR EN FIRESTORE (ANTES DE ABRIR)
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -650,8 +613,42 @@ async function notificarATodos() {
                 }).catch(err => console.warn('⚠️ Error guardando registro:', err));
         });
         
-        toast(`🔔 Mensaje en cadena generado para ${mensajerosConEnlace.length} mensajeros`, 'success', 4000);
-        toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
+        // ✅ ABRIR WHATSAPP PARA CADA MENSAJERO (CON RETRASO)
+        let abiertos = 0;
+        let errores = 0;
+        
+        mensajerosConEnlace.forEach((m, index) => {
+            setTimeout(() => {
+                try {
+                    const ventana = window.open(m.url, '_blank');
+                    if (ventana) {
+                        abiertos++;
+                        console.log(`📱 WhatsApp abierto para ${m.nombre} (${index + 1}/${mensajerosConEnlace.length})`);
+                        toast(`📱 WhatsApp para ${m.nombre} (${index + 1}/${mensajerosConEnlace.length})`, 'success', 2500);
+                    } else {
+                        errores++;
+                        console.warn(`⚠️ No se pudo abrir para ${m.nombre}`);
+                        setTimeout(() => {
+                            toast(`⚠️ Copia este enlace para ${m.nombre}: ${m.url}`, 'info', 8000);
+                        }, 500);
+                    }
+                } catch (err) {
+                    errores++;
+                    console.warn(`⚠️ Error abriendo para ${m.nombre}:`, err);
+                }
+            }, 1500 + (index * 2000)); // 1.5s + 2s entre cada apertura
+        });
+        
+        // ✅ MOSTRAR RESUMEN
+        setTimeout(() => {
+            const total = mensajerosConEnlace.length;
+            toast(`🔔 Notificaciones enviadas: ${abiertos}/${total} mensajeros`, 'success', 5000);
+            if (errores > 0) {
+                toast(`⚠️ ${errores} mensajeros no pudieron ser notificados automáticamente. Revisa los enlaces.`, 'warn', 6000);
+            }
+            toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
+        }, mensajerosConEnlace.length * 2000 + 2000);
+        
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
@@ -664,214 +661,6 @@ async function notificarATodos() {
         toast('❌ Error: ' + e.message, 'error');
         console.error('Error en notificarATodos:', e);
     }
-}
-
-// ============================================================
-// 📱 MOSTRAR MODAL CON MENSAJE EN CADENA
-// ============================================================
-function mostrarModalMensajeCadena(mensajeCadena, mensajerosConEnlace, tiendaId, pedidoId) {
-    const modal = document.createElement('div');
-    modal.id = 'modalMensajeCadena';
-    modal.style.cssText = `
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.92);
-        z-index: 999999;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-        animation: fadeInModal 0.3s ease;
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: #1e1e1e;
-            border-radius: 20px;
-            max-width: 700px;
-            width: 100%;
-            padding: 24px;
-            border: 2px solid #FFD600;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-        ">
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 12px;
-                padding-bottom: 12px;
-                border-bottom: 1px solid #2e2e2e;
-            ">
-                <h3 style="color: #FFD600; font-size: 18px; font-weight: 700;">
-                    📢 Mensaje en Cadena (${mensajerosConEnlace.length} mensajeros)
-                </h3>
-                <button onclick="window.cerrarModalMensajeCadena()" style="
-                    background: none;
-                    border: none;
-                    color: #888;
-                    font-size: 24px;
-                    cursor: pointer;
-                    width: auto;
-                    padding: 0 8px;
-                ">✕</button>
-            </div>
-            
-            <div style="
-                background: #141414;
-                border-radius: 10px;
-                padding: 14px;
-                margin-bottom: 12px;
-                border: 1px solid #2e2e2e;
-                flex: 1;
-                overflow-y: auto;
-                max-height: 450px;
-            ">
-                <div style="
-                    font-size: 11px; 
-                    color: #666; 
-                    margin-bottom: 8px; 
-                    display: flex; 
-                    justify-content: space-between;
-                    background: #1e1e1e;
-                    padding: 6px 10px;
-                    border-radius: 6px;
-                ">
-                    <span>📋 ${mensajerosConEnlace.length} mensajeros disponibles</span>
-                    <span style="color: #FFD600;">✅ Todos cumplen criterios</span>
-                </div>
-                <pre style="
-                    color: #ccc;
-                    font-size: 12px;
-                    white-space: pre-wrap;
-                    word-wrap: break-word;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    margin: 0;
-                    line-height: 1.8;
-                ">${mensajeCadena}</pre>
-            </div>
-            
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="window.copiarMensajeCadena()" style="
-                    flex: 2;
-                    padding: 12px;
-                    border: none;
-                    border-radius: 10px;
-                    background: #FFD600;
-                    color: #1a1a2e;
-                    font-weight: 700;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                ">📋 Copiar Mensaje en Cadena</button>
-                
-                <button onclick="window.abrirWhatsAppAdmin()" style="
-                    flex: 1;
-                    padding: 12px;
-                    border: none;
-                    border-radius: 10px;
-                    background: #25D366;
-                    color: #fff;
-                    font-weight: 700;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                ">📱 Abrir WhatsApp</button>
-                
-                <button onclick="window.cerrarModalMensajeCadena()" style="
-                    flex: 1;
-                    padding: 12px;
-                    border: 1px solid #2e2e2e;
-                    border-radius: 10px;
-                    background: transparent;
-                    color: #888;
-                    font-weight: 700;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                ">Cerrar</button>
-            </div>
-            
-            <div style="
-                margin-top: 8px;
-                padding: 8px 12px;
-                background: #252525;
-                border-radius: 8px;
-                font-size: 11px;
-                color: #666;
-                text-align: center;
-                border: 1px solid #2e2e2e;
-            ">
-                💡 El mensaje contiene enlaces individuales para cada mensajero. 
-                Copia y pega en WhatsApp, luego reenvía a cada mensajero.
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden';
-    
-    window._mensajeCadena = {
-        texto: mensajeCadena,
-        enlaces: mensajerosConEnlace,
-        tiendaId: tiendaId,
-        pedidoId: pedidoId
-    };
-}
-
-// ============================================================
-// 📋 COPIAR MENSAJE EN CADENA
-// ============================================================
-function copiarMensajeCadena() {
-    if (!window._mensajeCadena) return;
-    
-    navigator.clipboard.writeText(window._mensajeCadena.texto).then(() => {
-        toast('✅ Mensaje en cadena copiado al portapapeles', 'success', 3000);
-        toast(`📱 Ahora pégalo en WhatsApp y reenvía a cada mensajero (${window._mensajeCadena.enlaces.length} enlaces)`, 'info', 4000);
-    }).catch(() => {
-        const pre = document.querySelector('#modalMensajeCadena pre');
-        if (pre) {
-            const range = document.createRange();
-            range.selectNode(pre);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            document.execCommand('copy');
-            toast('✅ Mensaje copiado al portapapeles', 'success', 3000);
-        }
-    });
-}
-
-// ============================================================
-// 📱 ABRIR WHATSAPP DEL ADMINISTRADOR
-// ============================================================
-function abrirWhatsAppAdmin() {
-    if (!window._mensajeCadena) return;
-    
-    const mensaje = window._mensajeCadena.texto;
-    // Usar el teléfono del admin autenticado o un número por defecto
-    const telefonoAdmin = auth.currentUser?.phoneNumber || '573002937289';
-    
-    const url = `https://wa.me/${telefonoAdmin}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
-    
-    toast('📱 Abriendo WhatsApp para pegar el mensaje', 'info', 3000);
-    toast('💡 Pega el mensaje y reenvía a cada mensajero', 'info', 4000);
-}
-
-// ============================================================
-// ❌ CERRAR MODAL DE MENSAJE EN CADENA
-// ============================================================
-function cerrarModalMensajeCadena() {
-    const modal = document.getElementById('modalMensajeCadena');
-    if (modal) {
-        modal.remove();
-    }
-    document.body.style.overflow = '';
-    window._mensajeCadena = null;
 }
 
 // ============================================================
@@ -1007,7 +796,7 @@ async function inicializarPanel() {
         console.log('🔔 Alarma con CAMPANA PROFESIONAL activada');
         console.log('📋 2 MODOS DE ASIGNACIÓN: Manual y Automático');
         console.log('📱 Manual: WhatsApp SOLO al mensajero elegido');
-        console.log('📢 Automático: Mensaje en cadena para TODOS los disponibles');
+        console.log('📢 Automático: WhatsApp a TODOS los disponibles (con retraso)');
         console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
         console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
     } catch (error) {
@@ -1548,7 +1337,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         <!-- ===== MODO 2: ASIGNACIÓN AUTOMÁTICA (BROADCAST) ===== -->
         <div class="opcion-asignacion" style="border-color: var(--yellow);">
             <div class="titulo" style="color: var(--yellow);">📢 Asignación Automática</div>
-            <div class="descripcion"><strong>TODOS los mensajeros disponibles</strong> recibirán la notificación. El <strong>primero que tome</strong> el pedido se lo queda.</div>
+            <div class="descripcion"><strong>TODOS los mensajeros disponibles</strong> recibirán la notificación por WhatsApp. El <strong>primero que tome</strong> el pedido se lo queda.</div>
             <div class="mensajeros-disponibles">
                 📨 Mensajeros que recibirán la notificación: 
                 <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
@@ -1562,7 +1351,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 🔔 Notificar a todos los mensajeros
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                📋 Se generará un mensaje en cadena con todos los enlaces
+                📱 Se abrirá WhatsApp para cada mensajero (con retraso de 2 segundos)
             </div>
         </div>
         
@@ -2067,17 +1856,13 @@ window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
 window.simularPedidoAdmin = simularPedidoAdmin;
-window.mostrarModalMensajeCadena = mostrarModalMensajeCadena;
-window.copiarMensajeCadena = copiarMensajeCadena;
-window.abrirWhatsAppAdmin = abrirWhatsAppAdmin;
-window.cerrarModalMensajeCadena = cerrarModalMensajeCadena;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('📋 2 MODOS DE ASIGNACIÓN:');
 console.log('  👤 Manual: WhatsApp SOLO al mensajero elegido');
-console.log('  📢 Automático: Mensaje en cadena para TODOS los disponibles');
+console.log('  📢 Automático: WhatsApp a TODOS los disponibles (con retraso)');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
