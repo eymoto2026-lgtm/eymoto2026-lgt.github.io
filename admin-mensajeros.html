@@ -175,9 +175,20 @@
         .badge-sin-notificar { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
         .mensajero-count { font-size: 12px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
         .badge-telefono-invalido { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; animation: pulseBadge 1s ease-in-out infinite; }
+        .badge-grupo { background: #25D366; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
         @keyframes fadeInModal {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
+        }
+        #modalMensajeGrupo pre::-webkit-scrollbar {
+            width: 4px;
+        }
+        #modalMensajeGrupo pre::-webkit-scrollbar-track {
+            background: #141414;
+        }
+        #modalMensajeGrupo pre::-webkit-scrollbar-thumb {
+            background: #25D366;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -491,7 +502,7 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
 }
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS - ABRE WHATSAPP PARA CADA MENSAJERO
+// 📢 NOTIFICAR A TODOS - ENVÍA AL GRUPO DE WHATSAPP
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -506,7 +517,7 @@ async function notificarATodos() {
     }
     
     try {
-        toast('⏳ Enviando notificaciones a mensajeros disponibles...', 'info');
+        toast('⏳ Enviando pedido al grupo de WhatsApp...', 'info');
         
         const tienda = tiendasCache[tiendaId] || {};
         const pedidoInfo = {
@@ -517,138 +528,99 @@ async function notificarATodos() {
             telefonoTienda: tienda.whatsapp || ''
         };
         
-        // ✅ FILTRAR MENSAJEROS DISPONIBLES
+        // ✅ OBTENER EL ENLACE DEL GRUPO DE WHATSAPP
+        const grupoWhatsApp = tienda.grupoWhatsApp || '';
+        
+        if (!grupoWhatsApp) {
+            toast('⚠️ La tienda no tiene configurado un grupo de WhatsApp', 'error', 5000);
+            toast('💡 Agrega el campo "grupoWhatsApp" en Firestore', 'info', 5000);
+            cerrarModalAsignacion();
+            return;
+        }
+        
+        // ✅ GENERAR ENLACE DEL PEDIDO
+        const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
+        const urlPedido = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+        
+        // ✅ CONTAR MENSAJEROS DISPONIBLES
         const mensajerosDisponibles = todosLosMensajeros.filter(m => 
             m.activo !== false && 
             m.conectado !== false && 
             !m.ocupado
         );
         
-        if (mensajerosDisponibles.length === 0) {
-            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
-            cerrarModalAsignacion();
-            return;
-        }
+        // ✅ CREAR MENSAJE PARA EL GRUPO
+        let mensajeGrupo = `🛵 *¡Nuevo pedido disponible!*\n\n`;
+        mensajeGrupo += `📦 *Pedido:* ${pedidoInfo.numeroPedido}\n`;
+        mensajeGrupo += `🏪 *Tienda:* ${pedidoInfo.nombreTienda}\n`;
+        mensajeGrupo += `👤 *Cliente:* ${pedidoInfo.cliente?.nombre || 'Cliente'}\n`;
+        mensajeGrupo += `💰 *Total:* $${(pedidoInfo.total || 0).toLocaleString('es-CO')}\n\n`;
+        mensajeGrupo += `📍 *Dirección:* ${pedidoInfo.cliente?.direccion || 'N/A'}\n`;
+        mensajeGrupo += `📱 *Teléfono cliente:* ${pedidoInfo.cliente?.telefono || 'N/A'}\n\n`;
+        mensajeGrupo += `📱 *Haz clic aquí para ver el pedido:*\n`;
+        mensajeGrupo += `${urlPedido}\n\n`;
+        mensajeGrupo += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        mensajeGrupo += `📊 *Mensajeros disponibles:* ${mensajerosDisponibles.length}\n`;
+        mensajeGrupo += `⚡ *SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido.*\n`;
+        mensajeGrupo += `⚠️ *Si tienes un pedido en curso o estás desconectado, NO podrás acceder.*\n\n`;
+        mensajeGrupo += `🏆 *El primero en confirmar se lo queda.*\n`;
+        mensajeGrupo += `⏳ *Tienes 5 minutos para confirmar.*`;
         
-        // ✅ GENERAR ENLACE PARA CADA MENSAJERO
-        let mensajerosConEnlace = [];
-        const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
-        const urlPedido = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+        // ✅ ABRIR WHATSAPP CON EL MENSAJE
+        let urlWhatsApp = '';
         
-        mensajerosDisponibles.forEach(mensajero => {
-            let telefono = mensajero.telefono || mensajero.whatsapp || '';
-            telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        // Si es enlace de grupo (chat.whatsapp.com)
+        if (grupoWhatsApp.includes('chat.whatsapp.com')) {
+            // WhatsApp no permite enviar mensajes con texto a grupos directamente por URL
+            // Se abre el grupo y se copia el mensaje
+            urlWhatsApp = grupoWhatsApp;
+            window.open(urlWhatsApp, '_blank');
+            toast('📱 Abriendo el grupo de WhatsApp', 'info', 3000);
             
-            if (!telefono) {
-                console.warn(`⚠️ ${mensajero.nombre} sin teléfono`);
-                return;
-            }
+            // ✅ COPIAR EL MENSAJE AL PORTAPAPELES
+            navigator.clipboard.writeText(mensajeGrupo).then(() => {
+                toast('✅ Mensaje copiado al portapapeles. Pégalo en el grupo.', 'success', 5000);
+            }).catch(() => {
+                // Si no se puede copiar, mostrar el mensaje en un modal
+                mostrarModalMensajeGrupo(mensajeGrupo, tiendaId, pedidoId);
+            });
             
+        } else {
+            // Si es un número de teléfono normal (para compatibilidad)
+            let telefono = grupoWhatsApp.replace(/[\s\-\(\)\+\.]/g, '');
             if (telefono.length === 10) {
                 telefono = '57' + telefono;
             }
-            
-            if (telefono.length !== 12 || !telefono.startsWith('57')) {
-                console.warn(`⚠️ Teléfono inválido para ${mensajero.nombre}: ${telefono}`);
-                return;
-            }
-            
-            let mensaje = `🛵 *¡Nuevo pedido disponible!*\n\n`;
-            mensaje += `📦 *Pedido:* ${pedidoInfo.numeroPedido}\n`;
-            mensaje += `🏪 *Tienda:* ${pedidoInfo.nombreTienda}\n`;
-            mensaje += `👤 *Cliente:* ${pedidoInfo.cliente?.nombre || 'Cliente'}\n`;
-            mensaje += `💰 *Total:* $${(pedidoInfo.total || 0).toLocaleString('es-CO')}\n\n`;
-            mensaje += `📍 *Dirección:* ${pedidoInfo.cliente?.direccion || 'N/A'}\n`;
-            mensaje += `📱 *Teléfono cliente:* ${pedidoInfo.cliente?.telefono || 'N/A'}\n\n`;
-            mensaje += `📱 *Haz clic en el enlace para ver el pedido:*\n`;
-            mensaje += `${urlPedido}\n\n`;
-            mensaje += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
-            
-            const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-            
-            mensajerosConEnlace.push({
-                uid: mensajero.uid,
-                nombre: mensajero.nombre || 'Mensajero',
-                telefono: telefono,
-                url: urlWhatsApp,
-                mensaje: mensaje
-            });
-        });
-        
-        if (mensajerosConEnlace.length === 0) {
-            toast('⚠️ Ningún mensajero tiene teléfono válido', 'warn');
-            cerrarModalAsignacion();
-            return;
+            urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeGrupo)}`;
+            window.open(urlWhatsApp, '_blank');
+            toast('📱 WhatsApp abierto para enviar al grupo', 'success', 4000);
         }
         
-        // ✅ GUARDAR EN FIRESTORE (ANTES DE ABRIR)
+        // ✅ GUARDAR EN FIRESTORE
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
                 notificacionEnviada: true,
                 notificacionMasiva: true,
+                notificacionGrupo: true,
                 fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
                 notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 asignacionTipo: 'automatica',
-                mensajerosNotificados: mensajerosConEnlace.map(m => ({
-                    uid: m.uid,
-                    nombre: m.nombre,
-                    telefono: m.telefono
-                }))
+                grupoNotificado: grupoWhatsApp
             });
         
-        // ✅ GUARDAR REGISTRO INDIVIDUAL
-        mensajerosConEnlace.forEach(m => {
-            db.collection('tiendas').doc(tiendaId)
-                .collection('pedidos').doc(pedidoId)
-                .collection('notificacionesWhatsApp').add({
-                    mensajeroId: m.uid || 'unknown',
-                    mensajeroNombre: m.nombre,
-                    telefono: m.telefono,
-                    mensaje: m.mensaje,
-                    url: m.url,
-                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
-                    enviadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                    tipo: 'masivo'
-                }).catch(err => console.warn('⚠️ Error guardando registro:', err));
-        });
+        // ✅ GUARDAR REGISTRO DE NOTIFICACIÓN AL GRUPO
+        db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .collection('notificacionesGrupo').add({
+                mensaje: mensajeGrupo,
+                grupo: grupoWhatsApp,
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
+            }).catch(err => console.warn('⚠️ Error guardando registro:', err));
         
-        // ✅ ABRIR WHATSAPP PARA CADA MENSAJERO (CON RETRASO)
-        let abiertos = 0;
-        let errores = 0;
-        
-        mensajerosConEnlace.forEach((m, index) => {
-            setTimeout(() => {
-                try {
-                    const ventana = window.open(m.url, '_blank');
-                    if (ventana) {
-                        abiertos++;
-                        console.log(`📱 WhatsApp abierto para ${m.nombre} (${index + 1}/${mensajerosConEnlace.length})`);
-                        toast(`📱 WhatsApp para ${m.nombre} (${index + 1}/${mensajerosConEnlace.length})`, 'success', 2500);
-                    } else {
-                        errores++;
-                        console.warn(`⚠️ No se pudo abrir para ${m.nombre}`);
-                        setTimeout(() => {
-                            toast(`⚠️ Copia este enlace para ${m.nombre}: ${m.url}`, 'info', 8000);
-                        }, 500);
-                    }
-                } catch (err) {
-                    errores++;
-                    console.warn(`⚠️ Error abriendo para ${m.nombre}:`, err);
-                }
-            }, 1500 + (index * 2000)); // 1.5s + 2s entre cada apertura
-        });
-        
-        // ✅ MOSTRAR RESUMEN
-        setTimeout(() => {
-            const total = mensajerosConEnlace.length;
-            toast(`🔔 Notificaciones enviadas: ${abiertos}/${total} mensajeros`, 'success', 5000);
-            if (errores > 0) {
-                toast(`⚠️ ${errores} mensajeros no pudieron ser notificados automáticamente. Revisa los enlaces.`, 'warn', 6000);
-            }
-            toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
-        }, mensajerosConEnlace.length * 2000 + 2000);
-        
+        toast(`🔔 Notificación enviada al grupo de WhatsApp`, 'success', 4000);
+        toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible en el grupo`, 'info', 3000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
@@ -661,6 +633,163 @@ async function notificarATodos() {
         toast('❌ Error: ' + e.message, 'error');
         console.error('Error en notificarATodos:', e);
     }
+}
+
+// ============================================================
+// 📱 MOSTRAR MODAL CON MENSAJE PARA EL GRUPO
+// ============================================================
+function mostrarModalMensajeGrupo(mensajeGrupo, tiendaId, pedidoId) {
+    const modal = document.createElement('div');
+    modal.id = 'modalMensajeGrupo';
+    modal.style.cssText = `
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 999999;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        animation: fadeInModal 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #1e1e1e;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            padding: 24px;
+            border: 2px solid #25D366;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #2e2e2e;
+            ">
+                <h3 style="color: #25D366; font-size: 18px; font-weight: 700;">📱 Mensaje para el Grupo</h3>
+                <button onclick="window.cerrarModalMensajeGrupo()" style="
+                    background: none;
+                    border: none;
+                    color: #888;
+                    font-size: 24px;
+                    cursor: pointer;
+                    width: auto;
+                    padding: 0 8px;
+                ">✕</button>
+            </div>
+            
+            <div style="
+                background: #141414;
+                border-radius: 10px;
+                padding: 14px;
+                margin-bottom: 12px;
+                border: 1px solid #2e2e2e;
+                flex: 1;
+                overflow-y: auto;
+                max-height: 400px;
+            ">
+                <pre style="
+                    color: #ccc;
+                    font-size: 13px;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    margin: 0;
+                    line-height: 1.8;
+                ">${mensajeGrupo}</pre>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="window.copiarMensajeGrupo()" style="
+                    flex: 2;
+                    padding: 12px;
+                    border: none;
+                    border-radius: 10px;
+                    background: #25D366;
+                    color: #fff;
+                    font-weight: 700;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">📋 Copiar Mensaje</button>
+                
+                <button onclick="window.cerrarModalMensajeGrupo()" style="
+                    flex: 1;
+                    padding: 12px;
+                    border: 1px solid #2e2e2e;
+                    border-radius: 10px;
+                    background: transparent;
+                    color: #888;
+                    font-weight: 700;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">Cerrar</button>
+            </div>
+            
+            <div style="
+                margin-top: 8px;
+                padding: 8px 12px;
+                background: #252525;
+                border-radius: 8px;
+                font-size: 11px;
+                color: #666;
+                text-align: center;
+                border: 1px solid #2e2e2e;
+            ">
+                💡 Copia el mensaje y pégalo en el grupo de WhatsApp.
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    window._mensajeGrupo = mensajeGrupo;
+}
+
+// ============================================================
+// 📋 COPIAR MENSAJE DEL GRUPO
+// ============================================================
+function copiarMensajeGrupo() {
+    if (!window._mensajeGrupo) return;
+    
+    navigator.clipboard.writeText(window._mensajeGrupo).then(() => {
+        toast('✅ Mensaje copiado al portapapeles', 'success', 3000);
+        toast('📱 Pégalo en el grupo de WhatsApp', 'info', 4000);
+    }).catch(() => {
+        const pre = document.querySelector('#modalMensajeGrupo pre');
+        if (pre) {
+            const range = document.createRange();
+            range.selectNode(pre);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            toast('✅ Mensaje copiado al portapapeles', 'success', 3000);
+        }
+    });
+}
+
+// ============================================================
+// ❌ CERRAR MODAL DE MENSAJE DEL GRUPO
+// ============================================================
+function cerrarModalMensajeGrupo() {
+    const modal = document.getElementById('modalMensajeGrupo');
+    if (modal) {
+        modal.remove();
+    }
+    document.body.style.overflow = '';
+    window._mensajeGrupo = null;
 }
 
 // ============================================================
@@ -795,10 +924,11 @@ async function inicializarPanel() {
         console.log('✅ Panel ADMIN cargado correctamente');
         console.log('🔔 Alarma con CAMPANA PROFESIONAL activada');
         console.log('📋 2 MODOS DE ASIGNACIÓN: Manual y Automático');
-        console.log('📱 Manual: WhatsApp SOLO al mensajero elegido');
-        console.log('📢 Automático: WhatsApp a TODOS los disponibles (con retraso)');
+        console.log('👤 Manual: WhatsApp SOLO al mensajero elegido');
+        console.log('👥 Automático: Notifica al GRUPO de WhatsApp');
         console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
         console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
+        console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -1180,13 +1310,14 @@ function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
                 <span style="font-size:12px;color:var(--orange);">No hay mensajeros disponibles para asignar</span>
             </div>`;
     } else if (tipo === 'notificado') {
-        badgeTipo = '<span class="badge-automatico">📢 Notificado a todos</span>';
-        badgeEstado = '<span class="estado-badge">📢 Disponible</span>';
+        badgeTipo = '<span class="badge-automatico">📢 Notificado al grupo</span>';
+        badgeEstado = '<span class="estado-badge">📢 Disponible en grupo</span>';
         claseBorder = '';
         botonesHtml = `
-            <div style="margin-top:8px;padding:10px;background:var(--yellow-bg);border-radius:8px;border:1px solid var(--yellow);text-align:center;">
-                <div style="font-size:13px;color:var(--yellow);">📢 Notificado a todos los mensajeros disponibles</div>
+            <div style="margin-top:8px;padding:10px;background:var(--green-bg);border-radius:8px;border:1px solid var(--green);text-align:center;">
+                <div style="font-size:13px;color:var(--green);">👥 Notificado al grupo de WhatsApp</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">⏳ Esperando que un mensajero tome el pedido</div>
+                <div style="font-size:11px;color:var(--blue);margin-top:4px;">📱 SOLO conectados y disponibles pueden acceder</div>
             </div>
             <button class="btn-danger btn-sm" onclick="window.cancelarNotificacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;background:var(--red);color:#fff;">
                 ❌ Cancelar notificación
@@ -1267,7 +1398,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         return;
     }
     if (pedido.notificacionEnviada === true) {
-        toast('ℹ️ Este pedido ya fue notificado a todos los mensajeros', 'info', 3000);
+        toast('ℹ️ Este pedido ya fue notificado al grupo de WhatsApp', 'info', 3000);
         return;
     }
     pedidoAsignacion = { tiendaId, pedidoId };
@@ -1282,6 +1413,9 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         m.conectado !== false && 
         !m.ocupado
     );
+    
+    const grupoWhatsApp = tienda.grupoWhatsApp || '';
+    const tieneGrupo = grupoWhatsApp && grupoWhatsApp.length > 0;
     
     console.log('📋 Mensajeros disponibles para asignar:', mensajerosDisponibles.length);
     mensajerosDisponibles.forEach(m => {
@@ -1312,6 +1446,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
             <div class="row"><span class="label">📋 Mensajeros disponibles</span><span class="value" style="color:var(--blue);">${mensajerosDisponibles.length}</span></div>
+            ${tieneGrupo ? `<div class="row"><span class="label">👥 Grupo WhatsApp</span><span class="value" style="color:var(--green);">✅ Configurado</span></div>` : ''}
         </div>
         
         <!-- ===== MODO 1: ASIGNACIÓN MANUAL ===== -->
@@ -1334,24 +1469,32 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             </div>
         </div>
         
-        <!-- ===== MODO 2: ASIGNACIÓN AUTOMÁTICA (BROADCAST) ===== -->
-        <div class="opcion-asignacion" style="border-color: var(--yellow);">
-            <div class="titulo" style="color: var(--yellow);">📢 Asignación Automática</div>
-            <div class="descripcion"><strong>TODOS los mensajeros disponibles</strong> recibirán la notificación por WhatsApp. El <strong>primero que tome</strong> el pedido se lo queda.</div>
+        <!-- ===== MODO 2: NOTIFICAR AL GRUPO ===== -->
+        <div class="opcion-asignacion" style="border-color: var(--green);">
+            <div class="titulo" style="color: var(--green);">👥 Notificar al Grupo</div>
+            <div class="descripcion">El pedido se notificará al <strong>grupo de WhatsApp</strong> de mensajeros. <strong>SOLO los conectados y disponibles</strong> podrán tomar el pedido.</div>
+            ${tieneGrupo ? 
+                `<div style="font-size:12px;color:var(--green);margin:6px 0;padding:8px;background:var(--green-bg);border-radius:6px;border:1px solid var(--green);">
+                    ✅ Grupo configurado: ${grupoWhatsApp}
+                </div>` :
+                `<div style="font-size:12px;color:var(--red);margin:6px 0;padding:8px;background:var(--red-bg);border-radius:6px;border:1px solid var(--red);">
+                    ⚠️ No hay grupo configurado. Agrega el campo "grupoWhatsApp" en Firestore.
+                </div>`
+            }
             <div class="mensajeros-disponibles">
-                📨 Mensajeros que recibirán la notificación: 
+                📨 Mensajeros que verán el pedido en el grupo: 
                 <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                ⚡ El mensajero más rápido gana el pedido y debe confirmar con "TOMAR PEDIDO"
+                🔒 <strong>SOLO</strong> mensajeros CONECTADOS y DISPONIBLES pueden acceder al enlace.
             </div>
             <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
-                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                🔔 Notificar a todos los mensajeros
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${!tieneGrupo || mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                📱 Notificar al grupo de WhatsApp
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                📱 Se abrirá WhatsApp para cada mensajero (con retraso de 2 segundos)
+                📋 Se abrirá el grupo con el mensaje listo para copiar
             </div>
         </div>
         
@@ -1485,6 +1628,7 @@ async function cancelarNotificacion(pedidoId, tiendaId) {
             .update({
                 notificacionEnviada: false,
                 notificacionMasiva: false,
+                notificacionGrupo: false,
                 canceladoPor: auth.currentUser?.email || 'Admin Mensajeros',
                 fechaCancelacion: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1856,16 +2000,20 @@ window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
 window.simularPedidoAdmin = simularPedidoAdmin;
+window.mostrarModalMensajeGrupo = mostrarModalMensajeGrupo;
+window.copiarMensajeGrupo = copiarMensajeGrupo;
+window.cerrarModalMensajeGrupo = cerrarModalMensajeGrupo;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('📋 2 MODOS DE ASIGNACIÓN:');
 console.log('  👤 Manual: WhatsApp SOLO al mensajero elegido');
-console.log('  📢 Automático: WhatsApp a TODOS los disponibles (con retraso)');
+console.log('  👥 Automático: Notifica al GRUPO de WhatsApp');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
+console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
 console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
 </script>
