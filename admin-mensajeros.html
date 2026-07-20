@@ -175,6 +175,20 @@
         .badge-sin-notificar { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
         .mensajero-count { font-size: 12px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
         .badge-telefono-invalido { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; animation: pulseBadge 1s ease-in-out infinite; }
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        #modalMensajeMasivo pre::-webkit-scrollbar {
+            width: 4px;
+        }
+        #modalMensajeMasivo pre::-webkit-scrollbar-track {
+            background: #141414;
+        }
+        #modalMensajeMasivo pre::-webkit-scrollbar-thumb {
+            background: #FFD600;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -414,66 +428,29 @@ let recargandoMensajeros = false;
 let mensajerosListenersActivos = 0;
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP - CORREGIDO
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP (MANUAL - SOLO UN MENSAJERO)
 // ============================================================
 function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
     try {
-        // ✅ 1. OBTENER EL TELÉFONO
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
-        
-        console.log(`📱 Teléfono original de ${mensajero.nombre}: "${telefono}"`);
-        
-        // ✅ 2. LIMPIAR EL TELÉFONO (eliminar espacios, guiones, paréntesis, puntos, etc.)
         telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
         
-        console.log(`📱 Teléfono limpio: "${telefono}"`);
-        
-        // ✅ 3. VERIFICAR QUE TENGA TELÉFONO
         if (!telefono) {
             console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
             toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
             return;
         }
         
-        // ✅ 4. VERIFICAR QUE EL TELÉFONO TENGA 10 DÍGITOS
         if (telefono.length === 10) {
-            // Es un número colombiano sin código de país
             telefono = '57' + telefono;
-            console.log(`📱 Agregando código de país: ${telefono}`);
-        } else if (telefono.length === 13 && telefono.startsWith('+57')) {
-            // Tiene +57, eliminar el +
-            telefono = telefono.substring(1);
-            console.log(`📱 Eliminando +: ${telefono}`);
-        } else if (telefono.length === 12 && !telefono.startsWith('57')) {
-            // Si tiene 12 dígitos pero no empieza con 57, intentar corregir
-            if (telefono.startsWith('+')) {
-                telefono = telefono.substring(1);
-            }
-            console.log(`📱 Teléfono con 12 dígitos: ${telefono}`);
         }
         
-        // ✅ 5. VERIFICACIÓN FINAL: debe tener 12 dígitos y empezar con 57
-        if (telefono.length !== 12) {
-            console.warn(`⚠️ Teléfono con longitud incorrecta (${telefono.length}): ${telefono}`);
-            toast(`⚠️ Teléfono de ${mensajero.nombre} tiene formato incorrecto (${telefono.length} dígitos). Debe tener 10 dígitos + 57`, 'warn', 5000);
-            // Intentar corregir automáticamente
-            if (telefono.length === 10) {
-                telefono = '57' + telefono;
-                console.log(`📱 Corregido a: ${telefono}`);
-            } else {
-                return;
-            }
-        }
-        
-        if (!telefono.startsWith('57')) {
-            console.warn(`⚠️ Teléfono no empieza con 57: ${telefono}`);
-            toast(`⚠️ Teléfono de ${mensajero.nombre} no tiene código de país Colombia (57)`, 'warn', 5000);
+        if (telefono.length !== 12 || !telefono.startsWith('57')) {
+            console.warn(`⚠️ Teléfono inválido: ${telefono}`);
+            toast(`⚠️ Teléfono de ${mensajero.nombre} tiene formato incorrecto (${telefono})`, 'warn', 5000);
             return;
         }
         
-        console.log(`✅ Teléfono final para WhatsApp: ${telefono}`);
-        
-        // ✅ 6. CREAR EL MENSAJE
         const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
         const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
         
@@ -488,27 +465,21 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
         mensajeWhatsApp += `${url}\n\n`;
         mensajeWhatsApp += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
         
-        // ✅ 7. CREAR ENLACE DE WHATSAPP
         const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         
         console.log(`📱 Enviando WhatsApp a ${mensajero.nombre}: ${telefono}`);
         console.log(`🔗 Enlace: ${urlWhatsApp}`);
         
-        // ✅ 8. ABRIR WHATSAPP (intenta abrir en una nueva pestaña)
         const ventana = window.open(urlWhatsApp, '_blank');
         if (!ventana) {
-            // Si el navegador bloquea la ventana emergente, mostrar el enlace
-            console.warn('⚠️ Ventana emergente bloqueada.');
             toast(`📱 Abre WhatsApp manualmente para ${mensajero.nombre}`, 'info', 6000);
-            // Copiar enlace al portapapeles
             navigator.clipboard?.writeText(urlWhatsApp).then(() => {
-                toast(`📋 Enlace copiado al portapapeles para ${mensajero.nombre}`, 'info', 4000);
+                toast(`📋 Enlace copiado al portapapeles`, 'info', 4000);
             }).catch(() => {});
         } else {
             toast(`📱 WhatsApp abierto para ${mensajero.nombre}`, 'success', 4000);
         }
         
-        // ✅ 9. GUARDAR REGISTRO
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -520,7 +491,7 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
                     url: urlWhatsApp,
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
-                }).catch(err => console.warn('⚠️ Error guardando registro (no crítico):', err));
+                }).catch(err => console.warn('⚠️ Error guardando registro:', err));
         }
         
     } catch (error) {
@@ -530,42 +501,356 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
 }
 
 // ============================================================
-// 📱 FUNCIÓN PARA PROBAR WHATSAPP MANUALMENTE (DESDE CONSOLA)
+// 📢 NOTIFICAR A TODOS (AUTOMÁTICO) - VERSIÓN MENSAJE EN CADENA
 // ============================================================
-function probarWhatsAppManual(telefono) {
-    const tel = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
-    let numero = tel;
-    if (tel.length === 10) {
-        numero = '57' + tel;
-    }
-    if (!numero.startsWith('57')) {
-        console.warn('⚠️ El número debe tener código de país Colombia (57)');
+async function notificarATodos() {
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
+    
+    if (pedidoActual && pedidoActual.mensajeroId) {
+        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
+        detenerAlarmaPedido(pedidoId);
+        cerrarModalAsignacion();
+        recargarPedidos();
         return;
     }
-    const mensaje = '🛵 *Prueba de notificación EyMoto*\n\n✅ Este es un mensaje de prueba. Si lo recibes, el sistema funcionará correctamente.';
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
-    console.log('📱 Abriendo WhatsApp para:', numero);
-    console.log('🔗 Enlace:', url);
-    window.open(url, '_blank');
+    
+    try {
+        toast('⏳ Generando mensajes para mensajeros...', 'info');
+        
+        const tienda = tiendasCache[tiendaId] || {};
+        const pedidoInfo = {
+            numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
+            nombreTienda: tienda.nombre || 'Tienda',
+            cliente: pedidoActual?.cliente || {},
+            total: pedidoActual?.total || 0,
+            telefonoTienda: tienda.whatsapp || ''
+        };
+        
+        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+            m.activo !== false && 
+            m.conectado !== false && 
+            !m.ocupado
+        );
+        
+        if (mensajerosDisponibles.length === 0) {
+            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
+            cerrarModalAsignacion();
+            return;
+        }
+        
+        // ✅ GENERAR MENSAJES PARA CADA MENSAJERO
+        let mensajesCompletos = [];
+        let mensajerosValidos = [];
+        
+        const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
+        const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+        
+        mensajerosDisponibles.forEach(mensajero => {
+            let telefono = mensajero.telefono || mensajero.whatsapp || '';
+            telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+            
+            if (!telefono) {
+                console.warn(`⚠️ ${mensajero.nombre} sin teléfono`);
+                return;
+            }
+            
+            if (telefono.length === 10) {
+                telefono = '57' + telefono;
+            }
+            
+            if (telefono.length !== 12 || !telefono.startsWith('57')) {
+                console.warn(`⚠️ Teléfono inválido para ${mensajero.nombre}: ${telefono}`);
+                return;
+            }
+            
+            let mensajeWhatsApp = `🛵 *¡Nuevo pedido disponible!*\n\n`;
+            mensajeWhatsApp += `📦 *Pedido:* ${pedidoInfo.numeroPedido || '#' + pedidoId.slice(-6)}\n`;
+            mensajeWhatsApp += `🏪 *Tienda:* ${pedidoInfo.nombreTienda || 'Tienda'}\n`;
+            mensajeWhatsApp += `👤 *Cliente:* ${pedidoInfo.cliente?.nombre || 'Cliente'}\n`;
+            mensajeWhatsApp += `💰 *Total:* $${(pedidoInfo.total || 0).toLocaleString('es-CO')}\n\n`;
+            mensajeWhatsApp += `📍 *Dirección:* ${pedidoInfo.cliente?.direccion || 'N/A'}\n`;
+            mensajeWhatsApp += `📱 *Teléfono cliente:* ${pedidoInfo.cliente?.telefono || 'N/A'}\n\n`;
+            mensajeWhatsApp += `📱 *Haz clic en el enlace para ver el pedido:*\n`;
+            mensajeWhatsApp += `${url}\n\n`;
+            mensajeWhatsApp += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
+            
+            const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+            
+            mensajesCompletos.push({
+                nombre: mensajero.nombre || 'Mensajero',
+                telefono: telefono,
+                mensaje: mensajeWhatsApp,
+                url: urlWhatsApp,
+                uid: mensajero.uid
+            });
+            
+            mensajerosValidos.push(mensajero);
+        });
+        
+        if (mensajesCompletos.length === 0) {
+            toast('⚠️ Ningún mensajero tiene teléfono válido', 'warn');
+            cerrarModalAsignacion();
+            return;
+        }
+        
+        // ✅ CREAR MENSAJE PARA EL ADMIN (CON TODOS LOS ENLACES)
+        let mensajeAdmin = `📢 *NOTIFICACIÓN MASIVA DE PEDIDO*\n\n`;
+        mensajeAdmin += `📦 *Pedido:* ${pedidoInfo.numeroPedido || '#' + pedidoId.slice(-6)}\n`;
+        mensajeAdmin += `🏪 *Tienda:* ${pedidoInfo.nombreTienda || 'Tienda'}\n`;
+        mensajeAdmin += `👤 *Cliente:* ${pedidoInfo.cliente?.nombre || 'Cliente'}\n`;
+        mensajeAdmin += `💰 *Total:* $${(pedidoInfo.total || 0).toLocaleString('es-CO')}\n\n`;
+        mensajeAdmin += `📋 *Mensajeros notificados (${mensajesCompletos.length}):*\n\n`;
+        
+        mensajesCompletos.forEach((m, index) => {
+            mensajeAdmin += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            mensajeAdmin += `${index + 1}. 👤 *${m.nombre}*\n`;
+            mensajeAdmin += `📱 ${m.telefono}\n`;
+            mensajeAdmin += `🔗 ${m.url}\n\n`;
+        });
+        
+        mensajeAdmin += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        mensajeAdmin += `📱 *Instrucciones:*\n`;
+        mensajeAdmin += `1. Copia este mensaje completo\n`;
+        mensajeAdmin += `2. Envía a cada mensajero usando el enlace que corresponde\n`;
+        mensajeAdmin += `3. El primero que confirme tomará el pedido\n\n`;
+        mensajeAdmin += `⚡ *El pedido seguirá disponible hasta que alguien lo tome.*`;
+        
+        // ✅ MOSTRAR MODAL CON MENSAJE COMPLETO PARA COPIAR
+        mostrarModalMensajeMasivo(mensajeAdmin, mensajesCompletos, tiendaId, pedidoId, mensajerosValidos);
+        
+        // ✅ GUARDAR EN FIRESTORE
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                notificacionEnviada: true,
+                notificacionMasiva: true,
+                fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
+                notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+                asignacionTipo: 'automatica',
+                mensajerosNotificados: mensajerosValidos.map(m => ({
+                    uid: m.uid,
+                    nombre: m.nombre || 'Mensajero',
+                    telefono: m.telefono || m.whatsapp
+                }))
+            });
+        
+        // ✅ GUARDAR REGISTRO INDIVIDUAL
+        mensajesCompletos.forEach(m => {
+            db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId)
+                .collection('notificacionesWhatsApp').add({
+                    mensajeroId: m.uid || 'unknown',
+                    mensajeroNombre: m.nombre,
+                    telefono: m.telefono,
+                    mensaje: m.mensaje,
+                    url: m.url,
+                    fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                    enviadoPor: auth.currentUser?.email || 'Admin Mensajeros',
+                    tipo: 'masivo'
+                }).catch(err => console.warn('⚠️ Error guardando registro:', err));
+        });
+        
+        cerrarModalAsignacion();
+        
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error('Error en notificarATodos:', e);
+    }
 }
 
 // ============================================================
-// 🔍 FUNCIÓN PARA VERIFICAR TELÉFONO DE MENSAJERO
+// 📱 MOSTRAR MODAL CON MENSAJE MASIVO
 // ============================================================
-function verificarTelefonoMensajero(uid) {
-    db.collection('usuarios').doc(uid).get().then(doc => {
-        if (!doc.exists) {
-            console.log('❌ Mensajero no encontrado');
-            return;
+function mostrarModalMensajeMasivo(mensajeAdmin, mensajesCompletos, tiendaId, pedidoId, mensajerosValidos) {
+    const modal = document.createElement('div');
+    modal.id = 'modalMensajeMasivo';
+    modal.style.cssText = `
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 999999;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        animation: fadeInModal 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: #1e1e1e;
+            border-radius: 20px;
+            max-width: 650px;
+            width: 100%;
+            padding: 24px;
+            border: 2px solid #FFD600;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #2e2e2e;
+            ">
+                <h3 style="color: #FFD600; font-size: 18px; font-weight: 700;">📢 Notificación Masiva</h3>
+                <button onclick="window.cerrarModalMensajeMasivo()" style="
+                    background: none;
+                    border: none;
+                    color: #888;
+                    font-size: 24px;
+                    cursor: pointer;
+                    width: auto;
+                    padding: 0 8px;
+                ">✕</button>
+            </div>
+            
+            <div style="
+                background: #141414;
+                border-radius: 10px;
+                padding: 14px;
+                margin-bottom: 12px;
+                border: 1px solid #2e2e2e;
+                flex: 1;
+                overflow-y: auto;
+                max-height: 400px;
+            ">
+                <div style="font-size: 11px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                    <span>📋 ${mensajesCompletos.length} mensajeros</span>
+                    <span style="color: #FFD600;">${mensajesCompletos.length} enlaces generados</span>
+                </div>
+                <pre style="
+                    color: #ccc;
+                    font-size: 12px;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    margin: 0;
+                    line-height: 1.6;
+                ">${mensajeAdmin}</pre>
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="window.copiarMensajeMasivo()" style="
+                    flex: 2;
+                    padding: 12px;
+                    border: none;
+                    border-radius: 10px;
+                    background: #FFD600;
+                    color: #1a1a2e;
+                    font-weight: 700;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">📋 Copiar Mensaje Completo</button>
+                
+                <button onclick="window.abrirWhatsAppMasivo()" style="
+                    flex: 1;
+                    padding: 12px;
+                    border: none;
+                    border-radius: 10px;
+                    background: #25D366;
+                    color: #fff;
+                    font-weight: 700;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">📱 Abrir WhatsApp</button>
+                
+                <button onclick="window.cerrarModalMensajeMasivo()" style="
+                    flex: 1;
+                    padding: 12px;
+                    border: 1px solid #2e2e2e;
+                    border-radius: 10px;
+                    background: transparent;
+                    color: #888;
+                    font-weight: 700;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                ">Cerrar</button>
+            </div>
+            
+            <div style="
+                margin-top: 8px;
+                padding: 8px 12px;
+                background: #252525;
+                border-radius: 8px;
+                font-size: 11px;
+                color: #666;
+                text-align: center;
+            ">
+                💡 El mensaje contiene enlaces individuales para cada mensajero. 
+                Copia el mensaje y pégalo en WhatsApp para enviar a todos.
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    window._mensajeMasivo = {
+        texto: mensajeAdmin,
+        mensajes: mensajesCompletos,
+        tiendaId: tiendaId,
+        pedidoId: pedidoId,
+        mensajeros: mensajerosValidos
+    };
+}
+
+// ============================================================
+// 📋 COPIAR MENSAJE MASIVO
+// ============================================================
+function copiarMensajeMasivo() {
+    if (!window._mensajeMasivo) return;
+    
+    navigator.clipboard.writeText(window._mensajeMasivo.texto).then(() => {
+        toast('✅ Mensaje completo copiado al portapapeles', 'success', 3000);
+        toast('📱 Ahora pégalo en WhatsApp y envía a cada mensajero', 'info', 4000);
+    }).catch(() => {
+        const pre = document.querySelector('#modalMensajeMasivo pre');
+        if (pre) {
+            const range = document.createRange();
+            range.selectNode(pre);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            toast('✅ Mensaje copiado al portapapeles', 'success', 3000);
         }
-        const data = doc.data();
-        console.log('📱 Datos del mensajero:');
-        console.log('  👤 Nombre:', data.nombre);
-        console.log('  📱 telefono:', data.telefono);
-        console.log('  📱 whatsapp:', data.whatsapp);
-        console.log('  📱 Longitud telefono:', (data.telefono || '').length);
-        console.log('  📱 Caracteres ocultos:', JSON.stringify(data.telefono || ''));
     });
+}
+
+// ============================================================
+// 📱 ABRIR WHATSAPP CON EL MENSAJE MASIVO (PRIMER MENSAJERO)
+// ============================================================
+function abrirWhatsAppMasivo() {
+    if (!window._mensajeMasivo) return;
+    
+    const mensajes = window._mensajeMasivo.mensajes;
+    if (mensajes.length === 0) return;
+    
+    window.open(mensajes[0].url, '_blank');
+    toast('📱 Abriendo WhatsApp para el primer mensajero', 'info', 3000);
+    toast('💡 Reenvía el mensaje a los demás mensajeros desde WhatsApp', 'info', 4000);
+}
+
+// ============================================================
+// ❌ CERRAR MODAL DE MENSAJE MASIVO
+// ============================================================
+function cerrarModalMensajeMasivo() {
+    const modal = document.getElementById('modalMensajeMasivo');
+    if (modal) {
+        modal.remove();
+    }
+    document.body.style.overflow = '';
+    window._mensajeMasivo = null;
 }
 
 // ============================================================
@@ -701,11 +986,9 @@ async function inicializarPanel() {
         console.log('🔔 Alarma con CAMPANA PROFESIONAL activada');
         console.log('📋 2 MODOS DE ASIGNACIÓN: Manual y Automático');
         console.log('📱 Manual: WhatsApp SOLO al mensajero elegido');
-        console.log('📱 Automático: WhatsApp a TODOS los disponibles');
+        console.log('📢 Automático: WhatsApp a TODOS los disponibles (mensaje en cadena)');
         console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
         console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
-        console.log('📱 WhatsApp: Validación de teléfonos mejorada');
-        console.log('📱 Para probar WhatsApp manual: probarWhatsAppManual("3002937289")');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -982,7 +1265,6 @@ function renderizarMensajeros() {
         let estadoLabel = ocupado ? '🟠 Ocupado' : (activo ? (conectado ? '🔵 Disponible' : '🔴 Inactivo') : '🔴 Inactivo');
         const telefono = m.telefono || m.whatsapp || '';
         const telefonoDisplay = telefono ? `📱 ${telefono}` : '📱 Sin teléfono';
-        // Verificar si el teléfono tiene formato correcto
         const telefonoLimpio = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
         const telefonoValido = telefonoLimpio.length === 10 || telefonoLimpio.length === 12;
         const badgeTelefono = telefono && !telefonoValido ? '<span class="badge-telefono-invalido">⚠️ Teléfono inválido</span>' : '';
@@ -1259,7 +1541,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 🔔 Notificar a todos los mensajeros
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                🔔 La alarma SIGUE SONANDO hasta que alguien confirme con "TOMAR PEDIDO"
+                📋 Se generará un mensaje con todos los enlaces para enviar en cadena
             </div>
         </div>
         
@@ -1379,86 +1661,6 @@ async function asignarPedidoManual() {
             toast('❌ Error: ' + e.message, 'error');
             console.error('Error en asignación manual:', e);
         }
-    }
-}
-
-// ============================================================
-// 📢 NOTIFICAR A TODOS (AUTOMÁTICO)
-// ============================================================
-async function notificarATodos() {
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
-    
-    if (pedidoActual && pedidoActual.mensajeroId) {
-        toast('⚠️ Este pedido ya fue asignado a otro mensajero', 'warn');
-        detenerAlarmaPedido(pedidoId);
-        cerrarModalAsignacion();
-        recargarPedidos();
-        return;
-    }
-    
-    try {
-        toast('⏳ Notificando mensajeros disponibles...', 'info');
-        
-        const tienda = tiendasCache[tiendaId] || {};
-        const pedidoInfo = {
-            numeroPedido: pedidoActual?.numeroPedido || '#' + pedidoId.slice(-6),
-            nombreTienda: tienda.nombre || 'Tienda',
-            cliente: pedidoActual?.cliente || {},
-            total: pedidoActual?.total || 0,
-            telefonoTienda: tienda.whatsapp || ''
-        };
-        
-        const mensajerosDisponibles = todosLosMensajeros.filter(m => 
-            m.activo !== false && 
-            m.conectado !== false && 
-            !m.ocupado
-        );
-        
-        if (mensajerosDisponibles.length === 0) {
-            toast('⚠️ No hay mensajeros disponibles para notificar', 'warn');
-            cerrarModalAsignacion();
-            return;
-        }
-        
-        let enviados = 0;
-        mensajerosDisponibles.forEach(mensajero => {
-            const telefono = mensajero.telefono || mensajero.whatsapp || '';
-            if (telefono) {
-                enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoInfo);
-                enviados++;
-            }
-        });
-        
-        if (enviados === 0) {
-            toast('⚠️ Ningún mensajero tiene teléfono registrado', 'warn');
-            cerrarModalAsignacion();
-            return;
-        }
-        
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                notificacionEnviada: true,
-                notificacionMasiva: true,
-                fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
-                notificadoPor: auth.currentUser?.email || 'Admin Mensajeros',
-                asignacionTipo: 'automatica'
-            });
-        
-        toast(`🔔 Notificación enviada a ${enviados} mensajeros por WhatsApp`, 'success', 4000);
-        toast(`📦 Pedido ${pedidoInfo.numeroPedido} disponible para mensajeros`, 'info', 3000);
-        cerrarModalAsignacion();
-        actualizarHeaderBadge();
-        renderizarPedidosAsignar();
-        
-        setTimeout(() => {
-            recargarPedidos();
-        }, 500);
-        
-    } catch (e) {
-        toast('❌ Error: ' + e.message, 'error');
-        console.error('Error en notificarATodos:', e);
     }
 }
 
@@ -1844,21 +2046,20 @@ window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
 window.simularPedidoAdmin = simularPedidoAdmin;
-window.probarWhatsAppManual = probarWhatsAppManual;
-window.verificarTelefonoMensajero = verificarTelefonoMensajero;
+window.mostrarModalMensajeMasivo = mostrarModalMensajeMasivo;
+window.copiarMensajeMasivo = copiarMensajeMasivo;
+window.abrirWhatsAppMasivo = abrirWhatsAppMasivo;
+window.cerrarModalMensajeMasivo = cerrarModalMensajeMasivo;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('📋 2 MODOS DE ASIGNACIÓN:');
 console.log('  👤 Manual: WhatsApp SOLO al mensajero elegido');
-console.log('  📢 Automático: WhatsApp a TODOS los disponibles');
+console.log('  📢 Automático: WhatsApp a TODOS los disponibles (mensaje en cadena)');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
-console.log('📱 WhatsApp: Validación de teléfonos mejorada');
-console.log('📱 Para probar WhatsApp manual: probarWhatsAppManual("3002937289")');
-console.log('📱 Para verificar teléfono: verificarTelefonoMensajero("UID_del_mensajero")');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
 console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
 </script>
