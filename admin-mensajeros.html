@@ -174,6 +174,7 @@
         @keyframes pulseBadge { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .badge-sin-notificar { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
         .mensajero-count { font-size: 12px; color: var(--text-muted); background: var(--surface2); padding: 4px 12px; border-radius: 12px; }
+        .badge-telefono-invalido { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; animation: pulseBadge 1s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -413,22 +414,69 @@ let recargandoMensajeros = false;
 let mensajerosListenersActivos = 0;
 
 // ============================================================
-// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP
+// 📱 ENVIAR NOTIFICACIÓN POR WHATSAPP - CORREGIDO
 // ============================================================
 function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
     try {
+        // ✅ 1. OBTENER EL TELÉFONO
         let telefono = mensajero.telefono || mensajero.whatsapp || '';
+        
+        console.log(`📱 Teléfono original de ${mensajero.nombre}: "${telefono}"`);
+        
+        // ✅ 2. LIMPIAR EL TELÉFONO (eliminar espacios, guiones, paréntesis, puntos, etc.)
         telefono = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        
+        console.log(`📱 Teléfono limpio: "${telefono}"`);
+        
+        // ✅ 3. VERIFICAR QUE TENGA TELÉFONO
         if (!telefono) {
             console.warn('⚠️ Mensajero sin teléfono:', mensajero.nombre);
             toast(`⚠️ ${mensajero.nombre || 'Mensajero'} no tiene teléfono registrado`, 'warn', 3000);
             return;
         }
-        if (!telefono.startsWith('57') && telefono.length === 10) {
+        
+        // ✅ 4. VERIFICAR QUE EL TELÉFONO TENGA 10 DÍGITOS
+        if (telefono.length === 10) {
+            // Es un número colombiano sin código de país
             telefono = '57' + telefono;
+            console.log(`📱 Agregando código de país: ${telefono}`);
+        } else if (telefono.length === 13 && telefono.startsWith('+57')) {
+            // Tiene +57, eliminar el +
+            telefono = telefono.substring(1);
+            console.log(`📱 Eliminando +: ${telefono}`);
+        } else if (telefono.length === 12 && !telefono.startsWith('57')) {
+            // Si tiene 12 dígitos pero no empieza con 57, intentar corregir
+            if (telefono.startsWith('+')) {
+                telefono = telefono.substring(1);
+            }
+            console.log(`📱 Teléfono con 12 dígitos: ${telefono}`);
         }
+        
+        // ✅ 5. VERIFICACIÓN FINAL: debe tener 12 dígitos y empezar con 57
+        if (telefono.length !== 12) {
+            console.warn(`⚠️ Teléfono con longitud incorrecta (${telefono.length}): ${telefono}`);
+            toast(`⚠️ Teléfono de ${mensajero.nombre} tiene formato incorrecto (${telefono.length} dígitos). Debe tener 10 dígitos + 57`, 'warn', 5000);
+            // Intentar corregir automáticamente
+            if (telefono.length === 10) {
+                telefono = '57' + telefono;
+                console.log(`📱 Corregido a: ${telefono}`);
+            } else {
+                return;
+            }
+        }
+        
+        if (!telefono.startsWith('57')) {
+            console.warn(`⚠️ Teléfono no empieza con 57: ${telefono}`);
+            toast(`⚠️ Teléfono de ${mensajero.nombre} no tiene código de país Colombia (57)`, 'warn', 5000);
+            return;
+        }
+        
+        console.log(`✅ Teléfono final para WhatsApp: ${telefono}`);
+        
+        // ✅ 6. CREAR EL MENSAJE
         const baseUrl = 'https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/mensajero.html';
         const url = `${baseUrl}?pedido=${pedidoId}&tienda=${tiendaId}`;
+        
         let mensajeWhatsApp = `🛵 *¡Nuevo pedido disponible!*\n\n`;
         mensajeWhatsApp += `📦 *Pedido:* ${pedidoData.numeroPedido || '#' + pedidoId.slice(-6)}\n`;
         mensajeWhatsApp += `🏪 *Tienda:* ${pedidoData.nombreTienda || 'Tienda'}\n`;
@@ -439,10 +487,28 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
         mensajeWhatsApp += `📱 *Haz clic en el enlace para ver el pedido:*\n`;
         mensajeWhatsApp += `${url}\n\n`;
         mensajeWhatsApp += `⚡ *Toca el pedido y confirma para comenzar la entrega.*`;
+        
+        // ✅ 7. CREAR ENLACE DE WHATSAPP
         const urlWhatsApp = `https://wa.me/${telefono}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        
         console.log(`📱 Enviando WhatsApp a ${mensajero.nombre}: ${telefono}`);
-        window.open(urlWhatsApp, '_blank');
-        toast(`📱 WhatsApp abierto para ${mensajero.nombre}`, 'success', 4000);
+        console.log(`🔗 Enlace: ${urlWhatsApp}`);
+        
+        // ✅ 8. ABRIR WHATSAPP (intenta abrir en una nueva pestaña)
+        const ventana = window.open(urlWhatsApp, '_blank');
+        if (!ventana) {
+            // Si el navegador bloquea la ventana emergente, mostrar el enlace
+            console.warn('⚠️ Ventana emergente bloqueada.');
+            toast(`📱 Abre WhatsApp manualmente para ${mensajero.nombre}`, 'info', 6000);
+            // Copiar enlace al portapapeles
+            navigator.clipboard?.writeText(urlWhatsApp).then(() => {
+                toast(`📋 Enlace copiado al portapapeles para ${mensajero.nombre}`, 'info', 4000);
+            }).catch(() => {});
+        } else {
+            toast(`📱 WhatsApp abierto para ${mensajero.nombre}`, 'success', 4000);
+        }
+        
+        // ✅ 9. GUARDAR REGISTRO
         if (pedidoId && mensajero.uid) {
             db.collection('tiendas').doc(tiendaId)
                 .collection('pedidos').doc(pedidoId)
@@ -451,14 +517,55 @@ function enviarNotificacionWhatsApp(mensajero, tiendaId, pedidoId, pedidoData) {
                     mensajeroNombre: mensajero.nombre || 'Mensajero',
                     telefono: telefono,
                     mensaje: mensajeWhatsApp,
+                    url: urlWhatsApp,
                     fecha: firebase.firestore.FieldValue.serverTimestamp(),
                     enviadoPor: auth.currentUser?.email || 'Admin Mensajeros'
                 }).catch(err => console.warn('⚠️ Error guardando registro (no crítico):', err));
         }
+        
     } catch (error) {
         console.error('❌ Error enviando WhatsApp:', error);
         toast('❌ Error al enviar notificación: ' + error.message, 'error');
     }
+}
+
+// ============================================================
+// 📱 FUNCIÓN PARA PROBAR WHATSAPP MANUALMENTE (DESDE CONSOLA)
+// ============================================================
+function probarWhatsAppManual(telefono) {
+    const tel = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+    let numero = tel;
+    if (tel.length === 10) {
+        numero = '57' + tel;
+    }
+    if (!numero.startsWith('57')) {
+        console.warn('⚠️ El número debe tener código de país Colombia (57)');
+        return;
+    }
+    const mensaje = '🛵 *Prueba de notificación EyMoto*\n\n✅ Este es un mensaje de prueba. Si lo recibes, el sistema funcionará correctamente.';
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+    console.log('📱 Abriendo WhatsApp para:', numero);
+    console.log('🔗 Enlace:', url);
+    window.open(url, '_blank');
+}
+
+// ============================================================
+// 🔍 FUNCIÓN PARA VERIFICAR TELÉFONO DE MENSAJERO
+// ============================================================
+function verificarTelefonoMensajero(uid) {
+    db.collection('usuarios').doc(uid).get().then(doc => {
+        if (!doc.exists) {
+            console.log('❌ Mensajero no encontrado');
+            return;
+        }
+        const data = doc.data();
+        console.log('📱 Datos del mensajero:');
+        console.log('  👤 Nombre:', data.nombre);
+        console.log('  📱 telefono:', data.telefono);
+        console.log('  📱 whatsapp:', data.whatsapp);
+        console.log('  📱 Longitud telefono:', (data.telefono || '').length);
+        console.log('  📱 Caracteres ocultos:', JSON.stringify(data.telefono || ''));
+    });
 }
 
 // ============================================================
@@ -561,7 +668,8 @@ function forzarRecargaMensajeros() {
             
             snap.forEach(doc => {
                 const data = doc.data();
-                console.log(`  📱 ${data.telefono || data.whatsapp || 'Sin teléfono'} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
+                const tel = data.telefono || data.whatsapp || 'Sin teléfono';
+                console.log(`  📱 ${tel} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
             });
             
             toast(`✅ ${snap.size} mensajeros encontrados en Firestore`, 'success', 4000);
@@ -596,6 +704,8 @@ async function inicializarPanel() {
         console.log('📱 Automático: WhatsApp a TODOS los disponibles');
         console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
         console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
+        console.log('📱 WhatsApp: Validación de teléfonos mejorada');
+        console.log('📱 Para probar WhatsApp manual: probarWhatsAppManual("3002937289")');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -651,7 +761,8 @@ function cargarMensajeros() {
                         console.warn(`⚠️ Mensajero sin nombre: ${uid}`);
                     }
                     
-                    console.log(`  📱 ${data.telefono || data.whatsapp || 'Sin teléfono'} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
+                    const telefono = data.telefono || data.whatsapp || 'Sin teléfono';
+                    console.log(`  📱 ${telefono} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
                     
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === uid && 
@@ -871,13 +982,18 @@ function renderizarMensajeros() {
         let estadoLabel = ocupado ? '🟠 Ocupado' : (activo ? (conectado ? '🔵 Disponible' : '🔴 Inactivo') : '🔴 Inactivo');
         const telefono = m.telefono || m.whatsapp || '';
         const telefonoDisplay = telefono ? `📱 ${telefono}` : '📱 Sin teléfono';
+        // Verificar si el teléfono tiene formato correcto
+        const telefonoLimpio = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
+        const telefonoValido = telefonoLimpio.length === 10 || telefonoLimpio.length === 12;
+        const badgeTelefono = telefono && !telefonoValido ? '<span class="badge-telefono-invalido">⚠️ Teléfono inválido</span>' : '';
+        
         html += `
             <div class="mensajero-card" style="${!activo ? 'opacity:0.6;' : ''}">
                 <div class="avatar">${iniciales}</div>
                 <div class="info">
                     <div class="nombre">${m.nombre || 'Sin nombre'} ${ocupado ? '🛵' : ''} ${disponible ? '✅' : ''}</div>
                     <div class="email">📧 ${m.email || 'Sin email'}</div>
-                    <div class="telefono">${telefonoDisplay}</div>
+                    <div class="telefono">${telefonoDisplay} ${badgeTelefono}</div>
                     <div class="meta">${m.creadoEn ? '📅 ' + formatearFecha(m.creadoEn) : ''}</div>
                     <div style="font-size:10px;color:${conectado ? 'var(--green)' : 'var(--red)'};">${conectado ? '🟢 Conectado' : '🔴 Desconectado'}</div>
                 </div>
@@ -1728,6 +1844,8 @@ window.cerrarModalEditarMensajero = cerrarModalEditarMensajero;
 window.guardarEditarMensajero = guardarEditarMensajero;
 window.probarSonidoAdmin = probarSonidoAdmin;
 window.simularPedidoAdmin = simularPedidoAdmin;
+window.probarWhatsAppManual = probarWhatsAppManual;
+window.verificarTelefonoMensajero = verificarTelefonoMensajero;
 
 console.log('✅ Panel de administración de mensajeros cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
@@ -1738,6 +1856,9 @@ console.log('  📢 Automático: WhatsApp a TODOS los disponibles');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
+console.log('📱 WhatsApp: Validación de teléfonos mejorada');
+console.log('📱 Para probar WhatsApp manual: probarWhatsAppManual("3002937289")');
+console.log('📱 Para verificar teléfono: verificarTelefonoMensajero("UID_del_mensajero")');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
 console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
 </script>
