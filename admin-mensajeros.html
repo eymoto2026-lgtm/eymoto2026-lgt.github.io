@@ -179,38 +179,8 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
-        #modalMensajeGrupo pre::-webkit-scrollbar {
-            width: 4px;
-        }
-        #modalMensajeGrupo pre::-webkit-scrollbar-track {
-            background: #141414;
-        }
-        #modalMensajeGrupo pre::-webkit-scrollbar-thumb {
-            background: #25D366;
-            border-radius: 4px;
-        }
-        .grupo-configurado {
-            background: var(--green-bg);
-            color: var(--green);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            border: 1px solid var(--green);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .grupo-no-configurado {
-            background: var(--red-bg);
-            color: var(--red);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            border: 1px solid var(--red);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .badge-ocupado { background: var(--orange); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
+        .badge-disponible { background: var(--green); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -452,6 +422,7 @@ let mensajerosListenersActivos = 0;
 // ============================================================
 // 📢 NOTIFICAR A TODOS LOS MENSAJEROS CONECTADOS Y DISPONIBLES
 // (Versión INDIVIDUAL - sin grupo de WhatsApp)
+// CON VALIDACIÓN - NO permite que ocupados reciban notificación
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -469,7 +440,7 @@ async function notificarATodos() {
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
-        !m.ocupado
+        !m.ocupado  // 🔥 ESTO EVITA que ocupados reciban notificación
     );
     
     if (mensajerosDisponibles.length === 0) {
@@ -537,12 +508,12 @@ async function notificarATodos() {
             // Abrir WhatsApp para cada mensajero
             const urlWhatsApp = `https://wa.me/${telefonoFinal}?text=${encodeURIComponent(mensajePersonalizado)}`;
             
-            // Abrir en una nueva pestaña (se abrirán múltiples pestañas)
+            // Abrir en una nueva pestaña
             window.open(urlWhatsApp, '_blank');
             console.log(`📱 Enviando a ${mensajero.nombre}: ${telefonoFinal}`);
             enviados++;
             
-            // Pequeña pausa entre aperturas para no saturar
+            // Pequeña pausa entre aperturas
             await new Promise(resolve => setTimeout(resolve, 300));
         }
         
@@ -715,6 +686,7 @@ async function inicializarPanel() {
         console.log('👤 Manual: WhatsApp SOLO al mensajero elegido');
         console.log('👥 Automático: Notifica a TODOS los mensajeros disponibles');
         console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
+        console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
         toast('❌ Error al cargar el panel', 'error');
@@ -730,7 +702,7 @@ async function cargarTiendas() {
 }
 
 // ============================================================
-// CARGAR MENSAJEROS - VERSIÓN ESTABLE
+// CARGAR MENSAJEROS - VERSIÓN CORREGIDA (NO permite 2 pedidos)
 // ============================================================
 function cargarMensajeros() {
     if (mensajerosListenersActivos > 0) {
@@ -766,22 +738,35 @@ function cargarMensajeros() {
                     const data = doc.data();
                     const uid = doc.id;
                     
-                    if (!data.nombre) {
-                        console.warn(`⚠️ Mensajero sin nombre: ${uid}`);
-                    }
-                    
-                    const telefono = data.telefono || data.whatsapp || 'Sin teléfono';
-                    console.log(`  📱 ${telefono} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false}`);
-                    
+                    // ✅ VERIFICAR SI EL MENSAJERO TIENE UN PEDIDO ACTIVO
+                    // Incluye TODOS los estados donde el mensajero está ocupado
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === uid && 
-                        (p.estado === 'En camino al restaurante' || p.estado === 'Recogiendo pedido' || p.estado === 'En camino')
+                        (
+                            p.estado === 'En camino al restaurante' ||
+                            p.estado === 'Recogiendo pedido' ||
+                            p.estado === 'En camino' ||
+                            p.estado === 'Entregado' ||
+                            (p.estado === 'Listo para asignar' && p.pendienteConfirmacion === true)
+                        )
                     );
+                    
+                    // ✅ TAMBIÉN verificar si hay un pedido asignado manualmente que no haya sido confirmado
+                    const tieneAsignacionPendiente = todosLosPedidos.some(p =>
+                        p.mensajeroId === uid &&
+                        p.pendienteConfirmacion === true &&
+                        p.estado !== 'Entregado' &&
+                        p.estado !== 'Cancelado'
+                    );
+                    
+                    const ocupado = tienePedidoActivo || tieneAsignacionPendiente;
+                    
+                    console.log(`  📱 ${data.telefono || 'Sin teléfono'} | 👤 ${data.nombre || 'Sin nombre'} | activo: ${data.activo !== false} | conectado: ${data.conectado !== false} | ocupado: ${ocupado}`);
                     
                     todosLosMensajeros.push({ 
                         uid: uid, 
                         ...data, 
-                        ocupado: tienePedidoActivo 
+                        ocupado: ocupado
                     });
                 });
                 
@@ -801,7 +786,6 @@ function cargarMensajeros() {
                 
                 if (err.code === 'permission-denied') {
                     toast('⚠️ Error de permisos en Firestore. Verifica las reglas.', 'error', 5000);
-                    console.error('❌ PERMISSION DENIED: Asegúrate de que las reglas de Firestore permitan lectura/escritura');
                 } else {
                     toast('⚠️ Error al cargar mensajeros. Reintentando...', 'warn');
                     setTimeout(() => cargarMensajeros(), 5000);
@@ -1306,7 +1290,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// ✅ ASIGNACIÓN MANUAL
+// ✅ ASIGNACIÓN MANUAL - CON VALIDACIÓN (NO permite 2 pedidos)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -1321,6 +1305,12 @@ async function asignarPedidoManual() {
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
     const telefonoMensajero = mensajero?.telefono || mensajero?.whatsapp || '';
+    
+    // ✅ VALIDAR QUE EL MENSAJERO NO TENGA OTRO PEDIDO ACTIVO
+    if (mensajero && mensajero.ocupado) {
+        toast(`⚠️ ${nombreMensajero} YA tiene un pedido activo. No puede tomar otro.`, 'error', 5000);
+        return;
+    }
     
     const pedidoActual = todosLosPedidos.find(p => p.id === pedidoId && p.tiendaId === tiendaId);
     if (pedidoActual && pedidoActual.mensajeroId) {
@@ -1802,6 +1792,7 @@ console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
 console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
+console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
 console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
 </script>
