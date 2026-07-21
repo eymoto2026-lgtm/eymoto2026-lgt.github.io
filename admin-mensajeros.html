@@ -420,7 +420,7 @@ let recargandoMensajeros = false;
 let mensajerosListenersActivos = 0;
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS LOS MENSAJEROS CONECTADOS Y DISPONIBLES
+// 📢 NOTIFICAR A TODOS LOS MENSAJEROS DISPONIBLES (CORREGIDO)
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -443,15 +443,15 @@ async function notificarATodos() {
         return;
     }
     
-    // ✅ FILTRO CORRECTO: SOLO CONECTADOS Y DISPONIBLES (sin pedido activo)
+    // 🔥 FILTRO CORREGIDO: Solo mensajeros CONECTADOS y DISPONIBLES (sin pedido activo)
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
-        !m.ocupado
+        !m.ocupado  // 🔥 ESTO FILTRA LOS OCUPADOS
     );
     
     console.log(`📋 Mensajeros disponibles: ${mensajerosDisponibles.length}`);
-    mensajerosDisponibles.forEach(m => console.log(`  ✅ ${m.nombre}`));
+    mensajerosDisponibles.forEach(m => console.log(`  ✅ ${m.nombre} | ocupado: ${m.ocupado}`));
     
     if (mensajerosDisponibles.length === 0) {
         toast('⚠️ No hay mensajeros disponibles.', 'error', 5000);
@@ -484,7 +484,8 @@ async function notificarATodos() {
             `${urlPedido}\n\n` +
             `⚡ *Toca el pedido y confirma para comenzar la entrega.`;
         
-        let enviados = 0;
+        // 🔥 ABRIR TODAS LAS PESTAÑAS SIMULTÁNEAMENTE
+        const urls = [];
         for (const mensajero of mensajerosDisponibles) {
             const telefono = mensajero.telefono || mensajero.whatsapp || '';
             const telefonoLimpio = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
@@ -503,11 +504,16 @@ async function notificarATodos() {
             
             const mensajePersonalizado = mensajeBase + `\n\n🛵 *Mensajero:* ${mensajero.nombre}`;
             const urlWhatsApp = `https://wa.me/${telefonoFinal}?text=${encodeURIComponent(mensajePersonalizado)}`;
-            window.open(urlWhatsApp, '_blank');
-            console.log(`📱 Enviando a ${mensajero.nombre}: ${telefonoFinal}`);
-            enviados++;
-            await new Promise(resolve => setTimeout(resolve, 400));
+            urls.push({ url: urlWhatsApp, nombre: mensajero.nombre });
         }
+        
+        // 🔥 ABRIR TODAS LAS PESTAÑAS CASI AL MISMO TIEMPO
+        urls.forEach((item, index) => {
+            setTimeout(() => {
+                window.open(item.url, '_blank');
+                console.log(`📱 Enviando a ${item.nombre}`);
+            }, index * 100); // 100ms entre cada una (casi simultáneo)
+        });
         
         // Guardar en Firestore
         await db.collection('tiendas').doc(tiendaId)
@@ -524,12 +530,13 @@ async function notificarATodos() {
                 }))
             });
         
-        toast(`📱 Notificación enviada a ${enviados} mensajeros disponibles.`, 'success', 4000);
+        toast(`📱 Notificación enviada a ${urls.length} mensajeros disponibles.`, 'success', 4000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
         
         setTimeout(() => recargarPedidos(), 500);
+        setTimeout(() => recargarMensajeros(), 600);
         
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -688,7 +695,7 @@ async function cargarTiendas() {
 }
 
 // ============================================================
-// CARGAR MENSAJEROS - VERSIÓN CORREGIDA (NO permite 2 pedidos)
+// CARGAR MENSAJEROS - VERSIÓN CORREGIDA
 // ============================================================
 function cargarMensajeros() {
     if (mensajerosListenersActivos > 0) {
@@ -724,19 +731,18 @@ function cargarMensajeros() {
                     const data = doc.data();
                     const uid = doc.id;
                     
-                    // Verificar si el mensajero tiene un pedido activo
+                    // 🔥 VERIFICAR SI EL MENSAJERO TIENE UN PEDIDO ACTIVO
                     const tienePedidoActivo = todosLosPedidos.some(p => 
                         p.mensajeroId === uid && 
                         (
                             p.estado === 'En camino al restaurante' ||
                             p.estado === 'Recogiendo pedido' ||
                             p.estado === 'En camino' ||
-                            p.estado === 'Entregado' ||
                             (p.estado === 'Listo para asignar' && p.pendienteConfirmacion === true)
                         )
                     );
                     
-                    // Verificar si hay un pedido asignado manualmente que no haya sido confirmado
+                    // 🔥 TAMBIÉN verificar si hay un pedido asignado manualmente que no haya sido confirmado
                     const tieneAsignacionPendiente = todosLosPedidos.some(p =>
                         p.mensajeroId === uid &&
                         p.pendienteConfirmacion === true &&
@@ -1163,6 +1169,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
+    // 🔥 FILTRAR SOLO DISPONIBLES
     const mensajerosDisponibles = todosLosMensajeros.filter(m => 
         m.activo !== false && 
         m.conectado !== false && 
@@ -1237,7 +1244,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
                 📱 Notificar a ${mensajerosDisponibles.length} mensajeros
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                📋 Se abrirán ${mensajerosDisponibles.length} pestañas de WhatsApp (una por cada mensajero)
+                📋 Se abrirán ${mensajerosDisponibles.length} pestañas de WhatsApp (casi al mismo tiempo)
             </div>
         </div>
         
