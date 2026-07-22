@@ -936,6 +936,7 @@ function cargarPedidosDisponibles() {
             pedidosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
+                // Solo mostrar pedidos que NO tengan mensajero asignado
                 if (!data.mensajeroId) {
                     pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
@@ -992,15 +993,18 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// RENDERIZAR PEDIDOS DISPONIBLES
+// RENDERIZAR PEDIDOS DISPONIBLES (filtrando los ya tomados)
 // ============================================================
 function renderizarPedidosDisponibles() {
     const container = document.getElementById('listaDisponibles');
     const badge = document.getElementById('dispBadge');
     
-    badge.textContent = pedidosDisponibles.length;
+    // 🔥 Filtrar los que realmente no tienen mensajero (por si acaso)
+    const disponiblesReales = pedidosDisponibles.filter(p => !p.mensajeroId);
     
-    if (pedidosDisponibles.length === 0) {
+    badge.textContent = disponiblesReales.length;
+    
+    if (disponiblesReales.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <span class="icono">✅</span>
@@ -1010,7 +1014,7 @@ function renderizarPedidosDisponibles() {
         return;
     }
     
-    container.innerHTML = pedidosDisponibles.map(p => renderPedidoCard(p, 'disponible')).join('');
+    container.innerHTML = disponiblesReales.map(p => renderPedidoCard(p, 'disponible')).join('');
 }
 
 // ============================================================
@@ -1277,20 +1281,63 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 📦 RECOGER PEDIDO
+// 📦 RECOGER PEDIDO (MEJORADO CON VERIFICACIONES)
 // ============================================================
 async function recogerPedido(pedidoId, tiendaId) {
     try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'Recogiendo pedido',
-                fechaRecogida: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        // 1. Verificar que el pedido aún existe y está disponible
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            toast('⚠️ El pedido ya no existe.', 'error');
+            cargarPedidosDisponibles();
+            return;
+        }
+
+        const data = doc.data();
+
+        // 2. Verificar que el pedido no tenga ya un mensajero asignado
+        if (data.mensajeroId) {
+            toast('⛔ Este pedido ya fue tomado por otro mensajero.', 'error');
+            cargarPedidosDisponibles();
+            return;
+        }
+
+        // 3. Verificar que el estado sea "Listo para asignar"
+        if (data.estado !== 'Listo para asignar') {
+            toast(`⚠️ El pedido ya no está disponible (estado: ${data.estado})`, 'warn');
+            cargarPedidosDisponibles();
+            return;
+        }
+
+        // 4. Verificar que el mensajero esté conectado y sin pedidos activos
+        if (pedidosActivos.length > 0) {
+            toast('⚠️ Ya tienes un pedido activo.', 'error');
+            return;
+        }
+        if (!mensajeroData.conectado) {
+            toast('⚠️ Conéctate primero.', 'warn');
+            return;
+        }
+
+        // 5. ✅ Todo bien: actualizar el pedido
+        await docRef.update({
+            estado: 'Recogiendo pedido',
+            fechaRecogida: firebase.firestore.FieldValue.serverTimestamp(),
+            mensajeroId: mensajeroUid, // asegurar que queda asignado
+            nombreMensajero: mensajeroData.nombre || 'Mensajero'
+        });
+
         toast('📦 Pedido recogido. ¡En camino a la entrega!', 'success', 3000);
         cargarPedidos();
+        cargarPedidosDisponibles();
+
     } catch (e) {
+        console.error('Error en recogerPedido:', e);
         toast('❌ Error: ' + e.message, 'error');
+        cargarPedidosDisponibles();
     }
 }
 
