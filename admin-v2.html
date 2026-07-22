@@ -71,7 +71,6 @@ label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margi
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
 
-/* Campo de costo de domicilio */
 .campo-domicilio {
     display: flex;
     align-items: center;
@@ -184,8 +183,8 @@ header .spacer{flex:1}
 .stat-card.c-cyan .val{color:var(--cyan)}
 .stat-card.c-pink .val{color:var(--pink)}
 
-.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:5px;margin-bottom:22px}
-.tab-btn{flex:1;background:transparent;color:var(--text-muted);border:none;padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:5px;margin-bottom:22px;flex-wrap:wrap;}
+.tab-btn{flex:1;background:transparent;color:var(--text-muted);border:none;padding:10px 8px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;min-width:80px;}
 .tab-btn.active{background:var(--surface);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .tab-badge{background:var(--yellow);color:#1a1a2e;font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;}
 .tab-content{display:none}
@@ -321,6 +320,34 @@ header .spacer{flex:1}
 .badge-closed{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--red-bg);color:var(--red);margin-top:6px}
 .tienda-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
 .tienda-item.tiene-pedidos{border-color:var(--yellow);box-shadow:0 0 15px rgba(255,214,0,0.15)}
+
+.mensajero-item{
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+.mensajero-item .info{flex:1;min-width:180px;}
+.mensajero-item .info .nombre{font-size:15px;font-weight:700;}
+.mensajero-item .info .email{font-size:12px;color:var(--text-muted);}
+.mensajero-item .badge-estado{
+    display:inline-block;
+    padding:2px 10px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:700;
+}
+.mensajero-item .badge-estado.activo{background:var(--green-bg);color:var(--green);}
+.mensajero-item .badge-estado.inactivo{background:var(--red-bg);color:var(--red);}
+.mensajero-item .badge-estado.conectado{background:var(--blue-bg);color:var(--blue);}
+.mensajero-item .badge-estado.desconectado{background:var(--surface3);color:var(--text-muted);}
+.mensajero-item .badge-estado.ocupado{background:var(--yellow-bg);color:var(--yellow);}
+.mensajero-actions{display:flex;gap:6px;flex-wrap:wrap;}
 
 .prod-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);}
 .prod-item:last-child{border-bottom:none}
@@ -589,6 +616,53 @@ header .spacer{flex:1}
     font-weight: 500;
 }
 
+/* ===== MODAL CREAR MENSAJERO ===== */
+.modal-crear-mensajero {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.modal-crear-mensajero.active { display: flex; }
+.modal-crear-mensajero .modal-content {
+    background: #1e1e1e;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    padding: 24px;
+    border: 1px solid var(--yellow);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-crear-mensajero .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.modal-crear-mensajero .modal-header h3 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+}
+.modal-crear-mensajero .modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+}
+.modal-crear-mensajero .modal-close:hover { color: var(--red); }
+
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
@@ -634,8 +708,8 @@ header .spacer{flex:1}
       <div class="stat-card c-blue"><div class="val" id="statEnCamino">0</div><div class="lbl">En camino</div></div>
     </div>
 
-    <!-- RESUMEN DE NOTIFICACIONES -->
-    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;background:var(--surface2);padding:12px 16px;border-radius:12px;border:1px solid var(--border);">
+    <!-- RESUMEN DE NOTIFICACIONES (solo Super Admin) -->
+    <div id="notifResumenContainer" style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;background:var(--surface2);padding:12px 16px;border-radius:12px;border:1px solid var(--border);">
         <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:14px;">👑</span>
             <span style="font-size:13px;color:var(--text-muted);">
@@ -661,11 +735,12 @@ header .spacer{flex:1}
         </button>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" id="tabsContainer">
       <button class="tab-btn active" onclick="window.switchTab('pedidos',this)">Comandas <span class="tab-badge" id="tabBadge">0</span></button>
       <button class="tab-btn" onclick="window.switchTab('tiendas',this)" id="tabBtnTiendas">Tiendas</button>
-      <button class="tab-btn" onclick="window.switchTab('productos',this)">Productos</button>
-      <button class="tab-btn" onclick="window.switchTab('inventario',this)">📦 Inventario</button>
+      <button class="tab-btn" onclick="window.switchTab('productos',this)" id="tabBtnProductos">Productos</button>
+      <button class="tab-btn" onclick="window.switchTab('inventario',this)" id="tabBtnInventario">📦 Inventario</button>
+      <button class="tab-btn" onclick="window.switchTab('mensajeros',this)" id="tabBtnMensajeros">👥 Mensajeros</button>
       <button class="tab-btn" onclick="window.switchTab('estado',this)" id="tabBtnEstado">✅ Estado</button>
     </div>
 
@@ -692,7 +767,7 @@ header .spacer{flex:1}
       </div>
     </div>
 
-    <!-- TAB TIENDAS -->
+    <!-- TAB TIENDAS (solo Super Admin) -->
     <div class="tab-content" id="tab-tiendas">
       <div class="section-title">🏪 Gestionar tiendas</div>
       
@@ -976,6 +1051,41 @@ header .spacer{flex:1}
       </div>
     </div>
 
+    <!-- ===== TAB MENSAJEROS (solo Super Admin) ===== -->
+    <div class="tab-content" id="tab-mensajeros">
+      <div class="section-title">👥 Administrar mensajeros</div>
+      
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <button onclick="window.abrirModalCrearMensajero()" class="btn-success" style="width:auto;padding:10px 20px;display:flex;align-items:center;gap:8px;">
+          ➕ Crear mensajero
+        </button>
+        <button onclick="window.cargarMensajerosAdmin()" class="btn-info" style="width:auto;padding:10px 20px;">
+          🔄 Actualizar lista
+        </button>
+      </div>
+      
+      <div id="listaMensajeros">
+        <p style="color:var(--text-muted);font-size:13px;">Cargando mensajeros...</p>
+      </div>
+      
+      <!-- MODAL CREAR MENSAJERO -->
+      <div class="modal-crear-mensajero" id="modalCrearMensajero">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>➕ Crear nuevo mensajero</h3>
+            <button class="modal-close" onclick="window.cerrarModalCrearMensajero()">✕</button>
+          </div>
+          <div style="background:var(--surface3);padding:16px;border-radius:10px;margin-bottom:12px;">
+            <div class="form-group"><label>📧 Correo electrónico *</label><input id="nuevoMensajeroEmail" type="email" placeholder="mensajero@ejemplo.com"></div>
+            <div class="form-group"><label>🔑 Contraseña *</label><input id="nuevoMensajeroPassword" type="password" placeholder="Mínimo 6 caracteres"></div>
+            <div class="form-group"><label>👤 Nombre completo</label><input id="nuevoMensajeroNombre" placeholder="Nombre del mensajero"></div>
+            <div class="form-group"><label>📱 Teléfono</label><input id="nuevoMensajeroTelefono" placeholder="3000000000"></div>
+          </div>
+          <button onclick="window.crearMensajero()" style="width:100%;padding:14px;border-radius:10px;background:var(--yellow);color:#1a1a2e;font-weight:800;font-size:15px;border:none;cursor:pointer;">✅ Crear mensajero</button>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB ESTADO -->
     <div class="tab-content" id="tab-estado">
       <div class="section-title">🔧 Control de operación por tienda</div>
@@ -1187,13 +1297,11 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             return;
         }
         
-        // ✅ VERIFICAR SI EL PEDIDO YA FUE NOTIFICADO EN ESTE ESTADO
         if (pedido._ultimoEstadoNotificado === estadoNuevo) {
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
             return;
         }
         
-        // ✅ CALCULAR PRODUCTOS Y DOMICILIO
         let subtotalProductos = 0;
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => {
@@ -1218,7 +1326,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             });
         }
         
-        // ✅ AGREGAR PRODUCTOS, DOMICILIO Y TOTAL
         mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
         if (costoDomicilio > 0) {
             mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
@@ -1238,7 +1345,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
         if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
         
-        // ✅ AGREGAR MENSAJERO ASIGNADO SI EXISTE
         if (pedido.nombreMensajero) {
             mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
         }
@@ -1248,7 +1354,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         window.open(urlWhatsApp, '_blank');
         
-        // ✅ GUARDAR QUE YA SE NOTIFICÓ ESTE ESTADO
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1354,57 +1459,6 @@ let productosDisponibles = [];
 let itemsEditando = [];
 let pedidoAsignacion = null;
 let todosLosMensajeros = [];
-
-// ============================================================
-// FUNCIONES FALTANTES CORREGIDAS
-// ============================================================
-async function cargarTiendasEnFiltro() {
-    const selector = document.getElementById('filtroTienda');
-    if (!selector) return;
-    
-    selector.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
-    
-    try {
-        const snap = await db.collection('tiendas').get();
-        if (snap.empty) {
-            console.log('⚠️ No hay tiendas disponibles');
-            return;
-        }
-        snap.forEach(doc => {
-            const t = doc.data();
-            const id = doc.id;
-            const nombre = t.nombre || id;
-            const tipo = t.tipoNegocio || 'restaurante';
-            const icono = TIPOS_NEGOCIO[tipo]?.label?.split(' ')[0] || '🏪';
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = `${icono} ${nombre}`;
-            selector.appendChild(option);
-        });
-        console.log(`✅ ${snap.size} tiendas cargadas en el filtro`);
-        return snap.size;
-    } catch (error) {
-        console.error('❌ Error al cargar tiendas en el filtro:', error);
-        toast('❌ Error al cargar tiendas', 'error');
-        return 0;
-    }
-}
-
-async function cargarProductosParaEdicion() {
-    try {
-        const snap = await db.collectionGroup('productos').get();
-        productosDisponibles = [];
-        snap.forEach(doc => {
-            const p = doc.data();
-            const id = doc.id;
-            const tiendaId = doc.ref.parent.parent.id;
-            productosDisponibles.push({ id, tiendaId, ...p });
-        });
-        console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
-    } catch (e) {
-        console.error('Error cargando productos para edición:', e);
-    }
-}
 
 // ============================================================
 // TOAST
@@ -1647,10 +1701,17 @@ async function verificarRolUsuario() {
         }
         const data = doc.data();
         console.log('📌 Datos del usuario:', data);
+        // Super Admin
         if (data.admin === true || data.superAdmin === true) {
             console.log('👑 SUPER ADMIN');
             return { rol: 'superadmin', tiendaId: null };
         }
+        // Admin Mensajero (nuevo rol)
+        if (data.adminMensajero === true) {
+            console.log('🛵 ADMIN MENSAJERO');
+            return { rol: 'adminMensajero', tiendaId: null };
+        }
+        // Admin de tienda
         if (data.tiendaId) {
             console.log('🏪 ADMIN DE NEGOCIO - Tienda:', data.tiendaId);
             return { rol: 'admin', tiendaId: data.tiendaId };
@@ -1663,6 +1724,61 @@ async function verificarRolUsuario() {
     }
 }
 
+// ============================================================
+// FUNCIONES FALTANTES
+// ============================================================
+
+async function cargarTiendasEnFiltro() {
+    const selector = document.getElementById('filtroTienda');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
+    
+    try {
+        const snap = await db.collection('tiendas').get();
+        if (snap.empty) {
+            console.log('⚠️ No hay tiendas disponibles');
+            return;
+        }
+        snap.forEach(doc => {
+            const t = doc.data();
+            const id = doc.id;
+            const nombre = t.nombre || id;
+            const tipo = t.tipoNegocio || 'restaurante';
+            const icono = TIPOS_NEGOCIO[tipo]?.label?.split(' ')[0] || '🏪';
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${icono} ${nombre}`;
+            selector.appendChild(option);
+        });
+        console.log(`✅ ${snap.size} tiendas cargadas en el filtro`);
+        return snap.size;
+    } catch (error) {
+        console.error('❌ Error al cargar tiendas en el filtro:', error);
+        toast('❌ Error al cargar tiendas', 'error');
+        return 0;
+    }
+}
+
+async function cargarProductosParaEdicion() {
+    try {
+        const snap = await db.collectionGroup('productos').get();
+        productosDisponibles = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            const tiendaId = doc.ref.parent.parent.id;
+            productosDisponibles.push({ id, tiendaId, ...p });
+        });
+        console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
+    } catch (e) {
+        console.error('Error cargando productos para edición:', e);
+    }
+}
+
+// ============================================================
+// INICIALIZAR PANEL
+// ============================================================
 async function inicializarPanel() {
     try {
         const rolInfo = await verificarRolUsuario();
@@ -1675,30 +1791,60 @@ async function inicializarPanel() {
         tiendaIdUsuario = rolInfo.tiendaId;
         
         const rolLabel = document.getElementById('rolUsuario');
-        if (rolUsuario === 'superadmin') {
-            if (rolLabel) {
+        if (rolLabel) {
+            if (rolUsuario === 'superadmin') {
                 rolLabel.textContent = '👑 Super Administrador';
                 rolLabel.style.color = 'var(--yellow)';
+            } else if (rolUsuario === 'adminMensajero') {
+                rolLabel.textContent = '🛵 Admin Mensajero';
+                rolLabel.style.color = 'var(--blue)';
+            } else if (rolUsuario === 'admin') {
+                rolLabel.textContent = '🏪 Administrador de tienda';
+                rolLabel.style.color = 'var(--green)';
+            } else {
+                rolLabel.textContent = '👤 Cliente';
+                rolLabel.style.color = 'var(--text-muted)';
             }
+        }
+        
+        // Ocultar elementos según rol
+        const esSuperAdmin = (rolUsuario === 'superadmin');
+        const esAdminMensajero = (rolUsuario === 'adminMensajero');
+        const esAdminTienda = (rolUsuario === 'admin');
+        
+        // Mostrar/ocultar pestañas
+        document.getElementById('tabBtnTiendas').style.display = esSuperAdmin ? 'flex' : 'none';
+        document.getElementById('tabBtnProductos').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
+        document.getElementById('tabBtnInventario').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
+        document.getElementById('tabBtnMensajeros').style.display = esSuperAdmin ? 'flex' : 'none';
+        document.getElementById('tabBtnEstado').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
+        
+        // Resumen de notificaciones solo Super Admin
+        document.getElementById('notifResumenContainer').style.display = esSuperAdmin ? 'flex' : 'none';
+        
+        // Botón crear negocio solo Super Admin
+        document.getElementById('btnCrearNegocioContainer').style.display = esSuperAdmin ? 'block' : 'none';
+        
+        if (esSuperAdmin) {
             document.getElementById('panelTitulo').textContent = 'Panel de Super Administración';
-            document.getElementById('tabBtnTiendas').style.display = 'flex';
-            document.getElementById('btnCrearNegocioContainer').style.display = 'block';
-            cargarPreferenciaSonido();
-            
             await cargarTiendasSuperAdmin();
             await cargarSelectsTiendas();
             await cargarTiendasEnFiltro();
             await cargarProductosParaEdicion();
-            
-        } else if (rolUsuario === 'admin') {
-            if (rolLabel) {
-                rolLabel.textContent = '🏪 Administrador de tienda';
-                rolLabel.style.color = 'var(--green)';
-            }
-            document.getElementById('panelTitulo').textContent = 'Panel de Administración';
-            document.getElementById('tabBtnTiendas').style.display = 'none';
-            document.getElementById('btnCrearNegocioContainer').style.display = 'none';
-            
+            await cargarMensajerosAdmin();
+        } else if (esAdminMensajero) {
+            document.getElementById('panelTitulo').textContent = 'Panel de Mensajería - Asignación de Pedidos';
+            // Ocultar el selector de tiendas para admin mensajero (solo ve todos)
+            document.querySelector('.peds-controls select').style.display = 'none';
+            // Cargar solo pedidos listos para asignar (se maneja en la escucha)
+            cargarPreferenciaSonido();
+            // No cargar tiendas ni productos
+            // Iniciamos la escucha global para ver todos los pedidos listos
+            iniciarEscuchaGlobal();
+            // Aplicar filtro automático para mostrar solo "Listo para asignar" y "Asignado"
+            // Esto se hará en la función de renderizado
+        } else if (esAdminTienda) {
+            document.getElementById('panelTitulo').textContent = 'Panel de Administración de Tienda';
             await cargarTiendaUnica(tiendaIdUsuario);
             await cargarSelectsTiendasUnico(tiendaIdUsuario);
             
@@ -1727,7 +1873,10 @@ async function inicializarPanel() {
         }
         
         setTimeout(activarAudioAutomatico, 1000);
-        iniciarEscuchaGlobal();
+        if (!esAdminMensajero) {
+            // Para admin mensajero ya iniciamos la escucha antes
+            iniciarEscuchaGlobal();
+        }
         toast('✅ Panel cargado correctamente', 'success', 2000);
         
         setTimeout(() => {
@@ -2730,6 +2879,7 @@ function switchTab(tab, btn) {
     if (tab === 'tiendas') { cargarTiendasSuperAdmin(); }
     if (tab === 'inventario') { cargarInventario(); }
     if (tab === 'productos') { cargarSelectsTiendas(); }
+    if (tab === 'mensajeros') { cargarMensajerosAdmin(); }
 }
 
 // ============================================================
@@ -3037,7 +3187,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
     }
     
-    // ===== CAMPO DE COSTO DE DOMICILIO =====
     const campoDomicilio = `
         <div class="campo-domicilio">
             <span class="label-domicilio">🛵 Costo domicilio:</span>
@@ -3049,7 +3198,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </div>
     `;
     
-    // ===== TOTAL ACTUALIZADO CON DOMICILIO =====
     const totalHtml = `
         <div style="margin-top:4px;padding:6px 0;border-top:1px dashed var(--border2);">
             <div style="display:flex;justify-content:space-between;font-size:13px;">
@@ -3069,7 +3217,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         </div>
     `;
     
-    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimoEstado = estado === estadosNegocio[estadosNegocio.length - 1];
@@ -3084,7 +3231,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== MOSTRAR MENSAJERO ASIGNADO =====
     if (p.mensajeroId || p.nombreMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero (Sistema)';
         const asignadoPor = p.asignadoPor || 'Sistema';
@@ -3096,8 +3242,9 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== BOTÓN ASIGNAR MENSAJERO =====
-    if (estado === 'Listo para asignar' && !p.mensajeroId) {
+    // ===== BOTÓN ASIGNAR MENSAJERO - SOLO PARA SUPER ADMIN O ADMIN MENSAJERO =====
+    const puedeAsignar = (rolUsuario === 'superadmin' || rolUsuario === 'adminMensajero');
+    if (esListoParaAsignar && !p.mensajeroId && puedeAsignar) {
         acciones += `
             <button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">
                 👤 Asignar mensajero
@@ -3105,64 +3252,64 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         `;
     }
     
-    // ===== BOTONES DE ESTADO =====
-    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
-        const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
-        if (primerSiguiente) {
-            let icono = '▶';
-            const labelLower = primerSiguiente.toLowerCase();
-            if (labelLower.includes('cocina')) icono = '👨‍🍳';
-            else if (labelLower.includes('despacho')) icono = '📦';
-            else if (labelLower.includes('preparando')) icono = '⏳';
-            else if (labelLower.includes('cortando')) icono = '🔪';
-            else if (labelLower.includes('horneando')) icono = '🔥';
-            else if (labelLower.includes('arreglando')) icono = '🌸';
-            else icono = '✅';
+    // ===== BOTONES DE ESTADO (admin de tienda y super admin) =====
+    const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
+    if (puedeCambiarEstado) {
+        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
+            const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
+            if (primerSiguiente) {
+                let icono = '▶';
+                const labelLower = primerSiguiente.toLowerCase();
+                if (labelLower.includes('cocina')) icono = '👨‍🍳';
+                else if (labelLower.includes('despacho')) icono = '📦';
+                else if (labelLower.includes('preparando')) icono = '⏳';
+                else if (labelLower.includes('cortando')) icono = '🔪';
+                else if (labelLower.includes('horneando')) icono = '🔥';
+                else if (labelLower.includes('arreglando')) icono = '🌸';
+                else icono = '✅';
+                
+                acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">
+                    ${icono} ${primerSiguiente}
+                </button>`;
+            }
+        }
+        
+        if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+            acciones += `
+                <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                    ✅ Servicio Listo (Notificar Mensajeros)
+                </button>
+            `;
+        }
+        
+        if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+            let iconoSiguiente = '▶';
+            const labelLower = siguienteEstado.toLowerCase();
+            if (labelLower.includes('camino')) iconoSiguiente = '🛵';
+            else if (labelLower.includes('entregado')) iconoSiguiente = '✅';
+            else iconoSiguiente = '▶';
             
-            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">
-                ${icono} ${primerSiguiente}
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
+                ${iconoSiguiente} ${siguienteEstado}
             </button>`;
+        }
+        
+        const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
+        if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
+                ↩️ ${estadoAnterior}
+            </button>`;
+        }
+        
+        if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
+            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
     }
     
-    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
-        acciones += `
-            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
-                ✅ Servicio Listo (Notificar Mensajeros)
-            </button>
-        `;
-    }
-    
-    if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
-        let iconoSiguiente = '▶';
-        const labelLower = siguienteEstado.toLowerCase();
-        if (labelLower.includes('camino')) iconoSiguiente = '🛵';
-        else if (labelLower.includes('entregado')) iconoSiguiente = '✅';
-        else iconoSiguiente = '▶';
-        
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
-            ${iconoSiguiente} ${siguienteEstado}
-        </button>`;
-    }
-    
-    const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
-            ↩️ ${estadoAnterior}
-        </button>`;
-    }
-    
-    if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
-        acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-    }
-    
-    // ✅ BOTÓN EDITAR PEDIDO
-    if (estado !== 'Entregado' && estado !== 'Cancelado') {
+    // ===== BOTONES EDITAR Y REENVIAR (solo super admin y admin tienda) =====
+    const puedeEditar = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
+    if (puedeEditar && estado !== 'Entregado' && estado !== 'Cancelado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    // ✅ BOTÓN REENVIAR NOTIFICACIÓN
-    if (estado !== 'Entregado' && estado !== 'Cancelado') {
         acciones += `<button class="btn-renotificar" onclick="window.reenviarNotificacionConDomicilio('${tiendaId}','${pid}')">📱 Reenviar Notificación</button>`;
     }
     
@@ -3216,6 +3363,8 @@ function mostrarPedidosPendientesGlobal() {
         'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0, 'Listo para asignar': 0
     };
     
+    const esAdminMensajero = (rolUsuario === 'adminMensajero');
+    
     Object.keys(todosLosPedidos).forEach(tiendaId => {
         const tienda = tiendasCache[tiendaId] || {};
         const tipoNegocio = tienda.tipoNegocio || 'restaurante';
@@ -3226,6 +3375,11 @@ function mostrarPedidosPendientesGlobal() {
         pedidos.forEach(pedido => {
             const data = pedido.data;
             const estado = data.estado || estadosNegocio[0] || 'Pendiente';
+            
+            // Para admin mensajero: solo mostrar "Listo para asignar" y "Asignado"
+            if (esAdminMensajero && estado !== 'Listo para asignar' && estado !== 'Asignado') {
+                return; // Saltar este pedido
+            }
             
             if (estado === 'Entregado' || estado === 'Cancelado') {
                 detenerAlarmaGlobal(pedido.id);
@@ -3256,7 +3410,6 @@ function mostrarPedidosPendientesGlobal() {
         });
     });
     
-    // Actualizar contadores de columnas
     const cntP = document.getElementById('cnt-P');
     const cntC = document.getElementById('cnt-C');
     const cntM = document.getElementById('cnt-M');
@@ -3376,13 +3529,15 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         </div>
     `;
     
-    // ===== ACCIONES =====
     let acciones = '';
     const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     
-    // ===== MOSTRAR MENSAJERO ASIGNADO =====
+    const puedeAsignar = (rolUsuario === 'superadmin' || rolUsuario === 'adminMensajero');
+    const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
+    const puedeEditar = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
+    
     if (p.mensajeroId || p.nombreMensajero) {
         const nombreMensajero = p.nombreMensajero || 'Mensajero (Sistema)';
         const asignadoPor = p.asignadoPor || 'Sistema';
@@ -3394,7 +3549,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         `;
     }
     
-    if (esListoParaAsignar && !p.mensajeroId) {
+    if (esListoParaAsignar && !p.mensajeroId && puedeAsignar) {
         acciones += `
             <button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">
                 👤 Asignar mensajero
@@ -3402,58 +3557,57 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         `;
     }
     
-    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
-        acciones += `
-            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
-                ✅ Servicio Listo (Notificar Mensajeros)
-            </button>
-        `;
-    }
-    
-    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
-        const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
-        if (primerSiguiente) {
-            let icono = '▶';
-            const labelLower = primerSiguiente.toLowerCase();
-            if (labelLower.includes('cocina')) icono = '👨‍🍳';
-            else if (labelLower.includes('despacho')) icono = '📦';
-            else if (labelLower.includes('preparando')) icono = '⏳';
-            else icono = '✅';
+    if (puedeCambiarEstado) {
+        if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+            acciones += `
+                <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                    ✅ Servicio Listo (Notificar Mensajeros)
+                </button>
+            `;
+        }
+        
+        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
+            const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
+            if (primerSiguiente) {
+                let icono = '▶';
+                const labelLower = primerSiguiente.toLowerCase();
+                if (labelLower.includes('cocina')) icono = '👨‍🍳';
+                else if (labelLower.includes('despacho')) icono = '📦';
+                else if (labelLower.includes('preparando')) icono = '⏳';
+                else icono = '✅';
+                
+                acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">
+                    ${icono} ${primerSiguiente}
+                </button>`;
+            }
+        }
+        
+        if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+            let iconoSiguiente = '▶';
+            const labelLower = siguienteEstado.toLowerCase();
+            if (labelLower.includes('camino')) iconoSiguiente = '🛵';
+            else if (labelLower.includes('entregado')) iconoSiguiente = '✅';
+            else iconoSiguiente = '▶';
             
-            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">
-                ${icono} ${primerSiguiente}
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
+                ${iconoSiguiente} ${siguienteEstado}
             </button>`;
+        }
+        
+        const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
+        if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
+                ↩️ ${estadoAnterior}
+            </button>`;
+        }
+        
+        if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
+            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
     }
     
-    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
-        let iconoSiguiente = '▶';
-        const labelLower = siguienteEstado.toLowerCase();
-        if (labelLower.includes('camino')) iconoSiguiente = '🛵';
-        else if (labelLower.includes('entregado')) iconoSiguiente = '✅';
-        else iconoSiguiente = '▶';
-        
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
-            ${iconoSiguiente} ${siguienteEstado}
-        </button>`;
-    }
-    
-    const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-    if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
-        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
-            ↩️ ${estadoAnterior}
-        </button>`;
-    }
-    
-    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
-        acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
-    }
-    
-    if (estado !== 'Entregado' && estado !== 'Cancelado' && estado !== 'Asignado') {
+    if (puedeEditar && estado !== 'Entregado' && estado !== 'Cancelado' && estado !== 'Asignado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
-    }
-    
-    if (estado !== 'Entregado' && estado !== 'Cancelado') {
         acciones += `<button class="btn-renotificar" onclick="window.reenviarNotificacionConDomicilio('${tiendaId}','${pid}')">📱 Reenviar Notificación</button>`;
     }
     
@@ -3504,7 +3658,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE - TODOS LOS ESTADOS)
+// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE)
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -3531,7 +3685,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
             return;
         }
         
-        // 🔥 ACTUALIZAR ESTADO EN FIRESTORE
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({ 
@@ -3542,7 +3695,6 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         
         toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
         
-        // 🔥 NOTIFICAR AL CLIENTE DE CADA CAMBIO DE ESTADO
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoActual, nuevoEstado);
         
         if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
@@ -3645,10 +3797,7 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         });
         
         toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
-        
-        // 🔥 NOTIFICAR AL CLIENTE QUE ESTÁ LISTO
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, nuevoEstado);
-        
         console.log(`📦 Pedido ${pedidoId} listo para asignar`);
         
         if (tiendaSeleccionada) {
@@ -4115,6 +4264,42 @@ async function cargarMensajerosAdmin() {
         if (statInactivos) statInactivos.textContent = inactivos;
         if (statOcupados) statOcupados.textContent = ocupados;
         
+        // Renderizar lista (solo super admin)
+        const lista = document.getElementById('listaMensajeros');
+        if (lista && rolUsuario === 'superadmin') {
+            if (mensajerosList.length === 0) {
+                lista.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay mensajeros registrados.</p>';
+            } else {
+                let html = '';
+                mensajerosList.forEach(m => {
+                    const estado = m.activo ? 'activo' : 'inactivo';
+                    const conectado = m.conectado ? 'conectado' : 'desconectado';
+                    const ocupado = m.ocupado ? 'ocupado' : '';
+                    const nombre = m.nombre || m.email || 'Sin nombre';
+                    html += `
+                        <div class="mensajero-item">
+                            <div class="info">
+                                <div class="nombre">${nombre}</div>
+                                <div class="email">${m.email || 'Sin email'}</div>
+                                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+                                    <span class="badge-estado ${estado}">${m.activo ? '✅ Activo' : '❌ Inactivo'}</span>
+                                    <span class="badge-estado ${conectado}">${m.conectado ? '🟢 Conectado' : '🔴 Desconectado'}</span>
+                                    ${m.ocupado ? '<span class="badge-estado ocupado">🛵 Ocupado</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="mensajero-actions">
+                                <button class="btn-sm ${m.activo ? 'btn-danger' : 'btn-success'}" onclick="window.toggleActivoMensajero('${m.uid}')">
+                                    ${m.activo ? '🔴 Desactivar' : '🟢 Activar'}
+                                </button>
+                                <button class="btn-info btn-sm" onclick="window.verPedidosMensajero('${m.uid}')">📦 Ver pedidos</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                lista.innerHTML = html;
+            }
+        }
+        
         console.log(`📊 Mensajeros: ${activos} activos, ${inactivos} inactivos, ${ocupados} ocupados`);
         
         return { activos, inactivos, ocupados };
@@ -4126,9 +4311,162 @@ async function cargarMensajerosAdmin() {
 }
 
 // ============================================================
+// GESTIÓN DE MENSAJEROS (solo Super Admin)
+// ============================================================
+async function toggleActivoMensajero(uid) {
+    if (rolUsuario !== 'superadmin') {
+        toast('⛔ Solo el Super Admin puede hacer esto', 'error');
+        return;
+    }
+    if (!confirm('¿Cambiar el estado de este mensajero?')) return;
+    try {
+        const doc = await db.collection('usuarios').doc(uid).get();
+        if (!doc.exists) return;
+        const data = doc.data();
+        const nuevoEstado = !data.activo;
+        await db.collection('usuarios').doc(uid).update({
+            activo: nuevoEstado
+        });
+        toast(nuevoEstado ? '✅ Mensajero activado' : '❌ Mensajero desactivado', 'success');
+        cargarMensajerosAdmin();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+async function verPedidosMensajero(uid) {
+    const mensajero = todosLosMensajeros.find(m => m.uid === uid);
+    if (!mensajero) {
+        toast('⚠️ Mensajero no encontrado', 'error');
+        return;
+    }
+    
+    // Buscar pedidos asignados a este mensajero
+    let pedidos = [];
+    try {
+        const tiendasSnap = await db.collection('tiendas').get();
+        for (const tiendaDoc of tiendasSnap.docs) {
+            const tiendaId = tiendaDoc.id;
+            const pedidosSnap = await db.collection('tiendas')
+                .doc(tiendaId)
+                .collection('pedidos')
+                .where('mensajeroId', '==', uid)
+                .orderBy('fecha', 'desc')
+                .get();
+            pedidosSnap.forEach(d => {
+                pedidos.push({
+                    tiendaId,
+                    tiendaNombre: tiendasCache[tiendaId]?.nombre || tiendaId,
+                    id: d.id,
+                    ...d.data()
+                });
+            });
+        }
+    } catch(e) {
+        toast('❌ Error al obtener pedidos: ' + e.message, 'error');
+        return;
+    }
+    
+    let html = `<div style="margin-bottom:12px;"><strong>👤 ${mensajero.nombre || mensajero.email}</strong> - ${pedidos.length} pedidos</div>`;
+    if (pedidos.length === 0) {
+        html += '<p style="color:var(--text-muted);font-size:13px;">No hay pedidos asignados a este mensajero.</p>';
+    } else {
+        pedidos.forEach(p => {
+            const estado = p.estado || 'Pendiente';
+            html += `
+                <div style="background:var(--surface2);padding:10px;border-radius:8px;margin-bottom:6px;border:1px solid var(--border);">
+                    <div><strong>🏪 ${p.tiendaNombre}</strong></div>
+                    <div>🧾 ${p.numeroPedido || '#' + p.id.slice(-6)} - ${estado}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Cliente: ${p.cliente?.nombre || 'Desconocido'}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Total: $${(p.total || 0).toLocaleString('es-CO')}</div>
+                </div>
+            `;
+        });
+    }
+    toast('📦 Pedidos del mensajero', 'info', 5000);
+    // Mostrar en una alerta o modal simple
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;justify-content:center;align-items:center;padding:20px;';
+    modal.innerHTML = `
+        <div style="background:#1e1e1e;border-radius:20px;max-width:600px;width:100%;padding:24px;border:1px solid var(--yellow);max-height:80vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="color:#fff;">📦 Pedidos de ${mensajero.nombre || mensajero.email}</h3>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">✕</button>
+            </div>
+            ${html}
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// ============================================================
+// CREAR MENSAJERO (solo Super Admin)
+// ============================================================
+function abrirModalCrearMensajero() {
+    if (rolUsuario !== 'superadmin') {
+        toast('⛔ Solo el Super Admin puede crear mensajeros', 'error');
+        return;
+    }
+    document.getElementById('modalCrearMensajero').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalCrearMensajero() {
+    document.getElementById('modalCrearMensajero').classList.remove('active');
+    document.body.style.overflow = '';
+    document.getElementById('nuevoMensajeroEmail').value = '';
+    document.getElementById('nuevoMensajeroPassword').value = '';
+    document.getElementById('nuevoMensajeroNombre').value = '';
+    document.getElementById('nuevoMensajeroTelefono').value = '';
+}
+
+async function crearMensajero() {
+    if (rolUsuario !== 'superadmin') {
+        toast('⛔ Solo el Super Admin puede crear mensajeros', 'error');
+        return;
+    }
+    const email = document.getElementById('nuevoMensajeroEmail').value.trim();
+    const password = document.getElementById('nuevoMensajeroPassword').value;
+    const nombre = document.getElementById('nuevoMensajeroNombre').value.trim();
+    const telefono = document.getElementById('nuevoMensajeroTelefono').value.trim();
+    
+    if (!email || !password || password.length < 6) {
+        toast('⚠️ Correo y contraseña (mínimo 6 caracteres) son obligatorios.', 'error');
+        return;
+    }
+    
+    try {
+        toast('⏳ Creando mensajero...', 'info');
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const uid = userCredential.user.uid;
+        
+        await db.collection('usuarios').doc(uid).set({
+            email: email,
+            nombre: nombre || 'Mensajero',
+            telefono: telefono || '',
+            mensajero: true,
+            activo: true,
+            conectado: false,
+            creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        toast(`✅ Mensajero ${email} creado correctamente`, 'success');
+        cerrarModalCrearMensajero();
+        cargarMensajerosAdmin();
+    } catch (error) {
+        console.error('❌ Error creando mensajero:', error);
+        toast('❌ Error: ' + error.message, 'error');
+    }
+}
+
+// ============================================================
 // ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
 function abrirModalAsignacion(tiendaId, pedidoId) {
+    if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') {
+        toast('⛔ No tienes permiso para asignar pedidos', 'error');
+        return;
+    }
     pedidoAsignacion = { tiendaId, pedidoId };
     
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
@@ -4251,7 +4589,6 @@ async function asignarPedidoManual() {
                 asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
             });
         
-        // 🔥 NOTIFICAR AL CLIENTE QUE FUE ASIGNADO
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
         
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
@@ -4282,7 +4619,6 @@ async function notificarATodos() {
                 notificadoPor: auth.currentUser?.email || 'Admin'
             });
         
-        // 🔥 NOTIFICAR AL CLIENTE QUE ESTÁ LISTO PARA ASIGNAR
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'En cocina', 'Listo para asignar');
         
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
@@ -4439,15 +4775,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📦 Estados personalizados por tipo de negocio activados');
     console.log('🛵 Costo de domicilio integrado');
     console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
-    console.log('📱 Estados: Pendiente → Preparación → Listo → Asignado → En camino → Entregado');
-    console.log('✏️ Editar pedido con validación de campos');
-    console.log('📱 Mensaje WhatsApp con PRODUCTOS + DOMICILIO + TOTAL');
-    console.log('📱 Botón "Reenviar Notificación" para pedidos existentes');
-    console.log('👤 MOSTRARÁ EL NOMBRE DEL MENSAJERO ASIGNADO EN EL PANEL GENERAL');
-    
-    setTimeout(() => {
-        cargarMensajerosAdmin();
-    }, 2000);
+    console.log('👥 Administración de mensajeros activada');
 });
 
 // ============================================================
@@ -4549,15 +4877,17 @@ window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
 window.reenviarNotificacionConDomicilio = reenviarNotificacionConDomicilio;
 window.cargarTiendasEnFiltro = cargarTiendasEnFiltro;
+window.toggleActivoMensajero = toggleActivoMensajero;
+window.verPedidosMensajero = verPedidosMensajero;
+window.abrirModalCrearMensajero = abrirModalCrearMensajero;
+window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
+window.crearMensajero = crearMensajero;
 
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
 console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
 console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
-console.log('📱 Estados: Pendiente → Preparación → Listo → Asignado → En camino → Entregado');
-console.log('📱 Mensaje WhatsApp incluye: PRODUCTOS + DOMICILIO + TOTAL');
-console.log('📱 Botón "Reenviar Notificación" para pedidos antiguos');
-console.log('👤 El panel general MOSTRARÁ el nombre del mensajero asignado');
+console.log('👥 Administración de mensajeros: ACTIVADA');
 </script>
 </body>
 </html>
