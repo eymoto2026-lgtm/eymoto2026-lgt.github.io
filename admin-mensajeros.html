@@ -420,7 +420,7 @@ let recargandoMensajeros = false;
 let mensajerosListenersActivos = 0;
 
 // ============================================================
-// 📢 NOTIFICAR A TODOS LOS MENSAJEROS DISPONIBLES (CORREGIDO)
+// 📢 NOTIFICAR A TODOS LOS MENSAJEROS CONECTADOS (FORZADO)
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -443,24 +443,23 @@ async function notificarATodos() {
         return;
     }
     
-    // 🔥 FILTRO CORREGIDO: Solo mensajeros CONECTADOS y DISPONIBLES (sin pedido activo)
-    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+    // 🔥 NOTIFICAR A TODOS LOS CONECTADOS (sin importar si están ocupados)
+    const mensajerosConectados = todosLosMensajeros.filter(m => 
         m.activo !== false && 
-        m.conectado !== false && 
-        !m.ocupado  // 🔥 ESTO FILTRA LOS OCUPADOS
+        m.conectado !== false
     );
     
-    console.log(`📋 Mensajeros disponibles: ${mensajerosDisponibles.length}`);
-    mensajerosDisponibles.forEach(m => console.log(`  ✅ ${m.nombre} | ocupado: ${m.ocupado}`));
+    console.log(`📋 Mensajeros conectados: ${mensajerosConectados.length}`);
+    mensajerosConectados.forEach(m => console.log(`  ✅ ${m.nombre} | ocupado: ${m.ocupado}`));
     
-    if (mensajerosDisponibles.length === 0) {
-        toast('⚠️ No hay mensajeros disponibles.', 'error', 5000);
+    if (mensajerosConectados.length === 0) {
+        toast('⚠️ No hay mensajeros conectados.', 'error', 5000);
         cerrarModalAsignacion();
         return;
     }
     
     try {
-        toast(`⏳ Notificando a ${mensajerosDisponibles.length} mensajeros...`, 'info');
+        toast(`⏳ Notificando a ${mensajerosConectados.length} mensajeros...`, 'info');
         
         const tienda = tiendasCache[tiendaId] || {};
         const pedidoInfo = {
@@ -486,7 +485,7 @@ async function notificarATodos() {
         
         // 🔥 ABRIR TODAS LAS PESTAÑAS SIMULTÁNEAMENTE
         const urls = [];
-        for (const mensajero of mensajerosDisponibles) {
+        for (const mensajero of mensajerosConectados) {
             const telefono = mensajero.telefono || mensajero.whatsapp || '';
             const telefonoLimpio = String(telefono).replace(/[\s\-\(\)\+\.]/g, '');
             
@@ -512,7 +511,7 @@ async function notificarATodos() {
             setTimeout(() => {
                 window.open(item.url, '_blank');
                 console.log(`📱 Enviando a ${item.nombre}`);
-            }, index * 100); // 100ms entre cada una (casi simultáneo)
+            }, index * 80); // 80ms entre cada una (casi simultáneo)
         });
         
         // Guardar en Firestore
@@ -521,16 +520,17 @@ async function notificarATodos() {
             .update({
                 notificacionEnviada: true,
                 notificacionMasiva: true,
+                notificacionForzada: true,
                 fechaNotificacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignacionTipo: 'automatica_individual',
-                mensajerosNotificados: mensajerosDisponibles.map(m => ({
+                mensajerosNotificados: mensajerosConectados.map(m => ({
                     uid: m.uid,
                     nombre: m.nombre,
                     telefono: m.telefono || m.whatsapp
                 }))
             });
         
-        toast(`📱 Notificación enviada a ${urls.length} mensajeros disponibles.`, 'success', 4000);
+        toast(`📱 Notificación enviada a ${urls.length} mensajeros.`, 'success', 4000);
         cerrarModalAsignacion();
         actualizarHeaderBadge();
         renderizarPedidosAsignar();
@@ -677,8 +677,8 @@ async function inicializarPanel() {
         console.log('🔔 Alarma con CAMPANA PROFESIONAL activada');
         console.log('📋 2 MODOS DE ASIGNACIÓN: Manual y Automático');
         console.log('👤 Manual: WhatsApp SOLO al mensajero elegido');
-        console.log('👥 Automático: Notifica a TODOS los mensajeros disponibles');
-        console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
+        console.log('👥 Automático: Notifica a TODOS los mensajeros conectados');
+        console.log('📱 SOLO mensajeros CONECTADOS (incluso con pedido) pueden tomar el pedido');
         console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
     } catch (error) {
         console.error('❌ Error al inicializar panel:', error);
@@ -727,12 +727,19 @@ function cargarMensajeros() {
                     return;
                 }
                 
+                // 🔥 PRIMERO: Cargar todos los pedidos para verificar ocupados
+                const pedidosActivos = todosLosPedidos.filter(p => 
+                    p.mensajeroId && 
+                    p.estado !== 'Entregado' && 
+                    p.estado !== 'Cancelado'
+                );
+                
                 snap.forEach(doc => {
                     const data = doc.data();
                     const uid = doc.id;
                     
                     // 🔥 VERIFICAR SI EL MENSAJERO TIENE UN PEDIDO ACTIVO
-                    const tienePedidoActivo = todosLosPedidos.some(p => 
+                    const tienePedidoActivo = pedidosActivos.some(p => 
                         p.mensajeroId === uid && 
                         (
                             p.estado === 'En camino al restaurante' ||
@@ -743,11 +750,9 @@ function cargarMensajeros() {
                     );
                     
                     // 🔥 TAMBIÉN verificar si hay un pedido asignado manualmente que no haya sido confirmado
-                    const tieneAsignacionPendiente = todosLosPedidos.some(p =>
+                    const tieneAsignacionPendiente = pedidosActivos.some(p =>
                         p.mensajeroId === uid &&
-                        p.pendienteConfirmacion === true &&
-                        p.estado !== 'Entregado' &&
-                        p.estado !== 'Cancelado'
+                        p.pendienteConfirmacion === true
                     );
                     
                     const ocupado = tienePedidoActivo || tieneAsignacionPendiente;
@@ -1078,7 +1083,7 @@ function renderizarPedidoCardAdmin(p, mensajerosActivos, tipo) {
             <div style="margin-top:8px;padding:10px;background:var(--green-bg);border-radius:8px;border:1px solid var(--green);text-align:center;">
                 <div style="font-size:13px;color:var(--green);">👥 Notificado a ${p.mensajerosNotificados?.length || 0} mensajeros</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">⏳ Esperando que un mensajero tome el pedido</div>
-                <div style="font-size:11px;color:var(--blue);margin-top:4px;">📱 SOLO conectados y disponibles pueden acceder</div>
+                <div style="font-size:11px;color:var(--blue);margin-top:4px;">📱 SOLO conectados pueden acceder</div>
             </div>
             <button class="btn-danger btn-sm" onclick="window.cancelarNotificacion('${p.id}','${p.tiendaId}')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;background:var(--red);color:#fff;">
                 ❌ Cancelar notificación
@@ -1169,16 +1174,15 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
     
-    // 🔥 FILTRAR SOLO DISPONIBLES
-    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+    // 🔥 MOSTRAR TODOS LOS CONECTADOS (incluso ocupados)
+    const mensajerosConectados = todosLosMensajeros.filter(m => 
         m.activo !== false && 
-        m.conectado !== false && 
-        !m.ocupado
+        m.conectado !== false
     );
     
-    console.log('📋 Mensajeros disponibles para asignar:', mensajerosDisponibles.length);
-    mensajerosDisponibles.forEach(m => {
-        console.log('  -', m.nombre || 'Sin nombre', '| teléfono:', m.telefono || m.whatsapp || 'Sin teléfono');
+    console.log('📋 Mensajeros conectados para asignar:', mensajerosConectados.length);
+    mensajerosConectados.forEach(m => {
+        console.log('  -', m.nombre || 'Sin nombre', '| ocupado:', m.ocupado);
     });
     
     const modal = document.getElementById('modalAsignacion');
@@ -1187,14 +1191,15 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
     titulo.textContent = `📦 Asignar Pedido ${numero}`;
     
     let mensajerosOptions = '';
-    if (mensajerosDisponibles.length === 0) {
-        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    if (mensajerosConectados.length === 0) {
+        mensajerosOptions = '<option value="">⚠️ No hay mensajeros conectados</option>';
     } else {
         mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
-        mensajerosDisponibles.forEach(m => {
+        mensajerosConectados.forEach(m => {
             const telefono = m.telefono || m.whatsapp || 'Sin teléfono';
+            const estado = m.ocupado ? '🟠 Ocupado' : '🟢 Disponible';
             const telefonoDisplay = telefono !== 'Sin teléfono' ? ` 📱${telefono}` : '';
-            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'}${telefonoDisplay}</option>`;
+            mensajerosOptions += `<option value="${m.uid}">${m.nombre || 'Mensajero'} ${estado}${telefonoDisplay}</option>`;
         });
     }
     
@@ -1204,7 +1209,7 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
             <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
-            <div class="row"><span class="label">📋 Mensajeros disponibles</span><span class="value" style="color:var(--blue);">${mensajerosDisponibles.length}</span></div>
+            <div class="row"><span class="label">📋 Mensajeros conectados</span><span class="value" style="color:var(--blue);">${mensajerosConectados.length}</span></div>
         </div>
         
         <!-- ===== MODO 1: ASIGNACIÓN MANUAL ===== -->
@@ -1212,14 +1217,14 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
             <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
             <div class="descripcion">Selecciona un mensajero específico para asignar este pedido. <strong>SOLO él</strong> recibirá la notificación y deberá confirmar la orden.</div>
             <div style="margin: 8px 0 4px 0;">
-                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros conectados (${mensajerosConectados.length}):</label>
                 <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
                     ${mensajerosOptions}
                 </select>
             </div>
             <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
                     style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                    ${mensajerosConectados.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
                 ✅ Asignar a este mensajero
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
@@ -1230,21 +1235,21 @@ function abrirModalAsignacion(pedidoId, tiendaId) {
         <!-- ===== MODO 2: NOTIFICAR A TODOS ===== -->
         <div class="opcion-asignacion" style="border-color: var(--green);">
             <div class="titulo" style="color: var(--green);">👥 Notificar a TODOS los mensajeros</div>
-            <div class="descripcion">El pedido se notificará por WhatsApp a <strong>CADA mensajero</strong> que esté <strong>CONECTADO y DISPONIBLE</strong> (sin pedido activo).</div>
+            <div class="descripcion">El pedido se notificará por WhatsApp a <strong>CADA mensajero</strong> que esté <strong>CONECTADO</strong> (incluso si tiene otro pedido).</div>
             <div class="mensajeros-disponibles">
                 📨 Mensajeros que recibirán la notificación: 
-                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosConectados.length}</span>
             </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                🔒 <strong>SOLO</strong> mensajeros CONECTADOS y DISPONIBLES recibirán el mensaje.
+                🔒 <strong>TODOS</strong> los mensajeros CONECTADOS recibirán el mensaje.
             </div>
             <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
                     style="width:100%;padding:12px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                📱 Notificar a ${mensajerosDisponibles.length} mensajeros
+                    ${mensajerosConectados.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                📱 Notificar a ${mensajerosConectados.length} mensajeros
             </button>
             <div style="font-size:11px;color:var(--text-muted);margin-top:4px;text-align:center;">
-                📋 Se abrirán ${mensajerosDisponibles.length} pestañas de WhatsApp (casi al mismo tiempo)
+                📋 Se abrirán ${mensajerosConectados.length} pestañas de WhatsApp (casi al mismo tiempo)
             </div>
         </div>
         
@@ -1779,11 +1784,11 @@ console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('✏️ Edición de perfiles de mensajeros ACTIVADA');
 console.log('📋 2 MODOS DE ASIGNACIÓN:');
 console.log('  👤 Manual: WhatsApp SOLO al mensajero elegido');
-console.log('  👥 Automático: Notifica a TODOS los mensajeros disponibles');
+console.log('  👥 Automático: Notifica a TODOS los mensajeros CONECTADOS');
 console.log('⏳ El mensajero debe confirmar la orden con "TOMAR PEDIDO"');
 console.log('🔔 Sonido: CAMPANA PROFESIONAL (Do6 - Mi6 - Sol6)');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
-console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
+console.log('📱 SOLO mensajeros CONECTADOS (incluso con pedido) pueden tomar el pedido');
 console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('🧪 Para simular un pedido: simularPedidoAdmin()');
 console.log('🔄 Para forzar recarga de mensajeros: forzarRecargaMensajeros()');
