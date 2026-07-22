@@ -782,11 +782,9 @@ async function toggleActivo() {
         actualizarMotivacional(nuevoEstado);
         toast(nuevoEstado ? '🟢 Te has conectado' : '🔴 Te has desconectado', nuevoEstado ? 'success' : 'warn');
         
-        // 🔥 Si se conecta, recargar pedidos disponibles
         if (nuevoEstado) {
             cargarPedidosDisponibles();
         } else {
-            // 🔥 Si se desconecta, ocultar pedidos disponibles
             document.getElementById('seccionDisponibles').style.display = 'none';
         }
         
@@ -828,9 +826,6 @@ function actualizarMotivacional(conectado) {
     }
 }
 
-// ============================================================
-// PROBAR NOTIFICACIÓN
-// ============================================================
 function probarNotificacion() {
     toast('🔔 ¡Notificación de prueba!', 'new', 3000);
     if (navigator.vibrate) navigator.vibrate(100);
@@ -842,12 +837,10 @@ function probarNotificacion() {
 async function inicializarMensajero() {
     if (!mensajeroUid) return;
     
-    // Estado inicial
     actualizarStatus(mensajeroData.conectado || false);
     actualizarMotivacional(mensajeroData.conectado || false);
     document.getElementById('btnProbar').style.display = mensajeroData.conectado ? 'inline-block' : 'none';
     
-    // Escuchar cambios en el perfil del mensajero
     if (listenerMensajero) {
         try { listenerMensajero(); } catch(e) {}
         listenerMensajero = null;
@@ -862,7 +855,6 @@ async function inicializarMensajero() {
             }
         }, err => console.error('Error escuchando perfil:', err));
     
-    // Escuchar pedidos
     if (listenerPedidos) {
         try { listenerPedidos(); } catch(e) {}
         listenerPedidos = null;
@@ -887,7 +879,6 @@ function cargarPedidos() {
                 const data = doc.data();
                 const pedido = { id: doc.id, ...data };
                 
-                // Verificar si está activo (no entregado ni cancelado)
                 if (data.estado !== 'Entregado' && data.estado !== 'Cancelado') {
                     pedidosActivos.push(pedido);
                 } else {
@@ -895,7 +886,6 @@ function cargarPedidos() {
                 }
             });
             
-            // 🔥 ORDENAR: más recientes primero
             pedidosActivos.sort((a, b) => {
                 const fechaA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
                 const fechaB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
@@ -914,7 +904,6 @@ function cargarPedidos() {
             toast('⚠️ Error al cargar pedidos', 'error');
         });
     
-    // 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO Y ESTÁ CONECTADO)
     cargarPedidosDisponibles();
 }
 
@@ -922,11 +911,9 @@ function cargarPedidos() {
 // 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO Y ESTÁ CONECTADO)
 // ============================================================
 function cargarPedidosDisponibles() {
-    // 🔥 Verificar si el mensajero tiene pedido activo o está desconectado
     const tieneActivo = pedidosActivos.length > 0;
     const estaConectado = mensajeroData.conectado || false;
     
-    // 🔥 Si tiene pedido activo o está desconectado, OCULTAR pedidos disponibles
     if (tieneActivo || !estaConectado) {
         document.getElementById('seccionDisponibles').style.display = 'none';
         if (tieneActivo) {
@@ -939,11 +926,9 @@ function cargarPedidosDisponibles() {
         return;
     }
     
-    // 🔥 MOSTRAR PEDIDOS DISPONIBLES (solo si está conectado y sin pedido activo)
     document.getElementById('seccionDisponibles').style.display = 'block';
     document.getElementById('mensajeOcupado').style.display = 'none';
     
-    // Escuchar pedidos listos para asignar
     db.collectionGroup('pedidos')
         .where('estado', '==', 'Listo para asignar')
         .orderBy('fecha', 'desc')
@@ -951,13 +936,11 @@ function cargarPedidosDisponibles() {
             pedidosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
-                // 🔥 EXCLUIR pedidos que ya tienen mensajero asignado
                 if (!data.mensajeroId) {
                     pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
             });
             
-            // Ordenar por fecha
             pedidosDisponibles.sort((a, b) => {
                 const fechaA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
                 const fechaB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
@@ -980,7 +963,6 @@ function renderizarPedidos() {
     const badgeActivos = document.getElementById('activosBadge');
     const badgeHistorial = document.getElementById('historialBadge');
     
-    // Activos
     badgeActivos.textContent = pedidosActivos.length;
     if (pedidosActivos.length === 0) {
         containerActivos.innerHTML = `
@@ -993,7 +975,6 @@ function renderizarPedidos() {
         containerActivos.innerHTML = pedidosActivos.map(p => renderPedidoCard(p, 'activo')).join('');
     }
     
-    // Historial
     badgeHistorial.textContent = pedidosHistorial.length;
     if (pedidosHistorial.length === 0) {
         containerHistorial.innerHTML = `
@@ -1006,7 +987,6 @@ function renderizarPedidos() {
         containerHistorial.innerHTML = pedidosHistorial.slice(0, 20).map(p => renderPedidoCard(p, 'historial')).join('');
     }
     
-    // 🔥 Actualizar disponibles (si cambia el estado)
     cargarPedidosDisponibles();
     actualizarContadores();
 }
@@ -1091,7 +1071,6 @@ function renderPedidoCard(p, tipo) {
     let botonesHtml = '';
     
     if (tipo === 'disponible') {
-        // 🔥 BOTÓN TOMAR PEDIDO (SOLO si está conectado y sin pedido activo)
         const estaConectado = mensajeroData.conectado || false;
         const tieneActivo = pedidosActivos.length > 0;
         const botonDisabled = !estaConectado || tieneActivo;
@@ -1108,7 +1087,6 @@ function renderPedidoCard(p, tipo) {
             </div>
         `;
     } else if (tipo === 'activo') {
-        // 🔥 BOTONES PARA PEDIDO ACTIVO
         if (estado === 'Listo para asignar' || estado === 'Asignado') {
             botonesHtml = `
                 <button class="btn-recoger" onclick="window.recogerPedido('${p.id}','${p._tiendaId}')">
@@ -1141,7 +1119,6 @@ function renderPedidoCard(p, tipo) {
             `;
         }
         
-        // Botón para cancelar si está en estado temprano
         if (estado === 'Listo para asignar' || estado === 'Asignado' || estado === 'Pendiente' || estado === 'En cocina') {
             botonesHtml += `
                 <button class="btn-danger" onclick="window.cancelarPedido('${p.id}','${p._tiendaId}')" style="width:100%;margin-top:6px;padding:8px;font-size:12px;">
@@ -1228,7 +1205,6 @@ function actualizarContadores() {
     document.getElementById('statGanado').textContent = '$' + totalGanado.toLocaleString('es-CO');
     document.getElementById('statEntregados').textContent = entregados;
     
-    // Notificaciones
     const notifBadge = document.getElementById('notifBadge');
     const notifContainer = document.getElementById('listaNotificaciones');
     const notifs = notificacionesPendientes.filter(n => !notificacionesMostradas.has(n.id));
@@ -1256,19 +1232,16 @@ function actualizarContadores() {
 // 🛵 TOMAR PEDIDO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
-    // 🔥 VERIFICAR QUE NO TENGA PEDIDO ACTIVO
     if (pedidosActivos.length > 0) {
         toast('⚠️ Ya tienes un pedido activo. No puedes tomar otro.', 'error', 4000);
         return;
     }
     
-    // 🔥 VERIFICAR QUE ESTÉ CONECTADO
     if (!mensajeroData.conectado) {
         toast('⚠️ Conéctate primero para tomar pedidos.', 'warn', 3000);
         return;
     }
     
-    // 🔥 VERIFICAR QUE EL PEDIDO NO ESTÉ YA ASIGNADO
     try {
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
@@ -1283,7 +1256,6 @@ async function tomarPedido(pedidoId, tiendaId) {
             return;
         }
         
-        // ✅ ASIGNAR PEDIDO AL MENSAJERO
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1296,8 +1268,6 @@ async function tomarPedido(pedidoId, tiendaId) {
             });
         
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
-        
-        // 🔥 RECARGAR PEDIDOS
         cargarPedidos();
         cargarPedidosDisponibles();
         
