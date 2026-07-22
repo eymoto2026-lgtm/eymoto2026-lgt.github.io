@@ -6,6 +6,7 @@
     <title>EyMotoComidas - Menú Digital</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
+        /* ===== ESTILOS COMPLETOS (sin cambios) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif; }
         body { background: #f0f0f0; min-height: 100vh; }
         .header { position: relative; width: 100%; overflow: hidden; background: #1a1a2e; }
@@ -1132,20 +1133,32 @@ function mostrarFormularioYEnviar() {
 
 function generarNumeroPedido() { const num = String(Math.floor(Math.random() * 9000) + 1000); return `#${num}`; }
 
+// ============================================================
+// 🔥 ENVIAR PEDIDO (CON NORMALIZACIÓN DE TELÉFONO)
+// ============================================================
 async function enviarPedido() {
     const user = await autenticarCliente();
     if (!user) { mostrarToast('❌ Error de autenticación. Intenta de nuevo.', 'error'); return; }
     if (!tiendaAbierta) { mostrarToast('⚠️ La tienda está cerrada', 'error'); return; }
     if (carrito.length === 0) { mostrarToast('El carrito está vacío', 'error'); return; }
+
     const nombre = document.getElementById('clienteNombre').value.trim();
-    const telefono = document.getElementById('clienteTelefono').value.trim();
+    let telefono = document.getElementById('clienteTelefono').value.trim();
+    // 🔥 NORMALIZAR TELÉFONO PARA COLOMBIA (+57)
+    if (telefono) {
+        let num = telefono.replace(/\s/g, '').replace('+', '');
+        if (!num.startsWith('57')) num = '57' + num;
+        telefono = num;
+    }
     const direccion = document.getElementById('clienteDireccion').value.trim();
     const barrio = document.getElementById('clienteBarrio').value.trim();
     const observaciones = document.getElementById('clienteObservaciones').value.trim();
+
     if (!nombre) { mostrarToast('⚠️ Por favor ingresa tu NOMBRE', 'error'); const el = document.getElementById('clienteNombre'); el.focus(); el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); return; }
     if (!telefono) { mostrarToast('⚠️ Por favor ingresa tu TELÉFONO', 'error'); const el = document.getElementById('clienteTelefono'); el.focus(); el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); return; }
     if (!direccion) { mostrarToast('⚠️ Por favor ingresa tu DIRECCIÓN', 'error'); const el = document.getElementById('clienteDireccion'); el.focus(); el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); return; }
     if (!barrio) { mostrarToast('⚠️ Por favor ingresa tu BARRIO', 'error'); const el = document.getElementById('clienteBarrio'); el.focus(); el.classList.add('error'); setTimeout(() => el.classList.remove('error'), 3000); return; }
+
     const metodoPago = document.querySelector('input[name="metodoPago"]:checked')?.value || 'efectivo';
     const numeroPedido = generarNumeroPedido();
     const fecha = new Date();
@@ -1175,6 +1188,7 @@ async function enviarPedido() {
         fuente: 'whatsapp'
     };
     if (user.email) { pedidoData.email = user.email; }
+
     try {
         const batch = db.batch();
         const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -1191,6 +1205,7 @@ async function enviarPedido() {
         await batch.commit();
         console.log('✅ Stock actualizado correctamente');
     } catch (error) { console.error('❌ Error al actualizar stock:', error); }
+
     try {
         let guardado = false;
         let intentos = 0;
@@ -1219,6 +1234,7 @@ async function enviarPedido() {
         mostrarToast('❌ Error al guardar el pedido: ' + error.message, 'error', 5000);
         return;
     }
+
     const telefonoWhatsApp = WHATSAPP_TIENDA;
     const nombreTienda = tiendaData.nombre || 'EYMOTOCOMIDAS';
     let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n📅 *Fecha:* ${fechaStr}\n⏰ *Hora:* ${horaStr}\n\n👤 *Cliente:*\n${nombre}\n\n📱 *Teléfono:*\n${telefono}\n\n📍 *Dirección:*\n${direccion}\n\n🏘️ *Barrio:*\n${barrio}\n\n`;
@@ -1413,6 +1429,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const indicator = document.getElementById('scrollIndicator');
         if (wrapper && wrapper.scrollWidth > wrapper.clientWidth) { indicator.classList.add('visible'); setTimeout(() => indicator.classList.remove('visible'), 3000); }
     }, 500);
+    
+    // 🔥 Normalizar teléfono al salir del campo
+    document.getElementById('clienteTelefono').addEventListener('blur', function() {
+        let val = this.value.trim();
+        if (val) {
+            let num = val.replace(/\s/g, '').replace('+', '');
+            if (!num.startsWith('57')) num = '57' + num;
+            this.value = num;
+        }
+    });
 });
 
 console.log('✅ Menú EyMotoComidas cargado correctamente');
@@ -1420,6 +1446,7 @@ console.log('🏪 Tienda ID:', TIENDA_ID);
 console.log('📱 WhatsApp tienda (cargado desde Firestore):', WHATSAPP_TIENDA);
 console.log('⚖️ Soporte para productos por peso activado');
 console.log('🔐 Autenticación por email activada');
+console.log('🇨🇴 Números telefónicos normalizados con +57 (Colombia)');
 </script>
 </body>
 </html>
