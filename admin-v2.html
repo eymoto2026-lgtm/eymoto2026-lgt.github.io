@@ -3865,6 +3865,10 @@ function abrirWhatsApp(numero, mensaje) {
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
+    
+    // 🔥 LIMPIAR BLOQUEO ANTES DE NOTIFICAR
+    window.estadoPrevioAsignacion = null;
+
     try {
         toast('⏳ Notificando mensajeros...', 'info');
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
@@ -3883,7 +3887,6 @@ async function notificarATodos() {
             const total = data.total || 0;
             const costoDomicilio = data.costoDomicilio || 0;
             const totalConDomicilio = total + costoDomicilio;
-            // 🔥 Construir enlace directo al pedido para mensajeros
             const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
             let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
             mensaje += `🏪 *${nombreTienda}*\n`;
@@ -3903,7 +3906,6 @@ async function notificarATodos() {
                     mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                 });
             } else { mensaje += `- Sin productos\n`; }
-            // 🔥 Incluir el enlace para que cualquier mensajero pueda tomarlo
             mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}`;
             mensaje += `\n\n🚀 *¡El primero en tomarlo se lo queda!*`;
             abrirWhatsApp('573169934516', mensaje);
@@ -3914,7 +3916,6 @@ async function notificarATodos() {
         else mostrarPedidosPendientesGlobal();
     } catch(e) { console.error('Error en notificarATodos:', e); toast('❌ Error: ' + e.message, 'error'); }
 }
-
 // ============================================================
 // 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE (con enlace)
 // ============================================================
@@ -3926,6 +3927,11 @@ async function asignarPedidoManual() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
+    
+    // 🔥 LIMPIAR BLOQUEO ANTES DE ASIGNAR
+    const estadoPrevio = window.estadoPrevioAsignacion;
+    window.estadoPrevioAsignacion = null;
+
     try {
         toast('⏳ Asignando pedido...', 'info');
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
@@ -3945,7 +3951,6 @@ async function asignarPedidoManual() {
                 const total = data.total || 0;
                 const costoDomicilio = data.costoDomicilio || 0;
                 const totalConDomicilio = total + costoDomicilio;
-                // 🔥 Enlace directo para el mensajero asignado
                 const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
                 let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
                 mensaje += `🏪 *${nombreTienda}*\n`;
@@ -3965,7 +3970,6 @@ async function asignarPedidoManual() {
                         mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                     });
                 } else { mensaje += `- Sin productos\n`; }
-                // 🔥 Enlace para que el mensajero vea el pedido y lo gestione
                 mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
                 mensaje += `\n\n🛵 *Recoge el pedido en el restaurante.*`;
                 abrirWhatsApp(mensajero.telefono, mensaje);
@@ -3981,11 +3985,40 @@ async function asignarPedidoManual() {
 // ============================================================
 // ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
-function abrirModalAsignacion(tiendaId, pedidoId) {
+async function abrirModalAsignacion(tiendaId, pedidoId) {
     if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') { toast('⛔ No tienes permiso para asignar pedidos', 'error'); return; }
     pedidoAsignacion = { tiendaId, pedidoId };
+
+    // 🔥 BLOQUEAR EL PEDIDO MIENTRAS SE DECIDE (NO VISIBLE PARA MENSAJEROS)
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).get();
+        if (doc.exists) {
+            const data = doc.data();
+            window.estadoPrevioAsignacion = data.estado || 'Listo para asignar';
+            // Solo cambiamos el estado si actualmente está disponible para asignar
+            if (data.estado === 'Listo para asignar' || data.estado === 'Pendiente') {
+                await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                    estado: 'En asignación',
+                    _bloqueadoPor: auth.currentUser?.email || 'Admin',
+                    _fechaBloqueo: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('🔒 Pedido bloqueado en "En asignación" mientras el admin decide.');
+            } else {
+                // Si ya está en otro estado (ej: Asignado), no lo bloqueamos, pero guardamos igual
+                window.estadoPrevioAsignacion = data.estado;
+            }
+        }
+    } catch (e) {
+        console.error('Error al bloquear pedido:', e);
+        // Si falla, continuamos de todas formas para no bloquear la interfaz
+    }
+
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
-    if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); return; }
+    if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); 
+        // Si falla, desbloquear
+        cerrarModalAsignacion();
+        return; 
+    }
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
     const cliente = pedido.cliente || {};
@@ -4026,7 +4059,25 @@ function abrirModalAsignacion(tiendaId, pedidoId) {
     document.body.style.overflow = 'hidden';
 }
 
-function cerrarModalAsignacion() {
+async function cerrarModalAsignacion() {
+    // 🔥 DESBLOQUEAR EL PEDIDO (VOLVER A "Listo para asignar" SI NO SE TOMÓ DECISIÓN)
+    if (pedidoAsignacion && window.estadoPrevioAsignacion) {
+        const { tiendaId, pedidoId } = pedidoAsignacion;
+        try {
+            const doc = await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).get();
+            if (doc.exists && doc.data().estado === 'En asignación') {
+                // Si el admin cerró sin decidir, lo devolvemos al estado anterior (normalmente "Listo para asignar")
+                await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
+                    estado: window.estadoPrevioAsignacion
+                });
+                console.log(`🔓 Pedido desbloqueado, vuelve a: ${window.estadoPrevioAsignacion}`);
+            }
+        } catch (e) {
+            console.error('Error al desbloquear pedido:', e);
+        }
+        window.estadoPrevioAsignacion = null;
+    }
+
     document.getElementById('modalAsignacion').classList.remove('active');
     document.body.style.overflow = '';
     pedidoAsignacion = null;
