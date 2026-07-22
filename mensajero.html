@@ -351,6 +351,58 @@
             transform: none;
         }
         
+        /* ===== MENSAJE MOTIVACIONAL ===== */
+        .mensaje-motivacional {
+            background: linear-gradient(135deg, var(--yellow-bg), var(--surface2));
+            border: 2px solid var(--yellow);
+            border-radius: 14px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-bottom: 18px;
+            animation: pulse-motivacional 2s ease-in-out infinite;
+        }
+        @keyframes pulse-motivacional {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,214,0,0.1); }
+            50% { box-shadow: 0 0 40px rgba(255,214,0,0.25); }
+        }
+        .mensaje-motivacional .icono-grande {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .mensaje-motivacional .titulo-motivacional {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--yellow);
+            margin-bottom: 6px;
+        }
+        .mensaje-motivacional .sub-motivacional {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .mensaje-motivacional .sub-motivacional strong {
+            color: #fff;
+        }
+        .mensaje-motivacional .btn-activar-grande {
+            background: var(--yellow);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+            width: auto;
+            display: inline-block;
+        }
+        .mensaje-motivacional .btn-activar-grande:hover {
+            transform: scale(1.05);
+            background: var(--yellow-dim);
+        }
+        
         .mensaje-ocupado {
             background: var(--orange-bg);
             border: 2px solid var(--orange);
@@ -515,6 +567,18 @@
             <div class="stat-card c-blue"><div class="val" id="statEntregados">0</div><div class="lbl">Entregados</div></div>
         </div>
 
+        <!-- ===== 🔥 MENSAJE MOTIVACIONAL PARA CONECTARSE ===== -->
+        <div id="mensajeMotivacional" class="mensaje-motivacional">
+            <span class="icono-grande">🚀</span>
+            <div class="titulo-motivacional">¡Conéctate para recibir pedidos!</div>
+            <div class="sub-motivacional">
+                Haz clic en <strong>"🟢 Activar"</strong> en la parte superior para empezar a recibir notificaciones de pedidos disponibles.
+                <br>
+                Mientras estés <strong>conectado</strong>, podrás ver y tomar los pedidos que lleguen.
+            </div>
+            <button class="btn-activar-grande" onclick="window.toggleActivo()">🟢 Activar ahora</button>
+        </div>
+
         <!-- 🔥 SECCIÓN DE NOTIFICACIONES -->
         <div class="seccion">
             <div class="titulo">
@@ -529,7 +593,7 @@
             </div>
         </div>
 
-        <!-- 🔥 SECCIÓN DE PEDIDOS DISPONIBLES (OCULTA SI TIENE PEDIDO ACTIVO) -->
+        <!-- 🔥 SECCIÓN DE PEDIDOS DISPONIBLES (OCULTA SI TIENE PEDIDO ACTIVO O ESTÁ DESCONECTADO) -->
         <div class="seccion" id="seccionDisponibles">
             <div class="titulo">
                 📦 Pedidos Disponibles
@@ -715,7 +779,17 @@ async function toggleActivo() {
         });
         mensajeroData.conectado = nuevoEstado;
         actualizarStatus(nuevoEstado);
+        actualizarMotivacional(nuevoEstado);
         toast(nuevoEstado ? '🟢 Te has conectado' : '🔴 Te has desconectado', nuevoEstado ? 'success' : 'warn');
+        
+        // 🔥 Si se conecta, recargar pedidos disponibles
+        if (nuevoEstado) {
+            cargarPedidosDisponibles();
+        } else {
+            // 🔥 Si se desconecta, ocultar pedidos disponibles
+            document.getElementById('seccionDisponibles').style.display = 'none';
+        }
+        
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
     }
@@ -745,6 +819,15 @@ function actualizarStatus(conectado) {
     }
 }
 
+function actualizarMotivacional(conectado) {
+    const msg = document.getElementById('mensajeMotivacional');
+    if (conectado) {
+        msg.style.display = 'none';
+    } else {
+        msg.style.display = 'block';
+    }
+}
+
 // ============================================================
 // PROBAR NOTIFICACIÓN
 // ============================================================
@@ -761,6 +844,7 @@ async function inicializarMensajero() {
     
     // Estado inicial
     actualizarStatus(mensajeroData.conectado || false);
+    actualizarMotivacional(mensajeroData.conectado || false);
     document.getElementById('btnProbar').style.display = mensajeroData.conectado ? 'inline-block' : 'none';
     
     // Escuchar cambios en el perfil del mensajero
@@ -773,6 +857,7 @@ async function inicializarMensajero() {
             if (doc.exists) {
                 mensajeroData = doc.data();
                 actualizarStatus(mensajeroData.conectado || false);
+                actualizarMotivacional(mensajeroData.conectado || false);
                 document.getElementById('btnProbar').style.display = mensajeroData.conectado ? 'inline-block' : 'none';
             }
         }, err => console.error('Error escuchando perfil:', err));
@@ -829,21 +914,26 @@ function cargarPedidos() {
             toast('⚠️ Error al cargar pedidos', 'error');
         });
     
-    // 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO)
+    // 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO Y ESTÁ CONECTADO)
     cargarPedidosDisponibles();
 }
 
 // ============================================================
-// 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO)
+// 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO Y ESTÁ CONECTADO)
 // ============================================================
 function cargarPedidosDisponibles() {
-    // 🔥 Verificar si el mensajero tiene pedido activo
+    // 🔥 Verificar si el mensajero tiene pedido activo o está desconectado
     const tieneActivo = pedidosActivos.length > 0;
+    const estaConectado = mensajeroData.conectado || false;
     
-    if (tieneActivo) {
-        // 🔥 OCULTAR PEDIDOS DISPONIBLES
+    // 🔥 Si tiene pedido activo o está desconectado, OCULTAR pedidos disponibles
+    if (tieneActivo || !estaConectado) {
         document.getElementById('seccionDisponibles').style.display = 'none';
-        document.getElementById('mensajeOcupado').style.display = 'block';
+        if (tieneActivo) {
+            document.getElementById('mensajeOcupado').style.display = 'block';
+        } else {
+            document.getElementById('mensajeOcupado').style.display = 'none';
+        }
         pedidosDisponibles = [];
         actualizarContadores();
         return;
@@ -1005,10 +1095,13 @@ function renderPedidoCard(p, tipo) {
         const estaConectado = mensajeroData.conectado || false;
         const tieneActivo = pedidosActivos.length > 0;
         const botonDisabled = !estaConectado || tieneActivo;
+        let motivoDisabled = '';
+        if (!estaConectado) motivoDisabled = ' Conéctate primero';
+        else if (tieneActivo) motivoDisabled = ' Tienes pedido activo';
         botonesHtml = `
             <button class="btn-tomar" onclick="window.tomarPedido('${p.id}','${p._tiendaId}')" ${botonDisabled ? 'disabled' : ''}>
                 📋 TOMAR PEDIDO
-                ${botonDisabled ? (tieneActivo ? ' (Tienes pedido activo)' : ' (Conéctate primero)') : ''}
+                ${botonDisabled ? `(${motivoDisabled})` : ''}
             </button>
             <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:4px;">
                 ⚡ El primero en tomar el pedido se lo queda
@@ -1310,6 +1403,7 @@ console.log('📱 WhatsApp integrado para notificar mensajeros');
 console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
 console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
+console.log('🚀 Mensaje motivacional de conexión activado');
 </script>
 </body>
 </html>
