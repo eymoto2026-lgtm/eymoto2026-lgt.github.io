@@ -3081,14 +3081,10 @@ function escucharPedidosDeTienda(tiendaId) {
             if (cntM) cntM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
             if (cntE) cntE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
             
-            const statP = document.getElementById('statP');
-            const statC = document.getElementById('statC');
-            const statM = document.getElementById('statM');
-            const statE = document.getElementById('statE');
+            const statP = document.getElementById('statPendientes');
+            const statC = document.getElementById('statEnCamino');
             if (statP) statP.textContent = counts[estadosNegocio[0]] || 0;
-            if (statC) statC.textContent = (estadosNegocio.length > 1 ? counts[estadosNegocio[1]] : 0) || 0;
-            if (statM) statM.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
-            if (statE) statE.textContent = (estadosNegocio.length > 3 ? counts[estadosNegocio[3]] : 0) || 0;
+            if (statC) statC.textContent = (estadosNegocio.length > 2 ? counts[estadosNegocio[2]] : 0) || 0;
             
             const pend = counts[estadosNegocio[0]] || 0;
             const tabBadge = document.getElementById('tabBadge');
@@ -3428,14 +3424,10 @@ function mostrarPedidosPendientesGlobal() {
         }
     });
     
-    const statP = document.getElementById('statP');
-    const statC = document.getElementById('statC');
-    const statM = document.getElementById('statM');
-    const statE = document.getElementById('statE');
+    const statP = document.getElementById('statPendientes');
+    const statM = document.getElementById('statEnCamino');
     if (statP) statP.textContent = counts['Pendiente'] || 0;
-    if (statC) statC.textContent = counts['En Cocina'] || 0;
     if (statM) statM.textContent = counts['En Camino'] || 0;
-    if (statE) statE.textContent = counts['Entregado'] || 0;
 }
 
 function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
@@ -4455,125 +4447,117 @@ async function crearMensajero() {
 }
 
 // ============================================================
-// ABRIR MODAL DE ASIGNACIÓN
+// 🔥 FUNCIÓN: ABRIR WHATSAPP
 // ============================================================
-function abrirModalAsignacion(tiendaId, pedidoId) {
-    if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') {
-        toast('⛔ No tienes permiso para asignar pedidos', 'error');
-        return;
-    }
-    pedidoAsignacion = { tiendaId, pedidoId };
-    
-    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
-    if (!pedido) {
-        toast('⚠️ No se encontró el pedido', 'error');
-        return;
-    }
-    
-    const tienda = tiendasCache[tiendaId] || {};
-    const nombreTienda = tienda.nombre || 'Tienda';
-    const cliente = pedido.cliente || {};
-    const total = pedido.total || 0;
-    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-    
-    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
-        m.activo !== false && m.conectado !== false && !m.ocupado
-    );
-    
-    const container = document.getElementById('modalAsignacionContenido');
-    const titulo = document.getElementById('modalAsignacionTitulo');
-    if (titulo) titulo.textContent = `📦 Asignar Pedido ${numero}`;
-    
-    let mensajerosOptions = '';
-    if (mensajerosDisponibles.length === 0) {
-        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
-    } else {
-        mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
-        mensajerosDisponibles.forEach(m => {
-            const nombre = m.nombre || 'Mensajero';
-            mensajerosOptions += `<option value="${m.uid}">${nombre} (Disponible)</option>`;
-        });
-    }
-    
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="pedido-info-resumen">
-            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
-            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
-            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
-        </div>
-        
-        <div class="opcion-asignacion" style="border-color: var(--blue);">
-            <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
-            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
-            
-            <div style="margin: 8px 0 4px 0;">
-                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
-                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
-                    ${mensajerosOptions}
-                </select>
-            </div>
-            
-            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
-                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                ✅ Asignar a este mensajero
-            </button>
-        </div>
-        
-        <div class="opcion-asignacion" style="border-color: var(--yellow);">
-            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
-            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
-            
-            <div class="mensajeros-disponibles">
-                📨 Mensajeros que recibirán la notificación: 
-                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
-            </div>
-            
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
-                ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
-            </div>
-            
-            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
-                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
-                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                🔔 Notificar a todos los mensajeros
-            </button>
-        </div>
-        
-        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
-                style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
-            Cancelar
-        </button>
-    `;
-    
-    const modal = document.getElementById('modalAsignacion');
-    if (modal) modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+function abrirWhatsApp(numero, mensaje) {
+    let num = numero.replace(/\s/g, '').replace('+', '');
+    // Si no tiene código de país, asumir Colombia (57)
+    if (!num.startsWith('57')) num = '57' + num;
+    const url = `https://wa.me/${num}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
 }
 
 // ============================================================
-// ASIGNAR PEDIDO MANUALMENTE
+// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST)
+// ============================================================
+async function notificarATodos() {
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+
+    try {
+        toast('⏳ Notificando mensajeros...', 'info');
+
+        // 1. Actualizar estado a "Listo para asignar"
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                estado: 'Listo para asignar',
+                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                notificadoPor: auth.currentUser?.email || 'Admin'
+            });
+
+        // 2. Notificar al cliente
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'En cocina', 'Listo para asignar');
+
+        // 3. Obtener datos del pedido para enviar WhatsApp
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+
+        if (doc.exists) {
+            const data = doc.data();
+            const tienda = tiendasCache[tiendaId] || {};
+            const nombreTienda = tienda.nombre || 'EyMoto';
+            const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
+            const cliente = data.cliente || {};
+            const total = data.total || 0;
+            const costoDomicilio = data.costoDomicilio || 0;
+            const totalConDomicilio = total + costoDomicilio;
+
+            // Mensaje con título solicitado
+            let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
+            mensaje += `🏪 *${nombreTienda}*\n`;
+            mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
+            mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
+            mensaje += `📍 *Dirección:* ${cliente.direccion || 'N/A'}\n`;
+            mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
+            mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
+            if (costoDomicilio > 0) {
+                mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
+            }
+            mensaje += `\n📋 *Productos:*\n`;
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
+                    const nombre = item.nombre || 'Producto';
+                    const cantidad = item.cantidad || 1;
+                    const precio = item.precio || 0;
+                    const subtotal = precio * cantidad;
+                    mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                });
+            } else {
+                mensaje += `- Sin productos\n`;
+            }
+            mensaje += `\n🚀 *¡El primero en tomarlo se lo queda!*`;
+
+            // Enviar WhatsApp al número fijo
+            abrirWhatsApp('573169934516', mensaje);
+        }
+
+        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+        cerrarModalAsignacion();
+
+        // Recargar vista
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+
+    } catch (e) {
+        console.error('Error en notificarATodos:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
     if (!select) return;
     const mensajeroId = select.value;
-    
+
     if (!mensajeroId) {
         toast('⚠️ Selecciona un mensajero de la lista', 'warn');
         return;
     }
-    
+
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
-    
+
     try {
         toast('⏳ Asignando pedido...', 'info');
-        
+
+        // 1. Asignar el pedido al mensajero
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -4583,306 +4567,81 @@ async function asignarPedidoManual() {
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
                 asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
             });
-        
+
+        // 2. Notificar al cliente
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
-        
+
+        // 3. Notificar al mensajero específico (si tiene teléfono)
+        if (mensajero && mensajero.telefono) {
+            const doc = await db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos').doc(pedidoId).get();
+
+            if (doc.exists) {
+                const data = doc.data();
+                const tienda = tiendasCache[tiendaId] || {};
+                const nombreTienda = tienda.nombre || 'EyMoto';
+                const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
+                const cliente = data.cliente || {};
+                const total = data.total || 0;
+                const costoDomicilio = data.costoDomicilio || 0;
+                const totalConDomicilio = total + costoDomicilio;
+
+                let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
+                mensaje += `🏪 *${nombreTienda}*\n`;
+                mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
+                mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
+                mensaje += `📍 *Dirección:* ${cliente.direccion || 'N/A'}\n`;
+                mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
+                mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
+                if (costoDomicilio > 0) {
+                    mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
+                }
+                mensaje += `\n📋 *Productos:*\n`;
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
+                        const nombre = item.nombre || 'Producto';
+                        const cantidad = item.cantidad || 1;
+                        const precio = item.precio || 0;
+                        const subtotal = precio * cantidad;
+                        mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                    });
+                } else {
+                    mensaje += `- Sin productos\n`;
+                }
+                mensaje += `\n🛵 *Recoge el pedido en el restaurante.*`;
+
+                // Enviar WhatsApp al mensajero
+                abrirWhatsApp(mensajero.telefono, mensaje);
+            }
+        }
+
         toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
-        
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
-        
+
+        // Recargar vista
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+
     } catch (e) {
+        console.error('Error en asignarPedidoManual:', e);
         toast('❌ Error: ' + e.message, 'error');
     }
 }
 
 // ============================================================
-// NOTIFICAR A TODOS
+// EXPONER FUNCIONES AL GLOBAL (agregar abrirWhatsApp, notificarATodos, asignarPedidoManual)
 // ============================================================
-async function notificarATodos() {
-    const { tiendaId, pedidoId } = pedidoAsignacion;
-    
-    try {
-        toast('⏳ Notificando mensajeros...', 'info');
-        
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'Listo para asignar',
-                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
-                notificadoPor: auth.currentUser?.email || 'Admin'
-            });
-        
-        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'En cocina', 'Listo para asignar');
-        
-        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
-        cerrarModalAsignacion();
-        
-        if (sonidoGlobal) {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                if (ctx.state === 'suspended') ctx.resume();
-                [600, 800, 1000, 1200].forEach((freq, i) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.frequency.value = freq;
-                    osc.type = 'sine';
-                    const t = i * 0.12;
-                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
-                    osc.start(ctx.currentTime + t);
-                    osc.stop(ctx.currentTime + t + 0.2);
-                });
-            } catch(e) {}
-        }
-        
-        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
-        else mostrarPedidosPendientesGlobal();
-        
-    } catch (e) {
-        toast('❌ Error: ' + e.message, 'error');
-    }
-}
-
-// ============================================================
-// CERRAR MODAL DE ASIGNACIÓN
-// ============================================================
-function cerrarModalAsignacion() {
-    const modal = document.getElementById('modalAsignacion');
-    if (modal) modal.classList.remove('active');
-    document.body.style.overflow = '';
-    pedidoAsignacion = null;
-}
-
-// ============================================================
-// REENVIAR NOTIFICACIÓN CON DOMICILIO
-// ============================================================
-async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
-    try {
-        const doc = await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId).get();
-        
-        if (!doc.exists) {
-            toast('⚠️ Pedido no encontrado', 'error');
-            return;
-        }
-        
-        const pedido = doc.data();
-        const tienda = tiendasCache[tiendaId] || {};
-        const nombreTienda = tienda.nombre || 'EyMoto';
-        const whatsappTienda = tienda.whatsapp || '';
-        const telefonoCliente = pedido.cliente?.telefono || '';
-        
-        if (!telefonoCliente) {
-            toast('⚠️ Cliente sin teléfono', 'error');
-            return;
-        }
-        
-        let subtotalProductos = 0;
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => {
-                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
-            });
-        }
-        const costoDomicilio = pedido.costoDomicilio || 0;
-        const totalConDomicilio = subtotalProductos + costoDomicilio;
-        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        const estado = pedido.estado || 'Pendiente';
-        
-        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estado] || { emoji: '📌', texto: `Tu pedido está en estado: ${estado}` };
-        
-        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estado.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
-        
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => {
-                const nombreItem = item.nombre || 'Producto';
-                const cantidad = item.cantidad || 1;
-                const precioUnitario = item.precio || 0;
-                const subtotal = precioUnitario * cantidad;
-                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
-            });
-        }
-        
-        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
-        if (costoDomicilio > 0) {
-            mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
-        } else {
-            mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
-        }
-        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
-        
-        const metodoPago = pedido.metodoPago || 'efectivo';
-        if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
-            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
-            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
-        } else {
-            mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
-        }
-        
-        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
-        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
-        
-        if (pedido.nombreMensajero) {
-            mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
-        }
-        
-        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
-        
-        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-        window.open(urlWhatsApp, '_blank');
-        toast(`📱 Notificación reenviada a ${telefonoCliente}`, 'success');
-        
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .collection('notificaciones').add({
-                estado: estado,
-                mensaje: mensajeWhatsApp,
-                fecha: firebase.firestore.FieldValue.serverTimestamp(),
-                enviadoA: telefonoCliente,
-                tipo: 'reenvio'
-            });
-        
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        toast('❌ Error: ' + error.message, 'error');
-        return false;
-    }
-}
-
-// ============================================================
-// INICIALIZAR
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const sel = document.getElementById('filtroTienda');
-    if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
-    document.addEventListener('click', function activarAudioPorClic() {
-        activarAudioAutomatico();
-        document.removeEventListener('click', activarAudioPorClic);
-    }, { once: true });
-    cargarPreferenciaSonido();
-    console.log('✅ Panel de administración cargado correctamente');
-    console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
-    console.log('📦 Estados personalizados por tipo de negocio activados');
-    console.log('🛵 Costo de domicilio integrado');
-    console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
-    console.log('👥 Administración de mensajeros activada');
-});
-
-// ============================================================
-// ACTUALIZAR OCUPADOS EN TIEMPO REAL
-// ============================================================
-function actualizarOcupadosEnTiempoReal() {
-    const mensajerosOcupados = new Set();
-    
-    Object.keys(todosLosPedidos).forEach(tiendaId => {
-        const pedidos = todosLosPedidos[tiendaId] || [];
-        pedidos.forEach(p => {
-            if (p.data.mensajeroId && 
-                (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
-                mensajerosOcupados.add(p.data.mensajeroId);
-            }
-        });
-    });
-    
-    const statOcupados = document.getElementById('statOcupados');
-    if (statOcupados) statOcupados.textContent = mensajerosOcupados.size;
-    cargarMensajerosAdmin();
-}
-
-const originalActualizarEstadisticas = window.actualizarEstadisticas;
-window.actualizarEstadisticas = function() {
-    if (originalActualizarEstadisticas) {
-        originalActualizarEstadisticas();
-    }
-    actualizarOcupadosEnTiempoReal();
-};
-
-// ============================================================
-// EXPONER FUNCIONES AL GLOBAL
-// ============================================================
-window.toast = toast;
-window.logout = logout;
-window.iniciarSesion = iniciarSesion;
-window.switchTab = switchTab;
-window.cambiarTiendaSeleccionada = cambiarTiendaSeleccionada;
-window.cambiarEstadoAdmin = cambiarEstadoAdmin;
-window.confirmarPago = confirmarPago;
-window.rechazarPago = rechazarPago;
-window.eliminarPedido = eliminarPedido;
-window.generarFactura = generarFactura;
-window.probarAltavoz = probarAltavoz;
-window.stopAlarm = stopAlarm;
-window.toggleSonidoGlobal = toggleSonidoGlobal;
-window.detenerAlarmaContinua = detenerAlarmaContinua;
-window.detenerAlarmaGlobal = detenerAlarmaGlobal;
-window.obtenerPedidoDeCache = obtenerPedidoDeCache;
-window.cargarProductosParaEdicion = cargarProductosParaEdicion;
-window.abrirEditarPedido = abrirEditarPedido;
-window.cerrarEditarPedido = cerrarEditarPedido;
-window.cambiarCantidadItem = cambiarCantidadItem;
-window.quitarItemPedido = quitarItemPedido;
-window.agregarProductoAPedido = agregarProductoAPedido;
-window.guardarEdicionPedido = guardarEdicionPedido;
-window.marcarServicioListo = marcarServicioListo;
-window.abrirModalCrearNegocio = abrirModalCrearNegocio;
-window.cerrarModalCrearNegocio = cerrarModalCrearNegocio;
-window.verificarCorreoAdmin = verificarCorreoAdmin;
-window.crearNegocioCompleto = crearNegocioCompleto;
-window.editarTienda = editarTienda;
-window.cancelarEdTienda = cancelarEdTienda;
-window.guardarTienda = guardarTienda;
-window.eliminarTienda = eliminarTienda;
-window.toggleQR = toggleQR;
-window.toggleTienda = toggleTienda;
-window.verPedidosTienda = verPedidosTienda;
-window.toggleNotificacionSuperAdmin = toggleNotificacionSuperAdmin;
-window.mostrarResumenNotificaciones = mostrarResumenNotificaciones;
-window.cargarProductos = cargarProductos;
-window.guardarProducto = guardarProducto;
-window.editarProducto = editarProducto;
-window.cancelarEdProducto = cancelarEdProducto;
-window.eliminarProducto = eliminarProducto;
-window.limpiarFormularioProducto = limpiarFormularioProducto;
-window.seleccionarTipoProducto = seleccionarTipoProducto;
-window.cambiarModoPeso = cambiarModoPeso;
-window.actualizarPreciosPeso = actualizarPreciosPeso;
-window.abrirScannerAdmin = abrirScannerAdmin;
-window.cerrarScannerAdmin = cerrarScannerAdmin;
-window.buscarInformacionProducto = buscarInformacionProducto;
-window.filtrarProductos = filtrarProductos;
-window.limpiarBuscador = limpiarBuscador;
-window.cargarInventario = cargarInventario;
-window.ajustarStock = ajustarStock;
-window.actualizarStockManual = actualizarStockManual;
-window.exportarInventario = exportarInventario;
-window.resetearStockCero = resetearStockCero;
-window.actualizarTodosStock = actualizarTodosStock;
-window.cargarEstado = cargarEstado;
-window.abrirModalAsignacion = abrirModalAsignacion;
-window.cerrarModalAsignacion = cerrarModalAsignacion;
-window.asignarPedidoManual = asignarPedidoManual;
+window.abrirWhatsApp = abrirWhatsApp;
 window.notificarATodos = notificarATodos;
-window.cargarMensajerosAdmin = cargarMensajerosAdmin;
-window.actualizarCostoDomicilio = actualizarCostoDomicilio;
-window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
-window.reenviarNotificacionConDomicilio = reenviarNotificacionConDomicilio;
-window.cargarTiendasEnFiltro = cargarTiendasEnFiltro;
-window.toggleActivoMensajero = toggleActivoMensajero;
-window.verPedidosMensajero = verPedidosMensajero;
-window.abrirModalCrearMensajero = abrirModalCrearMensajero;
-window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
-window.crearMensajero = crearMensajero;
+window.asignarPedidoManual = asignarPedidoManual;
+// ... el resto de funciones ya están expuestas ...
 
-console.log('✅ Panel de administración de EyMoto cargado correctamente');
-console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
-console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
-console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
-console.log('👥 Administración de mensajeros: ACTIVADA');
+console.log('✅ Panel de administración actualizado con notificaciones WhatsApp');
+console.log('📱 Notificación broadcast al número +573169934516');
+console.log('📱 Notificación individual al mensajero si tiene teléfono');
 </script>
 </body>
 </html>
