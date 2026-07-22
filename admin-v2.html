@@ -3246,6 +3246,12 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     // ===== BOTONES DE ESTADO (admin de tienda y super admin) =====
     const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
     if (puedeCambiarEstado) {
+        // Botón de cancelar SIEMPRE (excepto si ya está cancelado)
+        if (estado !== 'Cancelado') {
+            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        }
+        
+        // Botones de avance/retroceso según el estado
         if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
             const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
             if (primerSiguiente) {
@@ -3290,10 +3296,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
                 ↩️ ${estadoAnterior}
             </button>`;
-        }
-        
-        if (!esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
-            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
     }
     
@@ -3545,6 +3547,12 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     }
     
     if (puedeCambiarEstado) {
+        // Botón de cancelar SIEMPRE (excepto si ya está cancelado)
+        if (estado !== 'Cancelado') {
+            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+        }
+        
+        // Botones de avance/retroceso
         if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
             acciones += `
                 <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
@@ -3586,10 +3594,6 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
                 ↩️ ${estadoAnterior}
             </button>`;
-        }
-        
-        if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
-            acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
     }
     
@@ -3645,7 +3649,7 @@ function resetKanban() {
 }
 
 // ============================================================
-// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE)
+// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE) - MODIFICADO PARA PERMITIR CANCELAR SIEMPRE
 // ============================================================
 async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
     try {
@@ -3662,11 +3666,26 @@ async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
         const data = doc.data();
         const estadoActual = data.estado;
         
-        if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
-            toast('⚠️ Este pedido ya está finalizado', 'warn');
+        // Si ya está cancelado, no hacer nada
+        if (estadoActual === 'Cancelado') {
+            toast('⚠️ Este pedido ya está cancelado', 'warn');
             return;
         }
         
+        // Si está Entregado y se quiere cancelar, confirmación extra
+        if (estadoActual === 'Entregado' && nuevoEstado === 'Cancelado') {
+            if (!confirm('⚠️ El pedido ya fue entregado. ¿Seguro que quieres cancelarlo? Esto no se puede deshacer.')) {
+                return;
+            }
+        }
+        // Para cualquier otro caso de cancelación, confirmación normal
+        else if (nuevoEstado === 'Cancelado') {
+            if (!confirm('¿Cancelar este pedido?')) {
+                return;
+            }
+        }
+        
+        // Si el pedido tiene mensajero y no se está cancelando, advertir
         if (data.mensajeroId && nuevoEstado !== 'Cancelado') {
             toast('⚠️ Este pedido ya está asignado a un mensajero. Solo puedes cancelarlo.', 'warn');
             return;
@@ -4632,14 +4651,291 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// EXPONER FUNCIONES AL GLOBAL (agregar abrirWhatsApp, notificarATodos, asignarPedidoManual)
+// ABRIR MODAL DE ASIGNACIÓN
 // ============================================================
-window.abrirWhatsApp = abrirWhatsApp;
-window.notificarATodos = notificarATodos;
-window.asignarPedidoManual = asignarPedidoManual;
-// ... el resto de funciones ya están expuestas ...
+function abrirModalAsignacion(tiendaId, pedidoId) {
+    if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') {
+        toast('⛔ No tienes permiso para asignar pedidos', 'error');
+        return;
+    }
+    pedidoAsignacion = { tiendaId, pedidoId };
+    
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    const cliente = pedido.cliente || {};
+    const total = pedido.total || 0;
+    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+    
+    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+        m.activo !== false && m.conectado !== false && !m.ocupado
+    );
+    
+    const container = document.getElementById('modalAsignacionContenido');
+    const titulo = document.getElementById('modalAsignacionTitulo');
+    if (titulo) titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    
+    let mensajerosOptions = '';
+    if (mensajerosDisponibles.length === 0) {
+        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    } else {
+        mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
+        mensajerosDisponibles.forEach(m => {
+            const nombre = m.nombre || 'Mensajero';
+            mensajerosOptions += `<option value="${m.uid}">${nombre} (Disponible)</option>`;
+        });
+    }
+    
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="pedido-info-resumen">
+            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+        </div>
+        
+        <div class="opcion-asignacion" style="border-color: var(--blue);">
+            <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
+            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+            
+            <div style="margin: 8px 0 4px 0;">
+                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                    ${mensajerosOptions}
+                </select>
+            </div>
+            
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                ✅ Asignar a este mensajero
+            </button>
+        </div>
+        
+        <div class="opcion-asignacion" style="border-color: var(--yellow);">
+            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
+            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
+            
+            <div class="mensajeros-disponibles">
+                📨 Mensajeros que recibirán la notificación: 
+                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+            </div>
+            
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
+            </div>
+            
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                🔔 Notificar a todos los mensajeros
+            </button>
+        </div>
+        
+        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
+                style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
+            Cancelar
+        </button>
+    `;
+    
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
 
-console.log('✅ Panel de administración actualizado con notificaciones WhatsApp');
+function cerrarModalAsignacion() {
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoAsignacion = null;
+}
+
+// ============================================================
+// REENVIAR NOTIFICACIÓN CON DOMICILIO
+// ============================================================
+async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const pedido = doc.data();
+        const tienda = tiendasCache[tiendaId] || {};
+        const nombreTienda = tienda.nombre || 'EyMoto';
+        const whatsappTienda = tienda.whatsapp || '';
+        const telefonoCliente = pedido.cliente?.telefono || '';
+        
+        if (!telefonoCliente) {
+            toast('⚠️ Cliente sin teléfono', 'error');
+            return;
+        }
+        
+        let subtotalProductos = 0;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
+        const costoDomicilio = pedido.costoDomicilio || 0;
+        const totalConDomicilio = subtotalProductos + costoDomicilio;
+        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        const estado = pedido.estado || 'Pendiente';
+        
+        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estado] || { emoji: '📌', texto: `Tu pedido está en estado: ${estado}` };
+        
+        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estado.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
+        
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                const nombreItem = item.nombre || 'Producto';
+                const cantidad = item.cantidad || 1;
+                const precioUnitario = item.precio || 0;
+                const subtotal = precioUnitario * cantidad;
+                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+            });
+        }
+        
+        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
+        if (costoDomicilio > 0) {
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
+        } else {
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
+        }
+        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+        
+        const metodoPago = pedido.metodoPago || 'efectivo';
+        if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
+            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
+        } else {
+            mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
+        }
+        
+        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
+        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
+        
+        if (pedido.nombreMensajero) {
+            mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
+        }
+        
+        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
+        
+        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        window.open(urlWhatsApp, '_blank');
+        toast(`📱 Notificación reenviada a ${telefonoCliente}`, 'success');
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .collection('notificaciones').add({
+                estado: estado,
+                mensaje: mensajeWhatsApp,
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                enviadoA: telefonoCliente,
+                tipo: 'reenvio'
+            });
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error: ' + error.message, 'error');
+        return false;
+    }
+}
+
+// ============================================================
+// EXPONER FUNCIONES AL GLOBAL
+// ============================================================
+window.toast = toast;
+window.logout = logout;
+window.iniciarSesion = iniciarSesion;
+window.switchTab = switchTab;
+window.cambiarTiendaSeleccionada = cambiarTiendaSeleccionada;
+window.cambiarEstadoAdmin = cambiarEstadoAdmin;
+window.confirmarPago = confirmarPago;
+window.rechazarPago = rechazarPago;
+window.eliminarPedido = eliminarPedido;
+window.generarFactura = generarFactura;
+window.probarAltavoz = probarAltavoz;
+window.stopAlarm = stopAlarm;
+window.toggleSonidoGlobal = toggleSonidoGlobal;
+window.detenerAlarmaContinua = detenerAlarmaContinua;
+window.detenerAlarmaGlobal = detenerAlarmaGlobal;
+window.obtenerPedidoDeCache = obtenerPedidoDeCache;
+window.cargarProductosParaEdicion = cargarProductosParaEdicion;
+window.abrirEditarPedido = abrirEditarPedido;
+window.cerrarEditarPedido = cerrarEditarPedido;
+window.cambiarCantidadItem = cambiarCantidadItem;
+window.quitarItemPedido = quitarItemPedido;
+window.agregarProductoAPedido = agregarProductoAPedido;
+window.guardarEdicionPedido = guardarEdicionPedido;
+window.marcarServicioListo = marcarServicioListo;
+window.abrirModalCrearNegocio = abrirModalCrearNegocio;
+window.cerrarModalCrearNegocio = cerrarModalCrearNegocio;
+window.verificarCorreoAdmin = verificarCorreoAdmin;
+window.crearNegocioCompleto = crearNegocioCompleto;
+window.editarTienda = editarTienda;
+window.cancelarEdTienda = cancelarEdTienda;
+window.guardarTienda = guardarTienda;
+window.eliminarTienda = eliminarTienda;
+window.toggleQR = toggleQR;
+window.toggleTienda = toggleTienda;
+window.verPedidosTienda = verPedidosTienda;
+window.toggleNotificacionSuperAdmin = toggleNotificacionSuperAdmin;
+window.mostrarResumenNotificaciones = mostrarResumenNotificaciones;
+window.cargarProductos = cargarProductos;
+window.guardarProducto = guardarProducto;
+window.editarProducto = editarProducto;
+window.cancelarEdProducto = cancelarEdProducto;
+window.eliminarProducto = eliminarProducto;
+window.limpiarFormularioProducto = limpiarFormularioProducto;
+window.seleccionarTipoProducto = seleccionarTipoProducto;
+window.cambiarModoPeso = cambiarModoPeso;
+window.actualizarPreciosPeso = actualizarPreciosPeso;
+window.abrirScannerAdmin = abrirScannerAdmin;
+window.cerrarScannerAdmin = cerrarScannerAdmin;
+window.buscarInformacionProducto = buscarInformacionProducto;
+window.filtrarProductos = filtrarProductos;
+window.limpiarBuscador = limpiarBuscador;
+window.cargarInventario = cargarInventario;
+window.ajustarStock = ajustarStock;
+window.actualizarStockManual = actualizarStockManual;
+window.exportarInventario = exportarInventario;
+window.resetearStockCero = resetearStockCero;
+window.actualizarTodosStock = actualizarTodosStock;
+window.cargarEstado = cargarEstado;
+window.abrirModalAsignacion = abrirModalAsignacion;
+window.cerrarModalAsignacion = cerrarModalAsignacion;
+window.asignarPedidoManual = asignarPedidoManual;
+window.notificarATodos = notificarATodos;
+window.cargarMensajerosAdmin = cargarMensajerosAdmin;
+window.actualizarCostoDomicilio = actualizarCostoDomicilio;
+window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
+window.reenviarNotificacionConDomicilio = reenviarNotificacionConDomicilio;
+window.cargarTiendasEnFiltro = cargarTiendasEnFiltro;
+window.toggleActivoMensajero = toggleActivoMensajero;
+window.verPedidosMensajero = verPedidosMensajero;
+window.abrirModalCrearMensajero = abrirModalCrearMensajero;
+window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
+window.crearMensajero = crearMensajero;
+window.abrirWhatsApp = abrirWhatsApp;
+
+console.log('✅ Panel de administración de EyMoto cargado correctamente');
+console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
+console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
+console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
+console.log('👥 Administración de mensajeros: ACTIVADA');
 console.log('📱 Notificación broadcast al número +573169934516');
 console.log('📱 Notificación individual al mensajero si tiene teléfono');
 </script>
