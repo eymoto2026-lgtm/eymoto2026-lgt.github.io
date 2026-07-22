@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Pedidos - EyMoto</title>
     <style>
+        /* ===== ESTILOS (igual que antes) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
@@ -1091,6 +1092,8 @@ function renderPedidoCard(p, tipo) {
             </div>
         `;
     } else if (tipo === 'activo') {
+        // 🔥 MENSAJERO NO PUEDE CANCELAR PEDIDOS YA TOMADOS
+        // Solo mostraremos botones según el estado del pedido, pero NO el botón de cancelar.
         if (estado === 'Listo para asignar' || estado === 'Asignado') {
             botonesHtml = `
                 <button class="btn-recoger" onclick="window.recogerPedido('${p.id}','${p._tiendaId}')">
@@ -1123,13 +1126,9 @@ function renderPedidoCard(p, tipo) {
             `;
         }
         
-        if (estado === 'Listo para asignar' || estado === 'Asignado' || estado === 'Pendiente' || estado === 'En cocina') {
-            botonesHtml += `
-                <button class="btn-danger" onclick="window.cancelarPedido('${p.id}','${p._tiendaId}')" style="width:100%;margin-top:6px;padding:8px;font-size:12px;">
-                    ❌ Cancelar pedido
-                </button>
-            `;
-        }
+        // 🔥 ELIMINAMOS EL BOTÓN DE CANCELAR PARA EL MENSAJERO
+        // Solo el admin puede cancelar desde el panel de administración.
+        
     } else if (tipo === 'historial') {
         botonesHtml = `
             <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:6px;background:var(--surface3);border-radius:6px;">
@@ -1380,27 +1379,10 @@ async function marcarEntregado(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// ❌ CANCELAR PEDIDO
+// ❌ CANCELAR PEDIDO (ELIMINADO PARA MENSAJEROS)
 // ============================================================
-async function cancelarPedido(pedidoId, tiendaId) {
-    if (!confirm('¿Cancelar este pedido? (Solo si es necesario)')) return;
-    try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'Cancelado',
-                mensajeroId: null,
-                nombreMensajero: null,
-                fechaCancelacion: firebase.firestore.FieldValue.serverTimestamp(),
-                canceladoPor: mensajeroData.nombre || 'Mensajero'
-            });
-        toast('❌ Pedido cancelado', 'warn', 3000);
-        cargarPedidos();
-        cargarPedidosDisponibles();
-    } catch (e) {
-        toast('❌ Error: ' + e.message, 'error');
-    }
-}
+// Ya no existe la función cancelarPedido para mensajeros.
+// Los mensajeros no pueden cancelar pedidos; solo el admin general puede hacerlo desde el panel de administración.
 
 // ============================================================
 // EXPONER FUNCIONES
@@ -1413,7 +1395,6 @@ window.tomarPedido = tomarPedido;
 window.recogerPedido = recogerPedido;
 window.marcarEnCamino = marcarEnCamino;
 window.marcarEntregado = marcarEntregado;
-window.cancelarPedido = cancelarPedido;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
@@ -1421,6 +1402,7 @@ console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notifica
 console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
 console.log('🚀 Mensaje motivacional de conexión activado');
+console.log('❌ Botón de cancelar pedido ELIMINADO para mensajeros (solo admin)');
 </script>
 </body>
 </html>
