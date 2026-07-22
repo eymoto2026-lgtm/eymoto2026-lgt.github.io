@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Mis Pedidos - EyMoto</title>
     <style>
-        /* ===== ESTILOS (igual que antes) ===== */
+        /* ===== ESTILOS COMPLETOS (sin cambios) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #0a0a0a; color: #fff; min-height: 100vh; }
         :root {
@@ -670,7 +670,6 @@ const db = firebase.firestore();
 // ============================================================
 let mensajeroUid = null;
 let mensajeroData = {};
-let todosLosPedidos = [];
 let pedidosActivos = [];
 let pedidosDisponibles = [];
 let pedidosHistorial = [];
@@ -878,12 +877,11 @@ function cargarPedidos() {
             
             snap.forEach(doc => {
                 const data = doc.data();
-                // 🔥 CORRECCIÓN AQUÍ: Extraemos el ID de la tienda de la referencia
                 const tiendaId = doc.ref.parent.parent.id;
                 const pedido = { 
                     id: doc.id, 
                     ...data,
-                    _tiendaId: tiendaId // Guardamos el ID de la tienda para usarlo en los botones
+                    _tiendaId: tiendaId
                 };
                 
                 if (data.estado !== 'Entregado' && data.estado !== 'Cancelado') {
@@ -915,7 +913,7 @@ function cargarPedidos() {
 }
 
 // ============================================================
-// 🔥 CARGAR PEDIDOS DISPONIBLES (SOLO SI NO TIENE PEDIDO ACTIVO Y ESTÁ CONECTADO)
+// 🔥 CARGAR PEDIDOS DISPONIBLES
 // ============================================================
 function cargarPedidosDisponibles() {
     const tieneActivo = pedidosActivos.length > 0;
@@ -943,7 +941,6 @@ function cargarPedidosDisponibles() {
             pedidosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
-                // Solo mostrar pedidos que NO tengan mensajero asignado
                 if (!data.mensajeroId) {
                     pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
@@ -1000,13 +997,12 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// RENDERIZAR PEDIDOS DISPONIBLES (filtrando los ya tomados)
+// RENDERIZAR PEDIDOS DISPONIBLES
 // ============================================================
 function renderizarPedidosDisponibles() {
     const container = document.getElementById('listaDisponibles');
     const badge = document.getElementById('dispBadge');
     
-    // 🔥 Filtrar los que realmente no tienen mensajero (por si acaso)
     const disponiblesReales = pedidosDisponibles.filter(p => !p.mensajeroId);
     
     badge.textContent = disponiblesReales.length;
@@ -1035,7 +1031,6 @@ function renderPedidoCard(p, tipo) {
     const totalConDomicilio = total + costoDomicilio;
     const estado = p.estado || 'Pendiente';
     const numero = p.numeroPedido || '#' + p.id.slice(-6);
-    const nombreMensajero = p.nombreMensajero || 'Mensajero';
     
     let fechaStr = '--/--/--', horaStr = '--:--';
     if (p.fecha) {
@@ -1068,14 +1063,13 @@ function renderPedidoCard(p, tipo) {
     }
     
     let estadoClass = '';
-    let estadoLabel = estado;
     if (estado === 'En camino' || estado === 'En camino al restaurante' || estado === 'Recogiendo pedido') {
         estadoClass = 'en-camino';
     } else if (estado === 'Entregado') {
         estadoClass = 'entregado';
     } else if (estado === 'Cancelado') {
         estadoClass = 'cancelado';
-    } else if (estado === 'Listo para asignar') {
+    } else if (estado === 'Listo para asignar' || estado === 'Asignado') {
         estadoClass = 'activo';
     }
     
@@ -1098,8 +1092,7 @@ function renderPedidoCard(p, tipo) {
             </div>
         `;
     } else if (tipo === 'activo') {
-        // 🔥 MENSAJERO NO PUEDE CANCELAR PEDIDOS YA TOMADOS
-        // Solo mostraremos botones según el estado del pedido, pero NO el botón de cancelar.
+        // 🔥 Si el estado es "Asignado" o "Listo para asignar", mostrar botón RECOGER
         if (estado === 'Listo para asignar' || estado === 'Asignado') {
             botonesHtml = `
                 <button class="btn-recoger" onclick="window.recogerPedido('${p.id}','${p._tiendaId}')">
@@ -1118,12 +1111,6 @@ function renderPedidoCard(p, tipo) {
                     ✅ ENTREGAR PEDIDO
                 </button>
             `;
-        } else if (estado === 'Pendiente' || estado === 'En cocina' || estado === 'Preparando') {
-            botonesHtml = `
-                <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px;background:var(--surface3);border-radius:8px;">
-                    ⏳ Esperando a que el restaurante prepare el pedido...
-                </div>
-            `;
         } else {
             botonesHtml = `
                 <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px;background:var(--surface3);border-radius:8px;">
@@ -1131,10 +1118,6 @@ function renderPedidoCard(p, tipo) {
                 </div>
             `;
         }
-        
-        // 🔥 ELIMINAMOS EL BOTÓN DE CANCELAR PARA EL MENSAJERO
-        // Solo el admin puede cancelar desde el panel de administración.
-        
     } else if (tipo === 'historial') {
         botonesHtml = `
             <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:6px;background:var(--surface3);border-radius:6px;">
@@ -1238,7 +1221,7 @@ function actualizarContadores() {
 }
 
 // ============================================================
-// 🛵 TOMAR PEDIDO
+// 🛵 TOMAR PEDIDO (desde disponibles)
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (pedidosActivos.length > 0) {
@@ -1272,7 +1255,6 @@ async function tomarPedido(pedidoId, tiendaId) {
                 nombreMensajero: mensajeroData.nombre || 'Mensajero',
                 estado: 'Asignado',
                 fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
-                pendienteConfirmacion: false,
                 asignadoPor: mensajeroData.nombre || 'Mensajero'
             });
         
@@ -1286,11 +1268,10 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 📦 RECOGER PEDIDO (MEJORADO CON VERIFICACIONES)
+// 📦 RECOGER PEDIDO (CORREGIDO)
 // ============================================================
 async function recogerPedido(pedidoId, tiendaId) {
     try {
-        // 1. Verificar que el pedido aún existe y está disponible
         const docRef = db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId);
         const doc = await docRef.get();
@@ -1303,37 +1284,38 @@ async function recogerPedido(pedidoId, tiendaId) {
 
         const data = doc.data();
 
-        // 2. Verificar que el pedido no tenga ya un mensajero asignado
-        if (data.mensajeroId) {
+        // Si el pedido ya está asignado a OTRO mensajero, mostrar error
+        if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
             toast('⛔ Este pedido ya fue tomado por otro mensajero.', 'error');
             cargarPedidosDisponibles();
             return;
         }
 
-        // 3. Verificar que el estado sea "Listo para asignar"
-        if (data.estado !== 'Listo para asignar') {
-            toast(`⚠️ El pedido ya no está disponible (estado: ${data.estado})`, 'warn');
-            cargarPedidosDisponibles();
+        // Si el pedido está asignado a ESTE mensajero o no tiene mensajero, permitir recoger
+        // Solo si el estado es "Listo para asignar" o "Asignado"
+        if (data.estado !== 'Listo para asignar' && data.estado !== 'Asignado') {
+            toast(`⚠️ El pedido no está disponible para recoger (estado: ${data.estado})`, 'warn');
             return;
         }
 
-        // 4. Verificar que el mensajero esté conectado y sin pedidos activos
-        if (pedidosActivos.length > 0) {
-            toast('⚠️ Ya tienes un pedido activo.', 'error');
-            return;
-        }
+        // Verificar que el mensajero esté conectado
         if (!mensajeroData.conectado) {
             toast('⚠️ Conéctate primero.', 'warn');
             return;
         }
 
-        // 5. ✅ Todo bien: actualizar el pedido
-        await docRef.update({
+        // Si no tiene mensajero, asignarlo a este mensajero
+        const updateData = {
             estado: 'Recogiendo pedido',
-            fechaRecogida: firebase.firestore.FieldValue.serverTimestamp(),
-            mensajeroId: mensajeroUid, // asegurar que queda asignado
-            nombreMensajero: mensajeroData.nombre || 'Mensajero'
-        });
+            fechaRecogida: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (!data.mensajeroId) {
+            updateData.mensajeroId = mensajeroUid;
+            updateData.nombreMensajero = mensajeroData.nombre || 'Mensajero';
+            updateData.asignadoPor = mensajeroData.nombre || 'Mensajero';
+        }
+
+        await docRef.update(updateData);
 
         toast('📦 Pedido recogido. ¡En camino a la entrega!', 'success', 3000);
         cargarPedidos();
