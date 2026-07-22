@@ -864,7 +864,7 @@ async function inicializarMensajero() {
 }
 
 // ============================================================
-// CARGAR PEDIDOS EN TIEMPO REAL
+// 🔥 CARGAR PEDIDOS EN TIEMPO REAL (CON _tiendaId CORREGIDO)
 // ============================================================
 function cargarPedidos() {
     if (!mensajeroUid) return;
@@ -878,7 +878,13 @@ function cargarPedidos() {
             
             snap.forEach(doc => {
                 const data = doc.data();
-                const pedido = { id: doc.id, ...data };
+                // 🔥 CORRECCIÓN AQUÍ: Extraemos el ID de la tienda de la referencia
+                const tiendaId = doc.ref.parent.parent.id;
+                const pedido = { 
+                    id: doc.id, 
+                    ...data,
+                    _tiendaId: tiendaId // Guardamos el ID de la tienda para usarlo en los botones
+                };
                 
                 if (data.estado !== 'Entregado' && data.estado !== 'Cancelado') {
                     pedidosActivos.push(pedido);
