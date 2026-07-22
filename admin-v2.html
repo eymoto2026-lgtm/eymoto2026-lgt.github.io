@@ -6,7 +6,7 @@
 <title>Admin EyMoto — Panel General</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-/* ===== ESTILOS COMPLETOS (MANTENER LOS MISMOS QUE TENÍAS) ===== */
+/* ===== ESTILOS COMPLETOS ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
 :root{
@@ -1688,7 +1688,7 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
-// AUTENTICACIÓN Y ROLES
+// AUTENTICACIÓN Y ROLES (PRIORIDAD: adminMensajero > superAdmin > admin)
 // ============================================================
 async function verificarRolUsuario() {
     const user = firebase.auth().currentUser;
@@ -1701,15 +1701,16 @@ async function verificarRolUsuario() {
         }
         const data = doc.data();
         console.log('📌 Datos del usuario:', data);
+        
+        // PRIORIDAD: Admin Mensajero primero
+        if (data.adminMensajero === true) {
+            console.log('🛵 ADMIN MENSAJERO');
+            return { rol: 'adminMensajero', tiendaId: null };
+        }
         // Super Admin
         if (data.admin === true || data.superAdmin === true) {
             console.log('👑 SUPER ADMIN');
             return { rol: 'superadmin', tiendaId: null };
-        }
-        // Admin Mensajero (nuevo rol)
-        if (data.adminMensajero === true) {
-            console.log('🛵 ADMIN MENSAJERO');
-            return { rol: 'adminMensajero', tiendaId: null };
         }
         // Admin de tienda
         if (data.tiendaId) {
@@ -1836,13 +1837,8 @@ async function inicializarPanel() {
             document.getElementById('panelTitulo').textContent = 'Panel de Mensajería - Asignación de Pedidos';
             // Ocultar el selector de tiendas para admin mensajero (solo ve todos)
             document.querySelector('.peds-controls select').style.display = 'none';
-            // Cargar solo pedidos listos para asignar (se maneja en la escucha)
             cargarPreferenciaSonido();
-            // No cargar tiendas ni productos
-            // Iniciamos la escucha global para ver todos los pedidos listos
             iniciarEscuchaGlobal();
-            // Aplicar filtro automático para mostrar solo "Listo para asignar" y "Asignado"
-            // Esto se hará en la función de renderizado
         } else if (esAdminTienda) {
             document.getElementById('panelTitulo').textContent = 'Panel de Administración de Tienda';
             await cargarTiendaUnica(tiendaIdUsuario);
@@ -1874,7 +1870,6 @@ async function inicializarPanel() {
         
         setTimeout(activarAudioAutomatico, 1000);
         if (!esAdminMensajero) {
-            // Para admin mensajero ya iniciamos la escucha antes
             iniciarEscuchaGlobal();
         }
         toast('✅ Panel cargado correctamente', 'success', 2000);
@@ -3951,7 +3946,7 @@ async function cargarEstado() {
 }
 
 // ============================================================
-// ✏️ EDITAR PEDIDO (COMPLETO Y CORREGIDO)
+// ✏️ EDITAR PEDIDO
 // ============================================================
 async function abrirEditarPedido(tiendaId, pedidoId) {
     try {
@@ -4384,7 +4379,7 @@ async function verPedidosMensajero(uid) {
         });
     }
     toast('📦 Pedidos del mensajero', 'info', 5000);
-    // Mostrar en una alerta o modal simple
+    // Mostrar en un modal simple
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:999999;display:flex;justify-content:center;align-items:center;padding:20px;';
     modal.innerHTML = `
@@ -4663,7 +4658,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// 📱 REENVIAR NOTIFICACIÓN CON DOMICILIO (PARA PEDIDOS EXISTENTES)
+// REENVIAR NOTIFICACIÓN CON DOMICILIO
 // ============================================================
 async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
     try {
