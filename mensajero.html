@@ -679,7 +679,7 @@ let notificacionesPendientes = [];
 let notificacionesMostradas = new Set();
 
 // ============================================================
-// TOAST
+// FUNCIONES AUXILIARES (TOAST, NORMALIZAR TELÉFONO)
 // ============================================================
 function toast(msg, type = 'info', dur = 4000) {
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
@@ -694,6 +694,78 @@ function toast(msg, type = 'info', dur = 4000) {
         setTimeout(() => el.remove(), 350);
     }, dur);
     return el;
+}
+
+function normalizarTelefonoColombia(numero) {
+    if (!numero) return '';
+    let num = numero.replace(/\s/g, '').replace('+', '');
+    if (!num.startsWith('57')) num = '57' + num;
+    return num;
+}
+
+// ============================================================
+// 🔥 NOTIFICACIÓN AL CLIENTE DESDE EL MENSAJERO
+// ============================================================
+async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
+    try {
+        // Obtener el pedido
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        if (!doc.exists) return;
+        const pedido = doc.data();
+
+        // Obtener la tienda
+        const tiendaDoc = await db.collection('tiendas').doc(tiendaId).get();
+        if (!tiendaDoc.exists) return;
+        const tienda = tiendaDoc.data();
+        const nombreTienda = tienda.nombre || 'EyMoto';
+        const whatsappTienda = tienda.whatsapp || '';
+
+        let telefonoCliente = pedido.cliente?.telefono || '';
+        if (!telefonoCliente) {
+            console.log('⚠️ Cliente sin teléfono, no se envía notificación');
+            return;
+        }
+        telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
+
+        // Mensajes por estado
+        const MENSAJES = {
+            'Asignado': { emoji: '🛵', texto: '¡Un mensajero ha tomado tu pedido! Está en camino al restaurante.' },
+            'Recogiendo pedido': { emoji: '📦', texto: 'El mensajero ha llegado al restaurante y está recogiendo tu pedido.' },
+            'En camino': { emoji: '🚗', texto: 'Tu pedido está en camino a tu dirección. ¡Llega muy pronto!' },
+            'Entregado': { emoji: '✅', texto: '¡Tu pedido ha sido entregado! Gracias por confiar en EyMoto. 🎉' }
+        };
+
+        const info = MENSAJES[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a: ${estadoNuevo}` };
+        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        const total = pedido.total || 0;
+        const costoDomicilio = pedido.costoDomicilio || 0;
+        const totalConDomicilio = total + costoDomicilio;
+
+        let mensaje = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${info.emoji} *${estadoNuevo.toUpperCase()}*\n${info.texto}\n\n📋 *Detalles:*\n`;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                const nombre = item.nombre || 'Producto';
+                const cantidad = item.cantidad || 1;
+                const precio = item.precio || 0;
+                const subtotal = precio * cantidad;
+                mensaje += `🍜 ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+            });
+        }
+        mensaje += `\n💰 *Total:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+        if (pedido.cliente?.direccion) mensaje += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
+        mensaje += `\n\n📱 *¿Preguntas?* Comunícate al ${whatsappTienda || 'nuestro WhatsApp'}`;
+
+        // Abrir WhatsApp
+        const url = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+
+        console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
+        return true;
+    } catch (e) {
+        console.error('Error enviando notificación:', e);
+        return false;
+    }
 }
 
 // ============================================================
@@ -863,7 +935,7 @@ async function inicializarMensajero() {
 }
 
 // ============================================================
-// 🔥 CARGAR PEDIDOS EN TIEMPO REAL (CON _tiendaId CORREGIDO)
+// CARGAR PEDIDOS EN TIEMPO REAL
 // ============================================================
 function cargarPedidos() {
     if (!mensajeroUid) return;
@@ -913,7 +985,7 @@ function cargarPedidos() {
 }
 
 // ============================================================
-// 🔥 CARGAR PEDIDOS DISPONIBLES
+// CARGAR PEDIDOS DISPONIBLES (SOLO "Listo para asignar" sin mensajero)
 // ============================================================
 function cargarPedidosDisponibles() {
     const tieneActivo = pedidosActivos.length > 0;
@@ -1004,7 +1076,6 @@ function renderizarPedidosDisponibles() {
     const badge = document.getElementById('dispBadge');
     
     const disponiblesReales = pedidosDisponibles.filter(p => !p.mensajeroId);
-    
     badge.textContent = disponiblesReales.length;
     
     if (disponiblesReales.length === 0) {
@@ -1092,7 +1163,6 @@ function renderPedidoCard(p, tipo) {
             </div>
         `;
     } else if (tipo === 'activo') {
-        // 🔥 Si el estado es "Asignado" o "Listo para asignar", mostrar botón RECOGER
         if (estado === 'Listo para asignar' || estado === 'Asignado') {
             botonesHtml = `
                 <button class="btn-recoger" onclick="window.recogerPedido('${p.id}','${p._tiendaId}')">
@@ -1221,7 +1291,7 @@ function actualizarContadores() {
 }
 
 // ============================================================
-// 🛵 TOMAR PEDIDO (desde disponibles)
+// 🛵 TOMAR PEDIDO (desde disponibles) + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (pedidosActivos.length > 0) {
@@ -1259,6 +1329,10 @@ async function tomarPedido(pedidoId, tiendaId) {
             });
         
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
+        
+        // Notificar al cliente que el mensajero tomó el pedido
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
+        
         cargarPedidos();
         cargarPedidosDisponibles();
         
@@ -1268,7 +1342,7 @@ async function tomarPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 📦 RECOGER PEDIDO (CORREGIDO)
+// 📦 RECOGER PEDIDO + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function recogerPedido(pedidoId, tiendaId) {
     try {
@@ -1284,27 +1358,25 @@ async function recogerPedido(pedidoId, tiendaId) {
 
         const data = doc.data();
 
-        // Si el pedido ya está asignado a OTRO mensajero, mostrar error
+        // Verificar si ya tiene mensajero y si es otro
         if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
             toast('⛔ Este pedido ya fue tomado por otro mensajero.', 'error');
             cargarPedidosDisponibles();
             return;
         }
 
-        // Si el pedido está asignado a ESTE mensajero o no tiene mensajero, permitir recoger
-        // Solo si el estado es "Listo para asignar" o "Asignado"
+        // Solo se puede recoger si estado es "Listo para asignar" o "Asignado"
         if (data.estado !== 'Listo para asignar' && data.estado !== 'Asignado') {
             toast(`⚠️ El pedido no está disponible para recoger (estado: ${data.estado})`, 'warn');
             return;
         }
 
-        // Verificar que el mensajero esté conectado
         if (!mensajeroData.conectado) {
             toast('⚠️ Conéctate primero.', 'warn');
             return;
         }
 
-        // Si no tiene mensajero, asignarlo a este mensajero
+        // Preparar datos de actualización
         const updateData = {
             estado: 'Recogiendo pedido',
             fechaRecogida: firebase.firestore.FieldValue.serverTimestamp()
@@ -1318,6 +1390,10 @@ async function recogerPedido(pedidoId, tiendaId) {
         await docRef.update(updateData);
 
         toast('📦 Pedido recogido. ¡En camino a la entrega!', 'success', 3000);
+        
+        // Notificar al cliente que el mensajero recogió el pedido
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'Recogiendo pedido');
+        
         cargarPedidos();
         cargarPedidosDisponibles();
 
@@ -1329,17 +1405,28 @@ async function recogerPedido(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// 🚗 MARCAR EN CAMINO
+// 🚗 MARCAR EN CAMINO + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function marcarEnCamino(pedidoId, tiendaId) {
     try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'En camino',
-                fechaEnvio: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            toast('⚠️ El pedido ya no existe.', 'error');
+            return;
+        }
+        const data = doc.data();
+        
+        await docRef.update({
+            estado: 'En camino',
+            fechaEnvio: firebase.firestore.FieldValue.serverTimestamp()
+        });
         toast('🚗 Pedido en camino al cliente', 'success', 3000);
+        
+        // Notificar al cliente
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'En camino');
+        
         cargarPedidos();
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -1347,18 +1434,29 @@ async function marcarEnCamino(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// ✅ MARCAR ENTREGADO
+// ✅ MARCAR ENTREGADO + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function marcarEntregado(pedidoId, tiendaId) {
     if (!confirm('¿Confirmar entrega de este pedido?')) return;
     try {
-        await db.collection('tiendas').doc(tiendaId)
-            .collection('pedidos').doc(pedidoId)
-            .update({
-                estado: 'Entregado',
-                fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            toast('⚠️ El pedido ya no existe.', 'error');
+            return;
+        }
+        const data = doc.data();
+        
+        await docRef.update({
+            estado: 'Entregado',
+            fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
+        });
         toast('✅ ¡Pedido entregado con éxito! 🎉', 'success', 4000);
+        
+        // Notificar al cliente
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'Entregado');
+        
         cargarPedidos();
         cargarPedidosDisponibles();
     } catch (e) {
@@ -1377,6 +1475,7 @@ window.tomarPedido = tomarPedido;
 window.recogerPedido = recogerPedido;
 window.marcarEnCamino = marcarEnCamino;
 window.marcarEntregado = marcarEntregado;
+window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
@@ -1385,6 +1484,7 @@ console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
 console.log('🚀 Mensaje motivacional de conexión activado');
 console.log('❌ Botón de cancelar pedido ELIMINADO para mensajeros (solo admin)');
+console.log('📲 Notificaciones al cliente: ACTIVADAS (tomar, recoger, en camino, entregar)');
 </script>
 </body>
 </html>
