@@ -6,7 +6,7 @@
 <title>Admin EyoMoto – Panel General</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-/* ===== ESTILOS COMPLETOS (sin cambios) ===== */
+/* ===== ESTILOS COMPLETOS ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
 :root{
@@ -1277,7 +1277,7 @@ const MENSAJES_NOTIFICACION_ESTADO = {
 };
 
 // ============================================================
-// 🔥 FUNCIÓN: NOTIFICAR AL CLIENTE TODOS LOS ESTADOS (CON NORMALIZACIÓN)
+// 🔥 FUNCIÓN: NOTIFICAR AL CLIENTE TODOS LOS ESTADOS
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
@@ -1297,10 +1297,8 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             return;
         }
         
-        // 🔥 NORMALIZAR TELÉFONO PARA COLOMBIA (+57)
-        let num = telefonoCliente.replace(/\s/g, '').replace('+', '');
-        if (!num.startsWith('57')) num = '57' + num;
-        telefonoCliente = num;
+        // Normalizar teléfono a +57
+        telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
         
         if (pedido._ultimoEstadoNotificado === estadoNuevo) {
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
@@ -1383,6 +1381,16 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         console.error('❌ Error enviando notificación:', error);
         return false;
     }
+}
+
+// ============================================================
+// FUNCIÓN PARA NORMALIZAR TELÉFONO (COLOMBIA +57)
+// ============================================================
+function normalizarTelefonoColombia(numero) {
+    if (!numero) return '';
+    let num = numero.replace(/\s/g, '').replace('+', '');
+    if (!num.startsWith('57')) num = '57' + num;
+    return num;
 }
 
 // ============================================================
@@ -2062,52 +2070,15 @@ async function toggleQR(tiendaId, estado) {
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
-// ============================================================
-// 🔥 FUNCIÓN MEJORADA: toggleTienda (maneja errores de lectura)
-// ============================================================
 async function toggleTienda(tiendaId, estado) {
     try {
-        // 1. Intentar actualizar el estado (ESCRITURA)
         await db.collection('tiendas').doc(tiendaId).update({ abierta: estado });
-        
-        // Si llegamos aquí, ¡la tienda se cerró/abrió con éxito en la base de datos!
-        toast(estado ? '✅ Tienda abierta correctamente' : '❌ Tienda cerrada correctamente', estado ? 'success' : 'warn');
-        
-        // 2. Intentar recargar la interfaz (LECTURA) - Si falla, solo mostramos advertencia
-        try {
-            // Solo intentamos recargar si estamos en la pestaña de Tiendas o Estado
-            if (document.getElementById('tab-tiendas').classList.contains('active')) {
-                await cargarTiendasSuperAdmin();
-            }
-            if (document.getElementById('tab-estado').classList.contains('active')) {
-                await cargarEstado();
-            }
-            // Si nada de lo anterior está activo, al menos recargamos el toggle de la tienda actual
-            const tiendaItem = document.getElementById(`tienda-${tiendaId}`);
-            if (tiendaItem) {
-                const btn = tiendaItem.querySelector('[onclick*="toggleTienda"]');
-                if (btn) {
-                    btn.textContent = estado ? '🔴 Cerrar' : '🟢 Abrir';
-                    btn.setAttribute('onclick', `window.toggleTienda('${tiendaId}', ${!estado})`);
-                }
-            }
-            // Actualizar el toggle en la pestaña Estado si existe
-            const toggleCheck = document.querySelector(`#estadoWrap input[onchange*="toggleTienda('${tiendaId}'"]`);
-            if (toggleCheck) {
-                toggleCheck.checked = estado;
-            }
-
-        } catch (errorLectura) {
-            // El cierre funcionó, pero no pudimos recargar la lista. Avisamos amablemente.
-            console.warn('⚠️ Tienda actualizada, pero no se pudo recargar la vista:', errorLectura);
-            toast('ℹ️ Tienda actualizada. Recarga la página para ver el cambio visual.', 'info', 4000);
+        toast(estado ? '✅ Tienda abierta' : '❌ Tienda cerrada', estado ? 'success' : 'warn');
+        cargarTiendasSuperAdmin();
+        if (document.getElementById('tab-estado').classList.contains('active')) {
+            cargarEstado();
         }
-
-    } catch(errorEscritura) {
-        // Esto solo pasa si FALLÓ la actualización en Firestore (problema de permisos de escritura)
-        console.error('❌ Error al actualizar la tienda:', errorEscritura);
-        toast('❌ Error de permisos: ' + errorEscritura.message, 'error');
-    }
+    } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
 async function toggleNotificacionSuperAdmin(tiendaId) {
@@ -3505,7 +3476,7 @@ async function cargarEstado() {
                     <div style="font-size:12px;margin-top:6px;">${abierta ? '🟢 Tienda ABIERTA' : '🔴 Tienda CERRADA'}</div>
                 </div>
                 <div class="toggle">
-                    <input type="checkbox" ${abierta ? 'checked' : ''} onchange="window.toggleTienda('${tid}', this.checked)">
+                    <input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleTienda('${tid}', this.checked)">
                     <span class="toggle-slider"></span>
                 </div>
             </div>
@@ -3539,7 +3510,7 @@ async function cargarEstado() {
 }
 
 // ============================================================
-// ✏️ EDITAR PEDIDO (CON NORMALIZACIÓN DE TELÉFONO)
+// ✏️ EDITAR PEDIDO
 // ============================================================
 async function abrirEditarPedido(tiendaId, pedidoId) {
     try {
@@ -3599,7 +3570,6 @@ function renderizarEditarPedido() {
     });
     const costoDomicilio = p.costoDomicilio || 0;
     const totalConDomicilio = total + costoDomicilio;
-    // 🔥 Muestra los datos del cliente en campos editables
     container.innerHTML = `
         <div class="pedido-info">
             <div class="row"><span class="label">🧾 Pedido:</span><span>${p.numeroPedido || '#' + p.id}</span></div>
@@ -3613,7 +3583,7 @@ function renderizarEditarPedido() {
             </div>
             <div class="row">
                 <span class="label">📱 Teléfono:</span>
-                <input type="text" id="editClienteTelefono" value="${cliente.telefono || ''}" placeholder="Ej: 573001234567" style="flex:1;padding:6px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:#fff;width:100%;" onblur="window.normalizarTelefonoEnEdicion()">
+                <input type="text" id="editClienteTelefono" value="${cliente.telefono || ''}" placeholder="Ej: 573001234567" style="flex:1;padding:6px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:#fff;width:100%;">
             </div>
             <div class="row">
                 <span class="label">📝 Observaciones:</span>
@@ -3630,18 +3600,6 @@ function renderizarEditarPedido() {
         <button class="btn-guardar-edicion" onclick="window.guardarEdicionPedido()">💾 Guardar cambios</button>
     `;
 }
-
-// Función para normalizar teléfono en el modal de edición
-window.normalizarTelefonoEnEdicion = function() {
-    const input = document.getElementById('editClienteTelefono');
-    if (!input) return;
-    let val = input.value.trim();
-    if (val) {
-        let num = val.replace(/\s/g, '').replace('+', '');
-        if (!num.startsWith('57')) num = '57' + num;
-        input.value = num;
-    }
-};
 
 function cambiarCantidadItem(index, delta) {
     if (index < 0 || index >= itemsEditando.length) return;
@@ -3689,9 +3647,6 @@ function agregarProductoAPedido() {
     renderizarEditarPedido();
 }
 
-// ============================================================
-// 🔥 GUARDAR EDICIÓN DEL PEDIDO (CON NORMALIZACIÓN)
-// ============================================================
 async function guardarEdicionPedido() {
     if (!pedidoEditando) return;
     const { tiendaId, id } = pedidoEditando;
@@ -3703,11 +3658,9 @@ async function guardarEdicionPedido() {
     let telefonoCliente = document.getElementById('editClienteTelefono')?.value?.trim() || '';
     const observacionesCliente = document.getElementById('editClienteObservaciones')?.value?.trim() || '';
 
-    // 🔥 NORMALIZAR TELÉFONO PARA COLOMBIA (+57)
+    // 🔥 NORMALIZAR TELÉFONO A +57
     if (telefonoCliente) {
-        let num = telefonoCliente.replace(/\s/g, '').replace('+', '');
-        if (!num.startsWith('57')) num = '57' + num;
-        telefonoCliente = num;
+        telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
     }
 
     try {
@@ -3733,7 +3686,7 @@ async function guardarEdicionPedido() {
             totalConDomicilio: Math.round(totalConDomicilio),
             'cliente.nombre': nombreCliente,
             'cliente.direccion': direccionCliente,
-            'cliente.telefono': telefonoCliente, // 🔥 Ya normalizado con +57
+            'cliente.telefono': telefonoCliente,
             'cliente.observaciones': observacionesCliente,
             editadoPor: auth.currentUser?.email || 'Admin',
             fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
@@ -3899,7 +3852,7 @@ async function crearMensajero() {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN: ABRIR WHATSAPP (CON NORMALIZACIÓN)
+// 🔥 FUNCIÓN: ABRIR WHATSAPP
 // ============================================================
 function abrirWhatsApp(numero, mensaje) {
     let num = numero.replace(/\s/g, '').replace('+', '');
@@ -3908,7 +3861,7 @@ function abrirWhatsApp(numero, mensaje) {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST)
+// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST) CON ENLACE
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -3930,6 +3883,8 @@ async function notificarATodos() {
             const total = data.total || 0;
             const costoDomicilio = data.costoDomicilio || 0;
             const totalConDomicilio = total + costoDomicilio;
+            // 🔥 Construir enlace directo al pedido para mensajeros
+            const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
             let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
             mensaje += `🏪 *${nombreTienda}*\n`;
             mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
@@ -3948,7 +3903,9 @@ async function notificarATodos() {
                     mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                 });
             } else { mensaje += `- Sin productos\n`; }
-            mensaje += `\n🚀 *¡El primero en tomarlo se lo queda!*`;
+            // 🔥 Incluir el enlace para que cualquier mensajero pueda tomarlo
+            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}`;
+            mensaje += `\n\n🚀 *¡El primero en tomarlo se lo queda!*`;
             abrirWhatsApp('573169934516', mensaje);
         }
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
@@ -3959,7 +3916,7 @@ async function notificarATodos() {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE
+// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE (con enlace)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -3988,6 +3945,8 @@ async function asignarPedidoManual() {
                 const total = data.total || 0;
                 const costoDomicilio = data.costoDomicilio || 0;
                 const totalConDomicilio = total + costoDomicilio;
+                // 🔥 Enlace directo para el mensajero asignado
+                const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
                 let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
                 mensaje += `🏪 *${nombreTienda}*\n`;
                 mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
@@ -4006,7 +3965,9 @@ async function asignarPedidoManual() {
                         mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                     });
                 } else { mensaje += `- Sin productos\n`; }
-                mensaje += `\n🛵 *Recoge el pedido en el restaurante.*`;
+                // 🔥 Enlace para que el mensajero vea el pedido y lo gestione
+                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
+                mensaje += `\n\n🛵 *Recoge el pedido en el restaurante.*`;
                 abrirWhatsApp(mensajero.telefono, mensaje);
             }
         }
@@ -4072,7 +4033,7 @@ function cerrarModalAsignacion() {
 }
 
 // ============================================================
-// REENVIAR NOTIFICACIÓN CON DOMICILIO (CON NORMALIZACIÓN)
+// REENVIAR NOTIFICACIÓN CON DOMICILIO
 // ============================================================
 async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
     try {
@@ -4084,12 +4045,8 @@ async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
         const whatsappTienda = tienda.whatsapp || '';
         let telefonoCliente = pedido.cliente?.telefono || '';
         if (!telefonoCliente) { toast('⚠️ Cliente sin teléfono', 'error'); return; }
-        
-        // 🔥 Normalizar
-        let num = telefonoCliente.replace(/\s/g, '').replace('+', '');
-        if (!num.startsWith('57')) num = '57' + num;
-        telefonoCliente = num;
-        
+        // Normalizar a +57
+        telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
         let subtotalProductos = 0;
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => { subtotalProductos += item.total || (item.precio * item.cantidad) || 0; });
@@ -4208,14 +4165,15 @@ window.abrirModalCrearMensajero = abrirModalCrearMensajero;
 window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
 window.crearMensajero = crearMensajero;
 window.abrirWhatsApp = abrirWhatsApp;
+window.normalizarTelefonoColombia = normalizarTelefonoColombia;
 
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
 console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
 console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
 console.log('👥 Administración de mensajeros: ACTIVADA');
-console.log('🇨🇴 Números telefónicos normalizados con +57 (Colombia)');
-console.log('🔧 Cierre de tienda: FUNCIONALIDAD MEJORADA');
+console.log('🇨🇴 Normalización de teléfonos +57 ACTIVADA');
+console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
 </script>
 </body>
 </html>
