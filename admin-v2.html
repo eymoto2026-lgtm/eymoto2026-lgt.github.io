@@ -71,6 +71,7 @@ label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margi
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
 
+/* Campo de costo de domicilio */
 .campo-domicilio {
     display: flex;
     align-items: center;
@@ -434,6 +435,7 @@ header .spacer{flex:1}
 .buscador-input-group button{width:auto;padding:10px 16px;white-space:nowrap;}
 .buscador-resultados{font-size:11px;color:var(--text-muted);margin-top:6px;}
 
+/* ===== MODAL DE ASIGNACIÓN ===== */
 .modal-asignacion {
     display: none;
     position: fixed;
@@ -985,7 +987,7 @@ header .spacer{flex:1}
   </div>
 </div>
 
-<!-- ===== MODALES ===== -->
+<!-- ===== MODAL DE ASIGNACIÓN DE PEDIDO ===== -->
 <div class="modal-asignacion" id="modalAsignacion">
     <div class="modal-content">
         <div class="modal-header">
@@ -996,6 +998,7 @@ header .spacer{flex:1}
     </div>
 </div>
 
+<!-- MODAL ESCÁNER ADMIN -->
 <div class="modal-scanner" id="modalScannerAdmin">
     <div class="modal-content">
         <div class="modal-header">
@@ -1014,6 +1017,7 @@ header .spacer{flex:1}
     </div>
 </div>
 
+<!-- MODAL EDITAR PEDIDO -->
 <div class="modal-editar-pedido" id="modalEditarPedido">
     <div class="modal-content">
         <div class="modal-header">
@@ -1183,11 +1187,13 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             return;
         }
         
+        // ✅ VERIFICAR SI EL PEDIDO YA FUE NOTIFICADO EN ESTE ESTADO
         if (pedido._ultimoEstadoNotificado === estadoNuevo) {
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
             return;
         }
         
+        // ✅ CALCULAR PRODUCTOS Y DOMICILIO
         let subtotalProductos = 0;
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => {
@@ -1200,8 +1206,10 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido está en: ${estadoNuevo}` };
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
         
+        // 🔥 MENSAJE CORTO Y CLARO
         let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *Pedido ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n`;
         
+        // 🔥 SOLO MOSTRAR DETALLES COMPLETOS EN ESTADOS CLAVE
         if (estadoNuevo === 'Pendiente' || estadoNuevo === 'Listo para asignar' || estadoNuevo === 'Asignado' || estadoNuevo === 'En camino' || estadoNuevo === 'Entregado') {
             mensajeWhatsApp += `\n📋 *Detalles:*\n`;
             if (pedido.items && pedido.items.length > 0) {
@@ -1227,11 +1235,13 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 ${pedido.cliente.direccion}`;
         }
         
+        // 🔥 MENSAJE DE CIERRE
         mensajeWhatsApp += `\n\n📱 *¿Preguntas?* ${whatsappTienda || 'Contáctanos'}`;
         
         const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         window.open(urlWhatsApp, '_blank');
         
+        // ✅ GUARDAR QUE YA SE NOTIFICÓ ESTE ESTADO
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
@@ -1562,64 +1572,8 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
     }
 }
 
+// Exponer función al scope global
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
-
-// ============================================================
-// 🔥 FUNCIONES FALTANTES: cargarTiendasEnFiltro y cargarProductosParaEdicion
-// ============================================================
-
-async function cargarTiendasEnFiltro() {
-    const selector = document.getElementById('filtroTienda');
-    if (!selector) return;
-    
-    selector.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
-    
-    try {
-        const snap = await db.collection('tiendas').get();
-        
-        if (snap.empty) {
-            console.log('⚠️ No hay tiendas disponibles');
-            return;
-        }
-        
-        snap.forEach(doc => {
-            const t = doc.data();
-            const id = doc.id;
-            const nombre = t.nombre || id;
-            const tipo = t.tipoNegocio || 'restaurante';
-            const icono = TIPOS_NEGOCIO[tipo]?.label?.split(' ')[0] || '🏪';
-            
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = `${icono} ${nombre}`;
-            selector.appendChild(option);
-        });
-        
-        console.log(`✅ ${snap.size} tiendas cargadas en el filtro`);
-        return snap.size;
-        
-    } catch (error) {
-        console.error('❌ Error al cargar tiendas en el filtro:', error);
-        toast('❌ Error al cargar tiendas', 'error');
-        return 0;
-    }
-}
-
-async function cargarProductosParaEdicion() {
-    try {
-        const snap = await db.collectionGroup('productos').get();
-        productosDisponibles = [];
-        snap.forEach(doc => {
-            const p = doc.data();
-            const id = doc.id;
-            const tiendaId = doc.ref.parent.parent.id;
-            productosDisponibles.push({ id, tiendaId, ...p });
-        });
-        console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
-    } catch (e) {
-        console.error('Error cargando productos para edición:', e);
-    }
-}
 
 // ============================================================
 // AUTENTICACIÓN Y ROLES
@@ -1651,9 +1605,6 @@ async function verificarRolUsuario() {
     }
 }
 
-// ============================================================
-// INICIALIZAR PANEL
-// ============================================================
 async function inicializarPanel() {
     try {
         const rolInfo = await verificarRolUsuario();
@@ -4407,6 +4358,62 @@ async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
 }
 
 // ============================================================
+// INICIALIZAR
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('filtroTienda');
+    if (sel) sel.addEventListener('change', cambiarTiendaSeleccionada);
+    document.addEventListener('click', function activarAudioPorClic() {
+        activarAudioAutomatico();
+        document.removeEventListener('click', activarAudioPorClic);
+    }, { once: true });
+    cargarPreferenciaSonido();
+    console.log('✅ Panel de administración cargado correctamente');
+    console.log('🏪 Tipos de negocio disponibles:', Object.keys(TIPOS_NEGOCIO).length);
+    console.log('📦 Estados personalizados por tipo de negocio activados');
+    console.log('🛵 Costo de domicilio integrado');
+    console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS CON MENSAJES CORTOS');
+    console.log('📱 Estados: Pendiente → Preparación → Listo → Asignado → En camino → Entregado');
+    console.log('✏️ Editar pedido con validación de campos');
+    console.log('📱 Mensaje WhatsApp con PRODUCTOS + DOMICILIO + TOTAL');
+    console.log('📱 Botón "Reenviar Notificación" para pedidos existentes');
+    console.log('👤 MOSTRARÁ EL NOMBRE DEL MENSAJERO ASIGNADO EN EL PANEL GENERAL');
+    
+    setTimeout(() => {
+        cargarMensajerosAdmin();
+    }, 2000);
+});
+
+// ============================================================
+// ACTUALIZAR OCUPADOS EN TIEMPO REAL
+// ============================================================
+function actualizarOcupadosEnTiempoReal() {
+    const mensajerosOcupados = new Set();
+    
+    Object.keys(todosLosPedidos).forEach(tiendaId => {
+        const pedidos = todosLosPedidos[tiendaId] || [];
+        pedidos.forEach(p => {
+            if (p.data.mensajeroId && 
+                (p.data.estado === 'Asignado' || p.data.estado === 'En camino')) {
+                mensajerosOcupados.add(p.data.mensajeroId);
+            }
+        });
+    });
+    
+    const statOcupados = document.getElementById('statOcupados');
+    if (statOcupados) statOcupados.textContent = mensajerosOcupados.size;
+    cargarMensajerosAdmin();
+}
+
+const originalActualizarEstadisticas = window.actualizarEstadisticas;
+window.actualizarEstadisticas = function() {
+    if (originalActualizarEstadisticas) {
+        originalActualizarEstadisticas();
+    }
+    actualizarOcupadosEnTiempoReal();
+};
+
+// ============================================================
 // EXPONER FUNCIONES AL GLOBAL
 // ============================================================
 window.toast = toast;
@@ -4426,7 +4433,6 @@ window.detenerAlarmaContinua = detenerAlarmaContinua;
 window.detenerAlarmaGlobal = detenerAlarmaGlobal;
 window.obtenerPedidoDeCache = obtenerPedidoDeCache;
 window.cargarProductosParaEdicion = cargarProductosParaEdicion;
-window.cargarTiendasEnFiltro = cargarTiendasEnFiltro;
 window.abrirEditarPedido = abrirEditarPedido;
 window.cerrarEditarPedido = cerrarEditarPedido;
 window.cambiarCantidadItem = cambiarCantidadItem;
