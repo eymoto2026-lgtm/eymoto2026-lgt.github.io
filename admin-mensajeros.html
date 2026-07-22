@@ -1611,7 +1611,57 @@ async function verificarRolUsuario() {
         return { rol: 'cliente', tiendaId: null };
     }
 }
+// ============================================================
+// 🔥 FUNCIONES QUE FALTAN (PEGA ESTO ANTES DE inicializarPanel)
+// ============================================================
 
+async function cargarTiendasEnFiltro() {
+    const selector = document.getElementById('filtroTienda');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">🌐 Todas las tiendas</option>';
+    
+    try {
+        const snap = await db.collection('tiendas').get();
+        if (snap.empty) {
+            console.log('⚠️ No hay tiendas disponibles');
+            return;
+        }
+        snap.forEach(doc => {
+            const t = doc.data();
+            const id = doc.id;
+            const nombre = t.nombre || id;
+            const tipo = t.tipoNegocio || 'restaurante';
+            const icono = TIPOS_NEGOCIO[tipo]?.label?.split(' ')[0] || '🏪';
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${icono} ${nombre}`;
+            selector.appendChild(option);
+        });
+        console.log(`✅ ${snap.size} tiendas cargadas en el filtro`);
+        return snap.size;
+    } catch (error) {
+        console.error('❌ Error al cargar tiendas en el filtro:', error);
+        toast('❌ Error al cargar tiendas', 'error');
+        return 0;
+    }
+}
+
+async function cargarProductosParaEdicion() {
+    try {
+        const snap = await db.collectionGroup('productos').get();
+        productosDisponibles = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            const tiendaId = doc.ref.parent.parent.id;
+            productosDisponibles.push({ id, tiendaId, ...p });
+        });
+        console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
+    } catch (e) {
+        console.error('Error cargando productos para edición:', e);
+    }
+}
 async function inicializarPanel() {
     try {
         const rolInfo = await verificarRolUsuario();
