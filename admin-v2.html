@@ -593,7 +593,6 @@ header .spacer{flex:1}
 </head>
 <body>
 
-<!-- ===== CONTENIDO HTML (IGUAL QUE ANTES) ===== -->
 <div id="toastWrap"></div>
 
 <!-- LOGIN -->
@@ -1566,38 +1565,9 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
-// AUTENTICACIÓN Y ROLES
-// ============================================================
-async function verificarRolUsuario() {
-    const user = firebase.auth().currentUser;
-    if (!user) return null;
-    try {
-        const doc = await db.collection('usuarios').doc(user.uid).get();
-        if (!doc.exists) {
-            console.log('⚠️ Usuario sin documento en "usuarios"');
-            return { rol: 'cliente', tiendaId: null };
-        }
-        const data = doc.data();
-        console.log('📌 Datos del usuario:', data);
-        if (data.admin === true || data.superAdmin === true) {
-            console.log('👑 SUPER ADMIN');
-            return { rol: 'superadmin', tiendaId: null };
-        }
-        if (data.tiendaId) {
-            console.log('🏪 ADMIN DE NEGOCIO - Tienda:', data.tiendaId);
-            return { rol: 'admin', tiendaId: data.tiendaId };
-        }
-        console.log('👤 CLIENTE');
-        return { rol: 'cliente', tiendaId: null };
-    } catch (error) {
-        console.error('❌ Error al verificar rol:', error);
-        return { rol: 'cliente', tiendaId: null };
-    }
-}
-
-// ============================================================
 // 🔥 FUNCIONES FALTANTES: cargarTiendasEnFiltro y cargarProductosParaEdicion
 // ============================================================
+
 async function cargarTiendasEnFiltro() {
     const selector = document.getElementById('filtroTienda');
     if (!selector) return;
@@ -1648,6 +1618,36 @@ async function cargarProductosParaEdicion() {
         console.log('📦 Productos disponibles para edición:', productosDisponibles.length);
     } catch (e) {
         console.error('Error cargando productos para edición:', e);
+    }
+}
+
+// ============================================================
+// AUTENTICACIÓN Y ROLES
+// ============================================================
+async function verificarRolUsuario() {
+    const user = firebase.auth().currentUser;
+    if (!user) return null;
+    try {
+        const doc = await db.collection('usuarios').doc(user.uid).get();
+        if (!doc.exists) {
+            console.log('⚠️ Usuario sin documento en "usuarios"');
+            return { rol: 'cliente', tiendaId: null };
+        }
+        const data = doc.data();
+        console.log('📌 Datos del usuario:', data);
+        if (data.admin === true || data.superAdmin === true) {
+            console.log('👑 SUPER ADMIN');
+            return { rol: 'superadmin', tiendaId: null };
+        }
+        if (data.tiendaId) {
+            console.log('🏪 ADMIN DE NEGOCIO - Tienda:', data.tiendaId);
+            return { rol: 'admin', tiendaId: data.tiendaId };
+        }
+        console.log('👤 CLIENTE');
+        return { rol: 'cliente', tiendaId: null };
+    } catch (error) {
+        console.error('❌ Error al verificar rol:', error);
+        return { rol: 'cliente', tiendaId: null };
     }
 }
 
@@ -3201,12 +3201,841 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
 }
 
 function mostrarPedidosPendientesGlobal() {
-    // Esta función se mantiene igual (resumida por brevedad)
-    // ... (el código completo está disponible)
+    resetKanban();
+    
+    const counts = {
+        'Pendiente': 0, 'En Cocina': 0, 'En Camino': 0, 'Entregado': 0, 'Cancelado': 0, 'Asignado': 0, 'Listo para asignar': 0
+    };
+    
+    Object.keys(todosLosPedidos).forEach(tiendaId => {
+        const tienda = tiendasCache[tiendaId] || {};
+        const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+        const estadosNegocio = getEstadosNegocio(tipoNegocio);
+        const estadoPrep = getEstadoPreparacion(tipoNegocio);
+        
+        const pedidos = todosLosPedidos[tiendaId] || [];
+        pedidos.forEach(pedido => {
+            const data = pedido.data;
+            const estado = data.estado || estadosNegocio[0] || 'Pendiente';
+            
+            if (estado === 'Entregado' || estado === 'Cancelado') {
+                detenerAlarmaGlobal(pedido.id);
+            }
+            
+            const { columna, contador } = obtenerColumnaYContador(estado, tipoNegocio);
+            
+            const colEl = document.getElementById(columna);
+            if (colEl) {
+                renderPedidoGlobalEnColumna(pedido.doc, tiendaId, colEl, tipoNegocio);
+            }
+            
+            if (estado === 'Cancelado') {
+                counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
+            } else if (estado === 'Asignado') {
+                counts['Asignado'] = (counts['Asignado'] || 0) + 1;
+            } else if (estado === 'Listo para asignar') {
+                counts['Pendiente']++;
+            } else if (estadosNegocio.indexOf(estado) === 0) {
+                counts['Pendiente']++;
+            } else if (estadosNegocio.indexOf(estado) === 1) {
+                counts['En Cocina']++;
+            } else if (estadosNegocio.indexOf(estado) === 2) {
+                counts['En Camino']++;
+            } else if (estadosNegocio.indexOf(estado) >= 3) {
+                counts['Entregado']++;
+            }
+        });
+    });
+    
+    // Actualizar contadores de columnas
+    const cntP = document.getElementById('cnt-P');
+    const cntC = document.getElementById('cnt-C');
+    const cntM = document.getElementById('cnt-M');
+    const cntE = document.getElementById('cnt-E');
+    if (cntP) cntP.textContent = counts['Pendiente'] || 0;
+    if (cntC) cntC.textContent = counts['En Cocina'] || 0;
+    if (cntM) cntM.textContent = counts['En Camino'] || 0;
+    if (cntE) cntE.textContent = counts['Entregado'] || 0;
+    
+    ['col-P','col-C','col-M','col-E'].forEach(colId => {
+        const el = document.getElementById(colId);
+        if (el && el.children.length === 0) {
+            const mensajes = {
+                'col-P': { ico:'⏳', txt:'Sin pedidos pendientes' },
+                'col-C': { ico:'👨‍🍳', txt:'Nada en preparación' },
+                'col-M': { ico:'🛵', txt:'Nada en camino' },
+                'col-E': { ico:'✅', txt:'Sin entregas aún' }
+            };
+            const msg = mensajes[colId] || { ico:'📦', txt:'Sin pedidos' };
+            el.innerHTML = `<div class="empty-col"><span class="ico">${msg.ico}</span>${msg.txt}</div>`;
+        }
+    });
+    
+    const statP = document.getElementById('statP');
+    const statC = document.getElementById('statC');
+    const statM = document.getElementById('statM');
+    const statE = document.getElementById('statE');
+    if (statP) statP.textContent = counts['Pendiente'] || 0;
+    if (statC) statC.textContent = counts['En Cocina'] || 0;
+    if (statM) statM.textContent = counts['En Camino'] || 0;
+    if (statE) statE.textContent = counts['Entregado'] || 0;
+}
+
+function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
+    const p = doc.data();
+    const pid = doc.id;
+    const estado = p.estado || 'Pendiente';
+    
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    const estadosNegocio = getEstadosNegocio(tipoNegocio);
+    const tieneMensajero = p.mensajeroId ? true : false;
+    const estadoPrep = getEstadoPreparacion(tipoNegocio);
+    const esListoParaAsignar = estado === 'Listo para asignar';
+    
+    const ringClass = obtenerColorClase(estado, tipoNegocio);
+    const claseExtra = esListoParaAsignar ? 'r-pending' : ringClass;
+    
+    let fechaStr = '--', horaStr = '--';
+    if (p.fecha) {
+        try {
+            let fechaDate;
+            if (p.fecha.toDate) fechaDate = p.fecha.toDate();
+            else if (p.fecha.seconds) fechaDate = new Date(p.fecha.seconds * 1000);
+            else fechaDate = new Date(p.fecha);
+            if (!isNaN(fechaDate.getTime())) {
+                fechaStr = fechaDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                horaStr = fechaDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            }
+        } catch(e) {}
+    }
+    
+    const num = p.numeroPedido || '#--';
+    const cliente = p.cliente || {};
+    const totalPedido = p.total || 0;
+    const metodoPago = p.metodoPago || 'efectivo';
+    const estadoPago = p.estadoPago || 'pendiente';
+    const costoDomicilio = p.costoDomicilio || 0;
+    const totalConDomicilio = totalPedido + costoDomicilio;
+    
+    let itemsHtml = '';
+    if (p.items && p.items.length > 0) {
+        p.items.forEach(it => {
+            let nombreItem = it.nombre || 'Producto';
+            if (it.pesoGramos) nombreItem += ` (${it.pesoGramos}g)`;
+            const totalItem = it.total || (it.precio * it.cantidad) || 0;
+            itemsHtml += `<div class="item"><span>${nombreItem} x${it.cantidad || 1}</span><span>$${totalItem.toLocaleString('es-CO')}</span></div>`;
+        });
+    }
+    
+    let badgePago = '';
+    if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+        const estadoTexto = estadoPago === 'pagado' ? '✅ Pagado' : (estadoPago === 'rechazado' ? '❌ Rechazado' : '⏳ Pendiente');
+        const clase = estadoPago === 'pagado' ? 'pagado' : (estadoPago === 'rechazado' ? 'rechazado' : 'pendiente');
+        badgePago = `<div class="badge-pago ${clase}">💳 ${metodoPago.toUpperCase()} ${estadoTexto}</div>`;
+    } else {
+        badgePago = `<div class="badge-pago pagado">💵 Efectivo</div>`;
+    }
+    
+    const campoDomicilio = `
+        <div class="campo-domicilio">
+            <span class="label-domicilio">🛵 Costo domicilio:</span>
+            <input type="number" id="domicilio-${pid}" value="${costoDomicilio}" min="0" step="500" placeholder="0">
+            <button class="btn-domicilio" onclick="window.actualizarCostoDomicilio('${tiendaId}','${pid}')">💾 Actualizar</button>
+            <span class="domicilio-actual ${costoDomicilio > 0 ? 'agregado' : ''}">
+                ${costoDomicilio > 0 ? '✅ $' + costoDomicilio.toLocaleString('es-CO') : '❌ Sin domicilio'}
+            </span>
+        </div>
+    `;
+    
+    const totalHtml = `
+        <div style="margin-top:4px;padding:6px 0;border-top:1px dashed var(--border2);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">Subtotal:</span>
+                <span>$${totalPedido.toLocaleString('es-CO')}</span>
+            </div>
+            ${costoDomicilio > 0 ? `
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span style="color:var(--text-muted);">🛵 Domicilio:</span>
+                <span style="color:var(--yellow);">$${costoDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+            ` : ''}
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--green);">
+                <span>TOTAL:</span>
+                <span>$${totalConDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+        </div>
+    `;
+    
+    // ===== ACCIONES =====
+    let acciones = '';
+    const siguienteEstado = getSiguienteEstado(tipoNegocio, estado);
+    const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
+    const esPrimer = estado === estadosNegocio[0];
+    
+    // ===== MOSTRAR MENSAJERO ASIGNADO =====
+    if (p.mensajeroId || p.nombreMensajero) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero (Sistema)';
+        const asignadoPor = p.asignadoPor || 'Sistema';
+        acciones += `
+            <div style="background:var(--blue-bg);color:var(--blue);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;border:1px solid var(--blue);">
+                🛵 Asignado a: <strong>${nombreMensajero}</strong> 
+                <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${asignadoPor})</span>
+            </div>
+        `;
+    }
+    
+    if (esListoParaAsignar && !p.mensajeroId) {
+        acciones += `
+            <button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">
+                👤 Asignar mensajero
+            </button>
+        `;
+    }
+    
+    if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+        acciones += `
+            <button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">
+                ✅ Servicio Listo (Notificar Mensajeros)
+            </button>
+        `;
+    }
+    
+    if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
+        const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
+        if (primerSiguiente) {
+            let icono = '▶';
+            const labelLower = primerSiguiente.toLowerCase();
+            if (labelLower.includes('cocina')) icono = '👨‍🍳';
+            else if (labelLower.includes('despacho')) icono = '📦';
+            else if (labelLower.includes('preparando')) icono = '⏳';
+            else icono = '✅';
+            
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">
+                ${icono} ${primerSiguiente}
+            </button>`;
+        }
+    }
+    
+    if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+        let iconoSiguiente = '▶';
+        const labelLower = siguienteEstado.toLowerCase();
+        if (labelLower.includes('camino')) iconoSiguiente = '🛵';
+        else if (labelLower.includes('entregado')) iconoSiguiente = '✅';
+        else iconoSiguiente = '▶';
+        
+        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">
+            ${iconoSiguiente} ${siguienteEstado}
+        </button>`;
+    }
+    
+    const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
+    if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+        acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">
+            ↩️ ${estadoAnterior}
+        </button>`;
+    }
+    
+    if (!esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar') {
+        acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
+    }
+    
+    if (estado !== 'Entregado' && estado !== 'Cancelado' && estado !== 'Asignado') {
+        acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
+    }
+    
+    if (estado !== 'Entregado' && estado !== 'Cancelado') {
+        acciones += `<button class="btn-renotificar" onclick="window.reenviarNotificacionConDomicilio('${tiendaId}','${pid}')">📱 Reenviar Notificación</button>`;
+    }
+    
+    if (esUltimo || estado === 'Cancelado') {
+        acciones += `<button class="btn-remove" onclick="window.eliminarPedido('${tiendaId}','${pid}')">🗑 Remover</button>`;
+        if (esUltimo) {
+            acciones += `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>`;
+        }
+    }
+    
+    const card = document.createElement('div');
+    card.className = `pedido-card ${claseExtra}`;
+    if (esListoParaAsignar) {
+        card.style.borderColor = 'var(--green)';
+        card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
+    }
+    card.innerHTML = `
+        <div class="pedido-tienda">🏪 ${nombreTienda}</div>
+        <div class="pedido-titulo">🛵 ${num}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
+        <div style="font-size:12px;color:${esListoParaAsignar ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">
+            📌 ${esListoParaAsignar ? '🔔 LISTO PARA ASIGNAR' : estado}
+        </div>
+        ${badgePago}
+        <div class="pedido-cliente">
+            <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
+            ${cliente.telefono ? `<div><span class="label">📱 Teléfono:</span> ${cliente.telefono}</div>` : ''}
+            ${cliente.direccion ? `<div><span class="label">📍 Dirección:</span> ${cliente.direccion}</div>` : ''}
+            ${cliente.barrio ? `<div><span class="label">🏘️ Barrio:</span> ${cliente.barrio}</div>` : ''}
+            ${cliente.observaciones ? `<div><span class="label">📝 Observaciones:</span> ${cliente.observaciones}</div>` : ''}
+        </div>
+        <div class="pedido-items">
+            <div style="font-weight:600;margin-bottom:4px;">🧾 PRODUCTOS</div>
+            ${itemsHtml || '<div style="color:var(--text-muted)">Sin productos</div>'}
+            ${campoDomicilio}
+            ${totalHtml}
+        </div>
+        <div class="accion-btns">${acciones}</div>
+    `;
+    colEl.appendChild(card);
+}
+
+function resetKanban() {
+    ['col-P','col-C','col-M','col-E'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
 }
 
 // ============================================================
-// RESTANTE DEL CÓDIGO (funciones de mensajeros, asignación, etc.)
+// ADMIN CAMBIA ESTADO (CON NOTIFICACIÓN AL CLIENTE - TODOS LOS ESTADOS)
+// ============================================================
+async function cambiarEstadoAdmin(tiendaId, pedidoId, nuevoEstado) {
+    try {
+        detenerAlarmaGlobal(pedidoId);
+        
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        const estadoActual = data.estado;
+        
+        if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
+            toast('⚠️ Este pedido ya está finalizado', 'warn');
+            return;
+        }
+        
+        if (data.mensajeroId && nuevoEstado !== 'Cancelado') {
+            toast('⚠️ Este pedido ya está asignado a un mensajero. Solo puedes cancelarlo.', 'warn');
+            return;
+        }
+        
+        // 🔥 ACTUALIZAR ESTADO EN FIRESTORE
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ 
+                estado: nuevoEstado,
+                editadoPor: auth.currentUser?.email || 'Admin',
+                fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        
+        toast(`✅ Pedido actualizado → ${nuevoEstado}`, 'success');
+        
+        // 🔥 NOTIFICAR AL CLIENTE DE CADA CAMBIO DE ESTADO
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoActual, nuevoEstado);
+        
+        if (nuevoEstado === 'Entregado' || nuevoEstado === 'Cancelado') {
+            pedidosNotificados.delete(pedidoId);
+            notificacionesMostradas.delete(pedidoId);
+            detenerAlarmaGlobal(pedidoId);
+        }
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
+    }
+}
+
+async function confirmarPago(tiendaId, pedidoId) {
+    if (!confirm('¿Confirmar que has recibido el pago de este pedido?')) return;
+    try {
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ estadoPago: 'pagado', fechaPago: firebase.firestore.FieldValue.serverTimestamp() });
+        toast('✅ Pago confirmado. El pedido está listo para preparar.', 'success');
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function rechazarPago(tiendaId, pedidoId) {
+    if (!confirm('¿Rechazar el pago de este pedido?')) return;
+    try {
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({ estadoPago: 'rechazado', estado: 'Cancelado' });
+        toast('⛔ Pago rechazado. El pedido fue cancelado.', 'error');
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Pendiente', 'Cancelado');
+        detenerAlarmaGlobal(pedidoId);
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function eliminarPedido(tiendaId, pedidoId) {
+    if (!confirm('¿Remover este pedido?')) return;
+    try {
+        detenerAlarmaGlobal(pedidoId);
+        pedidosNotificados.delete(pedidoId);
+        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
+        toast('Pedido removido.', 'info');
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+    } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ============================================================
+// MARCAR SERVICIO LISTO (CON NOTIFICACIÓN AL CLIENTE)
+// ============================================================
+async function marcarServicioListo(tiendaId, pedidoId) {
+    try {
+        const docRef = db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const data = doc.data();
+        const tienda = tiendasCache[tiendaId] || {};
+        const tipoNegocio = tienda.tipoNegocio || 'restaurante';
+        const estadosNegocio = getEstadosNegocio(tipoNegocio);
+        const estadoCocina = estadosNegocio[1];
+        
+        if (!estadoCocina) {
+            toast('⚠️ No se pudo determinar el estado de cocina', 'error');
+            return;
+        }
+        
+        if (data.estado !== estadoCocina) {
+            toast(`⚠️ El pedido debe estar en "${estadoCocina}" para marcar como listo. Estado actual: "${data.estado}"`, 'warn');
+            return;
+        }
+        
+        if (data.mensajeroId) {
+            toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn');
+            return;
+        }
+        
+        const nuevoEstado = 'Listo para asignar';
+        
+        await docRef.update({
+            estado: nuevoEstado,
+            fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+            notificadoPor: auth.currentUser?.email || 'Admin General'
+        });
+        
+        toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
+        
+        // 🔥 NOTIFICAR AL CLIENTE QUE ESTÁ LISTO
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, nuevoEstado);
+        
+        console.log(`📦 Pedido ${pedidoId} listo para asignar`);
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+        cargarMensajerosAdmin();
+        
+    } catch (e) {
+        console.error('Error en marcarServicioListo:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// ESCUCHA GLOBAL DE TIENDAS
+// ============================================================
+function iniciarEscuchaGlobal() {
+    if (escuchaGlobalActiva) return;
+    escuchaGlobalActiva = true;
+    console.log('🔔 Iniciando escucha global de todas las tiendas...');
+    db.collection('tiendas').get().then(snap => {
+        snap.forEach(doc => {
+            const tiendaId = doc.id;
+            const tiendaData = doc.data();
+            const nombreTienda = tiendaData.nombre || tiendaId;
+            tiendasCache[tiendaId] = tiendaData;
+            
+            const unsubscribe = db.collection('tiendas').doc(tiendaId)
+                .collection('pedidos')
+                .orderBy('fecha', 'desc')
+                .onSnapshot(snapPedidos => {
+                    const pedidos = [];
+                    snapPedidos.forEach(pedidoDoc => { 
+                        const data = pedidoDoc.data();
+                        if (data.estado === 'Entregado' || data.estado === 'Cancelado') {
+                            detenerAlarmaGlobal(pedidoDoc.id);
+                        }
+                        pedidos.push({ doc: pedidoDoc, data: data });
+                    });
+                    todosLosPedidos[tiendaId] = pedidos;
+                    
+                    snapPedidos.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const data = change.doc.data();
+                            const pedidoId = change.doc.id;
+                            
+                            const estadosNegocio = getEstadosNegocio(tiendaData.tipoNegocio || 'restaurante');
+                            const estadoPendiente = estadosNegocio[0] || 'Pendiente';
+                            
+                            if (data.estado === estadoPendiente && !data.mensajeroId) {
+                                const cliente = data.cliente?.nombre || 'Cliente';
+                                const total = data.total || 0;
+                                notificarNuevoPedido(nombreTienda, cliente, total, tiendaId, pedidoId);
+                            }
+                        } else if (change.type === 'modified') {
+                            const data = change.doc.data();
+                            const pedidoId = change.doc.id;
+                            
+                            if (data.mensajeroId || data.estado === 'Asignado') {
+                                detenerAlarmaGlobal(pedidoId);
+                            }
+                        }
+                    });
+                    
+                    if (!tiendaSeleccionada) mostrarPedidosPendientesGlobal();
+                }, err => { console.error(`Error escuchando tienda ${tiendaId}:`, err); });
+            
+            listenersTiendas[tiendaId] = unsubscribe;
+        });
+    }).catch(err => { console.error('Error obteniendo tiendas:', err); });
+}
+
+// ============================================================
+// CARGAR ESTADO
+// ============================================================
+async function cargarEstado() {
+    const tid = document.getElementById('tiendaEstado').value;
+    const wrap = document.getElementById('estadoWrap');
+    if (!wrap) return;
+    if (!tid) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecciona una tienda.</p>'; return; }
+    try {
+        const doc = await db.collection('tiendas').doc(tid).get();
+        if (!doc.exists) { wrap.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Tienda no encontrada.</p>'; return; }
+        const t = doc.data();
+        const abierta = t.abierta !== false;
+        const tipoNegocio = t.tipoNegocio || 'restaurante';
+        const tipoLabel = TIPOS_NEGOCIO[tipoNegocio]?.label || '📦 Otro';
+        const estados = getEstadosNegocio(tipoNegocio);
+        const estadoPrep = getEstadoPreparacion(tipoNegocio);
+        const estadoLabels = estados.join(' → ');
+        wrap.innerHTML = `
+            <div class="estado-card">
+                <div class="info">
+                    <div class="tienda-name">🏪 ${t.nombre || 'Sin nombre'}</div>
+                    <div class="estado-txt">${tipoLabel}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">📋 Estados: ${estadoLabels}</div>
+                    <div style="font-size:12px;color:var(--blue);margin-top:4px;">📌 Estado de preparación: <strong>${estadoPrep}</strong></div>
+                    <div style="font-size:12px;margin-top:6px;">${abierta ? '🟢 Tienda ABIERTA' : '🔴 Tienda CERRADA'}</div>
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleTienda('${tid}', this.checked)">
+                    <span class="toggle-slider"></span>
+                </div>
+            </div>
+            <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-top:14px;border:1px solid var(--border);">
+                <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">📊 Resumen de pedidos</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;margin-top:8px;" id="estadoResumen">
+                    <div style="background:var(--surface3);padding:8px;border-radius:8px;text-align:center;">
+                        <div style="font-size:18px;font-weight:900;color:var(--yellow);" id="resPendiente">0</div>
+                        <div style="font-size:10px;color:var(--text-muted);">${estados[0] || 'Pendiente'}</div>
+                    </div>
+                    <div style="background:var(--surface3);padding:8px;border-radius:8px;text-align:center;">
+                        <div style="font-size:18px;font-weight:900;color:var(--blue);" id="resPreparacion">0</div>
+                        <div style="font-size:10px;color:var(--text-muted);">${estadoPrep}</div>
+                    </div>
+                    <div style="background:var(--surface3);padding:8px;border-radius:8px;text-align:center;">
+                        <div style="font-size:18px;font-weight:900;color:var(--orange);" id="resCamino">0</div>
+                        <div style="font-size:10px;color:var(--text-muted);">${estados[2] || 'En camino'}</div>
+                    </div>
+                    <div style="background:var(--surface3);padding:8px;border-radius:8px;text-align:center;">
+                        <div style="font-size:18px;font-weight:900;color:var(--green);" id="resEntregado">0</div>
+                        <div style="font-size:10px;color:var(--text-muted);">${estados[3] || 'Entregado'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        const snap = await db.collection('tiendas').doc(tid).collection('pedidos').get();
+        let counts = {};
+        estados.forEach(e => counts[e] = 0);
+        counts['Cancelado'] = 0;
+        counts['Asignado'] = 0;
+        snap.forEach(doc => {
+            const p = doc.data();
+            const estado = p.estado || estados[0] || 'Pendiente';
+            if (counts[estado] !== undefined) counts[estado]++;
+            else if (estado === 'Cancelado') counts['Cancelado']++;
+            else if (estado === 'Asignado') counts['Asignado']++;
+        });
+        const resPendiente = document.getElementById('resPendiente');
+        const resPreparacion = document.getElementById('resPreparacion');
+        const resCamino = document.getElementById('resCamino');
+        const resEntregado = document.getElementById('resEntregado');
+        if (resPendiente) resPendiente.textContent = counts[estados[0]] || 0;
+        if (resPreparacion) resPreparacion.textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
+        if (resCamino) resCamino.textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
+        if (resEntregado) resEntregado.textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
+    } catch(e) { wrap.innerHTML = '<p style="color:var(--red);">Error al cargar estado.</p>'; }
+}
+
+// ============================================================
+// ✏️ EDITAR PEDIDO (COMPLETO Y CORREGIDO)
+// ============================================================
+async function abrirEditarPedido(tiendaId, pedidoId) {
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        if (!doc.exists) { toast('⚠️ Pedido no encontrado', 'error'); return; }
+        
+        const p = doc.data();
+        pedidoEditando = { id: pedidoId, tiendaId, data: p };
+        itemsEditando = p.items ? p.items.map(item => ({ ...item })) : [];
+        
+        const snap = await db.collection('tiendas').doc(tiendaId)
+            .collection('productos').get();
+        productosDisponibles = [];
+        snap.forEach(d => {
+            const prod = d.data();
+            productosDisponibles.push({ id: d.id, ...prod });
+        });
+        
+        renderizarEditarPedido();
+        const modal = document.getElementById('modalEditarPedido');
+        if (modal) modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+        console.error(e);
+    }
+}
+
+function cerrarEditarPedido() {
+    const modal = document.getElementById('modalEditarPedido');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoEditando = null;
+    itemsEditando = [];
+}
+
+function renderizarEditarPedido() {
+    const container = document.getElementById('editarPedidoContenido');
+    if (!container) return;
+    if (!pedidoEditando) return;
+    
+    const p = pedidoEditando.data;
+    const cliente = p.cliente || {};
+    let total = 0;
+    let itemsHtml = '';
+    
+    itemsEditando.forEach((item, index) => {
+        const precio = parseFloat(item.precio) || 0;
+        const cantidad = parseInt(item.cantidad) || 1;
+        const subtotal = precio * cantidad;
+        total += subtotal;
+        
+        let nombreItem = item.nombre || 'Producto';
+        if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+        itemsHtml += `
+            <div class="producto-editar-item">
+                <div class="info">
+                    <div class="nombre">${nombreItem}</div>
+                    <div class="detalle">$${precio.toLocaleString('es-CO')} x ${cantidad}</div>
+                </div>
+                <div class="acciones">
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, -1)">−</button>
+                    <span class="cantidad">${cantidad}</span>
+                    <button class="btn-cant" onclick="window.cambiarCantidadItem(${index}, 1)">+</button>
+                    <button class="btn-quitar" onclick="window.quitarItemPedido(${index})">✕</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    let selectorProductos = '<option value="">➕ Agregar producto...</option>';
+    productosDisponibles.forEach(prod => {
+        const nombre = prod.name || 'Producto';
+        const precio = prod.precio || 0;
+        const stock = prod.stock !== undefined ? ` (Stock: ${prod.stock})` : '';
+        selectorProductos += `<option value="${prod.id}">${nombre} - $${precio.toLocaleString('es-CO')}${stock}</option>`;
+    });
+    
+    const costoDomicilio = p.costoDomicilio || 0;
+    const totalConDomicilio = total + costoDomicilio;
+    
+    container.innerHTML = `
+        <div class="pedido-info">
+            <div class="row"><span class="label">🧾 Pedido:</span><span>${p.numeroPedido || '#' + p.id}</span></div>
+            <div class="row"><span class="label">👤 Cliente:</span><span>${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección:</span><span>${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">📱 Teléfono:</span><span>${cliente.telefono || 'N/A'}</span></div>
+            <div class="row"><span class="label">🛵 Domicilio:</span><span>$${costoDomicilio.toLocaleString('es-CO')}</span></div>
+        </div>
+        
+        <div style="font-weight:700;margin-bottom:8px;">🧾 Productos (${itemsEditando.length})</div>
+        <div class="productos-lista">
+            ${itemsHtml || '<div style="color:var(--text-muted);text-align:center;padding:10px;">No hay productos en este pedido</div>'}
+        </div>
+        
+        <div class="agregar-producto-area">
+            <select id="selectorProductoPedido">${selectorProductos}</select>
+            <button class="btn-agregar" onclick="window.agregarProductoAPedido()">➕ Agregar producto</button>
+        </div>
+        
+        <div class="total-editar">
+            <span>💰 TOTAL</span>
+            <span class="val">$${totalConDomicilio.toLocaleString('es-CO')}</span>
+        </div>
+        
+        <button class="btn-guardar-edicion" onclick="window.guardarEdicionPedido()">💾 Guardar cambios</button>
+    `;
+}
+
+function cambiarCantidadItem(index, delta) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    const item = itemsEditando[index];
+    const nuevaCant = (parseInt(item.cantidad) || 1) + delta;
+    if (nuevaCant < 1) {
+        itemsEditando.splice(index, 1);
+    } else {
+        itemsEditando[index].cantidad = nuevaCant;
+    }
+    renderizarEditarPedido();
+}
+
+function quitarItemPedido(index) {
+    if (index < 0 || index >= itemsEditando.length) return;
+    itemsEditando.splice(index, 1);
+    renderizarEditarPedido();
+}
+
+function agregarProductoAPedido() {
+    const selector = document.getElementById('selectorProductoPedido');
+    if (!selector) return;
+    const prodId = selector.value;
+    if (!prodId) { toast('⚠️ Selecciona un producto', 'warn'); return; }
+    const producto = productosDisponibles.find(p => p.id === prodId);
+    if (!producto) {
+        toast('⚠️ Producto no encontrado', 'error');
+        return;
+    }
+    
+    if (producto.precio === undefined || producto.precio === null) {
+        toast('⚠️ El producto no tiene precio definido', 'error');
+        return;
+    }
+    
+    if (producto.stock !== undefined && producto.stock <= 0) {
+        toast('⚠️ Producto sin stock disponible', 'warn');
+        return;
+    }
+    
+    const existente = itemsEditando.find(i => i.id === prodId);
+    if (existente) {
+        if (producto.stock !== undefined && existente.cantidad >= producto.stock) {
+            toast('⚠️ No hay suficiente stock', 'warn');
+            return;
+        }
+        existente.cantidad = (existente.cantidad || 1) + 1;
+        toast(`✅ ${producto.name} cantidad aumentada`, 'success', 1500);
+    } else {
+        let precio = producto.precio || 0;
+        let pesoGramos = null;
+        if (producto.tipoProducto === 'peso') {
+            pesoGramos = producto.pesoMinimo || 1;
+            if (producto.modoPeso === 'por_gramo' && producto.precioPorGramo) {
+                precio = producto.precioPorGramo * pesoGramos;
+            } else if (producto.modoPeso === 'por_base' && producto.pesoBase && producto.precioBase) {
+                precio = (producto.precioBase / producto.pesoBase) * pesoGramos;
+            }
+        }
+        itemsEditando.push({
+            id: prodId,
+            nombre: producto.name || 'Producto',
+            cantidad: 1,
+            precio: Math.round(precio) || 0,
+            pesoGramos: pesoGramos || null
+        });
+        toast(`✅ ${producto.name} agregado al pedido`, 'success', 1500);
+    }
+    
+    renderizarEditarPedido();
+}
+
+async function guardarEdicionPedido() {
+    if (!pedidoEditando) return;
+    const { tiendaId, id } = pedidoEditando;
+    
+    if (itemsEditando.length === 0) {
+        toast('⚠️ El pedido debe tener al menos un producto', 'warn');
+        return;
+    }
+    
+    try {
+        let total = 0;
+        const itemsParaGuardar = itemsEditando.map(item => {
+            const precio = parseFloat(item.precio) || 0;
+            const cantidad = parseInt(item.cantidad) || 1;
+            const subtotal = precio * cantidad;
+            total += subtotal;
+            
+            return {
+                id: item.id || '',
+                nombre: item.nombre || 'Producto',
+                cantidad: cantidad,
+                precio: precio,
+                total: subtotal,
+                pesoGramos: item.pesoGramos || null
+            };
+        });
+        
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(id).get();
+        const data = doc.data();
+        const costoDomicilio = data.costoDomicilio || 0;
+        const totalConDomicilio = total + costoDomicilio;
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(id)
+            .update({
+                items: itemsParaGuardar,
+                total: Math.round(total),
+                totalConDomicilio: Math.round(totalConDomicilio),
+                editadoPor: auth.currentUser?.email || 'Admin',
+                fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        
+        toast(`✅ Pedido actualizado correctamente. Nuevo total: $${totalConDomicilio.toLocaleString('es-CO')}`, 'success', 4000);
+        cerrarEditarPedido();
+        
+        if (tiendaSeleccionada) {
+            escucharPedidosDeTienda(tiendaSeleccionada);
+        } else {
+            mostrarPedidosPendientesGlobal();
+        }
+        
+    } catch(e) {
+        console.error('❌ Error guardando:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNCIONES PARA ESTADÍSTICAS DE MENSAJEROS
 // ============================================================
 async function cargarMensajerosAdmin() {
     try {
@@ -3287,13 +4116,294 @@ async function cargarMensajerosAdmin() {
     }
 }
 
+// ============================================================
+// ABRIR MODAL DE ASIGNACIÓN
+// ============================================================
 function abrirModalAsignacion(tiendaId, pedidoId) {
-    // ... (código existente)
-    toast('📦 Abriendo modal de asignación', 'info');
+    pedidoAsignacion = { tiendaId, pedidoId };
+    
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) {
+        toast('⚠️ No se encontró el pedido', 'error');
+        return;
+    }
+    
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'Tienda';
+    const cliente = pedido.cliente || {};
+    const total = pedido.total || 0;
+    const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+    
+    const mensajerosDisponibles = todosLosMensajeros.filter(m => 
+        m.activo !== false && m.conectado !== false && !m.ocupado
+    );
+    
+    const container = document.getElementById('modalAsignacionContenido');
+    const titulo = document.getElementById('modalAsignacionTitulo');
+    if (titulo) titulo.textContent = `📦 Asignar Pedido ${numero}`;
+    
+    let mensajerosOptions = '';
+    if (mensajerosDisponibles.length === 0) {
+        mensajerosOptions = '<option value="">⚠️ No hay mensajeros disponibles</option>';
+    } else {
+        mensajerosOptions = '<option value="">👤 Seleccionar mensajero...</option>';
+        mensajerosDisponibles.forEach(m => {
+            const nombre = m.nombre || 'Mensajero';
+            mensajerosOptions += `<option value="${m.uid}">${nombre} (Disponible)</option>`;
+        });
+    }
+    
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="pedido-info-resumen">
+            <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+            <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
+            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
+        </div>
+        
+        <div class="opcion-asignacion" style="border-color: var(--blue);">
+            <div class="titulo" style="color: var(--blue);">👤 Asignación Manual</div>
+            <div class="descripcion">Selecciona un mensajero específico para asignar este pedido.</div>
+            
+            <div style="margin: 8px 0 4px 0;">
+                <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:2px;">📋 Mensajeros disponibles (${mensajerosDisponibles.length}):</label>
+                <select id="selectMensajeroManual" style="background:var(--surface3);border:1px solid var(--border2);color:#fff;padding:10px 12px;border-radius:8px;width:100%;">
+                    ${mensajerosOptions}
+                </select>
+            </div>
+            
+            <button class="btn-asignar manual" onclick="window.asignarPedidoManual()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                ✅ Asignar a este mensajero
+            </button>
+        </div>
+        
+        <div class="opcion-asignacion" style="border-color: var(--yellow);">
+            <div class="titulo" style="color: var(--yellow);">📢 Notificar a Todos</div>
+            <div class="descripcion">Todos los mensajeros disponibles recibirán la notificación y <strong>el primero que acepte</strong> tomará el pedido.</div>
+            
+            <div class="mensajeros-disponibles">
+                📨 Mensajeros que recibirán la notificación: 
+                <span class="count" style="color:var(--green);font-weight:700;">${mensajerosDisponibles.length}</span>
+            </div>
+            
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:8px;background:var(--surface3);border-radius:6px;">
+                ⚡ Los mensajeros verán el pedido en su panel y podrán tomarlo voluntariamente.
+            </div>
+            
+            <button class="btn-asignar broadcast" onclick="window.notificarATodos()" 
+                    style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--yellow);color:#1a1a2e;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;"
+                    ${mensajerosDisponibles.length === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                🔔 Notificar a todos los mensajeros
+            </button>
+        </div>
+        
+        <button class="btn-cancelar-modal" onclick="window.cerrarModalAsignacion()" 
+                style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text-muted);font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;">
+            Cancelar
+        </button>
+    `;
+    
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
+// ============================================================
+// ASIGNAR PEDIDO MANUALMENTE
+// ============================================================
+async function asignarPedidoManual() {
+    const select = document.getElementById('selectMensajeroManual');
+    if (!select) return;
+    const mensajeroId = select.value;
+    
+    if (!mensajeroId) {
+        toast('⚠️ Selecciona un mensajero de la lista', 'warn');
+        return;
+    }
+    
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
+    const nombreMensajero = mensajero?.nombre || 'Mensajero';
+    
+    try {
+        toast('⏳ Asignando pedido...', 'info');
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                mensajeroId: mensajeroId,
+                nombreMensajero: nombreMensajero,
+                estado: 'Asignado',
+                fechaAsignacion: firebase.firestore.FieldValue.serverTimestamp(),
+                asignadoPor: auth.currentUser?.email || 'Admin (Manual)'
+            });
+        
+        // 🔥 NOTIFICAR AL CLIENTE QUE FUE ASIGNADO
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
+        
+        toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
+        cerrarModalAsignacion();
+        
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+        
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// NOTIFICAR A TODOS
+// ============================================================
+async function notificarATodos() {
+    const { tiendaId, pedidoId } = pedidoAsignacion;
+    
+    try {
+        toast('⏳ Notificando mensajeros...', 'info');
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .update({
+                estado: 'Listo para asignar',
+                fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
+                notificadoPor: auth.currentUser?.email || 'Admin'
+            });
+        
+        // 🔥 NOTIFICAR AL CLIENTE QUE ESTÁ LISTO PARA ASIGNAR
+        await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'En cocina', 'Listo para asignar');
+        
+        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+        cerrarModalAsignacion();
+        
+        if (sonidoGlobal) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                [600, 800, 1000, 1200].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = i * 0.12;
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime + t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15);
+                    osc.start(ctx.currentTime + t);
+                    osc.stop(ctx.currentTime + t + 0.2);
+                });
+            } catch(e) {}
+        }
+        
+        if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
+        else mostrarPedidosPendientesGlobal();
+        
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// CERRAR MODAL DE ASIGNACIÓN
+// ============================================================
 function cerrarModalAsignacion() {
-    // ... (código existente)
+    const modal = document.getElementById('modalAsignacion');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
+    pedidoAsignacion = null;
+}
+
+// ============================================================
+// 📱 REENVIAR NOTIFICACIÓN CON DOMICILIO (PARA PEDIDOS EXISTENTES)
+// ============================================================
+async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId).get();
+        
+        if (!doc.exists) {
+            toast('⚠️ Pedido no encontrado', 'error');
+            return;
+        }
+        
+        const pedido = doc.data();
+        const tienda = tiendasCache[tiendaId] || {};
+        const nombreTienda = tienda.nombre || 'EyMoto';
+        const whatsappTienda = tienda.whatsapp || '';
+        const telefonoCliente = pedido.cliente?.telefono || '';
+        
+        if (!telefonoCliente) {
+            toast('⚠️ Cliente sin teléfono', 'error');
+            return;
+        }
+        
+        let subtotalProductos = 0;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
+        const costoDomicilio = pedido.costoDomicilio || 0;
+        const totalConDomicilio = subtotalProductos + costoDomicilio;
+        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        const estado = pedido.estado || 'Pendiente';
+        
+        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estado] || { emoji: '📌', texto: `Tu pedido está en: ${estado}` };
+        
+        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *Pedido ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estado.toUpperCase()}*\n${mensajeInfo.texto}\n`;
+        
+        if (estado === 'Pendiente' || estado === 'Listo para asignar' || estado === 'Asignado' || estado === 'En camino' || estado === 'Entregado') {
+            if (pedido.items && pedido.items.length > 0) {
+                mensajeWhatsApp += `\n📋 *Detalles:*\n`;
+                pedido.items.forEach(item => {
+                    const nombreItem = item.nombre || 'Producto';
+                    const cantidad = item.cantidad || 1;
+                    const precioUnitario = item.precio || 0;
+                    const subtotal = precioUnitario * cantidad;
+                    mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                });
+            }
+            
+            mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
+            if (costoDomicilio > 0) {
+                mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
+            }
+            mensajeWhatsApp += `\n💰 *Total:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+            
+            if (pedido.nombreMensajero) {
+                mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
+            }
+            
+            if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 ${pedido.cliente.direccion}`;
+        }
+        
+        mensajeWhatsApp += `\n\n📱 *¿Preguntas?* ${whatsappTienda || 'Contáctanos'}`;
+        
+        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        window.open(urlWhatsApp, '_blank');
+        toast(`📱 Notificación reenviada a ${telefonoCliente}`, 'success');
+        
+        await db.collection('tiendas').doc(tiendaId)
+            .collection('pedidos').doc(pedidoId)
+            .collection('notificaciones').add({
+                estado: estado,
+                mensaje: mensajeWhatsApp,
+                fecha: firebase.firestore.FieldValue.serverTimestamp(),
+                enviadoA: telefonoCliente,
+                tipo: 'reenvio'
+            });
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        toast('❌ Error: ' + error.message, 'error');
+        return false;
+    }
 }
 
 // ============================================================
