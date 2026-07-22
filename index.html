@@ -6,7 +6,7 @@
     <title>EyMotoComidas - Menú Digital</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* ===== ESTILOS COMPLETOS (sin cambios) ===== */
+        /* ===== ESTILOS COMPLETOS ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif; }
         body { background: #f0f0f0; min-height: 100vh; }
         .header { position: relative; width: 100%; overflow: hidden; background: #1a1a2e; }
@@ -375,6 +375,19 @@ let audioContextGlobal = null;
 let clienteAutenticado = null;
 let pesosSeleccionados = {};
 
+// ============================================================
+// NORMALIZAR TELÉFONO A +57 (COLOMBIA)
+// ============================================================
+function normalizarTelefonoColombia(numero) {
+    if (!numero) return '';
+    let num = numero.replace(/\s/g, '').replace('+', '');
+    if (!num.startsWith('57')) num = '57' + num;
+    return num;
+}
+
+// ============================================================
+// AUTENTICACIÓN CLIENTE
+// ============================================================
 async function autenticarCliente() {
     try {
         if (auth.currentUser) {
@@ -406,6 +419,9 @@ async function autenticarCliente() {
     }
 }
 
+// ============================================================
+// AUDIO / SONIDOS
+// ============================================================
 function getAudioContext() {
     if (!audioContextGlobal) {
         try { audioContextGlobal = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -483,6 +499,9 @@ function actualizarVisibilidadBotonQR(activado) {
     else { btn.classList.add('oculto'); btn.style.display = 'none'; console.log('📷 Botón QR OCULTO ❌'); }
 }
 
+// ============================================================
+// CARGAR WHATSAPP DE TIENDA
+// ============================================================
 async function cargarNumeroWhatsApp() {
     if (!TIENDA_ID) return;
     try {
@@ -505,6 +524,9 @@ async function verificarEscaneoActivado() {
     } catch(e) { console.error('Error al verificar escaneo:', e); return false; }
 }
 
+// ============================================================
+// COLORES DINÁMICOS
+// ============================================================
 function getColorBrightness(hexColor) {
     if (!hexColor) return 0.5;
     let r, g, b;
@@ -608,6 +630,9 @@ function aplicarContrasteBanner(imagenUrl) {
     img.src = imagenUrl;
 }
 
+// ============================================================
+// SELECCIONAR PAGO
+// ============================================================
 function seleccionarPago(metodo, el) {
     document.querySelectorAll('.metodo-pago-option').forEach(opt => { opt.classList.remove('seleccionado'); });
     el.classList.add('seleccionado');
@@ -618,6 +643,9 @@ function seleccionarPago(metodo, el) {
     else { instrucciones.innerHTML = '💵 Pagas en efectivo al momento de la entrega.'; }
 }
 
+// ============================================================
+// QR SCANNER
+// ============================================================
 async function abrirModalQR() {
     const escaneoActivado = await verificarEscaneoActivado();
     if (!escaneoActivado) { reproducirSonido('error'); mostrarToast('⛔ El escaneo de códigos está DESACTIVADO en esta tienda', 'error', 3500); return; }
@@ -682,6 +710,9 @@ function onScanSuccess(decodedText, decodedResult) {
 
 function onScanError(err) {}
 
+// ============================================================
+// CARGAR TIENDA
+// ============================================================
 async function cargarTienda() {
     if (!TIENDA_ID) { mostrarToast('⚠️ No se especificó una tienda', 'error'); document.getElementById('nombreTiendaHeader').textContent = '⚠️ Sin tienda'; return; }
     try {
@@ -763,6 +794,9 @@ async function cargarTienda() {
     }
 }
 
+// ============================================================
+// FUNCIONES DE PRODUCTOS
+// ============================================================
 function formatearDescripcion(texto) {
     if (!texto) return '';
     return texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
@@ -838,6 +872,9 @@ function cambiarPesoInput(productoId, cambio) {
     actualizarPesoInput(productoId, nuevoValor);
 }
 
+// ============================================================
+// CARGAR PRODUCTOS
+// ============================================================
 async function cargarProductos() {
     const lista = document.getElementById('listaProductos');
     const categoriasContainer = document.getElementById('categoriasContainer');
@@ -1011,6 +1048,9 @@ function seleccionarCategoria(categoria) {
     });
 }
 
+// ============================================================
+// CARRITO
+// ============================================================
 function agregarAlCarrito(productoId) {
     if (!tiendaAbierta) { mostrarToast('⚠️ La tienda está cerrada temporalmente', 'error'); return; }
     const producto = productos.find(p => p.id === productoId);
@@ -1134,7 +1174,7 @@ function mostrarFormularioYEnviar() {
 function generarNumeroPedido() { const num = String(Math.floor(Math.random() * 9000) + 1000); return `#${num}`; }
 
 // ============================================================
-// 🔥 ENVIAR PEDIDO (CON NORMALIZACIÓN DE TELÉFONO)
+// ENVIAR PEDIDO (CON NORMALIZACIÓN DE TELÉFONO +57)
 // ============================================================
 async function enviarPedido() {
     const user = await autenticarCliente();
@@ -1144,11 +1184,9 @@ async function enviarPedido() {
 
     const nombre = document.getElementById('clienteNombre').value.trim();
     let telefono = document.getElementById('clienteTelefono').value.trim();
-    // 🔥 NORMALIZAR TELÉFONO PARA COLOMBIA (+57)
+    // 🔥 NORMALIZAR TELÉFONO A +57 (COLOMBIA)
     if (telefono) {
-        let num = telefono.replace(/\s/g, '').replace('+', '');
-        if (!num.startsWith('57')) num = '57' + num;
-        telefono = num;
+        telefono = normalizarTelefonoColombia(telefono);
     }
     const direccion = document.getElementById('clienteDireccion').value.trim();
     const barrio = document.getElementById('clienteBarrio').value.trim();
@@ -1164,16 +1202,19 @@ async function enviarPedido() {
     const fecha = new Date();
     const fechaStr = fecha.toLocaleDateString('es-CO');
     const horaStr = fecha.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
     let total = 0;
     const items = carrito.map(item => {
         const subtotal = item.precio * item.cantidad;
         total += subtotal;
         return { id: item.id, nombre: item.nombre, cantidad: item.cantidad, precio: item.precio, total: subtotal, tipoProducto: item.tipoProducto || 'unidad', pesoGramos: item.pesoGramos || null, precioPorGramo: item.precioPorGramo || 0 };
     });
+
     let uidCliente = user.uid;
     if (uidCliente && uidCliente.startsWith('temp_')) {
         try { if (auth.currentUser) { uidCliente = auth.currentUser.uid; console.log('✅ Usando UID real de Firebase:', uidCliente); } } catch(e) { console.warn('⚠️ Usando UID temporal:', uidCliente); }
     }
+
     const pedidoData = {
         numeroPedido: numeroPedido,
         cliente: { nombre, telefono, direccion, barrio, observaciones: observaciones || '' },
@@ -1189,6 +1230,7 @@ async function enviarPedido() {
     };
     if (user.email) { pedidoData.email = user.email; }
 
+    // Actualizar stock
     try {
         const batch = db.batch();
         const tiendaRef = db.collection('tiendas').doc(TIENDA_ID);
@@ -1206,6 +1248,7 @@ async function enviarPedido() {
         console.log('✅ Stock actualizado correctamente');
     } catch (error) { console.error('❌ Error al actualizar stock:', error); }
 
+    // Guardar pedido
     try {
         let guardado = false;
         let intentos = 0;
@@ -1235,8 +1278,10 @@ async function enviarPedido() {
         return;
     }
 
-    const telefonoWhatsApp = WHATSAPP_TIENDA;
+    // Preparar mensaje WhatsApp
+    const telefonoWhatsApp = WHATSAPP_TIENDA; // Ya debería venir con 57
     const nombreTienda = tiendaData.nombre || 'EYMOTOCOMIDAS';
+
     let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n🛵 *NUEVO PEDIDO ${numeroPedido}*\n\n📅 *Fecha:* ${fechaStr}\n⏰ *Hora:* ${horaStr}\n\n👤 *Cliente:*\n${nombre}\n\n📱 *Teléfono:*\n${telefono}\n\n📍 *Dirección:*\n${direccion}\n\n🏘️ *Barrio:*\n${barrio}\n\n`;
     if (observaciones) mensajeWhatsApp += `📝 *Observaciones:*\n${observaciones}\n\n`;
     mensajeWhatsApp += `💳 *Método de pago:* ${metodoPago.toUpperCase()}\n\n🧾 *PRODUCTOS*\n\n`;
@@ -1246,6 +1291,7 @@ async function enviarPedido() {
         mensajeWhatsApp += `🍜 ${nombreItem} x${item.cantidad} = $${item.total.toLocaleString('es-CO')}\n`;
     });
     mensajeWhatsApp += `\n💰 *TOTAL:* $${total.toLocaleString('es-CO')}`;
+
     if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
         const nombreMetodo = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
         const numeroPago = metodoPago === 'nequi' ? (tiendaData.nequi || telefonoWhatsApp) : (tiendaData.daviplata || telefonoWhatsApp);
@@ -1258,9 +1304,12 @@ async function enviarPedido() {
     } else {
         mensajeWhatsApp += `\n\n💵 Pagas en efectivo al momento de la entrega.`;
     }
+
+    // Abrir WhatsApp con el número normalizado (ya tiene 57)
     const urlWhatsApp = `https://wa.me/${telefonoWhatsApp}?text=${encodeURIComponent(mensajeWhatsApp)}`;
     console.log('📱 Abriendo WhatsApp con número:', telefonoWhatsApp);
     window.open(urlWhatsApp, '_blank');
+
     mostrarToast(`✅ Pedido ${numeroPedido} enviado correctamente`, 'success');
     carrito = [];
     actualizarCarrito();
@@ -1278,6 +1327,9 @@ async function enviarPedido() {
     });
 }
 
+// ============================================================
+// TOAST Y UTILIDADES
+// ============================================================
 function mostrarToast(mensaje, tipo = 'success', duracion = 4000) {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -1298,6 +1350,9 @@ function escHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// ============================================================
+// MODAL PRODUCTO
+// ============================================================
 let productoModalActual = null;
 let imagenesModal = [];
 let indiceImagenActual = 0;
@@ -1389,6 +1444,9 @@ function cerrarModalProducto(event) {
     indiceImagenActual = 0;
 }
 
+// ============================================================
+// EXPONER FUNCIONES AL GLOBAL
+// ============================================================
 window.actualizarPesoInput = actualizarPesoInput;
 window.validarPesoInput = validarPesoInput;
 window.cambiarPesoInput = cambiarPesoInput;
@@ -1407,7 +1465,11 @@ window.cerrarModalProducto = cerrarModalProducto;
 window.cambiarImagenModal = cambiarImagenModal;
 window.agregarAlCarritoDesdeModal = agregarAlCarritoDesdeModal;
 window.mostrarToast = mostrarToast;
+window.normalizarTelefonoColombia = normalizarTelefonoColombia;
 
+// ============================================================
+// DOMContentLoaded
+// ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Iniciando menú digital...');
     console.log('🏪 Tienda ID:', TIENDA_ID);
@@ -1416,6 +1478,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarNumeroWhatsApp();
     await cargarTienda();
     await cargarProductos();
+
+    // 🔥 NORMALIZAR TELÉFONO AL SALIR DEL CAMPO
+    document.getElementById('clienteTelefono').addEventListener('blur', function() {
+        let val = this.value.trim();
+        if (val) {
+            this.value = normalizarTelefonoColombia(val);
+        }
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && document.activeElement.tagName !== 'TEXTAREA') {
             const btn = document.getElementById('btnComprar');
@@ -1429,16 +1500,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const indicator = document.getElementById('scrollIndicator');
         if (wrapper && wrapper.scrollWidth > wrapper.clientWidth) { indicator.classList.add('visible'); setTimeout(() => indicator.classList.remove('visible'), 3000); }
     }, 500);
-    
-    // 🔥 Normalizar teléfono al salir del campo
-    document.getElementById('clienteTelefono').addEventListener('blur', function() {
-        let val = this.value.trim();
-        if (val) {
-            let num = val.replace(/\s/g, '').replace('+', '');
-            if (!num.startsWith('57')) num = '57' + num;
-            this.value = num;
-        }
-    });
 });
 
 console.log('✅ Menú EyMotoComidas cargado correctamente');
@@ -1446,7 +1507,7 @@ console.log('🏪 Tienda ID:', TIENDA_ID);
 console.log('📱 WhatsApp tienda (cargado desde Firestore):', WHATSAPP_TIENDA);
 console.log('⚖️ Soporte para productos por peso activado');
 console.log('🔐 Autenticación por email activada');
-console.log('🇨🇴 Números telefónicos normalizados con +57 (Colombia)');
+console.log('🇨🇴 Normalización de teléfonos +57 activada');
 </script>
 </body>
 </html>
