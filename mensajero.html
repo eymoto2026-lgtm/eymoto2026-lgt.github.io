@@ -594,7 +594,7 @@
             </div>
         </div>
 
-        <!-- 🔥 SECCIÓN DE PEDIDOS DISPONIBLES (OCULTA SI TIENE PEDIDO ACTIVO O ESTÁ DESCONECTADO) -->
+        <!-- 🔥 SECCIÓN DE PEDIDOS DISPONIBLES -->
         <div class="seccion" id="seccionDisponibles">
             <div class="titulo">
                 📦 Pedidos Disponibles
@@ -608,7 +608,7 @@
             </div>
         </div>
 
-        <!-- 🔥 SECCIÓN DE MENSAJE DE OCUPADO (SOLO SI TIENE PEDIDO ACTIVO) -->
+        <!-- 🔥 SECCIÓN DE MENSAJE DE OCUPADO -->
         <div id="mensajeOcupado" class="mensaje-ocupado" style="display:none;">
             <span class="icono">🛵</span>
             <div class="titulo-msg">Ya tienes un pedido en curso</div>
@@ -679,7 +679,7 @@ let notificacionesPendientes = [];
 let notificacionesMostradas = new Set();
 
 // ============================================================
-// FUNCIONES AUXILIARES (TOAST, NORMALIZAR TELÉFONO)
+// FUNCIONES AUXILIARES
 // ============================================================
 function toast(msg, type = 'info', dur = 4000) {
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warn: '⚠️', new: '🛵' };
@@ -708,13 +708,11 @@ function normalizarTelefonoColombia(numero) {
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
-        // Obtener el pedido
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
         if (!doc.exists) return;
         const pedido = doc.data();
 
-        // Obtener la tienda
         const tiendaDoc = await db.collection('tiendas').doc(tiendaId).get();
         if (!tiendaDoc.exists) return;
         const tienda = tiendaDoc.data();
@@ -728,7 +726,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         }
         telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
 
-        // Mensajes por estado
         const MENSAJES = {
             'Asignado': { emoji: '🛵', texto: '¡Un mensajero ha tomado tu pedido! Está en camino al restaurante.' },
             'Recogiendo pedido': { emoji: '📦', texto: 'El mensajero ha llegado al restaurante y está recogiendo tu pedido.' },
@@ -756,7 +753,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         if (pedido.cliente?.direccion) mensaje += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
         mensaje += `\n\n📱 *¿Preguntas?* Comunícate al ${whatsappTienda || 'nuestro WhatsApp'}`;
 
-        // Abrir WhatsApp
         const url = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
 
@@ -985,7 +981,7 @@ function cargarPedidos() {
 }
 
 // ============================================================
-// CARGAR PEDIDOS DISPONIBLES (SOLO "Listo para asignar" sin mensajero)
+// 🔥 CARGAR PEDIDOS DISPONIBLES (FILTRO ESTRICTO)
 // ============================================================
 function cargarPedidosDisponibles() {
     const tieneActivo = pedidosActivos.length > 0;
@@ -1006,6 +1002,7 @@ function cargarPedidosDisponibles() {
     document.getElementById('seccionDisponibles').style.display = 'block';
     document.getElementById('mensajeOcupado').style.display = 'none';
     
+    // 🔥 CLAVE: SOLO pedidos con estado == 'Listo para asignar' (excluye "En asignación")
     db.collectionGroup('pedidos')
         .where('estado', '==', 'Listo para asignar')
         .orderBy('fecha', 'desc')
@@ -1013,15 +1010,10 @@ function cargarPedidosDisponibles() {
             pedidosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
-                if (!data.mensajeroId) {
+                // Verificación extra por seguridad
+                if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                     pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
-            });
-            
-            pedidosDisponibles.sort((a, b) => {
-                const fechaA = a.fecha?.toDate ? a.fecha.toDate() : new Date(0);
-                const fechaB = b.fecha?.toDate ? b.fecha.toDate() : new Date(0);
-                return fechaB - fechaA;
             });
             
             renderizarPedidosDisponibles();
@@ -1032,7 +1024,7 @@ function cargarPedidosDisponibles() {
 }
 
 // ============================================================
-// RENDERIZAR PEDIDOS ACTIVOS E HISTORIAL
+// RENDERIZAR PEDIDOS
 // ============================================================
 function renderizarPedidos() {
     const containerActivos = document.getElementById('listaActivos');
@@ -1068,14 +1060,11 @@ function renderizarPedidos() {
     actualizarContadores();
 }
 
-// ============================================================
-// RENDERIZAR PEDIDOS DISPONIBLES
-// ============================================================
 function renderizarPedidosDisponibles() {
     const container = document.getElementById('listaDisponibles');
     const badge = document.getElementById('dispBadge');
     
-    const disponiblesReales = pedidosDisponibles.filter(p => !p.mensajeroId);
+    const disponiblesReales = pedidosDisponibles.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
     badge.textContent = disponiblesReales.length;
     
     if (disponiblesReales.length === 0) {
@@ -1291,7 +1280,7 @@ function actualizarContadores() {
 }
 
 // ============================================================
-// 🛵 TOMAR PEDIDO (desde disponibles) + NOTIFICACIÓN AL CLIENTE
+// 🛵 TOMAR PEDIDO + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (pedidosActivos.length > 0) {
@@ -1329,8 +1318,6 @@ async function tomarPedido(pedidoId, tiendaId) {
             });
         
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
-        
-        // Notificar al cliente que el mensajero tomó el pedido
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
         
         cargarPedidos();
@@ -1358,14 +1345,12 @@ async function recogerPedido(pedidoId, tiendaId) {
 
         const data = doc.data();
 
-        // Verificar si ya tiene mensajero y si es otro
         if (data.mensajeroId && data.mensajeroId !== mensajeroUid) {
             toast('⛔ Este pedido ya fue tomado por otro mensajero.', 'error');
             cargarPedidosDisponibles();
             return;
         }
 
-        // Solo se puede recoger si estado es "Listo para asignar" o "Asignado"
         if (data.estado !== 'Listo para asignar' && data.estado !== 'Asignado') {
             toast(`⚠️ El pedido no está disponible para recoger (estado: ${data.estado})`, 'warn');
             return;
@@ -1376,7 +1361,6 @@ async function recogerPedido(pedidoId, tiendaId) {
             return;
         }
 
-        // Preparar datos de actualización
         const updateData = {
             estado: 'Recogiendo pedido',
             fechaRecogida: firebase.firestore.FieldValue.serverTimestamp()
@@ -1390,8 +1374,6 @@ async function recogerPedido(pedidoId, tiendaId) {
         await docRef.update(updateData);
 
         toast('📦 Pedido recogido. ¡En camino a la entrega!', 'success', 3000);
-        
-        // Notificar al cliente que el mensajero recogió el pedido
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'Recogiendo pedido');
         
         cargarPedidos();
@@ -1423,10 +1405,7 @@ async function marcarEnCamino(pedidoId, tiendaId) {
             fechaEnvio: firebase.firestore.FieldValue.serverTimestamp()
         });
         toast('🚗 Pedido en camino al cliente', 'success', 3000);
-        
-        // Notificar al cliente
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'En camino');
-        
         cargarPedidos();
     } catch (e) {
         toast('❌ Error: ' + e.message, 'error');
@@ -1434,10 +1413,9 @@ async function marcarEnCamino(pedidoId, tiendaId) {
 }
 
 // ============================================================
-// ✅ MARCAR ENTREGADO + NOTIFICACIÓN AL CLIENTE
+// ✅ MARCAR ENTREGADO (SIN CONFIRM) + NOTIFICACIÓN AL CLIENTE
 // ============================================================
 async function marcarEntregado(pedidoId, tiendaId) {
-    if (!confirm('¿Confirmar entrega de este pedido?')) return;
     try {
         const docRef = db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId);
@@ -1453,10 +1431,7 @@ async function marcarEntregado(pedidoId, tiendaId) {
             fechaEntrega: firebase.firestore.FieldValue.serverTimestamp()
         });
         toast('✅ ¡Pedido entregado con éxito! 🎉', 'success', 4000);
-        
-        // Notificar al cliente
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, 'Entregado');
-        
         cargarPedidos();
         cargarPedidosDisponibles();
     } catch (e) {
@@ -1479,12 +1454,12 @@ window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
-console.log('📋 Los pedidos NO son visibles para mensajeros hasta ser notificados');
 console.log('🔒 Los mensajeros NO pueden tomar 2 pedidos a la vez');
 console.log('📱 SOLO mensajeros CONECTADOS y DISPONIBLES pueden tomar el pedido');
 console.log('🚀 Mensaje motivacional de conexión activado');
 console.log('❌ Botón de cancelar pedido ELIMINADO para mensajeros (solo admin)');
 console.log('📲 Notificaciones al cliente: ACTIVADAS (tomar, recoger, en camino, entregar)');
+console.log('🔒 FILTRO ACTIVADO: Los mensajeros SOLO ven estado "Listo para asignar"');
 </script>
 </body>
 </html>
