@@ -1002,7 +1002,6 @@ function cargarPedidosDisponibles() {
     document.getElementById('seccionDisponibles').style.display = 'block';
     document.getElementById('mensajeOcupado').style.display = 'none';
     
-    // 🔥 CLAVE: SOLO pedidos con estado == 'Listo para asignar' (excluye "En asignación")
     db.collectionGroup('pedidos')
         .where('estado', '==', 'Listo para asignar')
         .orderBy('fecha', 'desc')
@@ -1010,7 +1009,6 @@ function cargarPedidosDisponibles() {
             pedidosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
-                // Verificación extra por seguridad
                 if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
                     pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
@@ -1060,11 +1058,17 @@ function renderizarPedidos() {
     actualizarContadores();
 }
 
+// ============================================================
+// RENDERIZAR PEDIDOS DISPONIBLES (con filtro extra)
+// ============================================================
 function renderizarPedidosDisponibles() {
     const container = document.getElementById('listaDisponibles');
     const badge = document.getElementById('dispBadge');
     
-    const disponiblesReales = pedidosDisponibles.filter(p => p.estado === 'Listo para asignar' && !p.mensajeroId);
+    // 🔥 FILTRO ADICIONAL: SOLO estado "Listo para asignar" y sin mensajero
+    const disponiblesReales = pedidosDisponibles.filter(p => 
+        p.estado === 'Listo para asignar' && !p.mensajeroId
+    );
     badge.textContent = disponiblesReales.length;
     
     if (disponiblesReales.length === 0) {
