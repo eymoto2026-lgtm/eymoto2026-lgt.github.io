@@ -665,6 +665,10 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+const URL_BASE_MENU = "https://eymoto2026-lgtm.github.io/eymoto2026-lgt.github.io/";
+// Ruta al archivo de sonido (ajústala si está en otra carpeta)
+const URL_SONIDO = `${URL_BASE_MENU}notificacion-ymoto.mp3`;
+
 // ============================================================
 // VARIABLES GLOBALES
 // ============================================================
@@ -677,6 +681,52 @@ let listenerPedidos = null;
 let listenerMensajero = null;
 let notificacionesPendientes = [];
 let notificacionesMostradas = new Set();
+let audioNotificacion = null;
+let sonidoIniciado = false;
+let numeroPedidosDisponiblesAnterior = 0;
+
+// ============================================================
+// FUNCIONES DE SONIDO
+// ============================================================
+function iniciarSonidoNotificacion() {
+    if (!sonidoIniciado) {
+        // Intentar crear el audio solo cuando sea necesario
+        try {
+            audioNotificacion = new Audio(URL_SONIDO);
+            audioNotificacion.loop = true;
+            audioNotificacion.volume = 0.8;
+        } catch (e) {
+            console.warn('Error al crear elemento de audio:', e);
+            return;
+        }
+        sonidoIniciado = true;
+    }
+    if (audioNotificacion) {
+        audioNotificacion.play().catch(e => {
+            // Si el navegador bloquea la reproducción automática,
+            // mostramos un toast para que el usuario haga clic en algún lado
+            toast('🔊 Haz clic en "Activar" o en la página para escuchar las notificaciones', 'warn', 5000);
+            console.warn('Error al reproducir sonido automático:', e);
+        });
+    }
+}
+
+function detenerSonidoNotificacion() {
+    if (audioNotificacion) {
+        audioNotificacion.pause();
+        audioNotificacion.currentTime = 0;
+        // No eliminamos el objeto, solo lo pausamos
+    }
+    sonidoIniciado = false; // Permitir reiniciar si vuelve a haber pedidos
+}
+
+// Desbloquear el audio con la interacción del usuario
+function desbloquearAudio() {
+    if (!sonidoIniciado) return;
+    if (audioNotificacion && audioNotificacion.paused) {
+        audioNotificacion.play().catch(() => {});
+    }
+}
 
 // ============================================================
 // FUNCIONES AUXILIARES
@@ -852,8 +902,19 @@ async function toggleActivo() {
         
         if (nuevoEstado) {
             cargarPedidosDisponibles();
+            // Desbloquear audio al activar (por si el navegador bloquea)
+            if (!sonidoIniciado) {
+                // Preparamos el audio pero no lo reproducimos hasta que haya pedidos
+                try {
+                    audioNotificacion = new Audio(URL_SONIDO);
+                    audioNotificacion.loop = true;
+                    audioNotificacion.volume = 0.8;
+                    sonidoIniciado = true;
+                } catch (e) {}
+            }
         } else {
             document.getElementById('seccionDisponibles').style.display = 'none';
+            detenerSonidoNotificacion();
         }
         
     } catch (e) {
@@ -897,6 +958,15 @@ function actualizarMotivacional(conectado) {
 function probarNotificacion() {
     toast('🔔 ¡Notificación de prueba!', 'new', 3000);
     if (navigator.vibrate) navigator.vibrate(100);
+    // Probar sonido si está cargado
+    if (audioNotificacion) {
+        audioNotificacion.play().catch(() => {});
+    } else {
+        // Crear audio temporal
+        const tempAudio = new Audio(URL_SONIDO);
+        tempAudio.play().catch(() => toast('⚠️ No se pudo reproducir el sonido. Haz clic en "Activar" primero.', 'warn'));
+        setTimeout(() => tempAudio.pause(), 1000);
+    }
 }
 
 // ============================================================
@@ -908,6 +978,16 @@ async function inicializarMensajero() {
     actualizarStatus(mensajeroData.conectado || false);
     actualizarMotivacional(mensajeroData.conectado || false);
     document.getElementById('btnProbar').style.display = mensajeroData.conectado ? 'inline-block' : 'none';
+    
+    // Pre-cargar audio si está conectado
+    if (mensajeroData.conectado) {
+        try {
+            audioNotificacion = new Audio(URL_SONIDO);
+            audioNotificacion.loop = true;
+            audioNotificacion.volume = 0.8;
+            sonidoIniciado = true;
+        } catch (e) {}
+    }
     
     if (listenerMensajero) {
         try { listenerMensajero(); } catch(e) {}
@@ -981,7 +1061,7 @@ function cargarPedidos() {
 }
 
 // ============================================================
-// 🔥 CARGAR PEDIDOS DISPONIBLES (FILTRO ESTRICTO)
+// 🔥 CARGAR PEDIDOS DISPONIBLES (CON CONTROL DE SONIDO)
 // ============================================================
 function cargarPedidosDisponibles() {
     const tieneActivo = pedidosActivos.length > 0;
@@ -995,6 +1075,9 @@ function cargarPedidosDisponibles() {
             document.getElementById('mensajeOcupado').style.display = 'none';
         }
         pedidosDisponibles = [];
+        // Si no hay pedidos disponibles, detener sonido
+        detenerSonidoNotificacion();
+        numeroPedidosDisponiblesAnterior = 0;
         actualizarContadores();
         return;
     }
@@ -1006,14 +1089,24 @@ function cargarPedidosDisponibles() {
         .where('estado', '==', 'Listo para asignar')
         .orderBy('fecha', 'desc')
         .onSnapshot(snap => {
-            pedidosDisponibles = [];
+            const nuevosDisponibles = [];
             snap.forEach(doc => {
                 const data = doc.data();
                 if (data.estado === 'Listo para asignar' && !data.mensajeroId) {
-                    pedidosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
+                    nuevosDisponibles.push({ id: doc.id, ...data, _tiendaId: doc.ref.parent.parent.id });
                 }
             });
             
+            // 🔥 Control de sonido: si antes no había y ahora sí, iniciar sonido
+            const cantidadActual = nuevosDisponibles.length;
+            if (cantidadActual > 0 && numeroPedidosDisponiblesAnterior === 0) {
+                iniciarSonidoNotificacion();
+            } else if (cantidadActual === 0 && numeroPedidosDisponiblesAnterior > 0) {
+                detenerSonidoNotificacion();
+            }
+            numeroPedidosDisponiblesAnterior = cantidadActual;
+            
+            pedidosDisponibles = nuevosDisponibles;
             renderizarPedidosDisponibles();
             actualizarContadores();
         }, err => {
@@ -1059,13 +1152,12 @@ function renderizarPedidos() {
 }
 
 // ============================================================
-// RENDERIZAR PEDIDOS DISPONIBLES (con filtro extra)
+// RENDERIZAR PEDIDOS DISPONIBLES
 // ============================================================
 function renderizarPedidosDisponibles() {
     const container = document.getElementById('listaDisponibles');
     const badge = document.getElementById('dispBadge');
     
-    // 🔥 FILTRO ADICIONAL: SOLO estado "Listo para asignar" y sin mensajero
     const disponiblesReales = pedidosDisponibles.filter(p => 
         p.estado === 'Listo para asignar' && !p.mensajeroId
     );
@@ -1078,6 +1170,9 @@ function renderizarPedidosDisponibles() {
                 <p>No hay pedidos disponibles</p>
             </div>
         `;
+        // También detener sonido por si acaso
+        detenerSonidoNotificacion();
+        numeroPedidosDisponiblesAnterior = 0;
         return;
     }
     
@@ -1284,7 +1379,7 @@ function actualizarContadores() {
 }
 
 // ============================================================
-// 🛵 TOMAR PEDIDO + NOTIFICACIÓN AL CLIENTE
+// 🛵 TOMAR PEDIDO + NOTIFICACIÓN AL CLIENTE + DETENER SONIDO
 // ============================================================
 async function tomarPedido(pedidoId, tiendaId) {
     if (pedidosActivos.length > 0) {
@@ -1323,6 +1418,10 @@ async function tomarPedido(pedidoId, tiendaId) {
         
         toast('✅ Pedido tomado exitosamente', 'success', 3000);
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, 'Listo para asignar', 'Asignado');
+        
+        // 🔥 Detener sonido al tomar el pedido
+        detenerSonidoNotificacion();
+        numeroPedidosDisponiblesAnterior = 0;
         
         cargarPedidos();
         cargarPedidosDisponibles();
@@ -1455,6 +1554,9 @@ window.recogerPedido = recogerPedido;
 window.marcarEnCamino = marcarEnCamino;
 window.marcarEntregado = marcarEntregado;
 window.enviarNotificacionEstadoCliente = enviarNotificacionEstadoCliente;
+// Exponer funciones de sonido por si se necesitan desde fuera
+window.iniciarSonidoNotificacion = iniciarSonidoNotificacion;
+window.detenerSonidoNotificacion = detenerSonidoNotificacion;
 
 console.log('✅ Panel de mensajero cargado correctamente');
 console.log('📱 WhatsApp integrado para notificar mensajeros');
@@ -1464,6 +1566,7 @@ console.log('🚀 Mensaje motivacional de conexión activado');
 console.log('❌ Botón de cancelar pedido ELIMINADO para mensajeros (solo admin)');
 console.log('📲 Notificaciones al cliente: ACTIVADAS (tomar, recoger, en camino, entregar)');
 console.log('🔒 FILTRO ACTIVADO: Los mensajeros SOLO ven estado "Listo para asignar"');
+console.log(`🔊 Sonido de notificación: ${URL_SONIDO} (en bucle hasta tomar pedido)`);
 </script>
 </body>
 </html>
