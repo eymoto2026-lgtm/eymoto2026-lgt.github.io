@@ -6,7 +6,7 @@
 <title>Admin EyoMoto – Panel General</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-/* ===== ESTILOS COMPLETOS ===== */
+/* ===== ESTILOS COMPLETOS (sin cambios) ===== */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
 :root{
@@ -3861,7 +3861,7 @@ function abrirWhatsApp(numero, mensaje) {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST) CON ENLACE
+// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST) CON ENLACE + DIRECCIÓN
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -3882,6 +3882,7 @@ async function notificarATodos() {
             const data = doc.data();
             const tienda = tiendasCache[tiendaId] || {};
             const nombreTienda = tienda.nombre || 'EyMoto';
+            const direccionTienda = tienda.direccion || 'Dirección no registrada';
             const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
             const cliente = data.cliente || {};
             const total = data.total || 0;
@@ -3890,9 +3891,10 @@ async function notificarATodos() {
             const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
             let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
             mensaje += `🏪 *${nombreTienda}*\n`;
+            mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
             mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
             mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
-            mensaje += `📍 *Dirección:* ${cliente.direccion || 'N/A'}\n`;
+            mensaje += `📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}\n`;
             mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
             mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
             if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
@@ -3916,8 +3918,9 @@ async function notificarATodos() {
         else mostrarPedidosPendientesGlobal();
     } catch(e) { console.error('Error en notificarATodos:', e); toast('❌ Error: ' + e.message, 'error'); }
 }
+
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE (con enlace)
+// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE (con enlace + dirección)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -3945,6 +3948,7 @@ async function asignarPedidoManual() {
                 const data = doc.data();
                 const tienda = tiendasCache[tiendaId] || {};
                 const nombreTienda = tienda.nombre || 'EyMoto';
+                const direccionTienda = tienda.direccion || 'Dirección no registrada';
                 const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
                 const cliente = data.cliente || {};
                 const total = data.total || 0;
@@ -3953,9 +3957,10 @@ async function asignarPedidoManual() {
                 const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
                 let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
                 mensaje += `🏪 *${nombreTienda}*\n`;
+                mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
                 mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
                 mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
-                mensaje += `📍 *Dirección:* ${cliente.direccion || 'N/A'}\n`;
+                mensaje += `📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}\n`;
                 mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
                 mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
                 if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
@@ -3970,7 +3975,7 @@ async function asignarPedidoManual() {
                     });
                 } else { mensaje += `- Sin productos\n`; }
                 mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
-                mensaje += `\n\n🛵 *Recoge el pedido en el restaurante.*`;
+                mensaje += `\n\n🛵 *Recoge el pedido en la dirección indicada.*`;
                 abrirWhatsApp(mensajero.telefono, mensaje);
             }
         }
@@ -4054,6 +4059,10 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
     document.getElementById('modalAsignacion').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
+
+// ============================================================
+// CERRAR MODAL DE ASIGNACIÓN
+// ============================================================
 async function cerrarModalAsignacion() {
     // 🔥 DESBLOQUEAR (VOLVER A "Listo para asignar" SI EL ADMIN CANCELA)
     if (pedidoAsignacion && window.estadoPrevioAsignacion) {
@@ -4077,6 +4086,7 @@ async function cerrarModalAsignacion() {
     document.body.style.overflow = '';
     pedidoAsignacion = null;
 }
+
 // ============================================================
 // REENVIAR NOTIFICACIÓN CON DOMICILIO
 // ============================================================
@@ -4219,6 +4229,8 @@ console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
 console.log('👥 Administración de mensajeros: ACTIVADA');
 console.log('🇨🇴 Normalización de teléfonos +57 ACTIVADA');
 console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
+console.log('📍 Dirección de tienda incluida en mensajes a mensajeros');
+console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En asignación")');
 </script>
 </body>
 </html>
