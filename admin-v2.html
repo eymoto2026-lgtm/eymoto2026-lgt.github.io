@@ -3987,7 +3987,7 @@ async function asignarPedidoManual() {
 }
 
 // ============================================================
-// ABRIR MODAL DE ASIGNACIÓN
+// ABRIR MODAL DE ASIGNACIÓN (CON BLOQUEO MEJORADO)
 // ============================================================
 async function abrirModalAsignacion(tiendaId, pedidoId) {
     if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') { toast('⛔ No tienes permiso para asignar pedidos', 'error'); return; }
@@ -4006,15 +4006,24 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
                     _bloqueadoPor: auth.currentUser?.email || 'Admin',
                     _fechaBloqueo: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                toast('🔒 Pedido BLOQUEADO mientras decides (no visible para mensajeros)', 'info', 3000);
-                console.log('✅ Pedido bloqueado en "En asignación"');
+                // Verificar que el cambio se aplicó
+                const docVerificacion = await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).get();
+                if (docVerificacion.exists && docVerificacion.data().estado === 'En asignación') {
+                    toast('🔒 Pedido BLOQUEADO mientras decides (no visible para mensajeros)', 'info', 3000);
+                    console.log('✅ Pedido bloqueado en "En asignación"');
+                } else {
+                    toast('⚠️ No se pudo bloquear el pedido. Intenta de nuevo.', 'error');
+                    return;
+                }
             } else {
                 toast('⚠️ Este pedido ya no está disponible para asignar', 'warn');
+                return;
             }
         }
     } catch (e) {
         console.error('Error al bloquear:', e);
         toast('❌ Error al bloquear: ' + e.message, 'error');
+        return;
     }
 
     // --- EL RESTO DEL CÓDIGO (mostrar el modal) ---
