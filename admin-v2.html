@@ -2973,12 +2973,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const tieneMensajero = p.mensajeroId ? true : false;
-    const esListoParaAsignar = estado === 'Listo para asignar';
+    // 🔥 Ahora permitimos "Asignar mensajero" si estado es "Listo para asignar" O "Preparado"
+    const esAsignable = (estado === 'Listo para asignar' || estado === 'Preparado');
     if (estado === 'Entregado' || estado === 'Cancelado') detenerAlarmaGlobal(pid);
     const { columna } = obtenerColumnaYContador(estado, tipoNegocio);
     if (counts[estado] !== undefined) counts[estado]++;
     else if (estado === 'Cancelado') counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
     else if (estado === 'Asignado') counts['Asignado'] = (counts['Asignado'] || 0) + 1;
+    else if (estado === 'Preparado') counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1; // lo contamos como pendiente para el admin
     else if (estado === 'Listo para asignar') counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     const colEl = document.getElementById(columna);
     if (!colEl) return;
@@ -3039,7 +3041,8 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<div style="background:var(--blue-bg);color:var(--blue);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;border:1px solid var(--blue);">🛵 Asignado a: <strong>${nombreMensajero}</strong> <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${asignadoPor})</span></div>`;
     }
     const puedeAsignar = (rolUsuario === 'superadmin' || rolUsuario === 'adminMensajero');
-    if (esListoParaAsignar && !p.mensajeroId && puedeAsignar) {
+    // Mostrar el botón "Asignar mensajero" si el estado es "Listo para asignar" o "Preparado"
+    if (esAsignable && !p.mensajeroId && puedeAsignar) {
         acciones += `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">👤 Asignar mensajero</button>`;
     }
     const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
@@ -3047,7 +3050,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         if (estado !== 'Cancelado') {
             acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
-        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar') {
+        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar' && estado !== 'Preparado') {
             const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
             if (primerSiguiente) {
                 let icono = '▶';
@@ -3062,10 +3065,14 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
                 acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">${icono} ${primerSiguiente}</button>`;
             }
         }
-        if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
-            acciones += `<button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">✅ Servicio Listo (Notificar Mensajeros)</button>`;
+        // Si está en "Preparado", podemos pasar a "Listo para asignar" (desbloquear manual)
+        if (estado === 'Preparado' && puedeCambiarEstado) {
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Listo para asignar')" style="border-color:var(--green);color:var(--green);">🔄 Hacer visible para mensajeros</button>`;
         }
-        if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+        if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
+            acciones += `<button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">✅ Servicio Listo (Preparar)</button>`;
+        }
+        if (siguienteEstado && !esUltimoEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1] && estado !== 'Preparado') {
             let iconoSiguiente = '▶';
             const labelLower = siguienteEstado.toLowerCase();
             if (labelLower.includes('camino')) iconoSiguiente = '🛵';
@@ -3074,7 +3081,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">${iconoSiguiente} ${siguienteEstado}</button>`;
         }
         const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-        if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+        if (estadoAnterior && !esPrimerEstado && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== 'Preparado') {
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">↩️ ${estadoAnterior}</button>`;
         }
     }
@@ -3088,9 +3095,13 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         if (esUltimoEstado) acciones += `<button class="btn-factura" onclick="window.generarFactura('${tiendaId}','${pid}')">🧾 Ver Factura</button>`;
     }
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = estado === 'Listo para asignar' ? 'r-pending' : ringClass;
+    const claseExtra = (estado === 'Listo para asignar' || estado === 'Preparado') ? 'r-pending' : ringClass;
     const card = document.createElement('div');
     card.className = `pedido-card ${claseExtra}`;
+    if (estado === 'Preparado') {
+        card.style.borderColor = 'var(--orange)';
+        card.style.boxShadow = '0 0 15px rgba(255,105,0,0.2)';
+    }
     if (estado === 'Listo para asignar') {
         card.style.borderColor = 'var(--green)';
         card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
@@ -3099,7 +3110,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:${estado === 'Listo para asignar' ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">📌 ${estado === 'Listo para asignar' ? '🔔 LISTO PARA ASIGNAR' : estado}</div>
+        <div style="font-size:12px;color:${estado === 'Preparado' ? 'var(--orange)' : (estado === 'Listo para asignar' ? 'var(--green)' : 'var(--yellow)')};margin-bottom:6px;font-weight:700;">📌 ${estado === 'Preparado' ? '🔶 PREPARADO (Esperando asignación)' : (estado === 'Listo para asignar' ? '🔔 LISTO PARA ASIGNAR' : estado)}</div>
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -3122,7 +3133,7 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
 
 function mostrarPedidosPendientesGlobal() {
     resetKanban();
-    const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0, 'Asignado':0, 'Listo para asignar':0 };
+    const counts = { 'Pendiente':0, 'En Cocina':0, 'En Camino':0, 'Entregado':0, 'Cancelado':0, 'Asignado':0, 'Listo para asignar':0, 'Preparado':0 };
     const esAdminMensajero = (rolUsuario === 'adminMensajero');
     Object.keys(todosLosPedidos).forEach(tiendaId => {
         const tienda = tiendasCache[tiendaId] || {};
@@ -3132,6 +3143,7 @@ function mostrarPedidosPendientesGlobal() {
         pedidos.forEach(pedido => {
             const data = pedido.data;
             const estado = data.estado || estadosNegocio[0] || 'Pendiente';
+            // Los admins mensajeros solo ven "Listo para asignar", no "Preparado"
             if (esAdminMensajero && estado !== 'Listo para asignar' && estado !== 'Asignado') return;
             if (estado === 'Entregado' || estado === 'Cancelado') detenerAlarmaGlobal(pedido.id);
             const { columna } = obtenerColumnaYContador(estado, tipoNegocio);
@@ -3139,6 +3151,7 @@ function mostrarPedidosPendientesGlobal() {
             if (colEl) renderPedidoGlobalEnColumna(pedido.doc, tiendaId, colEl, tipoNegocio);
             if (estado === 'Cancelado') counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
             else if (estado === 'Asignado') counts['Asignado'] = (counts['Asignado'] || 0) + 1;
+            else if (estado === 'Preparado') counts['Preparado'] = (counts['Preparado'] || 0) + 1;
             else if (estado === 'Listo para asignar') counts['Pendiente']++;
             else if (estadosNegocio.indexOf(estado) === 0) counts['Pendiente']++;
             else if (estadosNegocio.indexOf(estado) === 1) counts['En Cocina']++;
@@ -3146,7 +3159,7 @@ function mostrarPedidosPendientesGlobal() {
             else if (estadosNegocio.indexOf(estado) >= 3) counts['Entregado']++;
         });
     });
-    document.getElementById('cnt-P').textContent = counts['Pendiente'] || 0;
+    document.getElementById('cnt-P').textContent = counts['Pendiente'] + counts['Preparado'] || 0;
     document.getElementById('cnt-C').textContent = counts['En Cocina'] || 0;
     document.getElementById('cnt-M').textContent = counts['En Camino'] || 0;
     document.getElementById('cnt-E').textContent = counts['Entregado'] || 0;
@@ -3163,7 +3176,7 @@ function mostrarPedidosPendientesGlobal() {
             el.innerHTML = `<div class="empty-col"><span class="ico">${msg.ico}</span>${msg.txt}</div>`;
         }
     });
-    document.getElementById('statPendientes').textContent = counts['Pendiente'] || 0;
+    document.getElementById('statPendientes').textContent = counts['Pendiente'] + counts['Preparado'] || 0;
     document.getElementById('statEnCamino').textContent = counts['En Camino'] || 0;
 }
 
@@ -3175,9 +3188,9 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const tieneMensajero = p.mensajeroId ? true : false;
-    const esListoParaAsignar = estado === 'Listo para asignar';
+    const esAsignable = (estado === 'Listo para asignar' || estado === 'Preparado');
     const ringClass = obtenerColorClase(estado, tipoNegocio);
-    const claseExtra = esListoParaAsignar ? 'r-pending' : ringClass;
+    const claseExtra = (estado === 'Listo para asignar' || estado === 'Preparado') ? 'r-pending' : ringClass;
     let fechaStr = '--', horaStr = '--';
     if (p.fecha) { try { const fd = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha.seconds * 1000); if (!isNaN(fd.getTime())) { fechaStr = fd.toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }); horaStr = fd.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' }); } } catch(e) {} }
     const num = p.numeroPedido || '#--';
@@ -3226,24 +3239,21 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     const esUltimo = estado === estadosNegocio[estadosNegocio.length - 1];
     const esPrimer = estado === estadosNegocio[0];
     const puedeAsignar = (rolUsuario === 'superadmin' || rolUsuario === 'adminMensajero');
-    const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
-    const puedeEditar = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
-    if (p.mensajeroId || p.nombreMensajero) {
-        const nombreMensajero = p.nombreMensajero || 'Mensajero (Sistema)';
-        const asignadoPor = p.asignadoPor || 'Sistema';
-        acciones += `<div style="background:var(--blue-bg);color:var(--blue);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;border:1px solid var(--blue);">🛵 Asignado a: <strong>${nombreMensajero}</strong> <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${asignadoPor})</span></div>`;
-    }
-    if (esListoParaAsignar && !p.mensajeroId && puedeAsignar) {
+    if (esAsignable && !p.mensajeroId && puedeAsignar) {
         acciones += `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">👤 Asignar mensajero</button>`;
     }
+    const puedeCambiarEstado = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
     if (puedeCambiarEstado) {
         if (estado !== 'Cancelado') {
             acciones += `<button class="btn-cancel" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Cancelado')">✕ Cancelar</button>`;
         }
         if (estado === estadosNegocio[1] && !tieneMensajero && estado !== 'Listo para asignar') {
-            acciones += `<button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">✅ Servicio Listo (Notificar Mensajeros)</button>`;
+            acciones += `<button class="btn-servicio-listo" onclick="window.marcarServicioListo('${tiendaId}','${pid}')">✅ Servicio Listo (Preparar)</button>`;
         }
-        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado') {
+        if (estado === 'Preparado' && puedeCambiarEstado) {
+            acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Listo para asignar')" style="border-color:var(--green);color:var(--green);">🔄 Hacer visible para mensajeros</button>`;
+        }
+        if (estado === estadosNegocio[0] && !tieneMensajero && estado !== 'Cancelado' && estado !== 'Listo para asignar' && estado !== 'Preparado') {
             const primerSiguiente = getSiguienteEstado(tipoNegocio, estado);
             if (primerSiguiente) {
                 let icono = '▶';
@@ -3255,7 +3265,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
                 acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">${icono} ${primerSiguiente}</button>`;
             }
         }
-        if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1]) {
+        if (siguienteEstado && !esUltimo && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== estadosNegocio[1] && estado !== 'Preparado') {
             let iconoSiguiente = '▶';
             const labelLower = siguienteEstado.toLowerCase();
             if (labelLower.includes('camino')) iconoSiguiente = '🛵';
@@ -3264,10 +3274,16 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${siguienteEstado}')" style="border-color:var(--blue);color:var(--blue);">${iconoSiguiente} ${siguienteEstado}</button>`;
         }
         const estadoAnterior = getEstadoAnterior(tipoNegocio, estado);
-        if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0]) {
+        if (estadoAnterior && !esPrimer && estado !== 'Cancelado' && estado !== 'Entregado' && estado !== 'Asignado' && estado !== 'Listo para asignar' && estado !== estadosNegocio[0] && estado !== 'Preparado') {
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${estadoAnterior}')" style="border-color:var(--orange);color:var(--orange);">↩️ ${estadoAnterior}</button>`;
         }
     }
+    if (p.mensajeroId || p.nombreMensajero) {
+        const nombreMensajero = p.nombreMensajero || 'Mensajero (Sistema)';
+        const asignadoPor = p.asignadoPor || 'Sistema';
+        acciones += `<div style="background:var(--blue-bg);color:var(--blue);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;border:1px solid var(--blue);">🛵 Asignado a: <strong>${nombreMensajero}</strong> <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${asignadoPor})</span></div>`;
+    }
+    const puedeEditar = (rolUsuario === 'superadmin' || rolUsuario === 'admin');
     if (puedeEditar && estado !== 'Entregado' && estado !== 'Cancelado' && estado !== 'Asignado') {
         acciones += `<button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${pid}')">✏️ Editar Pedido</button>`;
         acciones += `<button class="btn-renotificar" onclick="window.reenviarNotificacionConDomicilio('${tiendaId}','${pid}')">📱 Reenviar Notificación</button>`;
@@ -3278,7 +3294,11 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
     }
     const card = document.createElement('div');
     card.className = `pedido-card ${claseExtra}`;
-    if (esListoParaAsignar) {
+    if (estado === 'Preparado') {
+        card.style.borderColor = 'var(--orange)';
+        card.style.boxShadow = '0 0 15px rgba(255,105,0,0.2)';
+    }
+    if (estado === 'Listo para asignar') {
         card.style.borderColor = 'var(--green)';
         card.style.boxShadow = '0 0 20px rgba(0,200,83,0.3)';
     }
@@ -3286,7 +3306,7 @@ function renderPedidoGlobalEnColumna(doc, tiendaId, colEl, tipoNegocio) {
         <div class="pedido-tienda">🏪 ${nombreTienda}</div>
         <div class="pedido-titulo">🛵 ${num}</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">📅 ${fechaStr} ⏰ ${horaStr}</div>
-        <div style="font-size:12px;color:${esListoParaAsignar ? 'var(--green)' : 'var(--yellow)'};margin-bottom:6px;font-weight:700;">📌 ${esListoParaAsignar ? '🔔 LISTO PARA ASIGNAR' : estado}</div>
+        <div style="font-size:12px;color:${estado === 'Preparado' ? 'var(--orange)' : (estado === 'Listo para asignar' ? 'var(--green)' : 'var(--yellow)')};margin-bottom:6px;font-weight:700;">📌 ${estado === 'Preparado' ? '🔶 PREPARADO (Esperando asignación)' : (estado === 'Listo para asignar' ? '🔔 LISTO PARA ASIGNAR' : estado)}</div>
         ${badgePago}
         <div class="pedido-cliente">
             <div><span class="label">👤 Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
@@ -3381,7 +3401,7 @@ async function eliminarPedido(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// MARCAR SERVICIO LISTO
+// MARCAR SERVICIO LISTO (Ahora pone "Preparado")
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3396,11 +3416,13 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         if (!estadoCocina) { toast('⚠️ No se pudo determinar el estado de cocina', 'error'); return; }
         if (data.estado !== estadoCocina) { toast(`⚠️ El pedido debe estar en "${estadoCocina}" para marcar como listo. Estado actual: "${data.estado}"`, 'warn'); return; }
         if (data.mensajeroId) { toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn'); return; }
-        const nuevoEstado = 'Listo para asignar';
+        // 🔥 CAMBIO: ahora usamos "Preparado" en lugar de "Listo para asignar"
+        const nuevoEstado = 'Preparado';
         await docRef.update({ estado: nuevoEstado, fechaListo: firebase.firestore.FieldValue.serverTimestamp(), notificadoPor: auth.currentUser?.email || 'Admin General' });
-        toast('📢 Pedido marcado como listo - Notificado al Administrador de Mensajeros', 'success', 4000);
+        toast('📢 Pedido marcado como PREPARADO (esperando asignación). No visible para mensajeros.', 'success', 4000);
+        // Notificamos al cliente que su pedido está listo
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, nuevoEstado);
-        console.log(`📦 Pedido ${pedidoId} listo para asignar`);
+        console.log(`📦 Pedido ${pedidoId} preparado (estado: Preparado)`);
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
         cargarMensajerosAdmin();
@@ -3495,14 +3517,16 @@ async function cargarEstado() {
         estados.forEach(e => counts[e] = 0);
         counts['Cancelado'] = 0;
         counts['Asignado'] = 0;
+        counts['Preparado'] = 0;
         snap.forEach(doc => {
             const p = doc.data();
             const estado = p.estado || estados[0] || 'Pendiente';
             if (counts[estado] !== undefined) counts[estado]++;
             else if (estado === 'Cancelado') counts['Cancelado']++;
             else if (estado === 'Asignado') counts['Asignado']++;
+            else if (estado === 'Preparado') counts['Preparado']++;
         });
-        document.getElementById('resPendiente').textContent = counts[estados[0]] || 0;
+        document.getElementById('resPendiente').textContent = (counts[estados[0]] || 0) + (counts['Preparado'] || 0);
         document.getElementById('resPreparacion').textContent = (estados.length > 1 ? counts[estados[1]] : 0) || 0;
         document.getElementById('resCamino').textContent = (estados.length > 2 ? counts[estados[2]] : 0) || 0;
         document.getElementById('resEntregado').textContent = (estados.length > 3 ? counts[estados[3]] : 0) || 0;
@@ -3999,8 +4023,8 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
         if (doc.exists) {
             const data = doc.data();
             window.estadoPrevioAsignacion = data.estado || 'Listo para asignar';
-            // SOLO bloqueamos si está disponible para ser tomado
-            if (data.estado === 'Listo para asignar' || data.estado === 'Pendiente') {
+            // SOLO bloqueamos si está disponible para ser tomado (Listo para asignar O Preparado)
+            if (data.estado === 'Listo para asignar' || data.estado === 'Preparado' || data.estado === 'Pendiente') {
                 await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
                     estado: 'En asignación',
                     _bloqueadoPor: auth.currentUser?.email || 'Admin',
@@ -4031,6 +4055,7 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
     if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); cerrarModalAsignacion(); return; }
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'Tienda';
+    const direccionTienda = tienda.direccion || 'Dirección no registrada';
     const cliente = pedido.cliente || {};
     const total = pedido.total || 0;
     const numero = pedido.numeroPedido || '#' + pedidoId.slice(-6);
@@ -4045,8 +4070,9 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
     container.innerHTML = `
         <div class="pedido-info-resumen">
             <div class="row"><span class="label">🏪 Tienda</span><span class="value">${nombreTienda}</span></div>
+            <div class="row"><span class="label">📍 Dirección de la tienda</span><span class="value" style="color:var(--yellow);">${direccionTienda}</span></div>
             <div class="row"><span class="label">👤 Cliente</span><span class="value">${cliente.nombre || 'Desconocido'}</span></div>
-            <div class="row"><span class="label">📍 Dirección</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
+            <div class="row"><span class="label">📍 Dirección de entrega</span><span class="value">${cliente.direccion || 'N/A'}</span></div>
             <div class="row"><span class="label">💰 Total</span><span class="value" style="color:var(--green);">$${total.toLocaleString('es-CO')}</span></div>
         </div>
         <div class="opcion-asignacion" style="border-color: var(--blue);">
@@ -4240,6 +4266,7 @@ console.log('🇨🇴 Normalización de teléfonos +57 ACTIVADA');
 console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
 console.log('📍 Dirección de tienda incluida en mensajes a mensajeros');
 console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En asignación")');
+console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
 </script>
 </body>
 </html>
