@@ -663,6 +663,55 @@ header .spacer{flex:1}
 }
 .modal-crear-mensajero .modal-close:hover { color: var(--red); }
 
+/* ===== NUEVA SECCIÓN SERVICIOS ===== */
+.servicio-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+.servicio-item .info {
+    flex: 1;
+    min-width: 180px;
+}
+.servicio-item .info .cliente {
+    font-weight: 700;
+    font-size: 14px;
+}
+.servicio-item .info .telefono {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.servicio-item .info .estado-servicio {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.servicio-item .info .estado-servicio.preparado {
+    background: var(--orange-bg);
+    color: var(--orange);
+}
+.servicio-item .info .estado-servicio.asignado {
+    background: var(--blue-bg);
+    color: var(--blue);
+}
+.servicio-item .info .estado-servicio.entregado {
+    background: var(--green-bg);
+    color: var(--green);
+}
+.servicio-item .actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
 </style>
@@ -742,6 +791,8 @@ header .spacer{flex:1}
       <button class="tab-btn" onclick="window.switchTab('inventario',this)" id="tabBtnInventario">📦 Inventario</button>
       <button class="tab-btn" onclick="window.switchTab('mensajeros',this)" id="tabBtnMensajeros">👥 Mensajeros</button>
       <button class="tab-btn" onclick="window.switchTab('estado',this)" id="tabBtnEstado">✅ Estado</button>
+      <!-- NUEVA PESTAÑA SERVICIOS -->
+      <button class="tab-btn" onclick="window.switchTab('servicios',this)" id="tabBtnServicios">📋 Servicios</button>
     </div>
 
     <!-- TAB PEDIDOS -->
@@ -1094,6 +1145,72 @@ header .spacer{flex:1}
         <div id="estadoWrap"></div>
       </div>
     </div>
+
+    <!-- ===== NUEVO TAB: SERVICIOS ===== -->
+    <div class="tab-content" id="tab-servicios">
+      <div class="section-title">📋 Crear y gestionar servicios manuales</div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <!-- Formulario de creación -->
+        <div style="background:var(--surface2);padding:20px;border-radius:12px;border:1px solid var(--border);">
+          <h4 style="color:var(--yellow);margin-bottom:12px;">➕ Nuevo servicio</h4>
+          <div class="form-group">
+            <label>Tienda *</label>
+            <select id="servicioTienda"><option value="">Seleccionar...</option></select>
+          </div>
+          <div class="form-group">
+            <label>Nombre del cliente *</label>
+            <input id="servicioClienteNombre" placeholder="Ej: Juan Pérez">
+          </div>
+          <div class="form-group">
+            <label>Teléfono *</label>
+            <input id="servicioClienteTelefono" placeholder="3001234567">
+          </div>
+          <div class="form-group">
+            <label>Dirección</label>
+            <input id="servicioClienteDireccion" placeholder="Calle 123 #45-67">
+          </div>
+          <div class="form-group">
+            <label>Barrio</label>
+            <input id="servicioClienteBarrio" placeholder="Centro">
+          </div>
+          <div class="form-group">
+            <label>Observaciones</label>
+            <textarea id="servicioClienteObservaciones" rows="2" placeholder="Instrucciones especiales"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Productos (uno por línea, ej: "Hamburguesa x2 - $15000")</label>
+            <textarea id="servicioProductos" rows="4" placeholder="Hamburguesa x2 - $15000&#10;Gaseosa x1 - $3000"></textarea>
+          </div>
+          <div class="row2">
+            <div class="form-group">
+              <label>Total (COP) (opcional)</label>
+              <input id="servicioTotal" type="number" placeholder="18000" step="100">
+            </div>
+            <div class="form-group">
+              <label>Método de pago</label>
+              <select id="servicioMetodoPago">
+                <option value="efectivo">💵 Efectivo</option>
+                <option value="nequi">🟢 Nequi</option>
+                <option value="daviplata">🔵 Daviplata</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="window.crearServicioManual()" style="width:100%;padding:14px;background:var(--yellow);color:#1a1a2e;font-weight:800;border:none;border-radius:10px;cursor:pointer;">✅ Crear servicio</button>
+        </div>
+
+        <!-- Lista de servicios manuales -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="color:var(--yellow);">📋 Servicios creados</h4>
+            <button class="btn-info btn-sm" onclick="window.cargarServiciosManuales()" style="width:auto;">🔄 Actualizar</button>
+          </div>
+          <div id="listaServiciosManuales" style="max-height:500px;overflow-y:auto;padding-right:4px;">
+            <p style="color:var(--text-muted);font-size:13px;">Cargando servicios...</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1277,34 +1394,27 @@ const MENSAJES_NOTIFICACION_ESTADO = {
 };
 
 // ============================================================
-// 🔥 FUNCIÓN: NOTIFICAR AL CLIENTE TODOS LOS ESTADOS
+// FUNCIÓN: NOTIFICAR AL CLIENTE TODOS LOS ESTADOS
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
-        
         if (!doc.exists) return;
-        
         const pedido = doc.data();
         const tienda = tiendasCache[tiendaId] || {};
         const nombreTienda = tienda.nombre || 'EyMoto';
         const whatsappTienda = tienda.whatsapp || '';
         let telefonoCliente = pedido.cliente?.telefono || '';
-        
         if (!telefonoCliente) {
             console.log('⚠️ Cliente sin teléfono, no se envía notificación');
             return;
         }
-        
-        // Normalizar teléfono a +57
         telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
-        
         if (pedido._ultimoEstadoNotificado === estadoNuevo) {
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
             return;
         }
-        
         let subtotalProductos = 0;
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => {
@@ -1313,12 +1423,9 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         }
         const costoDomicilio = pedido.costoDomicilio || 0;
         const totalConDomicilio = subtotalProductos + costoDomicilio;
-        
         const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}` };
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        
         let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
-        
         if (pedido.items && pedido.items.length > 0) {
             pedido.items.forEach(item => {
                 const nombreItem = item.nombre || 'Producto';
@@ -1328,7 +1435,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
                 mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
             });
         }
-        
         mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
         if (costoDomicilio > 0) {
             mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
@@ -1336,7 +1442,6 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
         }
         mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
-        
         const metodoPago = pedido.metodoPago || 'efectivo';
         if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
             mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
@@ -1344,28 +1449,21 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
         } else {
             mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
         }
-        
         if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
         if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
-        
         if (pedido.nombreMensajero) {
             mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
         }
-        
         mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
-        
         const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         window.open(urlWhatsApp, '_blank');
-        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
                 _ultimoEstadoNotificado: estadoNuevo,
                 _ultimaNotificacionFecha: firebase.firestore.FieldValue.serverTimestamp()
             });
-        
         console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
-        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .collection('notificaciones').add({
@@ -1374,9 +1472,7 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 enviadoA: telefonoCliente
             });
-        
         return true;
-        
     } catch (error) {
         console.error('❌ Error enviando notificación:', error);
         return false;
@@ -1399,15 +1495,12 @@ function normalizarTelefonoColombia(numero) {
 function obtenerColumnaYContador(estado, tipoNegocio) {
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
-    
     if (estado === 'Cancelado') {
         return { columna: 'col-E', contador: 'Cancelado' };
     }
-    
     if (estadoIndex === -1) {
         return { columna: 'col-P', contador: 'Pendiente' };
     }
-    
     switch(estadoIndex) {
         case 0: return { columna: 'col-P', contador: 'Pendiente' };
         case 1: return { columna: 'col-C', contador: 'En Preparacion' };
@@ -1419,12 +1512,9 @@ function obtenerColumnaYContador(estado, tipoNegocio) {
 
 function obtenerColorClase(estado, tipoNegocio) {
     if (estado === 'Cancelado') return 'r-cancel';
-    
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
     const estadoIndex = estadosNegocio.indexOf(estado);
-    
     if (estadoIndex === -1) return 'r-pending';
-    
     switch(estadoIndex) {
         case 0: return 'r-pending';
         case 1: {
@@ -1490,23 +1580,20 @@ function toast(msg, type = 'info', dur = 4000, onClick = null) {
 }
 
 // ============================================================
-// FUNCIÓN PARA DETENER LA ALARMA GLOBALMENTE
+// DETENER ALARMA
 // ============================================================
 function detenerAlarmaGlobal(pedidoId) {
     if (pedidoId) {
         pedidosNotificados.delete(pedidoId);
         notificacionesMostradas.delete(pedidoId);
     }
-    
     if (alarmInterval) {
         clearInterval(alarmInterval);
         alarmInterval = null;
     }
-    
     if ('speechSynthesis' in window) {
         try { window.speechSynthesis.cancel(); } catch(e) {}
     }
-    
     alarmaActiva = false;
     vozActiva = false;
     const btn = document.getElementById('btnSilenciarAlarma');
@@ -1514,9 +1601,6 @@ function detenerAlarmaGlobal(pedidoId) {
     console.log('🔕 Alarma detenida' + (pedidoId ? ' para pedido: ' + pedidoId : ''));
 }
 
-// ============================================================
-// FUNCIÓN PARA OBTENER PEDIDO DEL CACHE
-// ============================================================
 function obtenerPedidoDeCache(tiendaId, pedidoId) {
     if (todosLosPedidos[tiendaId]) {
         const encontrado = todosLosPedidos[tiendaId].find(p => p.doc.id === pedidoId);
@@ -1525,18 +1609,13 @@ function obtenerPedidoDeCache(tiendaId, pedidoId) {
     return null;
 }
 
-// ============================================================
-// FUNCIÓN: GENERAR FACTURA
-// ============================================================
 function generarFactura(tiendaId, pedidoId) {
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
     if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); return; }
-    
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const whatsapp = tienda.whatsapp || '';
     const direccionTienda = tienda.direccion || 'Dirección no especificada';
-    
     let total = 0;
     let itemsHtml = '';
     if (pedido.items && pedido.items.length > 0) {
@@ -1555,10 +1634,8 @@ function generarFactura(tiendaId, pedidoId) {
             `;
         });
     }
-    
     const costoDomicilio = pedido.costoDomicilio || 0;
     const totalConDomicilio = total + costoDomicilio;
-    
     let fechaStr = '--', horaStr = '--';
     if (pedido.fecha) {
         try {
@@ -1572,12 +1649,10 @@ function generarFactura(tiendaId, pedidoId) {
             }
         } catch(e) {}
     }
-    
     const cliente = pedido.cliente || {};
     const numeroFactura = pedido.numeroPedido || `FAC-${String(pedido.id).slice(-6).toUpperCase()}`;
     const metodoPago = pedido.metodoPago || 'efectivo';
     const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : metodoPago === 'daviplata' ? 'Daviplata' : 'Efectivo';
-    
     const ventana = window.open('', '_blank', 'width=500,height=600');
     if (!ventana) {
         toast('⚠️ Permite ventanas emergentes para ver la factura', 'warn');
@@ -1648,7 +1723,7 @@ function generarFactura(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// 🛵 ACTUALIZAR COSTO DE DOMICILIO
+// ACTUALIZAR COSTO DE DOMICILIO
 // ============================================================
 async function actualizarCostoDomicilio(tiendaId, pedidoId) {
     try {
@@ -1657,47 +1732,37 @@ async function actualizarCostoDomicilio(tiendaId, pedidoId) {
             toast('⚠️ No se encontró el campo de domicilio', 'error');
             return;
         }
-        
         const costo = parseFloat(input.value) || 0;
         if (costo < 0) {
             toast('⚠️ El costo no puede ser negativo', 'error');
             return;
         }
-        
         const docRef = db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId);
         const doc = await docRef.get();
-        
         if (!doc.exists) {
             toast('⚠️ Pedido no encontrado', 'error');
             return;
         }
-        
         const data = doc.data();
         const totalPedido = data.total || 0;
-        
         await docRef.update({
             costoDomicilio: costo,
             totalConDomicilio: totalPedido + costo,
             fechaActualizacionDomicilio: firebase.firestore.FieldValue.serverTimestamp(),
             domicilioActualizadoPor: auth.currentUser?.email || 'Admin'
         });
-        
         toast(`✅ Costo de domicilio actualizado: $${costo.toLocaleString('es-CO')}`, 'success', 3000);
-        
         if (tiendaSeleccionada) {
             escucharPedidosDeTienda(tiendaSeleccionada);
         } else {
             mostrarPedidosPendientesGlobal();
         }
-        
     } catch (error) {
         console.error('❌ Error actualizando domicilio:', error);
         toast('❌ Error: ' + error.message, 'error');
     }
 }
-
-// Exponer función al scope global
 window.actualizarCostoDomicilio = actualizarCostoDomicilio;
 
 // ============================================================
@@ -1714,7 +1779,6 @@ async function verificarRolUsuario() {
         }
         const data = doc.data();
         console.log('📌 Datos del usuario:', data);
-        
         if (data.adminMensajero === true) {
             console.log('🛵 ADMIN MENSAJERO');
             return { rol: 'adminMensajero', tiendaId: null };
@@ -1808,6 +1872,7 @@ async function inicializarPanel() {
         document.getElementById('tabBtnInventario').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
         document.getElementById('tabBtnMensajeros').style.display = esSuperAdmin ? 'flex' : 'none';
         document.getElementById('tabBtnEstado').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
+        document.getElementById('tabBtnServicios').style.display = (esSuperAdmin || esAdminTienda) ? 'flex' : 'none';
         document.getElementById('notifResumenContainer').style.display = esSuperAdmin ? 'flex' : 'none';
         document.getElementById('btnCrearNegocioContainer').style.display = esSuperAdmin ? 'block' : 'none';
         
@@ -1818,6 +1883,8 @@ async function inicializarPanel() {
             await cargarTiendasEnFiltro();
             await cargarProductosParaEdicion();
             await cargarMensajerosAdmin();
+            await cargarSelectsServicios();
+            await cargarServiciosManuales();
         } else if (esAdminMensajero) {
             document.getElementById('panelTitulo').textContent = 'Panel de Mensajería - Asignación de Pedidos';
             document.querySelector('.peds-controls select').style.display = 'none';
@@ -1827,6 +1894,8 @@ async function inicializarPanel() {
             document.getElementById('panelTitulo').textContent = 'Panel de Administración de Tienda';
             await cargarTiendaUnica(tiendaIdUsuario);
             await cargarSelectsTiendasUnico(tiendaIdUsuario);
+            await cargarSelectsServiciosUnico(tiendaIdUsuario);
+            await cargarServiciosManuales();
             const selector = document.getElementById('filtroTienda');
             if (selector && tiendaIdUsuario) {
                 try {
@@ -1952,7 +2021,6 @@ function iniciarAlarmaContinua(nombreTienda, pedidoId) {
         }
     }, 3000);
 }
-
 function detenerAlarmaContinua() { detenerAlarmaGlobal(); }
 function stopAlarm() { detenerAlarmaGlobal(); toast('🔕 Alarma silenciada', 'info'); }
 
@@ -2021,9 +2089,6 @@ function reproducirSonidoNotificacion() {
     } catch(e) {}
 }
 
-// ============================================================
-// CONTROL DE SONIDO
-// ============================================================
 function toggleSonidoGlobal() {
     sonidoGlobal = !sonidoGlobal;
     localStorage.setItem('sonidoGlobal', sonidoGlobal ? 'true' : 'false');
@@ -2040,7 +2105,6 @@ function toggleSonidoGlobal() {
         }
     }
 }
-
 function cargarPreferenciaSonido() {
     const saved = localStorage.getItem('sonidoGlobal');
     if (saved !== null) sonidoGlobal = saved === 'true';
@@ -2142,7 +2206,6 @@ async function editarTienda(id) {
         toast('📝 Editando: ' + (t.nombre || id), 'info');
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
-
 function cancelarEdTienda() {
     document.getElementById('editTiendaId').value = '';
     document.getElementById('nombreTienda').value = '';
@@ -2158,7 +2221,6 @@ function cancelarEdTienda() {
     const form = document.getElementById('formEditarTienda');
     if (form) form.style.display = 'none';
 }
-
 async function guardarTienda() {
     const id = document.getElementById('editTiendaId').value;
     const nombre = document.getElementById('nombreTienda').value.trim();
@@ -2180,9 +2242,9 @@ async function guardarTienda() {
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
         cargarTiendasEnFiltro();
+        cargarSelectsServicios();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
-
 async function eliminarTienda(id) {
     if (!confirm('¿Eliminar esta tienda permanentemente? Esto eliminará TODOS sus productos y pedidos.')) return;
     try {
@@ -2191,6 +2253,7 @@ async function eliminarTienda(id) {
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
         cargarTiendasEnFiltro();
+        cargarSelectsServicios();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
 
@@ -2313,6 +2376,206 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 }
 
 // ============================================================
+// FUNCIONES PARA SELECTS DE SERVICIOS
+// ============================================================
+async function cargarSelectsServicios() {
+    const sel = document.getElementById('servicioTienda');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Seleccionar...</option>';
+    try {
+        const snap = await db.collection('tiendas').get();
+        snap.forEach(doc => {
+            const t = doc.data();
+            const id = doc.id;
+            const opt = `<option value="${id}">${t.nombre || id}</option>`;
+            sel.innerHTML += opt;
+        });
+    } catch(e) { console.error('❌ Error cargando tiendas para servicios:', e); }
+}
+
+async function cargarSelectsServiciosUnico(tiendaId) {
+    const sel = document.getElementById('servicioTienda');
+    if (!sel) return;
+    try {
+        const doc = await db.collection('tiendas').doc(tiendaId).get();
+        if (!doc.exists) return;
+        const t = doc.data();
+        sel.innerHTML = `<option value="${tiendaId}" selected>${t.nombre || tiendaId}</option>`;
+    } catch(e) { console.error('❌ Error:', e); }
+}
+
+// ============================================================
+// CREAR SERVICIO MANUAL
+// ============================================================
+async function crearServicioManual() {
+    const tiendaId = document.getElementById('servicioTienda').value;
+    const nombre = document.getElementById('servicioClienteNombre').value.trim();
+    let telefono = document.getElementById('servicioClienteTelefono').value.trim();
+    const direccion = document.getElementById('servicioClienteDireccion').value.trim();
+    const barrio = document.getElementById('servicioClienteBarrio').value.trim();
+    const observaciones = document.getElementById('servicioClienteObservaciones').value.trim();
+    const productosRaw = document.getElementById('servicioProductos').value.trim();
+    let total = parseFloat(document.getElementById('servicioTotal').value) || 0;
+    const metodoPago = document.getElementById('servicioMetodoPago').value || 'efectivo';
+
+    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'error'); return; }
+    if (!nombre) { toast('⚠️ Ingresa el nombre del cliente', 'error'); return; }
+    if (!telefono) { toast('⚠️ Ingresa el teléfono del cliente', 'error'); return; }
+    telefono = normalizarTelefonoColombia(telefono);
+
+    // Parsear productos: esperamos líneas con formato "Nombre xCantidad - $Precio" o similar
+    let items = [];
+    let totalCalculado = 0;
+    if (productosRaw) {
+        const lineas = productosRaw.split('\n').filter(line => line.trim() !== '');
+        lineas.forEach(line => {
+            // Intentar extraer nombre, cantidad y precio
+            // Formatos: "Hamburguesa x2 - $15000" o "Hamburguesa 2 - 15000"
+            let nombreItem = line;
+            let cantidad = 1;
+            let precio = 0;
+            // Buscar precio al final
+            const matchPrecio = line.match(/([\d,\.]+)\s*$/);
+            if (matchPrecio) {
+                const precioStr = matchPrecio[1].replace(/,/g, '');
+                precio = parseFloat(precioStr) || 0;
+                nombreItem = line.replace(matchPrecio[0], '').trim();
+                // Buscar cantidad: "x2" o " 2 "
+                const matchCant = nombreItem.match(/x(\d+)/i);
+                if (matchCant) {
+                    cantidad = parseInt(matchCant[1]) || 1;
+                    nombreItem = nombreItem.replace(matchCant[0], '').trim();
+                } else {
+                    // Buscar número suelto al final antes del precio
+                    const matchNum = nombreItem.match(/(\d+)\s*$/);
+                    if (matchNum) {
+                        cantidad = parseInt(matchNum[1]) || 1;
+                        nombreItem = nombreItem.replace(matchNum[0], '').trim();
+                    }
+                }
+            }
+            if (nombreItem && precio > 0) {
+                items.push({ nombre: nombreItem, cantidad, precio, total: precio * cantidad });
+                totalCalculado += precio * cantidad;
+            } else {
+                // Si no se pudo parsear, guardar como texto simple (sin precio)
+                items.push({ nombre: line, cantidad: 1, precio: 0, total: 0 });
+            }
+        });
+    }
+    if (items.length === 0) {
+        toast('⚠️ Agrega al menos un producto', 'error');
+        return;
+    }
+    // Si no se ingresó total, usamos el calculado
+    if (total === 0 && totalCalculado > 0) total = totalCalculado;
+
+    const numeroPedido = `#${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const pedidoData = {
+        numeroPedido,
+        cliente: { nombre, telefono, direccion, barrio, observaciones },
+        items: items.map(item => ({
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            total: item.total
+        })),
+        total: total,
+        estado: 'Preparado', // No visible para mensajeros hasta asignar
+        metodoPago,
+        estadoPago: 'pendiente',
+        manual: true, // Marcar como manual
+        fecha: firebase.firestore.FieldValue.serverTimestamp(),
+        timestamp: Date.now(),
+        fuente: 'admin_manual'
+    };
+
+    try {
+        const docRef = await db.collection('tiendas').doc(tiendaId).collection('pedidos').add(pedidoData);
+        toast(`✅ Servicio ${numeroPedido} creado correctamente`, 'success');
+        // Limpiar formulario (opcional)
+        document.getElementById('servicioClienteNombre').value = '';
+        document.getElementById('servicioClienteTelefono').value = '';
+        document.getElementById('servicioClienteDireccion').value = '';
+        document.getElementById('servicioClienteBarrio').value = '';
+        document.getElementById('servicioClienteObservaciones').value = '';
+        document.getElementById('servicioProductos').value = '';
+        document.getElementById('servicioTotal').value = '';
+        // Recargar lista de servicios
+        await cargarServiciosManuales();
+    } catch (e) {
+        console.error('❌ Error creando servicio:', e);
+        toast('❌ Error al crear servicio: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// CARGAR SERVICIOS MANUALES
+// ============================================================
+async function cargarServiciosManuales() {
+    const container = document.getElementById('listaServiciosManuales');
+    if (!container) return;
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Cargando servicios...</p>';
+    try {
+        // Solo mostrar pedidos con manual: true
+        const snap = await db.collectionGroup('pedidos')
+            .where('manual', '==', true)
+            .orderBy('fecha', 'desc')
+            .get();
+        if (snap.empty) {
+            container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay servicios manuales.</p>';
+            return;
+        }
+        let html = '';
+        snap.forEach(doc => {
+            const p = doc.data();
+            const id = doc.id;
+            const tiendaId = doc.ref.parent.parent.id;
+            const tienda = tiendasCache[tiendaId] || {};
+            const nombreTienda = tienda.nombre || 'Tienda';
+            const estado = p.estado || 'Preparado';
+            const estadoClass = estado === 'Preparado' ? 'preparado' : (estado === 'Asignado' ? 'asignado' : 'entregado');
+            const cliente = p.cliente || {};
+            const total = p.total || 0;
+            const numero = p.numeroPedido || '#' + id.slice(-6);
+            html += `
+                <div class="servicio-item" id="servicio-${id}">
+                    <div class="info">
+                        <div class="cliente">${cliente.nombre || 'Sin nombre'}</div>
+                        <div class="telefono">📱 ${cliente.telefono || 'N/A'} | 🏪 ${nombreTienda}</div>
+                        <div style="font-size:12px;color:var(--text-muted);">${numero} - $${total.toLocaleString('es-CO')}</div>
+                        <span class="estado-servicio ${estadoClass}">${estado}</span>
+                    </div>
+                    <div class="actions">
+                        ${estado !== 'Entregado' && estado !== 'Cancelado' ? `<button class="btn-info btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${id}')">👤 Asignar</button>` : ''}
+                        <button class="btn-editar-pedido" onclick="window.abrirEditarPedido('${tiendaId}','${id}')" style="width:auto;padding:4px 10px;font-size:11px;">✏️ Editar</button>
+                        <button class="btn-danger btn-sm" onclick="window.eliminarServicio('${tiendaId}','${id}')">🗑</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('❌ Error cargando servicios manuales:', e);
+        container.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar servicios.</p>';
+    }
+}
+
+// ============================================================
+// ELIMINAR SERVICIO
+// ============================================================
+async function eliminarServicio(tiendaId, pedidoId) {
+    if (!confirm('¿Eliminar este servicio permanentemente?')) return;
+    try {
+        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).delete();
+        toast('✅ Servicio eliminado', 'success');
+        await cargarServiciosManuales();
+    } catch (e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
 // ABRIR/CERRAR MODAL CREAR NEGOCIO
 // ============================================================
 function abrirModalCrearNegocio() {
@@ -2323,7 +2586,6 @@ function cerrarModalCrearNegocio() {
     document.getElementById('modalCrearNegocio').style.display = 'none';
     document.body.style.overflow = '';
 }
-
 function verificarCorreoAdmin(email) {
     const campoContraseña = document.getElementById('campoContraseña');
     const avisoSuperAdmin = document.getElementById('avisoSuperAdmin');
@@ -2341,7 +2603,6 @@ function verificarCorreoAdmin(email) {
         if (ayudaPassword) ayudaPassword.textContent = '🔑 Obligatorio para nuevos administradores.';
     }
 }
-
 async function crearNegocioCompleto() {
     const nombre = document.getElementById('nuevoNegocioNombre').value.trim();
     const direccion = document.getElementById('nuevoNegocioDireccion').value.trim();
@@ -2404,6 +2665,7 @@ async function crearNegocioCompleto() {
         cargarTiendasSuperAdmin();
         cargarSelectsTiendas();
         cargarTiendasEnFiltro();
+        cargarSelectsServicios();
         document.getElementById('nuevoNegocioNombre').value = '';
         document.getElementById('nuevoNegocioDireccion').value = '';
         document.getElementById('nuevoNegocioWhatsapp').value = '';
@@ -2433,14 +2695,12 @@ function seleccionarTipoProducto(tipo) {
     document.getElementById('labelPrecio').textContent = tipo === 'peso' ? '⚖️ Precio por gramo (COP)' : 'Precio *';
     if (tipo === 'peso') actualizarPreciosPeso();
 }
-
 function cambiarModoPeso() {
     const modo = document.getElementById('nuevoModoPeso').value;
     document.getElementById('modoPorGramo').style.display = modo === 'por_gramo' ? 'block' : 'none';
     document.getElementById('modoPorBase').style.display = modo === 'por_base' ? 'block' : 'none';
     actualizarPreciosPeso();
 }
-
 function actualizarPreciosPeso() {
     const modo = document.getElementById('nuevoModoPeso').value;
     if (modo === 'por_gramo') {
@@ -2471,14 +2731,12 @@ function abrirScannerAdmin() {
     if (mensaje) { mensaje.textContent = '📷 Acerca la cámara al código QR o código de barras'; mensaje.className = 'scanner-mensaje'; }
     iniciarScannerAdmin();
 }
-
 function cerrarScannerAdmin() {
     detenerScannerAdmin();
     const modal = document.getElementById('modalScannerAdmin');
     if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
 }
-
 function iniciarScannerAdmin() {
     if (scannerAdminActivo) return;
     scannerAdminActivo = true;
@@ -2500,7 +2758,6 @@ function iniciarScannerAdmin() {
             scannerAdminActivo = false;
         });
 }
-
 function detenerScannerAdmin() {
     scannerAdminActivo = false;
     if (scannerAdmin) {
@@ -2508,7 +2765,6 @@ function detenerScannerAdmin() {
         scannerAdmin = null;
     }
 }
-
 function onScannerAdminSuccess(decodedText) {
     const mensaje = document.getElementById('scannerAdminMensaje');
     if (mensaje) { mensaje.textContent = `✅ Código escaneado: ${decodedText}`; mensaje.className = 'scanner-mensaje success'; }
@@ -2517,7 +2773,6 @@ function onScannerAdminSuccess(decodedText) {
     setTimeout(() => cerrarScannerAdmin(), 1500);
     if (navigator.vibrate) navigator.vibrate(100);
 }
-
 function onScannerAdminError(err) {}
 
 // ============================================================
@@ -2543,12 +2798,10 @@ function filtrarProductos() {
     }
     mostrarProductos(productosFiltrados);
 }
-
 function limpiarBuscador() {
     document.getElementById('buscadorProducto').value = '';
     filtrarProductos();
 }
-
 function mostrarProductos(lista) {
     const container = document.getElementById('listaProductos');
     if (!container) return;
@@ -2612,7 +2865,6 @@ async function cargarProductos() {
         container.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar productos.</p>';
     }
 }
-
 async function guardarProducto() {
     const tiendaId = document.getElementById('tiendaProducto').value;
     if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'error'); return; }
@@ -2660,7 +2912,6 @@ async function guardarProducto() {
         cargarProductos();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
-
 function editarProducto(id) {
     const producto = productosFiltrados.find(p => p.id === id);
     if (!producto) { toast('⚠️ Producto no encontrado', 'error'); return; }
@@ -2687,14 +2938,12 @@ function editarProducto(id) {
     document.getElementById('nuevoNombre').focus();
     toast('✏️ Editando: ' + producto.name, 'info', 2000);
 }
-
 function cancelarEdProducto() {
     limpiarFormularioProducto();
     document.getElementById('btnCancelProd').classList.add('hidden');
     document.getElementById('editProductoId').value = '';
     toast('Edición cancelada', 'info');
 }
-
 async function eliminarProducto(id) {
     const tiendaId = document.getElementById('tiendaProducto').value;
     if (!tiendaId) return;
@@ -2705,7 +2954,6 @@ async function eliminarProducto(id) {
         cargarProductos();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
-
 function limpiarFormularioProducto() {
     document.getElementById('nuevoNombre').value = '';
     document.getElementById('nuevoPrecio').value = '';
@@ -2728,7 +2976,6 @@ function limpiarFormularioProducto() {
     document.getElementById('labelPrecio').textContent = 'Precio *';
     cambiarModoPeso();
 }
-
 function buscarInformacionProducto() {
     const codigo = document.getElementById('nuevoCodigoQR').value.trim();
     if (!codigo) { toast('⚠️ Escanea o ingresa un código primero', 'warn'); return; }
@@ -2768,6 +3015,7 @@ function switchTab(tab, btn) {
     if (tab === 'inventario') cargarInventario();
     if (tab === 'productos') cargarSelectsTiendas();
     if (tab === 'mensajeros') cargarMensajerosAdmin();
+    if (tab === 'servicios') { cargarSelectsServicios(); cargarServiciosManuales(); }
 }
 
 // ============================================================
@@ -2816,7 +3064,6 @@ async function cargarInventario() {
         document.getElementById('invStockBajo').textContent = stockBajo;
     } catch(e) { lista.innerHTML = '<p style="color:var(--red);font-size:13px;">Error al cargar inventario.</p>'; }
 }
-
 function ajustarStock(productoId, cambio) {
     const input = document.getElementById(`stockInput-${productoId}`);
     if (!input) return;
@@ -2825,7 +3072,6 @@ function ajustarStock(productoId, cambio) {
     input.value = nuevoValor;
     actualizarStockManual(productoId, nuevoValor);
 }
-
 async function actualizarStockManual(productoId, nuevoStock) {
     const tiendaId = document.getElementById('inventarioTienda').value;
     if (!tiendaId) return;
@@ -2840,7 +3086,6 @@ async function actualizarStockManual(productoId, nuevoStock) {
         cargarInventario();
     } catch(e) { toast('❌ Error: ' + e.message, 'error'); }
 }
-
 function exportarInventario() {
     const tiendaId = document.getElementById('inventarioTienda').value;
     if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
@@ -2861,7 +3106,6 @@ function exportarInventario() {
     link.click();
     toast('📊 Inventario exportado', 'success');
 }
-
 function resetearStockCero() {
     const tiendaId = document.getElementById('inventarioTienda').value;
     if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
@@ -2869,7 +3113,6 @@ function resetearStockCero() {
     document.querySelectorAll('.inventario-item .inv-cantidad-input').forEach(input => input.value = 0);
     toast('🔄 Stock reseteado en la interfaz. Guarda los cambios.', 'info');
 }
-
 function actualizarTodosStock() {
     const tiendaId = document.getElementById('inventarioTienda').value;
     if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'warn'); return; }
@@ -2973,14 +3216,13 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
     const tienda = tiendasCache[tiendaId] || {};
     const nombreTienda = tienda.nombre || 'EyMotoComidas';
     const tieneMensajero = p.mensajeroId ? true : false;
-    // 🔥 Ahora permitimos "Asignar mensajero" si estado es "Listo para asignar" O "Preparado"
     const esAsignable = (estado === 'Listo para asignar' || estado === 'Preparado');
     if (estado === 'Entregado' || estado === 'Cancelado') detenerAlarmaGlobal(pid);
     const { columna } = obtenerColumnaYContador(estado, tipoNegocio);
     if (counts[estado] !== undefined) counts[estado]++;
     else if (estado === 'Cancelado') counts['Cancelado'] = (counts['Cancelado'] || 0) + 1;
     else if (estado === 'Asignado') counts['Asignado'] = (counts['Asignado'] || 0) + 1;
-    else if (estado === 'Preparado') counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1; // lo contamos como pendiente para el admin
+    else if (estado === 'Preparado') counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     else if (estado === 'Listo para asignar') counts[estadosNegocio[0]] = (counts[estadosNegocio[0]] || 0) + 1;
     const colEl = document.getElementById(columna);
     if (!colEl) return;
@@ -3041,7 +3283,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
         acciones += `<div style="background:var(--blue-bg);color:var(--blue);padding:8px;border-radius:8px;text-align:center;font-weight:700;font-size:13px;border:1px solid var(--blue);">🛵 Asignado a: <strong>${nombreMensajero}</strong> <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${asignadoPor})</span></div>`;
     }
     const puedeAsignar = (rolUsuario === 'superadmin' || rolUsuario === 'adminMensajero');
-    // Mostrar el botón "Asignar mensajero" si el estado es "Listo para asignar" o "Preparado"
     if (esAsignable && !p.mensajeroId && puedeAsignar) {
         acciones += `<button class="btn-success btn-sm" onclick="window.abrirModalAsignacion('${tiendaId}','${pid}')" style="width:100%;margin-top:4px;padding:10px;font-size:13px;background:var(--green);color:#fff;">👤 Asignar mensajero</button>`;
     }
@@ -3065,7 +3306,6 @@ function renderPedidoConEstadosDinamicos(doc, tiendaId, counts, estadosNegocio, 
                 acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','${primerSiguiente}')" style="border-color:var(--blue);color:var(--blue);">${icono} ${primerSiguiente}</button>`;
             }
         }
-        // Si está en "Preparado", podemos pasar a "Listo para asignar" (desbloquear manual)
         if (estado === 'Preparado' && puedeCambiarEstado) {
             acciones += `<button class="btn-estado-custom" onclick="window.cambiarEstadoAdmin('${tiendaId}','${pid}','Listo para asignar')" style="border-color:var(--green);color:var(--green);">🔄 Hacer visible para mensajeros</button>`;
         }
@@ -3143,7 +3383,6 @@ function mostrarPedidosPendientesGlobal() {
         pedidos.forEach(pedido => {
             const data = pedido.data;
             const estado = data.estado || estadosNegocio[0] || 'Pendiente';
-            // Los admins mensajeros solo ven "Listo para asignar", no "Preparado"
             if (esAdminMensajero && estado !== 'Listo para asignar' && estado !== 'Asignado') return;
             if (estado === 'Entregado' || estado === 'Cancelado') detenerAlarmaGlobal(pedido.id);
             const { columna } = obtenerColumnaYContador(estado, tipoNegocio);
@@ -3401,7 +3640,7 @@ async function eliminarPedido(tiendaId, pedidoId) {
 }
 
 // ============================================================
-// MARCAR SERVICIO LISTO (Ahora pone "Preparado")
+// MARCAR SERVICIO LISTO (AHORA PONE "Preparado")
 // ============================================================
 async function marcarServicioListo(tiendaId, pedidoId) {
     try {
@@ -3416,11 +3655,9 @@ async function marcarServicioListo(tiendaId, pedidoId) {
         if (!estadoCocina) { toast('⚠️ No se pudo determinar el estado de cocina', 'error'); return; }
         if (data.estado !== estadoCocina) { toast(`⚠️ El pedido debe estar en "${estadoCocina}" para marcar como listo. Estado actual: "${data.estado}"`, 'warn'); return; }
         if (data.mensajeroId) { toast('⚠️ El pedido ya tiene un mensajero asignado', 'warn'); return; }
-        // 🔥 CAMBIO: ahora usamos "Preparado" en lugar de "Listo para asignar"
         const nuevoEstado = 'Preparado';
         await docRef.update({ estado: nuevoEstado, fechaListo: firebase.firestore.FieldValue.serverTimestamp(), notificadoPor: auth.currentUser?.email || 'Admin General' });
         toast('📢 Pedido marcado como PREPARADO (esperando asignación). No visible para mensajeros.', 'success', 4000);
-        // Notificamos al cliente que su pedido está listo
         await enviarNotificacionEstadoCliente(tiendaId, pedidoId, data.estado, nuevoEstado);
         console.log(`📦 Pedido ${pedidoId} preparado (estado: Preparado)`);
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
@@ -3675,18 +3912,13 @@ async function guardarEdicionPedido() {
     if (!pedidoEditando) return;
     const { tiendaId, id } = pedidoEditando;
     if (itemsEditando.length === 0) { toast('⚠️ El pedido debe tener al menos un producto', 'warn'); return; }
-
-    // 🔥 Obtener los datos del cliente desde los inputs
     const nombreCliente = document.getElementById('editClienteNombre')?.value?.trim() || '';
     const direccionCliente = document.getElementById('editClienteDireccion')?.value?.trim() || '';
     let telefonoCliente = document.getElementById('editClienteTelefono')?.value?.trim() || '';
     const observacionesCliente = document.getElementById('editClienteObservaciones')?.value?.trim() || '';
-
-    // 🔥 NORMALIZAR TELÉFONO A +57
     if (telefonoCliente) {
         telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
     }
-
     try {
         let total = 0;
         const itemsParaGuardar = itemsEditando.map(item => {
@@ -3696,14 +3928,11 @@ async function guardarEdicionPedido() {
             total += subtotal;
             return { id: item.id || '', nombre: item.nombre || 'Producto', cantidad, precio, total: subtotal, pesoGramos: item.pesoGramos || null };
         });
-
         const docRef = db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(id);
         const doc = await docRef.get();
         const data = doc.data();
         const costoDomicilio = data.costoDomicilio || 0;
         const totalConDomicilio = total + costoDomicilio;
-
-        // 🔥 Actualizar TODO (productos + cliente)
         await docRef.update({
             items: itemsParaGuardar,
             total: Math.round(total),
@@ -3715,12 +3944,10 @@ async function guardarEdicionPedido() {
             editadoPor: auth.currentUser?.email || 'Admin',
             fechaEdicion: firebase.firestore.FieldValue.serverTimestamp()
         });
-
         toast(`✅ Pedido actualizado. Teléfono corregido: ${telefonoCliente || 'No especificado'}`, 'success', 5000);
         cerrarEditarPedido();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
-
     } catch(e) {
         console.error('❌ Error guardando:', e);
         toast('❌ Error: ' + e.message, 'error');
@@ -3843,7 +4070,6 @@ function abrirModalCrearMensajero() {
     document.getElementById('modalCrearMensajero').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
-
 function cerrarModalCrearMensajero() {
     document.getElementById('modalCrearMensajero').classList.remove('active');
     document.body.style.overflow = '';
@@ -3852,7 +4078,6 @@ function cerrarModalCrearMensajero() {
     document.getElementById('nuevoMensajeroNombre').value = '';
     document.getElementById('nuevoMensajeroTelefono').value = '';
 }
-
 async function crearMensajero() {
     if (rolUsuario !== 'superadmin') { toast('⛔ Solo el Super Admin puede crear mensajeros', 'error'); return; }
     const email = document.getElementById('nuevoMensajeroEmail').value.trim();
@@ -3876,7 +4101,7 @@ async function crearMensajero() {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN: ABRIR WHATSAPP
+// ABRIR WHATSAPP
 // ============================================================
 function abrirWhatsApp(numero, mensaje) {
     let num = numero.replace(/\s/g, '').replace('+', '');
@@ -3885,14 +4110,11 @@ function abrirWhatsApp(numero, mensaje) {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: NOTIFICAR A TODOS (BROADCAST) CON ENLACE + DIRECCIÓN
+// NOTIFICAR A TODOS (BROADCAST) CON ENLACE + DIRECCIÓN
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
-    
-    // LIMPIAR BLOQUEO
     window.estadoPrevioAsignacion = null;
-
     try {
         toast('⏳ Notificando mensajeros...', 'info');
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
@@ -3944,7 +4166,7 @@ async function notificarATodos() {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN MODIFICADA: ASIGNAR PEDIDO MANUALMENTE (con enlace + dirección)
+// ASIGNAR PEDIDO MANUALMENTE (con enlace + dirección)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -3954,10 +4176,7 @@ async function asignarPedidoManual() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     const mensajero = todosLosMensajeros.find(m => m.uid === mensajeroId);
     const nombreMensajero = mensajero?.nombre || 'Mensajero';
-    
-    // LIMPIAR BLOQUEO
     window.estadoPrevioAsignacion = null;
-
     try {
         toast('⏳ Asignando pedido...', 'info');
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
@@ -4017,20 +4236,17 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
     if (rolUsuario !== 'superadmin' && rolUsuario !== 'adminMensajero') { toast('⛔ No tienes permiso para asignar pedidos', 'error'); return; }
     pedidoAsignacion = { tiendaId, pedidoId };
 
-    // 🔥 BLOQUEAR EL PEDIDO INMEDIATAMENTE (DESAPARECE DE LOS MENSAJEROS)
     try {
         const doc = await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).get();
         if (doc.exists) {
             const data = doc.data();
             window.estadoPrevioAsignacion = data.estado || 'Listo para asignar';
-            // SOLO bloqueamos si está disponible para ser tomado (Listo para asignar O Preparado)
             if (data.estado === 'Listo para asignar' || data.estado === 'Preparado' || data.estado === 'Pendiente') {
                 await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
                     estado: 'En asignación',
                     _bloqueadoPor: auth.currentUser?.email || 'Admin',
                     _fechaBloqueo: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                // Verificar que el cambio se aplicó
                 const docVerificacion = await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).get();
                 if (docVerificacion.exists && docVerificacion.data().estado === 'En asignación') {
                     toast('🔒 Pedido BLOQUEADO mientras decides (no visible para mensajeros)', 'info', 3000);
@@ -4050,7 +4266,6 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
         return;
     }
 
-    // --- EL RESTO DEL CÓDIGO (mostrar el modal) ---
     const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
     if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); cerrarModalAsignacion(); return; }
     const tienda = tiendasCache[tiendaId] || {};
@@ -4099,7 +4314,6 @@ async function abrirModalAsignacion(tiendaId, pedidoId) {
 // CERRAR MODAL DE ASIGNACIÓN
 // ============================================================
 async function cerrarModalAsignacion() {
-    // 🔥 DESBLOQUEAR (VOLVER A "Listo para asignar" SI EL ADMIN CANCELA)
     if (pedidoAsignacion && window.estadoPrevioAsignacion) {
         const { tiendaId, pedidoId } = pedidoAsignacion;
         try {
@@ -4116,7 +4330,6 @@ async function cerrarModalAsignacion() {
         }
         window.estadoPrevioAsignacion = null;
     }
-
     document.getElementById('modalAsignacion').classList.remove('active');
     document.body.style.overflow = '';
     pedidoAsignacion = null;
@@ -4135,7 +4348,6 @@ async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
         const whatsappTienda = tienda.whatsapp || '';
         let telefonoCliente = pedido.cliente?.telefono || '';
         if (!telefonoCliente) { toast('⚠️ Cliente sin teléfono', 'error'); return; }
-        // Normalizar a +57
         telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
         let subtotalProductos = 0;
         if (pedido.items && pedido.items.length > 0) {
@@ -4256,6 +4468,10 @@ window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
 window.crearMensajero = crearMensajero;
 window.abrirWhatsApp = abrirWhatsApp;
 window.normalizarTelefonoColombia = normalizarTelefonoColombia;
+window.crearServicioManual = crearServicioManual;
+window.cargarServiciosManuales = cargarServiciosManuales;
+window.eliminarServicio = eliminarServicio;
+window.cargarSelectsServicios = cargarSelectsServicios;
 
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
@@ -4267,6 +4483,7 @@ console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
 console.log('📍 Dirección de tienda incluida en mensajes a mensajeros');
 console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En asignación")');
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
+console.log('📋 Nueva pestaña "Servicios" para crear pedidos manuales');
 </script>
 </body>
 </html>
