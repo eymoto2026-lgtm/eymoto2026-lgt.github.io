@@ -711,6 +711,44 @@ header .spacer{flex:1}
     gap: 6px;
     flex-wrap: wrap;
 }
+/* Área de pegado de WhatsApp */
+.whatsapp-parse-area {
+    background: var(--surface2);
+    border: 2px dashed var(--yellow);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.whatsapp-parse-area textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 13px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: #fff;
+    padding: 10px;
+    width: 100%;
+    border-radius: 8px;
+}
+.whatsapp-parse-area .btn-parse {
+    background: var(--yellow);
+    color: #1a1a2e;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: auto;
+    margin-top: 8px;
+}
+.whatsapp-parse-area .btn-parse:hover {
+    background: var(--yellow-dim);
+}
+.whatsapp-parse-area .btn-parse:active {
+    transform: scale(0.97);
+}
 
 @media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}.row2{grid-template-columns:1fr}.row3{grid-template-columns:1fr 1fr}.kanban{grid-template-columns:repeat(2,minmax(220px,1fr))}}
 @media(max-width:600px){.stats-grid{grid-template-columns:1fr 1fr}.row3{grid-template-columns:1fr}.tabs{gap:2px}.tab-btn{font-size:11px;padding:8px 4px}.kanban{grid-template-columns:minmax(240px,1fr)}}
@@ -1150,6 +1188,20 @@ header .spacer{flex:1}
     <div class="tab-content" id="tab-servicios">
       <div class="section-title">📋 Crear y gestionar servicios manuales</div>
       
+      <!-- 🔥 ÁREA DE PEGADO DE WHATSAPP (NUEVO) -->
+      <div class="whatsapp-parse-area">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:20px;">📱</span>
+          <span style="font-weight:700;color:var(--yellow);">Pega el mensaje de WhatsApp</span>
+          <span style="font-size:11px;color:var(--text-muted);">(El sistema analizará y rellenará los campos automáticamente)</span>
+        </div>
+        <textarea id="whatsappTexto" placeholder="Pega aquí el mensaje de WhatsApp con los datos del servicio..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn-parse" onclick="window.analizarWhatsApp()">📋 Analizar WhatsApp</button>
+          <button class="btn-ghost btn-sm" onclick="document.getElementById('whatsappTexto').value='';" style="width:auto;padding:8px 16px;">🗑 Limpiar</button>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
         <!-- Formulario de creación -->
         <div style="background:var(--surface2);padding:20px;border-radius:12px;border:1px solid var(--border);">
@@ -1167,16 +1219,16 @@ header .spacer{flex:1}
             <input id="servicioClienteTelefono" placeholder="3001234567">
           </div>
           <div class="form-group">
-            <label>Dirección</label>
+            <label>Dirección *</label>
             <input id="servicioClienteDireccion" placeholder="Calle 123 #45-67">
           </div>
           <div class="form-group">
-            <label>Barrio</label>
+            <label>Barrio / Ciudad</label>
             <input id="servicioClienteBarrio" placeholder="Centro">
           </div>
           <div class="form-group">
             <label>Observaciones</label>
-            <textarea id="servicioClienteObservaciones" rows="2" placeholder="Instrucciones especiales"></textarea>
+            <textarea id="servicioClienteObservaciones" rows="2" placeholder="Instrucciones especiales, coordenadas, etc."></textarea>
           </div>
           <div class="form-group">
             <label>Productos (uno por línea, ej: "Hamburguesa x2 - $15000")</label>
@@ -2405,6 +2457,130 @@ async function cargarSelectsServiciosUnico(tiendaId) {
 }
 
 // ============================================================
+// 🔥 FUNCIÓN PARA ANALIZAR WHATSAPP (NUEVA)
+// ============================================================
+function analizarWhatsApp() {
+    const texto = document.getElementById('whatsappTexto').value;
+    if (!texto.trim()) {
+        toast('⚠️ Pega un mensaje de WhatsApp primero.', 'warn');
+        return;
+    }
+    const resultado = parsearMensajeWhatsApp(texto);
+    if (!resultado) {
+        toast('⚠️ No se pudieron extraer datos del mensaje. Verifica el formato.', 'error');
+        return;
+    }
+    // Rellenar el formulario con los datos extraídos
+    if (resultado.nombre) document.getElementById('servicioClienteNombre').value = resultado.nombre;
+    if (resultado.telefono) document.getElementById('servicioClienteTelefono').value = resultado.telefono;
+    if (resultado.direccion) document.getElementById('servicioClienteDireccion').value = resultado.direccion;
+    if (resultado.ciudad) document.getElementById('servicioClienteBarrio').value = resultado.ciudad;
+    if (resultado.observaciones) {
+        let obs = resultado.observaciones;
+        if (resultado.coordenadas) obs += `\n📍 Coordenadas: ${resultado.coordenadas}`;
+        document.getElementById('servicioClienteObservaciones').value = obs;
+    }
+    if (resultado.productos) {
+        document.getElementById('servicioProductos').value = resultado.productos.join('\n');
+    }
+    if (resultado.metodoPago) {
+        const metodo = resultado.metodoPago.toLowerCase();
+        if (metodo === 'nequi' || metodo === 'daviplata' || metodo === 'efectivo') {
+            document.getElementById('servicioMetodoPago').value = metodo;
+        }
+    }
+    toast('✅ Datos extraídos del WhatsApp. Revisa y ajusta si es necesario.', 'success', 3000);
+}
+
+// ============================================================
+// 🔥 PARSEADOR DE MENSAJE DE WHATSAPP
+// ============================================================
+function parsearMensajeWhatsApp(texto) {
+    const data = {};
+    // Extraer nombre: buscar "NOMBRE DEL CLIENTE" o "CLIENTE:" o líneas con nombre
+    const nombreMatch = texto.match(/(?:NOMBRE DEL CLIENTE|CLIENTE|👤)\s*[:]*\s*([^\n]+)/i);
+    if (nombreMatch) data.nombre = nombreMatch[1].trim();
+    
+    // Extraer teléfono: buscar "WHATSAPP" o "TELÉFONO" o número de teléfono
+    let telefonoMatch = texto.match(/(?:WHATSAPP|TELÉFONO|📱)\s*[:]*\s*([\d\s]+)/i);
+    if (!telefonoMatch) {
+        // Buscar número de teléfono en el texto (formato colombiano)
+        const numMatch = texto.match(/(\d{10,13})/);
+        if (numMatch) telefonoMatch = [null, numMatch[1]];
+    }
+    if (telefonoMatch) {
+        let telefono = telefonoMatch[1].trim().replace(/\s/g, '');
+        // Si no tiene 57, se normaliza después
+        data.telefono = telefono;
+    }
+    
+    // Extraer dirección de origen y destino
+    let direccionOrigen = '';
+    let direccionDestino = '';
+    const origenMatch = texto.match(/(?:DIRECCION DE ORIGEN|ORIGEN)\s*[:]*\s*([^\n]+)/i);
+    if (origenMatch) direccionOrigen = origenMatch[1].trim();
+    const destinoMatch = texto.match(/(?:DIRECCION DE DESTINO|DESTINO)\s*[:]*\s*([^\n]+)/i);
+    if (destinoMatch) direccionDestino = destinoMatch[1].trim();
+    // Usar destino como dirección principal, origen como observación
+    data.direccion = direccionDestino || direccionOrigen || '';
+    if (direccionOrigen && direccionDestino) {
+        data.observaciones = `Origen: ${direccionOrigen}\nDestino: ${direccionDestino}`;
+    } else if (direccionOrigen) {
+        data.observaciones = `Origen: ${direccionOrigen}`;
+    }
+    
+    // Extraer ciudad
+    const ciudadMatch = texto.match(/(?:CIUDAD|🏙️)\s*[:]*\s*([^\n]+)/i);
+    if (ciudadMatch) data.ciudad = ciudadMatch[1].trim();
+    
+    // Extraer método de pago
+    const pagoMatch = texto.match(/(?:CANCELAR A TRAVES|PAGO|💳)\s*[:]*\s*([^\n]+)/i);
+    if (pagoMatch) {
+        const pago = pagoMatch[1].trim().toLowerCase();
+        if (pago.includes('nequi')) data.metodoPago = 'nequi';
+        else if (pago.includes('daviplata')) data.metodoPago = 'daviplata';
+        else if (pago.includes('efectivo')) data.metodoPago = 'efectivo';
+        else data.metodoPago = pago;
+    }
+    
+    // Extraer detalle/productos
+    const detalleMatch = texto.match(/(?:DETALLE|PRODUCTOS|SERVICIO)\s*[:]*\s*([^\n]+)/i);
+    if (detalleMatch) {
+        // Puede contener varios productos, los dividimos por saltos de línea o comas
+        const detalle = detalleMatch[1].trim();
+        // Intentamos separar en líneas o comas
+        const items = detalle.split(/\n|,|;|\|/).map(item => item.trim()).filter(item => item.length > 0);
+        if (items.length > 0) data.productos = items;
+        else data.productos = [detalle];
+    }
+    
+    // Extraer coordenadas (si están en el texto)
+    const coordMatch = texto.match(/([\d.-]+)\s*[,;]\s*([\d.-]+)/);
+    if (coordMatch) {
+        data.coordenadas = `${coordMatch[1]},${coordMatch[2]}`;
+    }
+    
+    // Si no se encontró nombre, intentar con el primer renglón que no sea etiqueta
+    if (!data.nombre) {
+        const lineas = texto.split('\n').filter(line => line.trim().length > 0);
+        for (const line of lineas) {
+            if (!line.match(/^(TIPO|WHATSAPP|DIRECCION|CIUDAD|DETALLE|FECHA|PEDIDO|UBICACION)/i)) {
+                // Posible nombre
+                data.nombre = line.trim();
+                break;
+            }
+        }
+    }
+    
+    // Validar datos mínimos
+    if (!data.nombre && !data.telefono && !data.direccion) {
+        return null; // No se pudo extraer nada útil
+    }
+    
+    return data;
+}
+
+// ============================================================
 // CREAR SERVICIO MANUAL
 // ============================================================
 async function crearServicioManual() {
@@ -2429,24 +2605,19 @@ async function crearServicioManual() {
     if (productosRaw) {
         const lineas = productosRaw.split('\n').filter(line => line.trim() !== '');
         lineas.forEach(line => {
-            // Intentar extraer nombre, cantidad y precio
-            // Formatos: "Hamburguesa x2 - $15000" o "Hamburguesa 2 - 15000"
             let nombreItem = line;
             let cantidad = 1;
             let precio = 0;
-            // Buscar precio al final
             const matchPrecio = line.match(/([\d,\.]+)\s*$/);
             if (matchPrecio) {
                 const precioStr = matchPrecio[1].replace(/,/g, '');
                 precio = parseFloat(precioStr) || 0;
                 nombreItem = line.replace(matchPrecio[0], '').trim();
-                // Buscar cantidad: "x2" o " 2 "
                 const matchCant = nombreItem.match(/x(\d+)/i);
                 if (matchCant) {
                     cantidad = parseInt(matchCant[1]) || 1;
                     nombreItem = nombreItem.replace(matchCant[0], '').trim();
                 } else {
-                    // Buscar número suelto al final antes del precio
                     const matchNum = nombreItem.match(/(\d+)\s*$/);
                     if (matchNum) {
                         cantidad = parseInt(matchNum[1]) || 1;
@@ -2458,7 +2629,6 @@ async function crearServicioManual() {
                 items.push({ nombre: nombreItem, cantidad, precio, total: precio * cantidad });
                 totalCalculado += precio * cantidad;
             } else {
-                // Si no se pudo parsear, guardar como texto simple (sin precio)
                 items.push({ nombre: line, cantidad: 1, precio: 0, total: 0 });
             }
         });
@@ -2467,7 +2637,6 @@ async function crearServicioManual() {
         toast('⚠️ Agrega al menos un producto', 'error');
         return;
     }
-    // Si no se ingresó total, usamos el calculado
     if (total === 0 && totalCalculado > 0) total = totalCalculado;
 
     const numeroPedido = `#${String(Math.floor(Math.random() * 9000) + 1000)}`;
@@ -2481,10 +2650,10 @@ async function crearServicioManual() {
             total: item.total
         })),
         total: total,
-        estado: 'Preparado', // No visible para mensajeros hasta asignar
+        estado: 'Preparado',
         metodoPago,
         estadoPago: 'pendiente',
-        manual: true, // Marcar como manual
+        manual: true,
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         timestamp: Date.now(),
         fuente: 'admin_manual'
@@ -2501,7 +2670,7 @@ async function crearServicioManual() {
         document.getElementById('servicioClienteObservaciones').value = '';
         document.getElementById('servicioProductos').value = '';
         document.getElementById('servicioTotal').value = '';
-        // Recargar lista de servicios
+        document.getElementById('whatsappTexto').value = '';
         await cargarServiciosManuales();
     } catch (e) {
         console.error('❌ Error creando servicio:', e);
@@ -2517,7 +2686,6 @@ async function cargarServiciosManuales() {
     if (!container) return;
     container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Cargando servicios...</p>';
     try {
-        // Solo mostrar pedidos con manual: true
         const snap = await db.collectionGroup('pedidos')
             .where('manual', '==', true)
             .orderBy('fecha', 'desc')
@@ -4468,6 +4636,8 @@ window.cerrarModalCrearMensajero = cerrarModalCrearMensajero;
 window.crearMensajero = crearMensajero;
 window.abrirWhatsApp = abrirWhatsApp;
 window.normalizarTelefonoColombia = normalizarTelefonoColombia;
+window.analizarWhatsApp = analizarWhatsApp;
+window.parsearMensajeWhatsApp = parsearMensajeWhatsApp;
 window.crearServicioManual = crearServicioManual;
 window.cargarServiciosManuales = cargarServiciosManuales;
 window.eliminarServicio = eliminarServicio;
@@ -4483,7 +4653,7 @@ console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
 console.log('📍 Dirección de tienda incluida en mensajes a mensajeros');
 console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En asignación")');
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
-console.log('📋 Nueva pestaña "Servicios" para crear pedidos manuales');
+console.log('📋 Nueva pestaña "Servicios" con análisis automático de WhatsApp');
 </script>
 </body>
 </html>
