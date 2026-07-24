@@ -2452,7 +2452,6 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 // FUNCIONES PARA SELECTS DE SERVICIOS
 // ============================================================
 async function cargarSelectsServicios() {
-    // La tienda ahora se asigna automáticamente. Buscamos la primera tienda disponible o usamos la del usuario.
     const tiendaId = tiendaIdUsuario || null;
     const hiddenInput = document.getElementById('servicioTienda');
     if (!hiddenInput) return;
@@ -2627,7 +2626,6 @@ function parsearMensajeWhatsApp(texto) {
 // CREAR SERVICIO MANUAL
 // ============================================================
 async function crearServicioManual() {
-    // 🔥 Obtener la tienda del campo oculto
     const tiendaId = document.getElementById('servicioTienda').value;
     if (!tiendaId) { toast('⚠️ No se pudo determinar la tienda. Configura una tienda primero.', 'error'); return; }
 
@@ -2645,7 +2643,6 @@ async function crearServicioManual() {
     if (!telefono) { toast('⚠️ Ingresa el teléfono del cliente', 'error'); return; }
     telefono = normalizarTelefonoColombia(telefono);
 
-    // Parsear productos
     let items = [];
     let totalCalculado = 0;
     if (productosRaw) {
@@ -2700,7 +2697,7 @@ async function crearServicioManual() {
         metodoPago,
         estadoPago: 'pendiente',
         manual: true,
-        categoria: categoria, // 🔥 Guardamos la categoría
+        categoria: categoria,
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         timestamp: Date.now(),
         fuente: 'admin_manual'
@@ -2709,7 +2706,6 @@ async function crearServicioManual() {
     try {
         const docRef = await db.collection('tiendas').doc(tiendaId).collection('pedidos').add(pedidoData);
         toast(`✅ Servicio ${numeroPedido} creado correctamente (${categoria})`, 'success');
-        // Limpiar formulario
         document.getElementById('servicioClienteNombre').value = '';
         document.getElementById('servicioClienteTelefono').value = '';
         document.getElementById('servicioClienteDireccion').value = '';
@@ -4327,13 +4323,13 @@ function abrirWhatsApp(numero, mensaje) {
 }
 
 // ============================================================
-// NOTIFICAR A TODOS (BROADCAST) CON ENLACE + DIRECCIÓN
+// NOTIFICAR A TODOS (BROADCAST) - CON FORMATO EXACTO Y COPIA AL PORTAPAPELES
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
     window.estadoPrevioAsignacion = null;
     try {
-        toast('⏳ Notificando mensajeros...', 'info');
+        toast('⏳ Preparando notificación para mensajeros...', 'info');
         await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).update({
             estado: 'Listo para asignar',
             fechaListo: firebase.firestore.FieldValue.serverTimestamp(),
@@ -4344,7 +4340,7 @@ async function notificarATodos() {
         if (doc.exists) {
             const data = doc.data();
             const tienda = tiendasCache[tiendaId] || {};
-            const nombreTienda = tienda.nombre || 'EyMoto';
+            const nombreTienda = tienda.nombre || 'EyMotoServicios';
             const direccionTienda = tienda.direccion || 'Dirección no registrada';
             const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
             const cliente = data.cliente || {};
@@ -4352,30 +4348,58 @@ async function notificarATodos() {
             const costoDomicilio = data.costoDomicilio || 0;
             const totalConDomicilio = total + costoDomicilio;
             const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-            let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
-            mensaje += `🏪 *${nombreTienda}*\n`;
-            mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
-            mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
-            mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
-            mensaje += `📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}\n`;
-            mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
-            mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
-            if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-            mensaje += `\n📋 *Productos:*\n`;
+
+            // Construir la lista de productos
+            let productosStr = '';
             if (data.items && data.items.length > 0) {
                 data.items.forEach(item => {
                     const nombre = item.nombre || 'Producto';
                     const cantidad = item.cantidad || 1;
                     const precio = item.precio || 0;
                     const subtotal = precio * cantidad;
-                    mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                    productosStr += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                 });
-            } else { mensaje += `- Sin productos\n`; }
-            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}`;
-            mensaje += `\n\n🚀 *¡El primero en tomarlo se lo queda!*`;
-            abrirWhatsApp('573169934516', mensaje);
+            } else {
+                productosStr = '- Sin productos\n';
+            }
+
+            // Mensaje con el formato exacto solicitado
+            const mensaje = 
+`*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*
+
+🛵 *${nombreTienda}*
+📍 *Dirección para recoger:* ${direccionTienda}
+📋 *Pedido:* ${numeroPedido}
+👤 *Cliente:* *${cliente.nombre || 'Desconocido'}*
+📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}
+📞 *Teléfono:* ${cliente.telefono || 'N/A'}
+💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}
+💵 *Servicio:* $${total.toLocaleString('es-CO')}
+
+🛒 *Productos:*
+${productosStr}
+🔗 *Tomar pedido:* ${enlacePedido}
+
+⚡ *¡El primero en tomarlo se lo queda!*`;
+
+            // Copiar al portapapeles
+            try {
+                await navigator.clipboard.writeText(mensaje);
+            } catch (clipError) {
+                // Fallback: mostrar en un alert
+                alert('Copia este mensaje y envíalo a los mensajeros:\n\n' + mensaje);
+            }
+
+            // Mostrar lista de mensajeros disponibles (para que el admin sepa a quién enviar)
+            const mensajerosDisponibles = todosLosMensajeros.filter(m => m.activo !== false && m.conectado !== false && !m.ocupado);
+            let numeros = mensajerosDisponibles.map(m => m.telefono).filter(t => t).join(', ');
+            if (!numeros) numeros = 'No hay mensajeros disponibles con teléfono registrado.';
+            toast(`📋 Mensaje copiado al portapapeles. Envíalo a: ${mensajerosDisponibles.length} mensajeros (${numeros})`, 'success', 8000);
+
+            // También mostramos en consola para depuración
+            console.log('📨 MENSAJE GENERADO (copiado al portapapeles):\n', mensaje);
         }
-        toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
+        toast('🔔 Notificación preparada (copiada al portapapeles)', 'success', 4000);
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
@@ -4383,7 +4407,7 @@ async function notificarATodos() {
 }
 
 // ============================================================
-// ASIGNAR PEDIDO MANUALMENTE (con enlace + dirección)
+// ASIGNAR PEDIDO MANUALMENTE - CON FORMATO EXACTO
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -4407,7 +4431,7 @@ async function asignarPedidoManual() {
             if (doc.exists) {
                 const data = doc.data();
                 const tienda = tiendasCache[tiendaId] || {};
-                const nombreTienda = tienda.nombre || 'EyMoto';
+                const nombreTienda = tienda.nombre || 'EyMotoServicios';
                 const direccionTienda = tienda.direccion || 'Dirección no registrada';
                 const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
                 const cliente = data.cliente || {};
@@ -4415,31 +4439,45 @@ async function asignarPedidoManual() {
                 const costoDomicilio = data.costoDomicilio || 0;
                 const totalConDomicilio = total + costoDomicilio;
                 const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-                let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
-                mensaje += `🏪 *${nombreTienda}*\n`;
-                mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
-                mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
-                mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
-                mensaje += `📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}\n`;
-                mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
-                mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
-                if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-                mensaje += `\n📋 *Productos:*\n`;
+
+                let productosStr = '';
                 if (data.items && data.items.length > 0) {
                     data.items.forEach(item => {
                         const nombre = item.nombre || 'Producto';
                         const cantidad = item.cantidad || 1;
                         const precio = item.precio || 0;
                         const subtotal = precio * cantidad;
-                        mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                        productosStr += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                     });
-                } else { mensaje += `- Sin productos\n`; }
-                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
-                mensaje += `\n\n🛵 *Recoge el pedido en la dirección indicada.*`;
+                } else {
+                    productosStr = '- Sin productos\n';
+                }
+
+                const mensaje = 
+`*📦 NUEVO PEDIDO ASIGNADO A TI*
+
+🛵 *${nombreTienda}*
+📍 *Dirección para recoger:* ${direccionTienda}
+📋 *Pedido:* ${numeroPedido}
+👤 *Cliente:* *${cliente.nombre || 'Desconocido'}*
+📍 *Dirección de entrega:* ${cliente.direccion || 'N/A'}
+📞 *Teléfono:* ${cliente.telefono || 'N/A'}
+💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}
+💵 *Servicio:* $${total.toLocaleString('es-CO')}
+
+🛒 *Productos:*
+${productosStr}
+🔗 *Tomar pedido:* ${enlacePedido}
+
+⚡ *¡El primero en tomarlo se lo queda!*`;
+
+                // Abrir WhatsApp directamente con el mensaje
                 abrirWhatsApp(mensajero.telefono, mensaje);
+                toast(`✅ Mensaje enviado a ${nombreMensajero}`, 'success', 3000);
             }
+        } else {
+            toast(`✅ Pedido asignado a ${nombreMensajero} (sin teléfono para WhatsApp)`, 'success', 3000);
         }
-        toast(`✅ Pedido asignado a ${nombreMensajero}`, 'success');
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
@@ -4704,6 +4742,7 @@ console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En as
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
 console.log('📋 Nueva pestaña "Servicios" con análisis automático de WhatsApp');
 console.log('🏷️ Categorías de servicio: Mensajería, Compras, Transporte, etc.');
+console.log('📢 Notificación a todos: ahora COPIA el mensaje al portapapeles y muestra los números de los mensajeros');
 </script>
 </body>
 </html>
