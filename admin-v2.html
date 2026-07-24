@@ -1195,7 +1195,7 @@ header .spacer{flex:1}
     <div class="tab-content" id="tab-servicios">
       <div class="section-title">📋 Crear y gestionar servicios manuales</div>
       
-      <!-- 🔥 ÁREA DE PEGADO DE WHATSAPP -->
+      <!-- ÁREA DE PEGADO DE WHATSAPP -->
       <div class="whatsapp-parse-area">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
           <span style="font-size:20px;">📱</span>
@@ -1214,7 +1214,7 @@ header .spacer{flex:1}
         <div style="background:var(--surface2);padding:20px;border-radius:12px;border:1px solid var(--border);">
           <h4 style="color:var(--yellow);margin-bottom:12px;">➕ Nuevo servicio</h4>
           
-          <!-- 🔥 CAMBIO IMPORTANTE: Tienda reemplazada por Tipo de pedido -->
+          <!-- Tipo de pedido / Categoría -->
           <div class="form-group">
             <label>Tipo de pedido / Categoría *</label>
             <select id="servicioTipo">
@@ -1448,7 +1448,7 @@ function getEstadoAnterior(tipo, estadoActual) {
 // 🔥 NOTIFICACIONES AL CLIENTE - MENSAJES POR ESTADO
 // ============================================================
 const MENSAJES_NOTIFICACION_ESTADO = {
-    'Pendiente': { emoji: '🛵', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.' },
+    'Pendiente': { emoji: '⏳', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu pedido con mucho cuidado.' },
     'En cocina': { emoji: '👨‍🍳', texto: 'Tu pedido está en la cocina, nuestros chefs están trabajando para que esté delicioso.' },
     'Preparando': { emoji: '👨‍🍳', texto: 'Tu pedido está siendo preparado, pronto estará listo.' },
     'En despacho': { emoji: '📦', texto: 'Tu pedido está siendo empacado y preparado para el envío.' },
@@ -1467,13 +1467,24 @@ const MENSAJES_NOTIFICACION_ESTADO = {
 };
 
 // ============================================================
-// FUNCIÓN: NOTIFICAR AL CLIENTE TODOS LOS ESTADOS
+// FUNCIÓN PARA NORMALIZAR TELÉFONO (COLOMBIA +57)
+// ============================================================
+function normalizarTelefonoColombia(numero) {
+    if (!numero) return '';
+    let num = numero.replace(/\s/g, '').replace('+', '');
+    if (!num.startsWith('57')) num = '57' + num;
+    return num;
+}
+
+// ============================================================
+// 🔥 FUNCIÓN: NOTIFICAR AL CLIENTE (FORMATO PROFESIONAL)
 // ============================================================
 async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterior, estadoNuevo) {
     try {
         const doc = await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId).get();
         if (!doc.exists) return;
+        
         const pedido = doc.data();
         const tienda = tiendasCache[tiendaId] || {};
         const nombreTienda = tienda.nombre || 'EyMoto';
@@ -1488,60 +1499,74 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
             return;
         }
-        let subtotalProductos = 0;
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => {
-                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
-            });
-        }
-        const costoDomicilio = pedido.costoDomicilio || 0;
-        const totalConDomicilio = subtotalProductos + costoDomicilio;
-        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}` };
+        
+        // Obtener categoría (si es manual) o usar "Servicio" por defecto
+        const categoria = pedido.categoria || 'Servicio';
         const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => {
+        const cliente = pedido.cliente || {};
+        const metodoPago = pedido.metodoPago || 'efectivo';
+        const estadoPago = pedido.estadoPago || 'pendiente';
+        const total = pedido.total || 0;
+        const items = pedido.items || [];
+        const costoDomicilio = pedido.costoDomicilio || 0;
+        const subtotalProductos = items.reduce((sum, item) => sum + (item.total || 0), 0);
+        const totalConDomicilio = subtotalProductos + costoDomicilio;
+        
+        const info = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a: ${estadoNuevo}` };
+        
+        // Construir mensaje
+        let mensaje = `🏪 *${nombreTienda} ${categoria}*\n`;
+        mensaje += `📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n`;
+        mensaje += `${info.emoji} *${estadoNuevo.toUpperCase()}*\n${info.texto}\n\n`;
+        mensaje += `📋 *Detalles del pedido:*\n`;
+        if (items.length > 0) {
+            items.forEach(item => {
                 const nombreItem = item.nombre || 'Producto';
                 const cantidad = item.cantidad || 1;
-                const precioUnitario = item.precio || 0;
-                const subtotal = precioUnitario * cantidad;
-                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                const precio = item.precio || 0;
+                const subtotal = precio * cantidad;
+                mensaje += `- ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
             });
+        } else {
+            mensaje += `- Sin productos\n`;
         }
-        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
+        mensaje += `\n💰 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
         if (costoDomicilio > 0) {
-            mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
-        } else {
-            mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
+            mensaje += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
         }
-        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
-        const metodoPago = pedido.metodoPago || 'efectivo';
+        mensaje += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+        
+        // Método de pago
         if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
-            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
-            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
+            const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
+            const estadoPagoTexto = estadoPago === 'pagado' ? '✅ Pagado' : '⏳ Pendiente de confirmación';
+            mensaje += `\n💳 *Pago:* ${pagoTexto} ${estadoPagoTexto}`;
         } else {
-            mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
+            mensaje += `\n💵 *Pago:* Efectivo al entregar`;
         }
-        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
-        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
+        if (cliente.direccion) mensaje += `\n📍 *Dirección:* ${cliente.direccion}`;
+        if (cliente.barrio) mensaje += `\n🏘️ *Barrio:* ${cliente.barrio}`;
         if (pedido.nombreMensajero) {
-            mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
+            mensaje += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
         }
-        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
-        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        mensaje += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
+        
+        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
         window.open(urlWhatsApp, '_blank');
+        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
                 _ultimoEstadoNotificado: estadoNuevo,
                 _ultimaNotificacionFecha: firebase.firestore.FieldValue.serverTimestamp()
             });
+        
         console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .collection('notificaciones').add({
                 estado: estadoNuevo,
-                mensaje: mensajeWhatsApp,
+                mensaje: mensaje,
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 enviadoA: telefonoCliente
             });
@@ -1553,17 +1578,7 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
 }
 
 // ============================================================
-// FUNCIÓN PARA NORMALIZAR TELÉFONO (COLOMBIA +57)
-// ============================================================
-function normalizarTelefonoColombia(numero) {
-    if (!numero) return '';
-    let num = numero.replace(/\s/g, '').replace('+', '');
-    if (!num.startsWith('57')) num = '57' + num;
-    return num;
-}
-
-// ============================================================
-// FUNCIÓN PARA OBTENER LA COLUMNA CORRECTA SEGÚN EL ESTADO
+// FUNCIONES DE UTILIDAD PARA OBTENER COLUMNA Y COLOR
 // ============================================================
 function obtenerColumnaYContador(estado, tipoNegocio) {
     const estadosNegocio = getEstadosNegocio(tipoNegocio);
@@ -2452,13 +2467,11 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 // FUNCIONES PARA SELECTS DE SERVICIOS
 // ============================================================
 async function cargarSelectsServicios() {
-    // La tienda ahora se asigna automáticamente. Buscamos la primera tienda disponible o usamos la del usuario.
-    const tiendaId = tiendaIdUsuario || null;
     const hiddenInput = document.getElementById('servicioTienda');
     if (!hiddenInput) return;
-    if (tiendaId) {
-        hiddenInput.value = tiendaId;
-        console.log('🏪 Tienda asignada automáticamente (usuario):', tiendaId);
+    if (tiendaIdUsuario) {
+        hiddenInput.value = tiendaIdUsuario;
+        console.log('🏪 Tienda asignada automáticamente (usuario):', tiendaIdUsuario);
         return;
     }
     try {
@@ -2484,7 +2497,7 @@ async function cargarSelectsServiciosUnico(tiendaId) {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN PARA ANALIZAR WHATSAPP (NUEVA)
+// FUNCIONES PARA ANALIZAR WHATSAPP
 // ============================================================
 function analizarWhatsApp() {
     const texto = document.getElementById('whatsappTexto').value;
@@ -2497,7 +2510,7 @@ function analizarWhatsApp() {
         toast('⚠️ No se pudieron extraer datos del mensaje. Verifica el formato.', 'error');
         return;
     }
-    // Rellenar el formulario con los datos extraídos
+    // Rellenar el formulario
     if (resultado.nombre) document.getElementById('servicioClienteNombre').value = resultado.nombre;
     if (resultado.telefono) document.getElementById('servicioClienteTelefono').value = resultado.telefono;
     if (resultado.direccion) document.getElementById('servicioClienteDireccion').value = resultado.direccion;
@@ -2516,7 +2529,6 @@ function analizarWhatsApp() {
             document.getElementById('servicioMetodoPago').value = metodo;
         }
     }
-    // 🔥 Auto-seleccionar el tipo de servicio
     if (resultado.tipo) {
         const select = document.getElementById('servicioTipo');
         const opciones = ['Mensajería', 'Compras', 'Transporte', 'Mensajería y Transporte', 'Otros Servicios', 'Locales'];
@@ -2526,16 +2538,13 @@ function analizarWhatsApp() {
     toast('✅ Datos extraídos del WhatsApp. Revisa y ajusta si es necesario.', 'success', 3000);
 }
 
-// ============================================================
-// 🔥 PARSEADOR DE MENSAJE DE WHATSAPP
-// ============================================================
 function parsearMensajeWhatsApp(texto) {
     const data = {};
-    // Extraer nombre: buscar "NOMBRE DEL CLIENTE" o "CLIENTE:" o líneas con nombre
+    // Extraer nombre
     const nombreMatch = texto.match(/(?:NOMBRE DEL CLIENTE|CLIENTE|👤)\s*[:]*\s*([^\n]+)/i);
     if (nombreMatch) data.nombre = nombreMatch[1].trim();
     
-    // Extraer teléfono: buscar "WHATSAPP" o "TELÉFONO" o número de teléfono
+    // Extraer teléfono
     let telefonoMatch = texto.match(/(?:WHATSAPP|TELÉFONO|📱)\s*[:]*\s*([\d\s]+)/i);
     if (!telefonoMatch) {
         const numMatch = texto.match(/(\d{10,13})/);
@@ -2583,12 +2592,11 @@ function parsearMensajeWhatsApp(texto) {
         else data.productos = [detalle];
     }
     
-    // 🔥 NUEVO: Extraer tipo de servicio (Mensajería, Compras, Transporte, etc.)
+    // Extraer tipo de servicio
     const tipoMatch = texto.match(/(?:TIPO DE SERVICIO|SERVICIO)\s*[:]*\s*([^\n]+)/i);
     if (tipoMatch) {
         data.tipo = tipoMatch[1].trim();
     } else {
-        // Si no encuentra la etiqueta, busca palabras clave en el texto
         const palabrasClave = ['Mensajería', 'Mensajeria', 'Compras', 'Transporte', 'Locales'];
         for (const palabra of palabrasClave) {
             if (texto.includes(palabra)) {
@@ -2598,13 +2606,13 @@ function parsearMensajeWhatsApp(texto) {
         }
     }
     
-    // Extraer coordenadas (si están en el texto)
+    // Extraer coordenadas
     const coordMatch = texto.match(/([\d.-]+)\s*[,;]\s*([\d.-]+)/);
     if (coordMatch) {
         data.coordenadas = `${coordMatch[1]},${coordMatch[2]}`;
     }
     
-    // Si no se encontró nombre, intentar con el primer renglón que no sea etiqueta
+    // Si no se encontró nombre, intentar con el primer renglón sin etiqueta
     if (!data.nombre) {
         const lineas = texto.split('\n').filter(line => line.trim().length > 0);
         for (const line of lineas) {
@@ -2615,11 +2623,9 @@ function parsearMensajeWhatsApp(texto) {
         }
     }
     
-    // Validar datos mínimos
     if (!data.nombre && !data.telefono && !data.direccion) {
         return null;
     }
-    
     return data;
 }
 
@@ -2627,7 +2633,6 @@ function parsearMensajeWhatsApp(texto) {
 // CREAR SERVICIO MANUAL
 // ============================================================
 async function crearServicioManual() {
-    // 🔥 Obtener la tienda del campo oculto
     const tiendaId = document.getElementById('servicioTienda').value;
     if (!tiendaId) { toast('⚠️ No se pudo determinar la tienda. Configura una tienda primero.', 'error'); return; }
 
@@ -2700,7 +2705,7 @@ async function crearServicioManual() {
         metodoPago,
         estadoPago: 'pendiente',
         manual: true,
-        categoria: categoria, // 🔥 Guardamos la categoría
+        categoria: categoria,
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         timestamp: Date.now(),
         fuente: 'admin_manual'
@@ -4327,7 +4332,7 @@ function abrirWhatsApp(numero, mensaje) {
 }
 
 // ============================================================
-// NOTIFICAR A TODOS (BROADCAST) CON ENLACE + DIRECCIÓN
+// NOTIFICAR A TODOS (BROADCAST) CON FORMATO PROFESIONAL
 // ============================================================
 async function notificarATodos() {
     const { tiendaId, pedidoId } = pedidoAsignacion;
@@ -4349,11 +4354,14 @@ async function notificarATodos() {
             const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
             const cliente = data.cliente || {};
             const total = data.total || 0;
+            const items = data.items || [];
             const costoDomicilio = data.costoDomicilio || 0;
             const totalConDomicilio = total + costoDomicilio;
+            const categoria = data.categoria || 'Servicio';
             const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-            let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
-            mensaje += `🏪 *${nombreTienda}*\n`;
+            
+            let mensaje = `📢 *PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
+            mensaje += `🏪 *${nombreTienda} ${categoria}*\n`;
             mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
             mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
             mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
@@ -4361,29 +4369,36 @@ async function notificarATodos() {
             mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
             mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
             if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-            mensaje += `\n📋 *Productos:*\n`;
-            if (data.items && data.items.length > 0) {
-                data.items.forEach(item => {
+            mensaje += `💵 *Servicio:* $${total.toLocaleString('es-CO')}\n\n`;
+            mensaje += `📋 *Productos:*\n`;
+            if (items.length > 0) {
+                items.forEach(item => {
                     const nombre = item.nombre || 'Producto';
                     const cantidad = item.cantidad || 1;
                     const precio = item.precio || 0;
                     const subtotal = precio * cantidad;
                     mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                 });
-            } else { mensaje += `- Sin productos\n`; }
-            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}`;
-            mensaje += `\n\n🚀 *¡El primero en tomarlo se lo queda!*`;
+            } else {
+                mensaje += `- Sin productos\n`;
+            }
+            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}\n`;
+            mensaje += `\n🚀 *¡El primero en tomarlo se lo queda!*`;
+            
             abrirWhatsApp('573169934516', mensaje);
         }
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
-    } catch(e) { console.error('Error en notificarATodos:', e); toast('❌ Error: ' + e.message, 'error'); }
+    } catch(e) {
+        console.error('Error en notificarATodos:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 // ============================================================
-// ASIGNAR PEDIDO MANUALMENTE (con enlace + dirección)
+// ASIGNAR PEDIDO MANUALMENTE (CON FORMATO PROFESIONAL)
 // ============================================================
 async function asignarPedidoManual() {
     const select = document.getElementById('selectMensajeroManual');
@@ -4412,11 +4427,14 @@ async function asignarPedidoManual() {
                 const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
                 const cliente = data.cliente || {};
                 const total = data.total || 0;
+                const items = data.items || [];
                 const costoDomicilio = data.costoDomicilio || 0;
                 const totalConDomicilio = total + costoDomicilio;
+                const categoria = data.categoria || 'Servicio';
                 const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-                let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
-                mensaje += `🏪 *${nombreTienda}*\n`;
+                
+                let mensaje = `📦 *NUEVO PEDIDO ASIGNADO A TI*\n\n`;
+                mensaje += `🏪 *${nombreTienda} ${categoria}*\n`;
                 mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
                 mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
                 mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
@@ -4424,18 +4442,22 @@ async function asignarPedidoManual() {
                 mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
                 mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
                 if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-                mensaje += `\n📋 *Productos:*\n`;
-                if (data.items && data.items.length > 0) {
-                    data.items.forEach(item => {
+                mensaje += `💵 *Servicio:* $${total.toLocaleString('es-CO')}\n\n`;
+                mensaje += `📋 *Productos:*\n`;
+                if (items.length > 0) {
+                    items.forEach(item => {
                         const nombre = item.nombre || 'Producto';
                         const cantidad = item.cantidad || 1;
                         const precio = item.precio || 0;
                         const subtotal = precio * cantidad;
                         mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                     });
-                } else { mensaje += `- Sin productos\n`; }
-                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
-                mensaje += `\n\n🛵 *Recoge el pedido en la dirección indicada.*`;
+                } else {
+                    mensaje += `- Sin productos\n`;
+                }
+                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}\n`;
+                mensaje += `\n🛵 *Recoge el pedido en la dirección indicada.*`;
+                
                 abrirWhatsApp(mensajero.telefono, mensaje);
             }
         }
@@ -4443,7 +4465,10 @@ async function asignarPedidoManual() {
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
-    } catch(e) { console.error('Error en asignarPedidoManual:', e); toast('❌ Error: ' + e.message, 'error'); }
+    } catch(e) {
+        console.error('Error en asignarPedidoManual:', e);
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 // ============================================================
@@ -4566,45 +4591,8 @@ async function reenviarNotificacionConDomicilio(tiendaId, pedidoId) {
         let telefonoCliente = pedido.cliente?.telefono || '';
         if (!telefonoCliente) { toast('⚠️ Cliente sin teléfono', 'error'); return; }
         telefonoCliente = normalizarTelefonoColombia(telefonoCliente);
-        let subtotalProductos = 0;
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => { subtotalProductos += item.total || (item.precio * item.cantidad) || 0; });
-        }
-        const costoDomicilio = pedido.costoDomicilio || 0;
-        const totalConDomicilio = subtotalProductos + costoDomicilio;
-        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        const estado = pedido.estado || 'Pendiente';
-        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estado] || { emoji: '📌', texto: `Tu pedido está en estado: ${estado}` };
-        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estado.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
-        if (pedido.items && pedido.items.length > 0) {
-            pedido.items.forEach(item => {
-                const nombreItem = item.nombre || 'Producto';
-                const cantidad = item.cantidad || 1;
-                const precioUnitario = item.precio || 0;
-                const subtotal = precioUnitario * cantidad;
-                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
-            });
-        }
-        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
-        if (costoDomicilio > 0) { mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`; } else { mensajeWhatsApp += `\n🚚 *Domicilio:* $0`; }
-        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
-        const metodoPago = pedido.metodoPago || 'efectivo';
-        if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
-            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
-            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
-        } else { mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`; }
-        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
-        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
-        if (pedido.nombreMensajero) mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
-        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
-        window.open(`https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
-        toast(`📱 Notificación reenviada a ${telefonoCliente}`, 'success');
-        await db.collection('tiendas').doc(tiendaId).collection('pedidos').doc(pedidoId).collection('notificaciones').add({
-            estado, mensaje: mensajeWhatsApp,
-            fecha: firebase.firestore.FieldValue.serverTimestamp(),
-            enviadoA: telefonoCliente, tipo: 'reenvio'
-        });
-        return true;
+        // Usar la función unificada para el cliente
+        return enviarNotificacionEstadoCliente(tiendaId, pedidoId, pedido.estado, pedido.estado);
     } catch(error) { console.error('❌ Error:', error); toast('❌ Error: ' + error.message, 'error'); return false; }
 }
 
@@ -4695,7 +4683,7 @@ window.cargarSelectsServicios = cargarSelectsServicios;
 console.log('✅ Panel de administración de EyMoto cargado correctamente');
 console.log('🛵 Costo de domicilio: FUNCIONALIDAD ACTIVADA');
 console.log('✏️ Editar pedido: FUNCIONALIDAD ACTIVADA (con validación)');
-console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS');
+console.log('📱 NOTIFICACIONES AL CLIENTE: TODOS LOS ESTADOS (FORMATO PROFESIONAL)');
 console.log('👥 Administración de mensajeros: ACTIVADA');
 console.log('🇨🇴 Normalización de teléfonos +57 ACTIVADA');
 console.log('🔗 Enlace directo a pedidos en asignación manual y broadcast');
@@ -4704,6 +4692,7 @@ console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En as
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
 console.log('📋 Nueva pestaña "Servicios" con análisis automático de WhatsApp');
 console.log('🏷️ Categorías de servicio: Mensajería, Compras, Transporte, etc.');
+console.log('📨 Mensajes con formato profesional para clientes y mensajeros');
 </script>
 </body>
 </html>
