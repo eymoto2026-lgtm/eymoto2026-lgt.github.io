@@ -1448,7 +1448,7 @@ function getEstadoAnterior(tipo, estadoActual) {
 // 🔥 NOTIFICACIONES AL CLIENTE - MENSAJES POR ESTADO
 // ============================================================
 const MENSAJES_NOTIFICACION_ESTADO = {
-    'Pendiente': { emoji: '⏳', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu pedido con mucho cuidado.' },
+    'Pendiente': { emoji: '🛵', texto: '¡Tu pedido ha sido recibido! Estamos preparando tu comida con mucho cuidado.' },
     'En cocina': { emoji: '👨‍🍳', texto: 'Tu pedido está en la cocina, nuestros chefs están trabajando para que esté delicioso.' },
     'Preparando': { emoji: '👨‍🍳', texto: 'Tu pedido está siendo preparado, pronto estará listo.' },
     'En despacho': { emoji: '📦', texto: 'Tu pedido está siendo empacado y preparado para el envío.' },
@@ -1488,72 +1488,60 @@ async function enviarNotificacionEstadoCliente(tiendaId, pedidoId, estadoAnterio
             console.log(`⏭️ Estado ${estadoNuevo} ya notificado, omitiendo...`);
             return;
         }
-        
-        // Obtener categoría (si es manual) o usar "Comida" por defecto
-        const categoria = pedido.categoria || 'Servicio';
-        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
-        const cliente = pedido.cliente || {};
-        const metodoPago = pedido.metodoPago || 'efectivo';
-        const estadoPago = pedido.estadoPago || 'pendiente';
-        const total = pedido.total || 0;
-        const items = pedido.items || [];
+        let subtotalProductos = 0;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
+                subtotalProductos += item.total || (item.precio * item.cantidad) || 0;
+            });
+        }
         const costoDomicilio = pedido.costoDomicilio || 0;
-        const subtotalProductos = items.reduce((sum, item) => sum + (item.total || 0), 0);
         const totalConDomicilio = subtotalProductos + costoDomicilio;
-        
-        const info = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a: ${estadoNuevo}` };
-        
-        let mensaje = `🏪 *${nombreTienda} ${categoria}*\n`;
-        mensaje += `📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n`;
-        mensaje += `${info.emoji} *${estadoNuevo.toUpperCase()}*\n${info.texto}\n\n`;
-        mensaje += `📋 *Detalles del pedido:*\n`;
-        if (items.length > 0) {
-            items.forEach(item => {
+        const mensajeInfo = MENSAJES_NOTIFICACION_ESTADO[estadoNuevo] || { emoji: '📌', texto: `Tu pedido ha cambiado a estado: ${estadoNuevo}` };
+        const numeroPedido = pedido.numeroPedido || '#' + pedidoId.slice(-6);
+        let mensajeWhatsApp = `🏪 *${nombreTienda}*\n\n📦 *ACTUALIZACIÓN DE PEDIDO ${numeroPedido}*\n\n${mensajeInfo.emoji} *${estadoNuevo.toUpperCase()}*\n${mensajeInfo.texto}\n\n📋 *Detalles del pedido:*\n`;
+        if (pedido.items && pedido.items.length > 0) {
+            pedido.items.forEach(item => {
                 const nombreItem = item.nombre || 'Producto';
                 const cantidad = item.cantidad || 1;
-                const precio = item.precio || 0;
-                const subtotal = precio * cantidad;
-                mensaje += `- ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
+                const precioUnitario = item.precio || 0;
+                const subtotal = precioUnitario * cantidad;
+                mensajeWhatsApp += `🍜 ${nombreItem} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
             });
-        } else {
-            mensaje += `- Sin productos\n`;
         }
-        mensaje += `\n💰 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
+        mensajeWhatsApp += `\n📦 *Productos:* $${subtotalProductos.toLocaleString('es-CO')}`;
         if (costoDomicilio > 0) {
-            mensaje += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
-        }
-        mensaje += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
-        
-        if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
-            const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : 'Daviplata';
-            const estadoPagoTexto = estadoPago === 'pagado' ? '✅ Pagado' : '⏳ Pendiente de confirmación';
-            mensaje += `\n💳 *Pago:* ${pagoTexto} ${estadoPagoTexto}`;
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}`;
         } else {
-            mensaje += `\n💵 *Pago:* Efectivo al entregar`;
+            mensajeWhatsApp += `\n🚚 *Domicilio:* $0`;
         }
-        if (cliente.direccion) mensaje += `\n📍 *Dirección:* ${cliente.direccion}`;
-        if (cliente.barrio) mensaje += `\n🏘️ *Barrio:* ${cliente.barrio}`;
+        mensajeWhatsApp += `\n💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}`;
+        const metodoPago = pedido.metodoPago || 'efectivo';
+        if (metodoPago === 'nequi' || metodoPago === 'daviplata') {
+            mensajeWhatsApp += `\n💳 *Pago:* ${metodoPago.toUpperCase()}`;
+            mensajeWhatsApp += pedido.estadoPago === 'pagado' ? ` ✅ Pagado` : ` ⏳ Pendiente de confirmación`;
+        } else {
+            mensajeWhatsApp += `\n💵 *Pago:* Efectivo al entregar`;
+        }
+        if (pedido.cliente?.direccion) mensajeWhatsApp += `\n📍 *Dirección:* ${pedido.cliente.direccion}`;
+        if (pedido.cliente?.barrio) mensajeWhatsApp += `\n🏘️ *Barrio:* ${pedido.cliente.barrio}`;
         if (pedido.nombreMensajero) {
-            mensaje += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
+            mensajeWhatsApp += `\n\n🛵 *Mensajero:* ${pedido.nombreMensajero}`;
         }
-        mensaje += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
-        
-        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensaje)}`;
+        mensajeWhatsApp += `\n\n📱 *¿Tienes preguntas?* Comunícate con nosotros al ${whatsappTienda || 'nuestro WhatsApp'}`;
+        const urlWhatsApp = `https://wa.me/${telefonoCliente}?text=${encodeURIComponent(mensajeWhatsApp)}`;
         window.open(urlWhatsApp, '_blank');
-        
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .update({
                 _ultimoEstadoNotificado: estadoNuevo,
                 _ultimaNotificacionFecha: firebase.firestore.FieldValue.serverTimestamp()
             });
-        
         console.log(`📱 Notificación enviada a ${telefonoCliente} - Estado: ${estadoNuevo}`);
         await db.collection('tiendas').doc(tiendaId)
             .collection('pedidos').doc(pedidoId)
             .collection('notificaciones').add({
                 estado: estadoNuevo,
-                mensaje: mensaje,
+                mensaje: mensajeWhatsApp,
                 fecha: firebase.firestore.FieldValue.serverTimestamp(),
                 enviadoA: telefonoCliente
             });
@@ -1695,8 +1683,116 @@ function obtenerPedidoDeCache(tiendaId, pedidoId) {
 }
 
 function generarFactura(tiendaId, pedidoId) {
-    // (función no modificada, se mantiene)
-    // ...
+    const pedido = obtenerPedidoDeCache(tiendaId, pedidoId);
+    if (!pedido) { toast('⚠️ No se encontró el pedido', 'error'); return; }
+    const tienda = tiendasCache[tiendaId] || {};
+    const nombreTienda = tienda.nombre || 'EyMotoComidas';
+    const whatsapp = tienda.whatsapp || '';
+    const direccionTienda = tienda.direccion || 'Dirección no especificada';
+    let total = 0;
+    let itemsHtml = '';
+    if (pedido.items && pedido.items.length > 0) {
+        pedido.items.forEach(item => {
+            const subtotal = (item.precio || 0) * (item.cantidad || 1);
+            total += subtotal;
+            let nombreItem = item.nombre || 'Producto';
+            if (item.pesoGramos) nombreItem += ` (${item.pesoGramos}g)`;
+            itemsHtml += `
+                <tr>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;color:#1a1a2e;">${nombreItem}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:center;color:#1a1a2e;">${item.cantidad || 1}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:right;color:#1a1a2e;">$${(item.precio || 0).toLocaleString('es-CO')}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e8e8e8;text-align:right;font-weight:600;color:#1a1a2e;">$${subtotal.toLocaleString('es-CO')}</td>
+                </tr>
+            `;
+        });
+    }
+    const costoDomicilio = pedido.costoDomicilio || 0;
+    const totalConDomicilio = total + costoDomicilio;
+    let fechaStr = '--', horaStr = '--';
+    if (pedido.fecha) {
+        try {
+            let fechaDate;
+            if (pedido.fecha.toDate) fechaDate = pedido.fecha.toDate();
+            else if (pedido.fecha.seconds) fechaDate = new Date(pedido.fecha.seconds * 1000);
+            else fechaDate = new Date(pedido.fecha);
+            if (!isNaN(fechaDate.getTime())) {
+                fechaStr = fechaDate.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                horaStr = fechaDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            }
+        } catch(e) {}
+    }
+    const cliente = pedido.cliente || {};
+    const numeroFactura = pedido.numeroPedido || `FAC-${String(pedido.id).slice(-6).toUpperCase()}`;
+    const metodoPago = pedido.metodoPago || 'efectivo';
+    const pagoTexto = metodoPago === 'nequi' ? 'Nequi' : metodoPago === 'daviplata' ? 'Daviplata' : 'Efectivo';
+    const ventana = window.open('', '_blank', 'width=500,height=600');
+    if (!ventana) {
+        toast('⚠️ Permite ventanas emergentes para ver la factura', 'warn');
+        return;
+    }
+    ventana.document.write(`
+        <html>
+        <head><title>Factura ${numeroFactura}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #1a1a2e; }
+            .header { text-align: center; padding: 10px 0; border-bottom: 2px solid #FFD600; }
+            .logo { font-size: 24px; font-weight: 900; color: #FFD600; }
+            .tienda { font-size: 18px; font-weight: 700; }
+            .direccion { font-size: 12px; color: #555; margin-top: 2px; }
+            .factura-info { display: flex; justify-content: space-between; margin: 15px 0; font-size: 13px; }
+            .factura-info .label { color: #888; }
+            .cliente-info { background: #f5f5f5; padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            table th { background: #FFD600; color: #1a1a2e; padding: 8px; text-align: left; font-size: 12px; }
+            .total { font-size: 18px; font-weight: 800; text-align: right; padding: 10px 0; border-top: 2px solid #FFD600; }
+            .domicilio-line { font-size: 14px; text-align: right; padding: 4px 0; color: #555; }
+            .domicilio-line .dom-valor { color: #FFD600; font-weight: 700; }
+            .pago { font-size: 13px; color: #555; margin-top: 10px; }
+            .footer { text-align: center; font-size: 11px; color: #888; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
+            @media print { body { margin: 0; } .no-print { display: none; } }
+        </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">EyMoto</div>
+                <div class="tienda">${nombreTienda}</div>
+                <div class="direccion">📍 ${direccionTienda}</div>
+                <div style="font-size:12px;color:#888;">${whatsapp}</div>
+            </div>
+            <div class="factura-info">
+                <div><span class="label">Factura:</span> ${numeroFactura}</div>
+                <div><span class="label">Fecha:</span> ${fechaStr} ${horaStr}</div>
+                <div><span class="label">Pago:</span> ${pagoTexto}</div>
+            </div>
+            <div class="cliente-info">
+                <div><span class="label">Cliente:</span> ${cliente.nombre || 'Desconocido'}</div>
+                ${cliente.telefono ? `<div><span class="label">Teléfono:</span> ${cliente.telefono}</div>` : ''}
+                ${cliente.direccion ? `<div><span class="label">Dirección de entrega:</span> ${cliente.direccion}</div>` : ''}
+                ${cliente.barrio ? `<div><span class="label">Barrio:</span> ${cliente.barrio}</div>` : ''}
+                ${cliente.observaciones ? `<div><span class="label">Observaciones:</span> ${cliente.observaciones}</div>` : ''}
+            </div>
+            <table>
+                <thead><tr><th>Producto</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            ${costoDomicilio > 0 ? `
+            <div class="domicilio-line">
+                🛵 Costo de domicilio: <span class="dom-valor">$${costoDomicilio.toLocaleString('es-CO')}</span>
+            </div>
+            ` : ''}
+            <div class="total">TOTAL: $${totalConDomicilio.toLocaleString('es-CO')}</div>
+            ${costoDomicilio > 0 ? `<div style="font-size:11px;text-align:right;color:#888;">(Incluye domicilio)</div>` : ''}
+            <div class="pago">${metodoPago === 'nequi' || metodoPago === 'daviplata' ? `💳 Pagado con ${pagoTexto}` : '💵 Pagado en efectivo'}</div>
+            <div class="footer">Gracias por tu compra - ${nombreTienda}</div>
+            <div class="no-print" style="text-align:center;margin-top:15px;">
+                <button onclick="window.print()" style="padding:10px 20px;background:#FFD600;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>
+                <button onclick="window.close()" style="padding:10px 20px;background:#eee;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-left:10px;">Cerrar</button>
+            </div>
+        </body>
+        </html>
+    `);
+    ventana.document.close();
 }
 
 // ============================================================
@@ -2356,6 +2452,7 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 // FUNCIONES PARA SELECTS DE SERVICIOS
 // ============================================================
 async function cargarSelectsServicios() {
+    // La tienda ahora se asigna automáticamente. Buscamos la primera tienda disponible o usamos la del usuario.
     const tiendaId = tiendaIdUsuario || null;
     const hiddenInput = document.getElementById('servicioTienda');
     if (!hiddenInput) return;
@@ -2387,7 +2484,7 @@ async function cargarSelectsServiciosUnico(tiendaId) {
 }
 
 // ============================================================
-// 🔥 FUNCIÓN PARA ANALIZAR WHATSAPP
+// 🔥 FUNCIÓN PARA ANALIZAR WHATSAPP (NUEVA)
 // ============================================================
 function analizarWhatsApp() {
     const texto = document.getElementById('whatsappTexto').value;
@@ -2419,6 +2516,7 @@ function analizarWhatsApp() {
             document.getElementById('servicioMetodoPago').value = metodo;
         }
     }
+    // 🔥 Auto-seleccionar el tipo de servicio
     if (resultado.tipo) {
         const select = document.getElementById('servicioTipo');
         const opciones = ['Mensajería', 'Compras', 'Transporte', 'Mensajería y Transporte', 'Otros Servicios', 'Locales'];
@@ -2433,11 +2531,11 @@ function analizarWhatsApp() {
 // ============================================================
 function parsearMensajeWhatsApp(texto) {
     const data = {};
-    // Extraer nombre
+    // Extraer nombre: buscar "NOMBRE DEL CLIENTE" o "CLIENTE:" o líneas con nombre
     const nombreMatch = texto.match(/(?:NOMBRE DEL CLIENTE|CLIENTE|👤)\s*[:]*\s*([^\n]+)/i);
     if (nombreMatch) data.nombre = nombreMatch[1].trim();
     
-    // Extraer teléfono
+    // Extraer teléfono: buscar "WHATSAPP" o "TELÉFONO" o número de teléfono
     let telefonoMatch = texto.match(/(?:WHATSAPP|TELÉFONO|📱)\s*[:]*\s*([\d\s]+)/i);
     if (!telefonoMatch) {
         const numMatch = texto.match(/(\d{10,13})/);
@@ -2485,11 +2583,12 @@ function parsearMensajeWhatsApp(texto) {
         else data.productos = [detalle];
     }
     
-    // Extraer tipo de servicio
+    // 🔥 NUEVO: Extraer tipo de servicio (Mensajería, Compras, Transporte, etc.)
     const tipoMatch = texto.match(/(?:TIPO DE SERVICIO|SERVICIO)\s*[:]*\s*([^\n]+)/i);
     if (tipoMatch) {
         data.tipo = tipoMatch[1].trim();
     } else {
+        // Si no encuentra la etiqueta, busca palabras clave en el texto
         const palabrasClave = ['Mensajería', 'Mensajeria', 'Compras', 'Transporte', 'Locales'];
         for (const palabra of palabrasClave) {
             if (texto.includes(palabra)) {
@@ -2499,7 +2598,7 @@ function parsearMensajeWhatsApp(texto) {
         }
     }
     
-    // Extraer coordenadas
+    // Extraer coordenadas (si están en el texto)
     const coordMatch = texto.match(/([\d.-]+)\s*[,;]\s*([\d.-]+)/);
     if (coordMatch) {
         data.coordenadas = `${coordMatch[1]},${coordMatch[2]}`;
@@ -2528,6 +2627,7 @@ function parsearMensajeWhatsApp(texto) {
 // CREAR SERVICIO MANUAL
 // ============================================================
 async function crearServicioManual() {
+    // 🔥 Obtener la tienda del campo oculto
     const tiendaId = document.getElementById('servicioTienda').value;
     if (!tiendaId) { toast('⚠️ No se pudo determinar la tienda. Configura una tienda primero.', 'error'); return; }
 
@@ -2600,7 +2700,7 @@ async function crearServicioManual() {
         metodoPago,
         estadoPago: 'pendiente',
         manual: true,
-        categoria: categoria,
+        categoria: categoria, // 🔥 Guardamos la categoría
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         timestamp: Date.now(),
         fuente: 'admin_manual'
@@ -4249,14 +4349,11 @@ async function notificarATodos() {
             const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
             const cliente = data.cliente || {};
             const total = data.total || 0;
-            const items = data.items || [];
             const costoDomicilio = data.costoDomicilio || 0;
             const totalConDomicilio = total + costoDomicilio;
-            const categoria = data.categoria || 'Servicio';
             const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-            
-            let mensaje = `📢 *PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
-            mensaje += `🏪 *${nombreTienda} ${categoria}*\n`;
+            let mensaje = `*📢 PEDIDO DISPONIBLE PARA TODOS LOS MENSAJEROS ACTIVOS*\n\n`;
+            mensaje += `🏪 *${nombreTienda}*\n`;
             mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
             mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
             mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
@@ -4264,32 +4361,25 @@ async function notificarATodos() {
             mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
             mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
             if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-            mensaje += `💵 *Servicio:* $${total.toLocaleString('es-CO')}\n\n`;
-            mensaje += `📋 *Productos:*\n`;
-            if (items.length > 0) {
-                items.forEach(item => {
+            mensaje += `\n📋 *Productos:*\n`;
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => {
                     const nombre = item.nombre || 'Producto';
                     const cantidad = item.cantidad || 1;
                     const precio = item.precio || 0;
                     const subtotal = precio * cantidad;
                     mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                 });
-            } else {
-                mensaje += `- Sin productos\n`;
-            }
-            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}\n`;
-            mensaje += `\n🚀 *¡El primero en tomarlo se lo queda!*`;
-            
+            } else { mensaje += `- Sin productos\n`; }
+            mensaje += `\n🔗 *Tomar pedido:* ${enlacePedido}`;
+            mensaje += `\n\n🚀 *¡El primero en tomarlo se lo queda!*`;
             abrirWhatsApp('573169934516', mensaje);
         }
         toast('🔔 Notificación enviada a todos los mensajeros disponibles', 'success', 4000);
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
-    } catch(e) {
-        console.error('Error en notificarATodos:', e);
-        toast('❌ Error: ' + e.message, 'error');
-    }
+    } catch(e) { console.error('Error en notificarATodos:', e); toast('❌ Error: ' + e.message, 'error'); }
 }
 
 // ============================================================
@@ -4322,14 +4412,11 @@ async function asignarPedidoManual() {
                 const numeroPedido = data.numeroPedido || '#' + pedidoId.slice(-6);
                 const cliente = data.cliente || {};
                 const total = data.total || 0;
-                const items = data.items || [];
                 const costoDomicilio = data.costoDomicilio || 0;
                 const totalConDomicilio = total + costoDomicilio;
-                const categoria = data.categoria || 'Servicio';
                 const enlacePedido = `${URL_BASE_MENU}mensajero.html?pedido=${pedidoId}&tienda=${tiendaId}`;
-                
-                let mensaje = `📦 *NUEVO PEDIDO ASIGNADO A TI*\n\n`;
-                mensaje += `🏪 *${nombreTienda} ${categoria}*\n`;
+                let mensaje = `*📦 NUEVO PEDIDO ASIGNADO A TI*\n\n`;
+                mensaje += `🏪 *${nombreTienda}*\n`;
                 mensaje += `📍 *Dirección para recoger:* ${direccionTienda}\n`;
                 mensaje += `🧾 *Pedido:* ${numeroPedido}\n`;
                 mensaje += `👤 *Cliente:* ${cliente.nombre || 'Desconocido'}\n`;
@@ -4337,22 +4424,18 @@ async function asignarPedidoManual() {
                 mensaje += `📱 *Teléfono:* ${cliente.telefono || 'N/A'}\n`;
                 mensaje += `💰 *Total a pagar:* $${totalConDomicilio.toLocaleString('es-CO')}\n`;
                 if (costoDomicilio > 0) mensaje += `🛵 *Domicilio:* $${costoDomicilio.toLocaleString('es-CO')}\n`;
-                mensaje += `💵 *Servicio:* $${total.toLocaleString('es-CO')}\n\n`;
-                mensaje += `📋 *Productos:*\n`;
-                if (items.length > 0) {
-                    items.forEach(item => {
+                mensaje += `\n📋 *Productos:*\n`;
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
                         const nombre = item.nombre || 'Producto';
                         const cantidad = item.cantidad || 1;
                         const precio = item.precio || 0;
                         const subtotal = precio * cantidad;
                         mensaje += `- ${nombre} x${cantidad} = $${subtotal.toLocaleString('es-CO')}\n`;
                     });
-                } else {
-                    mensaje += `- Sin productos\n`;
-                }
-                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}\n`;
-                mensaje += `\n🛵 *Recoge el pedido en la dirección indicada.*`;
-                
+                } else { mensaje += `- Sin productos\n`; }
+                mensaje += `\n🔗 *Ver y gestionar pedido:* ${enlacePedido}`;
+                mensaje += `\n\n🛵 *Recoge el pedido en la dirección indicada.*`;
                 abrirWhatsApp(mensajero.telefono, mensaje);
             }
         }
@@ -4360,10 +4443,7 @@ async function asignarPedidoManual() {
         cerrarModalAsignacion();
         if (tiendaSeleccionada) escucharPedidosDeTienda(tiendaSeleccionada);
         else mostrarPedidosPendientesGlobal();
-    } catch(e) {
-        console.error('Error en asignarPedidoManual:', e);
-        toast('❌ Error: ' + e.message, 'error');
-    }
+    } catch(e) { console.error('Error en asignarPedidoManual:', e); toast('❌ Error: ' + e.message, 'error'); }
 }
 
 // ============================================================
@@ -4624,7 +4704,6 @@ console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En as
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
 console.log('📋 Nueva pestaña "Servicios" con análisis automático de WhatsApp');
 console.log('🏷️ Categorías de servicio: Mensajería, Compras, Transporte, etc.');
-console.log('📲 Mensajes con formato profesional para clientes y mensajeros');
 </script>
 </body>
 </html>
