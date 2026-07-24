@@ -687,6 +687,13 @@ header .spacer{flex:1}
     font-size: 12px;
     color: var(--text-muted);
 }
+.servicio-item .info .categoria-servicio {
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 8px;
+}
 .servicio-item .info .estado-servicio {
     display: inline-block;
     padding: 2px 10px;
@@ -1188,7 +1195,7 @@ header .spacer{flex:1}
     <div class="tab-content" id="tab-servicios">
       <div class="section-title">📋 Crear y gestionar servicios manuales</div>
       
-      <!-- 🔥 ÁREA DE PEGADO DE WHATSAPP (NUEVO) -->
+      <!-- 🔥 ÁREA DE PEGADO DE WHATSAPP -->
       <div class="whatsapp-parse-area">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
           <span style="font-size:20px;">📱</span>
@@ -1206,10 +1213,24 @@ header .spacer{flex:1}
         <!-- Formulario de creación -->
         <div style="background:var(--surface2);padding:20px;border-radius:12px;border:1px solid var(--border);">
           <h4 style="color:var(--yellow);margin-bottom:12px;">➕ Nuevo servicio</h4>
+          
+          <!-- 🔥 CAMBIO IMPORTANTE: Tienda reemplazada por Tipo de pedido -->
           <div class="form-group">
-            <label>Tienda *</label>
-            <select id="servicioTienda"><option value="">Seleccionar...</option></select>
+            <label>Tipo de pedido / Categoría *</label>
+            <select id="servicioTipo">
+              <option value="Mensajería">📦 Mensajería</option>
+              <option value="Compras">🛒 Compras</option>
+              <option value="Transporte">🚗 Transporte</option>
+              <option value="Mensajería y Transporte">🚛 Mensajería y Transporte</option>
+              <option value="Otros Servicios">🔧 Otros Servicios</option>
+              <option value="Locales">🏢 Locales</option>
+              <option value="Otro">📌 Otro</option>
+            </select>
+            <small style="color:var(--text-muted);font-size:10px;">Selecciona el tipo de servicio que ofrece el cliente.</small>
           </div>
+          <!-- Campo oculto para la tienda real (se asigna automáticamente) -->
+          <input type="hidden" id="servicioTienda">
+
           <div class="form-group">
             <label>Nombre del cliente *</label>
             <input id="servicioClienteNombre" placeholder="Ej: Juan Pérez">
@@ -1236,7 +1257,7 @@ header .spacer{flex:1}
           </div>
           <div class="row2">
             <div class="form-group">
-              <label>Total (COP) (opcional)</label>
+              <label>Total (COP) (precio del servicio)</label>
               <input id="servicioTotal" type="number" placeholder="18000" step="100">
             </div>
             <div class="form-group">
@@ -2431,29 +2452,35 @@ async function cargarSelectsTiendasUnico(tiendaId) {
 // FUNCIONES PARA SELECTS DE SERVICIOS
 // ============================================================
 async function cargarSelectsServicios() {
-    const sel = document.getElementById('servicioTienda');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">Seleccionar...</option>';
+    // La tienda ahora se asigna automáticamente. Buscamos la primera tienda disponible o usamos la del usuario.
+    const tiendaId = tiendaIdUsuario || null;
+    const hiddenInput = document.getElementById('servicioTienda');
+    if (!hiddenInput) return;
+    if (tiendaId) {
+        hiddenInput.value = tiendaId;
+        console.log('🏪 Tienda asignada automáticamente (usuario):', tiendaId);
+        return;
+    }
     try {
-        const snap = await db.collection('tiendas').get();
-        snap.forEach(doc => {
-            const t = doc.data();
-            const id = doc.id;
-            const opt = `<option value="${id}">${t.nombre || id}</option>`;
-            sel.innerHTML += opt;
-        });
-    } catch(e) { console.error('❌ Error cargando tiendas para servicios:', e); }
+        const snap = await db.collection('tiendas').limit(1).get();
+        if (!snap.empty) {
+            const doc = snap.docs[0];
+            hiddenInput.value = doc.id;
+            console.log('🏪 Tienda asignada automáticamente (primera):', doc.id);
+        } else {
+            toast('⚠️ No hay tiendas registradas. Crea una tienda primero.', 'error');
+        }
+    } catch(e) {
+        console.error('❌ Error asignando tienda automática:', e);
+    }
 }
 
 async function cargarSelectsServiciosUnico(tiendaId) {
-    const sel = document.getElementById('servicioTienda');
-    if (!sel) return;
-    try {
-        const doc = await db.collection('tiendas').doc(tiendaId).get();
-        if (!doc.exists) return;
-        const t = doc.data();
-        sel.innerHTML = `<option value="${tiendaId}" selected>${t.nombre || tiendaId}</option>`;
-    } catch(e) { console.error('❌ Error:', e); }
+    const hiddenInput = document.getElementById('servicioTienda');
+    if (hiddenInput && tiendaId) {
+        hiddenInput.value = tiendaId;
+        console.log('🏪 Tienda asignada automáticamente (específica):', tiendaId);
+    }
 }
 
 // ============================================================
@@ -2489,6 +2516,13 @@ function analizarWhatsApp() {
             document.getElementById('servicioMetodoPago').value = metodo;
         }
     }
+    // 🔥 Auto-seleccionar el tipo de servicio
+    if (resultado.tipo) {
+        const select = document.getElementById('servicioTipo');
+        const opciones = ['Mensajería', 'Compras', 'Transporte', 'Mensajería y Transporte', 'Otros Servicios', 'Locales'];
+        const encontrado = opciones.find(op => resultado.tipo.toLowerCase().includes(op.toLowerCase()));
+        if (encontrado) select.value = encontrado;
+    }
     toast('✅ Datos extraídos del WhatsApp. Revisa y ajusta si es necesario.', 'success', 3000);
 }
 
@@ -2504,13 +2538,11 @@ function parsearMensajeWhatsApp(texto) {
     // Extraer teléfono: buscar "WHATSAPP" o "TELÉFONO" o número de teléfono
     let telefonoMatch = texto.match(/(?:WHATSAPP|TELÉFONO|📱)\s*[:]*\s*([\d\s]+)/i);
     if (!telefonoMatch) {
-        // Buscar número de teléfono en el texto (formato colombiano)
         const numMatch = texto.match(/(\d{10,13})/);
         if (numMatch) telefonoMatch = [null, numMatch[1]];
     }
     if (telefonoMatch) {
         let telefono = telefonoMatch[1].trim().replace(/\s/g, '');
-        // Si no tiene 57, se normaliza después
         data.telefono = telefono;
     }
     
@@ -2521,7 +2553,6 @@ function parsearMensajeWhatsApp(texto) {
     if (origenMatch) direccionOrigen = origenMatch[1].trim();
     const destinoMatch = texto.match(/(?:DIRECCION DE DESTINO|DESTINO)\s*[:]*\s*([^\n]+)/i);
     if (destinoMatch) direccionDestino = destinoMatch[1].trim();
-    // Usar destino como dirección principal, origen como observación
     data.direccion = direccionDestino || direccionOrigen || '';
     if (direccionOrigen && direccionDestino) {
         data.observaciones = `Origen: ${direccionOrigen}\nDestino: ${direccionDestino}`;
@@ -2546,12 +2577,25 @@ function parsearMensajeWhatsApp(texto) {
     // Extraer detalle/productos
     const detalleMatch = texto.match(/(?:DETALLE|PRODUCTOS|SERVICIO)\s*[:]*\s*([^\n]+)/i);
     if (detalleMatch) {
-        // Puede contener varios productos, los dividimos por saltos de línea o comas
         const detalle = detalleMatch[1].trim();
-        // Intentamos separar en líneas o comas
         const items = detalle.split(/\n|,|;|\|/).map(item => item.trim()).filter(item => item.length > 0);
         if (items.length > 0) data.productos = items;
         else data.productos = [detalle];
+    }
+    
+    // 🔥 NUEVO: Extraer tipo de servicio (Mensajería, Compras, Transporte, etc.)
+    const tipoMatch = texto.match(/(?:TIPO DE SERVICIO|SERVICIO)\s*[:]*\s*([^\n]+)/i);
+    if (tipoMatch) {
+        data.tipo = tipoMatch[1].trim();
+    } else {
+        // Si no encuentra la etiqueta, busca palabras clave en el texto
+        const palabrasClave = ['Mensajería', 'Mensajeria', 'Compras', 'Transporte', 'Locales'];
+        for (const palabra of palabrasClave) {
+            if (texto.includes(palabra)) {
+                data.tipo = palabra;
+                break;
+            }
+        }
     }
     
     // Extraer coordenadas (si están en el texto)
@@ -2565,7 +2609,6 @@ function parsearMensajeWhatsApp(texto) {
         const lineas = texto.split('\n').filter(line => line.trim().length > 0);
         for (const line of lineas) {
             if (!line.match(/^(TIPO|WHATSAPP|DIRECCION|CIUDAD|DETALLE|FECHA|PEDIDO|UBICACION)/i)) {
-                // Posible nombre
                 data.nombre = line.trim();
                 break;
             }
@@ -2574,7 +2617,7 @@ function parsearMensajeWhatsApp(texto) {
     
     // Validar datos mínimos
     if (!data.nombre && !data.telefono && !data.direccion) {
-        return null; // No se pudo extraer nada útil
+        return null;
     }
     
     return data;
@@ -2584,7 +2627,11 @@ function parsearMensajeWhatsApp(texto) {
 // CREAR SERVICIO MANUAL
 // ============================================================
 async function crearServicioManual() {
+    // 🔥 Obtener la tienda del campo oculto
     const tiendaId = document.getElementById('servicioTienda').value;
+    if (!tiendaId) { toast('⚠️ No se pudo determinar la tienda. Configura una tienda primero.', 'error'); return; }
+
+    const categoria = document.getElementById('servicioTipo').value;
     const nombre = document.getElementById('servicioClienteNombre').value.trim();
     let telefono = document.getElementById('servicioClienteTelefono').value.trim();
     const direccion = document.getElementById('servicioClienteDireccion').value.trim();
@@ -2594,12 +2641,11 @@ async function crearServicioManual() {
     let total = parseFloat(document.getElementById('servicioTotal').value) || 0;
     const metodoPago = document.getElementById('servicioMetodoPago').value || 'efectivo';
 
-    if (!tiendaId) { toast('⚠️ Selecciona una tienda', 'error'); return; }
     if (!nombre) { toast('⚠️ Ingresa el nombre del cliente', 'error'); return; }
     if (!telefono) { toast('⚠️ Ingresa el teléfono del cliente', 'error'); return; }
     telefono = normalizarTelefonoColombia(telefono);
 
-    // Parsear productos: esperamos líneas con formato "Nombre xCantidad - $Precio" o similar
+    // Parsear productos
     let items = [];
     let totalCalculado = 0;
     if (productosRaw) {
@@ -2654,6 +2700,7 @@ async function crearServicioManual() {
         metodoPago,
         estadoPago: 'pendiente',
         manual: true,
+        categoria: categoria, // 🔥 Guardamos la categoría
         fecha: firebase.firestore.FieldValue.serverTimestamp(),
         timestamp: Date.now(),
         fuente: 'admin_manual'
@@ -2661,8 +2708,8 @@ async function crearServicioManual() {
 
     try {
         const docRef = await db.collection('tiendas').doc(tiendaId).collection('pedidos').add(pedidoData);
-        toast(`✅ Servicio ${numeroPedido} creado correctamente`, 'success');
-        // Limpiar formulario (opcional)
+        toast(`✅ Servicio ${numeroPedido} creado correctamente (${categoria})`, 'success');
+        // Limpiar formulario
         document.getElementById('servicioClienteNombre').value = '';
         document.getElementById('servicioClienteTelefono').value = '';
         document.getElementById('servicioClienteDireccion').value = '';
@@ -2706,12 +2753,14 @@ async function cargarServiciosManuales() {
             const cliente = p.cliente || {};
             const total = p.total || 0;
             const numero = p.numeroPedido || '#' + id.slice(-6);
+            const categoria = p.categoria || 'Sin categoría';
             html += `
                 <div class="servicio-item" id="servicio-${id}">
                     <div class="info">
                         <div class="cliente">${cliente.nombre || 'Sin nombre'}</div>
                         <div class="telefono">📱 ${cliente.telefono || 'N/A'} | 🏪 ${nombreTienda}</div>
                         <div style="font-size:12px;color:var(--text-muted);">${numero} - $${total.toLocaleString('es-CO')}</div>
+                        <span class="categoria-servicio">📌 ${categoria}</span>
                         <span class="estado-servicio ${estadoClass}">${estado}</span>
                     </div>
                     <div class="actions">
@@ -4654,6 +4703,7 @@ console.log('📍 Dirección de tienda incluida en mensajes a mensajeros');
 console.log('🔒 Bloqueo de pedido al abrir modal de asignación (estado "En asignación")');
 console.log('📦 Nuevo estado "Preparado" - pedidos no visibles para mensajeros hasta que se notifique');
 console.log('📋 Nueva pestaña "Servicios" con análisis automático de WhatsApp');
+console.log('🏷️ Categorías de servicio: Mensajería, Compras, Transporte, etc.');
 </script>
 </body>
 </html>
